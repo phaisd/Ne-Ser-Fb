@@ -109,7 +109,16 @@ export default function AdminPage() {
 
       {/* Quick Admin Navigation */}
       <div className="space-y-4">
-        <h2 className="text-sm font-bold text-slate-900">แผงควบคุมระบบงานแต่ละโมดูล</h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-sm font-bold text-slate-900">แผงควบคุมระบบงานแต่ละโมดูล</h2>
+          <Link
+            href="/admin/sync"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>เปิด Import / Export Center</span>
+          </Link>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             href="/admin/requests"
