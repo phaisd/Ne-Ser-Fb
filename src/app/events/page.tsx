@@ -1,5 +1,5 @@
 import { universityStore } from '@/shared/lib/store/university-store';
-import { registerEventAction, checkInAndIssueCertAction } from '@/modules/events/actions';
+import { registerEventAction, checkInEventAction } from '@/modules/events/actions';
 import { formatDateTime } from '@/shared/lib/locale/date-formatter';
 import {
   Award,
@@ -9,19 +9,14 @@ import {
   Users,
   CheckCircle2,
   Sparkles,
-  Download,
   ShieldCheck,
   Send,
+  HeartHandshake,
 } from 'lucide-react';
 
 export default function EventsPage() {
   const events = universityStore.getEvents();
-  const participations = universityStore.getParticipations();
-  const students = universityStore.getStudents();
-
-  // Total accumulated hours for Thanapat (65010214)
-  const studentParts = participations.filter((p) => p.studentCode === '65010214' && p.attended);
-  const totalHours = studentParts.reduce((acc, p) => acc + p.activityHours, 0);
+  const registrations = universityStore.getEventRegistrations();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -29,47 +24,19 @@ export default function EventsPage() {
       <div className="border-b border-slate-200 pb-5">
         <div className="flex items-center gap-2 text-xs font-semibold text-rose-600 uppercase tracking-wider">
           <Award className="w-4 h-4" />
-          <span>Module 7 • กิจกรรมพัฒนานิสิตและสะสมชั่วโมงเสริมทักษะ</span>
+          <span>Module 7 • กิจกรรมมหาวิทยาลัยและการอบรมวิปัสสนากรรมฐาน (events & event_registrations)</span>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mt-1">ระบบกิจกรรม & เกียรติบัตรอิเล็กทรอนิกส์ (E-Certificate)</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mt-1">กิจกรรม & การอบรมวิปัสสนากรรมฐาน</h1>
         <p className="text-xs sm:text-sm text-slate-500">
-          ลงทะเบียนกิจกรรมวิชาการ/จิตอาสา เช็คชื่อเข้าร่วม สะสมชั่วโมงกิจกรรม และรับ E-Certificate อัตโนมัติ
+          โครงสร้างจริง events: จัดการกลุ่มปฏิบัติธรรม (group_number, group_name), meditation_config, และเช็คชื่อรายวัน (daily_attendance)
         </p>
       </div>
 
-      {/* Student Activity Accumulator Card */}
-      <div className="bg-gradient-to-r from-rose-700 via-pink-700 to-indigo-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-2 max-w-xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>กระเป๋าสะสมกิจกรรม (Activity Passport)</span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-bold">
-            นายธนพัฒน์ สิทธิโชค (รหัส 65010214)
-          </h2>
-          <p className="text-xs text-rose-100 leading-relaxed">
-            ชั่วโมงกิจกรรมได้รับการรับรองโดยมหาวิทยาลัย สามารถนำไปใช้ยื่นจบการศึกษาหรือยื่นเอกสารกองทุน กยศ.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-6 bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/20">
-          <div className="text-center">
-            <p className="text-xs text-rose-200">กิจกรรมที่ผ่าน</p>
-            <p className="text-2xl font-black text-white">{studentParts.length} <span className="text-xs font-normal">งาน</span></p>
-          </div>
-          <div className="w-px h-10 bg-white/20"></div>
-          <div className="text-center">
-            <p className="text-xs text-rose-200">ชั่วโมงสะสม</p>
-            <p className="text-3xl font-black text-amber-300">{totalHours} <span className="text-xs font-normal text-white">ชม.</span></p>
-          </div>
-        </div>
-      </div>
-
-      {/* Events Directory Catalog */}
+      {/* Events List Catalog */}
       <div className="space-y-4">
         <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-          <span>กิจกรรมที่เปิดรับลงทะเบียน</span>
-          <span className="text-xs text-slate-400">({events.length} กิจกรรม)</span>
+          <span>โครงการอบรมและกิจกรรมที่เปิดรับลงทะเบียน</span>
+          <span className="text-xs text-slate-400">({events.length} โครงการ)</span>
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -78,56 +45,81 @@ export default function EventsPage() {
               key={e.id}
               className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between"
             >
-              <div>
-                <div className="relative h-44 bg-slate-100 overflow-hidden">
-                  <img
-                    src={e.coverImageUrl}
-                    alt={e.titleTh}
-                    className="w-full h-full object-cover hover:scale-105 transition duration-300"
-                  />
-                  <div className="absolute top-2.5 right-2.5 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-amber-300 font-bold text-xs flex items-center gap-1">
+              <div className="p-5 space-y-4">
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md">
+                    {e.meditationConfig ? 'โครงการปฏิบัติวิปัสสนา' : 'กิจกรรมวิชาการ/จิตอาสา'}
+                  </span>
+                  <div className="px-2.5 py-1 rounded-full bg-slate-900 text-amber-300 font-bold text-xs flex items-center gap-1">
                     <Award className="w-3.5 h-3.5" />
                     <span>+{e.activityHours} ชม.</span>
                   </div>
                 </div>
 
-                <div className="p-5 space-y-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md">
-                    {e.category}
-                  </span>
+                <h3 className="font-bold text-slate-900 text-sm leading-snug">
+                  {e.title}
+                </h3>
 
-                  <h3 className="font-bold text-slate-900 text-sm leading-snug">
-                    {e.titleTh}
-                  </h3>
+                <div className="space-y-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>{formatDateTime(e.startDate, 'th')} - {formatDateTime(e.endDate, 'th')}</span>
+                  </div>
 
-                  <div className="space-y-1.5 text-xs text-slate-500">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{e.startDate}</span>
+                  {e.meditationConfig && (
+                    <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200/60 text-amber-900 text-[11px] space-y-1">
+                      <p className="font-bold flex items-center gap-1 text-amber-800">
+                        <Sparkles className="w-3 h-3 text-amber-600" />
+                        <span>การอบรมวิปัสสนากรรมฐาน (meditation_config)</span>
+                      </p>
+                      <p>• สถานที่: {e.meditationConfig.location}</p>
+                      <p>• พระวิปัสสนาจารย์: {e.meditationConfig.leaderMonk}</p>
+                      <p>• จำนวนรอบเจริญภาวนา: วันละ {e.meditationConfig.roundsPerDay} รอบ</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="truncate">{e.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-3.5 h-3.5 text-slate-400" />
-                      <span>
-                        ผู้ลงทะเบียนแล้ว <strong>{e.currentParticipants}</strong> / {e.maxParticipants} ท่าน
-                      </span>
-                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <Users className="w-3.5 h-3.5 text-slate-400" />
+                    <span>ลงทะเบียนแล้ว <strong>{e.registrationsCount || 0}</strong> รูป/คน</span>
                   </div>
                 </div>
               </div>
 
+              {/* Quick Registration Form */}
               <div className="p-5 pt-0">
-                <form action={registerEventAction}>
+                <form action={registerEventAction} className="space-y-2 text-xs">
                   <input type="hidden" name="eventId" value={e.id} />
-                  <input type="hidden" name="studentCode" value="65010214" />
+                  <input
+                    type="text"
+                    name="participantName"
+                    defaultValue="พระมหาธนพัฒน์ โชติปญฺโญ"
+                    required
+                    placeholder="ชื่อ-สกุล/ฉายาผู้เข้าร่วม"
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-[11px]"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      name="groupNumber"
+                      defaultValue={1}
+                      min={1}
+                      max={20}
+                      className="px-2 py-1.5 rounded-lg border border-slate-300 text-[11px]"
+                      placeholder="กลุ่มที่"
+                    />
+                    <input
+                      type="text"
+                      name="groupName"
+                      defaultValue="กลุ่มเจริญสติปัญญา ๑"
+                      className="px-2 py-1.5 rounded-lg border border-slate-300 text-[11px]"
+                      placeholder="ชื่อกลุ่ม"
+                    />
+                  </div>
                   <button
                     type="submit"
-                    className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition shadow-xs cursor-pointer"
+                    className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition cursor-pointer shadow-xs"
                   >
-                    ลงทะเบียนเข้าร่วมกิจกรรม (Register)
+                    ลงทะเบียนเข้าร่วม (Register)
                   </button>
                 </form>
               </div>
@@ -136,68 +128,84 @@ export default function EventsPage() {
         </div>
       </div>
 
-      {/* Participations & E-Certificates Issued */}
+      {/* Registrations & Daily Attendance Tracking */}
       <div className="space-y-4 pt-4">
         <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-          <span>ประวัติการเข้าร่วมและเกียรติบัตรที่ได้รับ (E-Certificates)</span>
-          <span className="text-xs text-slate-400">({participations.length} รายการ)</span>
+          <span>ทะเบียนผู้เข้าร่วมและเช็คชื่อรายวัน (daily_attendance)</span>
+          <span className="text-xs text-slate-400">({registrations.length} รายชื่อ)</span>
         </h2>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3 px-4">ชื่อกิจกรรม</th>
-                <th className="py-3 px-4">นิสิตผู้เข้าร่วม</th>
-                <th className="py-3 px-4">ชั่วโมงกิจกรรม</th>
+                <th className="py-3 px-4">โครงการกิจกรรม</th>
+                <th className="py-3 px-4">ผู้เข้าร่วม (participant_name)</th>
+                <th className="py-3 px-4">กลุ่มที่ / ชื่อกลุ่ม</th>
+                <th className="py-3 px-4">เช็คชื่อรายวัน (daily_attendance)</th>
                 <th className="py-3 px-4">สถานะการเช็คชื่อ</th>
-                <th className="py-3 px-4">รหัส E-Certificate</th>
                 <th className="py-3 px-4 text-right">ดำเนินการ (Actions)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {participations.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50/70 transition">
+              {registrations.map((reg) => (
+                <tr key={reg.id} className="hover:bg-slate-50/70 transition">
                   <td className="py-3 px-4 font-semibold text-slate-900 max-w-xs">
-                    {p.eventTitle}
+                    {reg.eventTitle}
+                  </td>
+                  <td className="py-3 px-4 font-bold text-slate-800">
+                    {reg.participantName}
                   </td>
                   <td className="py-3 px-4">
-                    <p className="font-semibold text-slate-800">{p.studentName}</p>
-                    <p className="text-[11px] text-slate-400 font-mono">{p.studentCode}</p>
+                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 font-medium">
+                      กลุ่ม {reg.groupNumber}: {reg.groupName}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    {reg.dailyAttendance && (
+                      <div className="flex gap-1.5">
+                        {Object.entries(reg.dailyAttendance).map(([day, checked]) => (
+                          <span
+                            key={day}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              checked
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200'
+                            }`}
+                          >
+                            {day}: {checked ? '✓' : '-'}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="py-3 px-4 whitespace-nowrap">
-                    <span className="font-bold text-amber-600">+{p.activityHours}</span> ชั่วโมง
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    {p.attended ? (
+                    {reg.attendedAt ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <CheckCircle2 className="w-3 h-3" />
-                        เข้าร่วมสำเร็จ
+                        เสร็จสิ้นการอบรม
                       </span>
                     ) : (
                       <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        ลงทะเบียนแล้ว (รอเช็คชื่อ)
+                        ลงทะเบียนแล้ว
                       </span>
                     )}
                   </td>
-                  <td className="py-3 px-4 font-mono font-bold text-slate-700">
-                    {p.certCode || '-'}
-                  </td>
                   <td className="py-3 px-4 text-right whitespace-nowrap">
-                    {!p.attended ? (
-                      <form action={checkInAndIssueCertAction}>
-                        <input type="hidden" name="participationId" value={p.id} />
+                    {!reg.attendedAt ? (
+                      <form action={checkInEventAction}>
+                        <input type="hidden" name="registrationId" value={reg.id} />
                         <button
                           type="submit"
                           className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs cursor-pointer shadow-xs"
                         >
-                          เช็คชื่อและออก E-Cert
+                          เช็คชื่อสำเร็จ
                         </button>
                       </form>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-semibold">
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>ออกใบประกาศแล้ว</span>
+                        <span>ผ่านการอบรม ({reg.certCode})</span>
                       </span>
                     )}
                   </td>

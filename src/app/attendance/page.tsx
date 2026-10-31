@@ -6,7 +6,6 @@ import {
   XCircle,
   AlertTriangle,
   Clock,
-  QrCode,
   UserCheck,
   Percent,
   GraduationCap,
@@ -14,11 +13,12 @@ import {
 } from 'lucide-react';
 
 export default async function AttendancePage() {
-  const summaries = universityStore.getAttendanceSummaries();
-  const students = universityStore.getStudents();
+  const enrollments = universityStore.getEnrollments();
+  const courses = universityStore.getCourses();
 
-  // Dynamic countdown QR for live session check-in
-  const qrTokenData = `ATT-SESSION-${Date.now()}-EXP60`;
+  // Dynamic Timed QR Code for the active course session
+  const activeCourse = courses[0];
+  const qrTokenData = `ATT-SESSION-${activeCourse?.courseCode || '000101'}-${Date.now()}`;
   const qrImage = await generateQrDataUrl(qrTokenData);
 
   return (
@@ -27,32 +27,33 @@ export default async function AttendancePage() {
       <div className="border-b border-slate-200 pb-5">
         <div className="flex items-center gap-2 text-xs font-semibold text-purple-600 uppercase tracking-wider">
           <CheckCircle2 className="w-4 h-4" />
-          <span>Module 3 • ระบบตรวจสอบเวลาเข้าเรียนและสิทธิ์สอบ</span>
+          <span>Module 3 • ระบบเช็คชื่อและสิทธิ์สอบ 80% (Attendance & Exam Eligibility)</span>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mt-1">เวลาเข้าเรียน & สิทธิ์สอบ (เกณฑ์ขั้นต่ำ 80%)</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mt-1">เวลาเรียนและสิทธิ์เข้าสอบ (เป้าหมาย ๑๖ คาบ)</h1>
         <p className="text-xs sm:text-sm text-slate-500">
-          เช็คชื่อรายคาบ คำนวณเปอร์เซ็นต์เข้าเรียนอัตโนมัติ ป้ายเตือนขาดสิทธิ์สอบ และ QR Code สแกนเช็คชื่อแบบเรียลไทม์
+          โครงสร้างจริง attendance_sessions, course_enrollments, attendance_records ตามเกณฑ์ calculation_rules (ขั้นต่ำ 80%)
         </p>
       </div>
 
-      {/* Top Banner: QR Countdown Check-in Widget for Classrooms */}
+      {/* Dynamic Classroom QR Code Widget */}
       <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-3 max-w-xl">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/30 border border-purple-400/40 text-purple-200 text-xs font-semibold">
             <Clock className="w-3.5 h-3.5" />
-            <span>Dynamic Classroom QR • สลับรหัสอัตโนมัติ</span>
+            <span>Dynamic Timed QR Code • คาบเรียนปัจจุบัน</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold">
-            QR Code เช็คชื่อประจำคาบเรียน: CS201 Algorithms
+            วิชา {activeCourse?.courseCode} {activeCourse?.courseName} (ตอนเรียน {activeCourse?.section})
           </h2>
           <p className="text-xs text-purple-200 leading-relaxed">
-            อาจารย์สามารถเปิดหน้าจอนี้ผ่าน Projector ประจำห้องเรียนเพื่อให้นิสิตใช้สมาร์ตโฟนสแกนเข้าชั้นเรียน
-            ระบบจะอัปเดตสถิติเวลาเรียนและส่งสำเนาเข้า Google Sheets ทันที
+            ห้องเรียน: {activeCourse?.room} • จำนวนคาบตามหลักสูตร: <strong>{activeCourse?.targetSessions || 16} คาบ</strong>
+            <br />
+            อาจารย์ผู้สอนสามารถเปิดหน้าจอนี้ผ่าน Projector เพื่อให้นิสิตสแกนเช็คชื่อเข้าชั้นเรียนแบบ Real-time
           </p>
-          <div className="text-xs text-purple-300 flex items-center gap-3">
-            <span>เกณฑ์การคำนวณ:</span>
-            <span className="font-mono bg-purple-950/60 px-2.5 py-1 rounded border border-purple-800">
-              Rate = (มา + สาย×0.5) / คาบทั้งหมด × 100%
+          <div className="text-xs text-purple-300 flex items-center gap-2">
+            <span>กฎการคำนวณ (calculation_rules):</span>
+            <span className="font-mono bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800 text-[11px]">
+              LateCountsAsFull = True, MinPercent = 80.0%
             </span>
           </div>
         </div>
@@ -66,15 +67,15 @@ export default async function AttendancePage() {
             />
           )}
           <span className="text-[11px] font-mono text-purple-700 font-bold mt-2">
-            สแกนเพื่อเช็คชื่อเข้าชั้นเรียน
+            สแกนเข้าห้องเรียน
           </span>
-          <span className="text-[10px] text-slate-400">หมดอายุใน 60 วินาที</span>
+          <span className="text-[10px] text-slate-400">สลับรหัสทุก 60 วินาที</span>
         </div>
       </div>
 
-      {/* Manual Check-in Form & Live Attendance Summary Grid */}
+      {/* Attendance Logging & Eligibility Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Quick Check-in Panel (For Instructors) */}
+        {/* Check-in Form */}
         <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs h-fit space-y-4">
           <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
             <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
@@ -82,57 +83,44 @@ export default async function AttendancePage() {
             </div>
             <div>
               <h2 className="font-bold text-slate-900 text-sm">บันทึกเวลาเรียนรายบุคคล (อาจารย์)</h2>
-              <p className="text-[11px] text-slate-500">เลือกสถานะเพื่อบันทึกประวัติการเข้าเรียน</p>
+              <p className="text-[11px] text-slate-500">บันทึกลงตาราง attendance_records</p>
             </div>
           </div>
 
           <form action={checkInAttendanceAction} className="space-y-4 text-xs">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">เลือกนิสิต *</label>
+              <label className="block font-semibold text-slate-700 mb-1">เลือกนิสิตที่ลงทะเบียน *</label>
               <select
-                name="studentId"
+                name="enrollmentId"
                 required
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
               >
-                {students.map((s) => (
-                  <option key={s.id} value={s.studentCode}>
-                    {s.studentCode} - {s.firstNameTh} {s.lastNameTh} ({s.major})
+                {enrollments.map((enr) => (
+                  <option key={enr.id} value={enr.id}>
+                    {enr.studentCode} - {enr.studentName} ({enr.courseCode})
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">รหัสวิชา *</label>
-              <select
-                name="courseCode"
-                required
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
-              >
-                <option value="CS201">CS201 - การวิเคราะห์และออกแบบขั้นตอนวิธี</option>
-                <option value="CS202">CS202 - ระบบจัดการฐานข้อมูล</option>
-                <option value="SE301">SE301 - วิศวกรรมซอฟต์แวร์</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">สถานะการเข้าเรียน *</label>
+              <label className="block font-semibold text-slate-700 mb-1">สถานะการเข้าเรียน (status) *</label>
               <div className="grid grid-cols-2 gap-2">
                 <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-emerald-50 cursor-pointer">
                   <input type="radio" name="status" value="PRESENT" defaultChecked />
-                  <span className="font-semibold text-emerald-700">มาเรียน (Present)</span>
+                  <span className="font-semibold text-emerald-700">มาเรียน (PRESENT)</span>
                 </label>
                 <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-amber-50 cursor-pointer">
                   <input type="radio" name="status" value="LATE" />
-                  <span className="font-semibold text-amber-700">มาสาย (Late)</span>
+                  <span className="font-semibold text-amber-700">มาสาย (LATE)</span>
                 </label>
                 <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-blue-50 cursor-pointer">
                   <input type="radio" name="status" value="LEAVE" />
-                  <span className="font-semibold text-blue-700">ลา (Leave)</span>
+                  <span className="font-semibold text-blue-700">ลา (LEAVE)</span>
                 </label>
                 <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-rose-50 cursor-pointer">
                   <input type="radio" name="status" value="ABSENT" />
-                  <span className="font-semibold text-rose-700">ขาดเรียน (Absent)</span>
+                  <span className="font-semibold text-rose-700">ขาดเรียน (ABSENT)</span>
                 </label>
               </div>
             </div>
@@ -141,48 +129,48 @@ export default async function AttendancePage() {
               type="submit"
               className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold text-xs shadow-md shadow-purple-500/20 transition cursor-pointer"
             >
-              บันทึกเวลาเรียน (Save Attendance)
+              บันทึกการเช็คชื่อ (Save Record)
             </button>
           </form>
         </div>
 
-        {/* Student Exam Eligibility Summary Table */}
+        {/* Student Exam Eligibility Cards */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <span>รายงานสิทธิ์สอบนิสิตประจำภาคการศึกษา</span>
+              <span>สถานะสิทธิ์สอบของนิสิต (เกณฑ์เข้าเรียนไม่น้อยกว่า 80%)</span>
               <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-xs">
-                {summaries.length} คน
+                {enrollments.length} นิสิต
               </span>
             </h2>
-            <span className="text-xs text-slate-500">เกณฑ์มาตรฐาน: เข้าเรียน ≥ 80%</span>
+            <span className="text-xs text-slate-500">เป้าหมาย 16 คาบ</span>
           </div>
 
           <div className="space-y-4">
-            {summaries.map((item, idx) => (
+            {enrollments.map((enr) => (
               <div
-                key={idx}
+                key={enr.id}
                 className={`bg-white p-5 rounded-2xl border shadow-xs transition space-y-3 ${
-                  item.isEligible ? 'border-slate-200' : 'border-rose-300 bg-rose-50/20'
+                  enr.isEligible ? 'border-slate-200' : 'border-rose-300 bg-rose-50/20'
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <span className="font-bold text-slate-900 text-sm">{item.studentName}</span>
-                    <span className="text-xs text-slate-500 ml-2">ID: {item.studentCode}</span>
-                    <p className="text-xs text-purple-700 font-medium">{item.courseCode} - {item.courseName}</p>
+                    <span className="font-bold text-slate-900 text-sm">{enr.studentName}</span>
+                    <span className="text-xs text-slate-500 font-mono ml-2">ID: {enr.studentCode}</span>
+                    <p className="text-xs text-purple-700 font-medium">{enr.courseCode} - {enr.courseName}</p>
                   </div>
 
                   <div>
-                    {item.isEligible ? (
+                    {enr.isEligible ? (
                       <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        มีสิทธิ์สอบ (Eligible)
+                        มีสิทธิ์สอบ (ELIGIBLE)
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">
                         <AlertTriangle className="w-4 h-4 text-rose-600" />
-                        หมดสิทธิ์สอบ (Ineligible &lt; 80%)
+                        หมดสิทธิ์สอบ (INELIGIBLE &lt; 80%)
                       </span>
                     )}
                   </div>
@@ -191,40 +179,36 @@ export default async function AttendancePage() {
                 {/* Progress Bar */}
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">อัตราการเข้าชั้นเรียน</span>
-                    <span className="font-bold text-slate-900">{item.attendanceRate}%</span>
+                    <span className="text-slate-500">เปอร์เซ็นต์เวลาเรียนสะสม</span>
+                    <span className="font-bold text-slate-900 font-mono">{enr.attendancePercent || 0}%</span>
                   </div>
                   <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        item.isEligible ? 'bg-emerald-500' : 'bg-rose-500'
+                        enr.isEligible ? 'bg-emerald-500' : 'bg-rose-500'
                       }`}
-                      style={{ width: `${Math.min(100, item.attendanceRate)}%` }}
+                      style={{ width: `${Math.min(100, enr.attendancePercent || 0)}%` }}
                     />
                   </div>
                 </div>
 
-                {/* Session breakdown pill */}
-                <div className="grid grid-cols-5 gap-2 pt-2 text-center text-[11px]">
-                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-                    <p className="text-slate-400">ทั้งหมด</p>
-                    <p className="font-bold text-slate-800">{item.totalSessions} คาบ</p>
-                  </div>
+                {/* Breakdown counts */}
+                <div className="grid grid-cols-4 gap-2 pt-2 text-center text-[11px]">
                   <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-800">
                     <p>มาเรียน</p>
-                    <p className="font-bold">{item.presentCount}</p>
+                    <p className="font-bold text-sm">{enr.presentCount || 0}</p>
                   </div>
                   <div className="p-2 rounded-xl bg-amber-50 border border-amber-100 text-amber-800">
                     <p>มาสาย</p>
-                    <p className="font-bold">{item.lateCount}</p>
+                    <p className="font-bold text-sm">{enr.lateCount || 0}</p>
                   </div>
                   <div className="p-2 rounded-xl bg-blue-50 border border-blue-100 text-blue-800">
                     <p>การลา</p>
-                    <p className="font-bold">{item.leaveCount}</p>
+                    <p className="font-bold text-sm">{enr.leaveCount || 0}</p>
                   </div>
                   <div className="p-2 rounded-xl bg-rose-50 border border-rose-100 text-rose-800">
                     <p>ขาดเรียน</p>
-                    <p className="font-bold">{item.absentCount}</p>
+                    <p className="font-bold text-sm">{enr.absentCount || 0}</p>
                   </div>
                 </div>
               </div>

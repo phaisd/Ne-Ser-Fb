@@ -7,392 +7,195 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  STUDENT
-  FACULTY
-  STAFF
-  ADMIN
-  SUPER_ADMIN
-}
+// -------------------------------------------------------------
+// 1. ระบบคำร้องขอหนังสือรับรอง
+// -------------------------------------------------------------
+model CertificateType {
+  id          String               @id @default(uuid()) @db.Uuid
+  tenantId    String               @map("tenant_id") @db.Uuid
+  name        String               @db.VarChar(255) // เช่น หนังสือรับรองการเป็นนิสิต, หนังสือรับรองความประพฤติ
+  description String?              @db.Text
+  isActive    Boolean              @default(true) @map("is_active")
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz()
+  requests    CertificateRequest[]
 
-enum RequestType {
-  STUDENT_STATUS_CERTIFICATE
-  OFFICIAL_TRANSCRIPT
-  STUDENT_LOAN_CERTIFICATE
-  MILITARY_DEFERMENT
-  LEAVE_REQUEST
-  OTHER
-}
-
-enum RequestStatus {
-  PENDING
-  UNDER_REVIEW
-  APPROVED
-  REJECTED
-  CANCELLED
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  REJECTED
-}
-
-enum AttendanceStatus {
-  PRESENT
-  LATE
-  LEAVE
-  ABSENT
-}
-
-enum StudentStatus {
-  ACTIVE
-  PROBATION
-  SUSPENDED
-  GRADUATED
-  RESIGNED
-  DISMISSED
-}
-
-enum DayOfWeek {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
-}
-
-model Tenant {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  nameTh    String
-  nameEn    String
-  sheetId   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  users     User[]
-  courses   Course[]
-  rooms     MeetingRoom[]
-  events    UniversityEvent[]
-
-  @@index([code])
-}
-
-model User {
-  id           String    @id @default(uuid())
-  tenantId     String    @default("default")
-  username     String
-  passwordHash String
-  email        String?
-  role         Role      @default(STUDENT)
-  firstNameTh  String
-  lastNameTh   String
-  firstNameEn  String
-  lastNameEn   String
-  avatarUrl    String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  student      StudentProfile?
-  requests     CertificateRequest[] @relation("StudentRequests")
-  approvedReqs CertificateRequest[] @relation("ApprovedByOfficer")
-  bookings     RoomBooking[]
-  auditLogs    AuditLog[]
-
-  @@unique([tenantId, username])
-  @@index([tenantId, role])
+  @@map("certificate_types")
 }
 
 model CertificateRequest {
-  id                String        @id @default(uuid())
-  tenantId          String        @default("default")
-  requestNumber     String        @unique
-  userId            String
-  type              RequestType
-  titleTh           String
-  titleEn           String
-  purpose           String
-  copiesCount       Int           @default(1)
-  deliveryMethod    String        @default("DIGITAL")
-  status            RequestStatus @default(PENDING)
-  officerNotes      String?
-  rejectionReason   String?
-  verificationToken String        @unique @default(uuid())
-  documentUrl       String?
-  approvedById      String?
-  approvedAt        DateTime?
-  syncedToSheets    Boolean       @default(false)
-  syncedAt          DateTime?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id                String          @id @default(uuid()) @db.Uuid
+  tenantId          String          @map("tenant_id") @db.Uuid
+  userId            String          @map("user_id") @db.Uuid
+  certificateTypeId String          @map("certificate_type_id") @db.Uuid
+  status            String          @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  reason            String?         @db.Text // เหตุผลกรณีปฏิเสธ
+  note              String?         @db.Text // วัตถุประสงค์การขอ
+  issuedDocumentUrl String?         @map("issued_document_url") @db.VarChar(500)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz()
 
-  user              User          @relation("StudentRequests", fields: [userId], references: [id], onDelete: Cascade)
-  approvedBy        User?         @relation("ApprovedByOfficer", fields: [approvedById], references: [id])
-  attachments       RequestAttachment[]
+  certificateType   CertificateType @relation(fields: [certificateTypeId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId, status])
-  @@index([tenantId, userId])
-  @@index([verificationToken])
+  @@map("certificate_requests")
 }
 
-model RequestAttachment {
-  id          String   @id @default(uuid())
-  requestId   String
-  fileName    String
-  fileUrl     String
-  fileSize    Int
-  fileType    String
-  createdAt   DateTime @default(now())
-
-  request     CertificateRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-
-  @@index([requestId])
-}
-
+// -------------------------------------------------------------
+// 2. ระบบจองห้องประชุมออนไลน์
+// -------------------------------------------------------------
 model MeetingRoom {
-  id          String        @id @default(uuid())
-  tenantId    String        @default("default")
-  roomCode    String
-  nameTh      String
-  nameEn      String
-  building    String
-  floor       Int
-  capacity    Int
-  imageUrl    String?
-  equipments  String[]
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id        String           @id @default(uuid()) @db.Uuid
+  tenantId  String           @map("tenant_id") @db.Uuid
+  name      String           @db.VarChar(255)
+  capacity  Int              @default(10)
+  equipment String?          @db.Text // อุปกรณ์ประจำห้อง เช่น โปรเจกเตอร์, ไมค์
+  imageUrl  String?          @map("image_url") @db.VarChar(500)
+  isActive  Boolean          @default(true) @map("is_active")
+  bookings  MeetingBooking[]
 
-  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bookings    RoomBooking[]
-
-  @@unique([tenantId, roomCode])
-  @@index([tenantId, isActive])
+  @@map("meeting_rooms")
 }
 
-model RoomBooking {
-  id             String        @id @default(uuid())
-  tenantId       String        @default("default")
-  roomId         String
-  userId         String
-  title          String
-  description    String?
-  attendeesCount Int
-  startTime      DateTime
-  endTime        DateTime
-  status         BookingStatus @default(CONFIRMED)
-  cancelReason   String?
-  syncedToSheets Boolean       @default(false)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+model MeetingBooking {
+  id          String      @id @default(uuid()) @db.Uuid
+  tenantId    String      @map("tenant_id") @db.Uuid
+  roomId      String      @map("room_id") @db.Uuid
+  requesterId String      @map("requester_id") @db.Uuid
+  title       String      @db.VarChar(255) // หัวข้อการประชุม
+  startTime   DateTime    @map("start_time") @db.Timestamptz()
+  endTime     DateTime    @map("end_time") @db.Timestamptz()
+  status      String      @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  remark      String?     @db.Text
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz()
 
-  room           MeetingRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room        MeetingRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId, roomId, startTime, endTime])
-  @@index([tenantId, status])
+  @@map("meeting_bookings")
 }
 
+// -------------------------------------------------------------
+// 3. ทะเบียนนิสิต (Student Directory & Records)
+// -------------------------------------------------------------
+model Student {
+  id          String             @id @default(uuid()) @db.Uuid
+  tenantId    String             @map("tenant_id") @db.Uuid
+  studentCode String             @map("student_code") @db.VarChar(50) // รหัสนิสิต
+  title       String?            @db.VarChar(50) // พระ, สามเณร, นาย, นางสาว
+  firstName   String             @map("first_name") @db.VarChar(100)
+  lastName    String             @map("last_name") @db.VarChar(100)
+  yearLevel   Int                @default(1) @map("year_level") // ชั้นปี 1-4
+  degree      String?            @default("ปริญญาตรี") @db.VarChar(100)
+  faculty     String?            @default("คณะพุทธศาสตร์") @db.VarChar(255)
+  department  String?            @db.VarChar(255) // ภาควิชา
+  major       String?            @db.VarChar(255) // สาขาวิชา
+  studyStatus String?            @default("ปกติ") @map("study_status") @db.VarChar(50)
+  email       String?            @db.VarChar(255)
+  phoneNumber String?            @map("phone_number") @db.VarChar(50)
+  isActive    Boolean            @default(true) @map("is_active")
+  enrollments CourseEnrollment[]
+
+  @@unique([tenantId, studentCode])
+  @@map("students")
+}
+
+// -------------------------------------------------------------
+// 4. รายวิชา, ตารางสอน, และการลงทะเบียน
+// -------------------------------------------------------------
 model Course {
-  id           String          @id @default(uuid())
-  tenantId     String          @default("default")
-  code         String
-  nameTh       String
-  nameEn       String
-  credits      Int             @default(3)
-  lectureHours Int             @default(3)
-  labHours     Int             @default(0)
-  department   String
-  description  String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id               String              @id @default(uuid()) @db.Uuid
+  tenantId         String              @map("tenant_id") @db.Uuid
+  courseCode       String              @map("course_code") @db.VarChar(50) // รหัสวิชา
+  courseName       String              @map("course_name") @db.VarChar(255)
+  courseNameEn     String?             @map("course_name_en") @db.VarChar(255)
+  credits          Int                 @default(3)
+  section          String              @default("1") @db.VarChar(20)
+  term             String              @db.VarChar(50) // เช่น 1/2569
+  academicYear     String              @default("2569") @map("academic_year") @db.VarChar(20)
+  semester         Int                 @default(1)
+  room             String?             @db.VarChar(100) // ห้องเรียน
+  dayOfWeek        Int?                @map("day_of_week") // 1=จันทร์ .. 7=อาทิตย์
+  startTime        String?             @map("start_time") @db.VarChar(20)
+  endTime          String?             @map("end_time") @db.VarChar(20)
+  targetSessions   Int                 @default(16) @map("target_sessions") // จำนวนคาบทั้งหมด
+  calculationRules Json                @default("{\"lateCountsAsFull\": true, \"minPercent\": 80.0}") @map("calculation_rules")
+  enrollments      CourseEnrollment[]
+  sessions         AttendanceSession[]
 
-  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  sections     CourseSection[]
-
-  @@unique([tenantId, code])
-  @@index([tenantId, code])
+  @@map("courses")
 }
 
-model CourseSection {
-  id             String              @id @default(uuid())
-  tenantId       String              @default("default")
-  courseId       String
-  sectionNumber  String
-  semester       Int
-  academicYear   Int
-  capacity       Int                 @default(50)
-  instructorName String
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+model CourseEnrollment {
+  id              String             @id @default(uuid()) @db.Uuid
+  tenantId        String             @map("tenant_id") @db.Uuid
+  courseId        String             @map("course_id") @db.Uuid
+  studentId       String             @map("student_id") @db.Uuid
+  attendanceScore Float?             @map("attendance_score")
+  status          String             @default("ENROLLED")
+  records         AttendanceRecord[]
 
-  course         Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  enrollments    StudentEnrollment[]
-  sessions       AttendanceSession[]
-  schedules      ScheduleSlot[]
+  course          Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student         Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  @@unique([tenantId, courseId, semester, academicYear, sectionNumber])
-  @@index([tenantId, academicYear, semester])
+  @@map("course_enrollments")
 }
 
+// -------------------------------------------------------------
+// 5. ระบบเช็คชื่อและสิทธิ์สอบ 80%
+// -------------------------------------------------------------
 model AttendanceSession {
-  id           String             @id @default(uuid())
-  tenantId     String             @default("default")
-  sectionId    String
-  sessionIndex Int
-  sessionDate  DateTime
-  topic        String?
-  qrToken      String?            @unique
-  qrExpiresAt  DateTime?
-  allowCheckIn Boolean            @default(true)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  id        String             @id @default(uuid()) @db.Uuid
+  tenantId  String             @map("tenant_id") @db.Uuid
+  courseId  String             @map("course_id") @db.Uuid
+  sessionNo Int                @map("session_no") // คาบที่ 1-16
+  date      DateTime           @db.Date
+  qrCode    String?            @map("qr_code") @db.VarChar(100) // Dynamic timed QR
+  records   AttendanceRecord[]
 
-  section      CourseSection      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  records      AttendanceRecord[]
+  course    Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId, sectionId, sessionDate])
+  @@map("attendance_sessions")
 }
 
 model AttendanceRecord {
-  id          String           @id @default(uuid())
-  tenantId    String           @default("default")
-  sessionId   String
-  studentId   String
-  status      AttendanceStatus @default(ABSENT)
-  checkInAt   DateTime?
-  checkInType String           @default("MANUAL")
-  notes       String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id           String            @id @default(uuid()) @db.Uuid
+  tenantId     String            @map("tenant_id") @db.Uuid
+  sessionId    String            @map("session_id") @db.Uuid
+  enrollmentId String            @map("enrollment_id") @db.Uuid
+  status       String            @default("PRESENT") // PRESENT (มา), LATE (สาย), LEAVE (ลา), ABSENT (ขาด)
+  markedAt     DateTime          @default(now()) @map("marked_at") @db.Timestamptz()
 
-  session     AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student     StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session      AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  enrollment   CourseEnrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
 
-  @@unique([sessionId, studentId])
-  @@index([tenantId, studentId])
+  @@map("attendance_records")
 }
 
-model StudentProfile {
-  id            String             @id @default(uuid())
-  tenantId      String             @default("default")
-  userId        String             @unique
-  studentCode   String             @unique
-  citizenId     String?
-  faculty       String
-  major         String
-  academicYear  Int
-  yearLevel     Int                @default(1)
-  status        StudentStatus      @default(ACTIVE)
-  gpa           Float?             @default(0.0)
-  creditsEarned Int                @default(0)
-  phone         String?
-  advisorName   String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+// -------------------------------------------------------------
+// 6. กิจกรรมมหาวิทยาลัยและการอบรมวิปัสสนากรรมฐาน
+// -------------------------------------------------------------
+model Event {
+  id               String              @id @default(uuid()) @db.Uuid
+  tenantId         String              @map("tenant_id") @db.Uuid
+  title            String              @db.VarChar(255)
+  startDate        DateTime            @map("start_date") @db.Timestamptz()
+  endDate          DateTime            @map("end_date") @db.Timestamptz()
+  activityHours    Int                 @default(3) @map("activity_hours") // ชั่วโมงกิจกรรม
+  meditationConfig Json?               @map("meditation_config") // การตั้งค่ากลุ่มวิปัสสนา
+  registrations    EventRegistration[]
 
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enrollments   StudentEnrollment[]
-  attendance    AttendanceRecord[]
-  eventRecords  EventParticipation[]
-
-  @@index([tenantId, studentCode])
-  @@index([tenantId, faculty, major])
+  @@map("events")
 }
 
-model StudentEnrollment {
-  id        String        @id @default(uuid())
-  tenantId  String        @default("default")
-  studentId String
-  sectionId String
-  grade     String?
-  createdAt DateTime      @default(now())
+model EventRegistration {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  eventId         String    @map("event_id") @db.Uuid
+  participantName String    @map("participant_name") @db.VarChar(255)
+  groupNumber     Int?      @map("group_number") // กลุ่มที่
+  groupName       String?   @map("group_name") @db.VarChar(100)
+  attendedAt      DateTime? @map("attended_at") @db.Timestamptz()
+  dailyAttendance Json?     @map("daily_attendance") // เช็คชื่อรายวัน
 
-  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  section   CourseSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  event           Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  @@unique([studentId, sectionId])
-  @@index([tenantId, studentId])
-}
-
-model ScheduleSlot {
-  id        String        @id @default(uuid())
-  tenantId  String        @default("default")
-  sectionId String
-  dayOfWeek DayOfWeek
-  startTime String
-  endTime   String
-  roomCode  String?
-  building  String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  section   CourseSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, dayOfWeek, startTime, endTime])
-  @@index([tenantId, roomCode, dayOfWeek])
-}
-
-model UniversityEvent {
-  id              String               @id @default(uuid())
-  tenantId        String               @default("default")
-  titleTh         String
-  titleEn         String
-  category        String
-  activityHours   Float                @default(1.0)
-  location        String
-  startDate       DateTime
-  endDate         DateTime
-  maxParticipants Int                  @default(100)
-  coverImageUrl   String?
-  isPublished     Boolean              @default(true)
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-
-  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  participations  EventParticipation[]
-
-  @@index([tenantId, startDate])
-}
-
-model EventParticipation {
-  id           String          @id @default(uuid())
-  tenantId     String          @default("default")
-  eventId      String
-  studentId    String
-  attended     Boolean         @default(false)
-  attendedAt   DateTime?
-  certCode     String?         @unique
-  certIssuedAt DateTime?
-  createdAt    DateTime        @default(now())
-
-  event        UniversityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  student      StudentProfile  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, studentId])
-  @@index([tenantId, studentId])
-}
-
-model AuditLog {
-  id         String   @id @default(uuid())
-  tenantId   String   @default("default")
-  userId     String?
-  action     String
-  resource   String
-  resourceId String?
-  details    Json?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, action])
-  @@index([tenantId, createdAt])
+  @@map("event_registrations")
 }

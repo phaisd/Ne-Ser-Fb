@@ -6,13 +6,12 @@ export async function GET(
   context: { params: Promise<{ token: string }> }
 ) {
   const { token } = await context.params;
-  const req = universityStore.getRequestById(token);
+  const req = universityStore.getCertificateRequestById(token);
 
   if (!req) {
-    return NextResponse.json({ error: 'Certificate not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Certificate request not found' }, { status: 404 });
   }
 
-  // Redirect to print view if valid
   const url = new URL(`/certificates/${req.id}`, request.url);
   return NextResponse.redirect(url);
 }

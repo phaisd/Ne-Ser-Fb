@@ -2,30 +2,28 @@
 
 import { revalidatePath } from 'next/cache';
 import { universityStore } from '@/shared/lib/store/university-store';
-import { CreateCertificateRequestSchema, ApproveRequestSchema, RejectRequestSchema } from '@/shared/lib/validations';
+import { CreateCertificateRequestSchema, UpdateCertificateStatusSchema } from '@/shared/lib/validations';
 
 export async function submitCertificateRequestAction(formData: FormData): Promise<void> {
   try {
-    const rawData = {
-      tenantId: (formData.get('tenantId') as string) || 'default',
-      studentId: formData.get('studentId') as string,
-      studentName: formData.get('studentName') as string,
-      type: formData.get('type') as any,
-      purpose: formData.get('purpose') as string,
-      copiesCount: formData.get('copiesCount') || 1,
-      deliveryMethod: (formData.get('deliveryMethod') as any) || 'DIGITAL',
+    const raw = {
+      tenantId: (formData.get('tenantId') as string) || undefined,
+      userId: (formData.get('userId') as string) || undefined,
+      certificateTypeId: formData.get('certificateTypeId') as string,
+      studentCode: formData.get('studentCode') as string,
+      requesterName: formData.get('requesterName') as string,
+      note: formData.get('note') as string,
     };
 
-    const validated = CreateCertificateRequestSchema.parse(rawData);
+    const validated = CreateCertificateRequestSchema.parse(raw);
 
     await universityStore.createCertificateRequest({
       tenantId: validated.tenantId,
-      studentId: validated.studentId,
-      studentName: validated.studentName,
-      type: validated.type,
-      purpose: validated.purpose,
-      copiesCount: validated.copiesCount,
-      deliveryMethod: validated.deliveryMethod,
+      userId: validated.userId,
+      certificateTypeId: validated.certificateTypeId,
+      studentCode: validated.studentCode,
+      requesterName: validated.requesterName,
+      note: validated.note,
     });
 
     revalidatePath('/certificates');
@@ -35,47 +33,25 @@ export async function submitCertificateRequestAction(formData: FormData): Promis
   }
 }
 
-export async function approveCertificateRequestAction(formData: FormData): Promise<void> {
+export async function updateCertificateStatusAction(formData: FormData): Promise<void> {
   try {
-    const requestId = formData.get('requestId') as string;
-    const officerNotes = formData.get('officerNotes') as string;
-    const approvedById = (formData.get('approvedById') as string) || 'staff-01';
+    const raw = {
+      requestId: formData.get('requestId') as string,
+      status: formData.get('status') as any,
+      reason: (formData.get('reason') as string) || undefined,
+    };
 
-    const validated = ApproveRequestSchema.parse({ requestId, officerNotes, approvedById });
+    const validated = UpdateCertificateStatusSchema.parse(raw);
 
-    await universityStore.updateRequestStatus(
+    await universityStore.updateCertificateRequestStatus(
       validated.requestId,
-      'APPROVED',
-      validated.officerNotes,
-      undefined,
-      validated.approvedById
+      validated.status,
+      validated.reason
     );
 
     revalidatePath('/certificates');
     revalidatePath('/admin/requests');
   } catch (error: any) {
-    console.error('Error approving request:', error?.message);
-  }
-}
-
-export async function rejectCertificateRequestAction(formData: FormData): Promise<void> {
-  try {
-    const requestId = formData.get('requestId') as string;
-    const rejectionReason = formData.get('rejectionReason') as string;
-    const officerNotes = formData.get('officerNotes') as string;
-
-    const validated = RejectRequestSchema.parse({ requestId, rejectionReason, officerNotes });
-
-    await universityStore.updateRequestStatus(
-      validated.requestId,
-      'REJECTED',
-      validated.officerNotes,
-      validated.rejectionReason
-    );
-
-    revalidatePath('/certificates');
-    revalidatePath('/admin/requests');
-  } catch (error: any) {
-    console.error('Error rejecting request:', error?.message);
+    console.error('Error updating certificate status:', error?.message);
   }
 }

@@ -4,14 +4,14 @@ import {
   BookOpen,
   Plus,
   FileSpreadsheet,
-  Layers,
-  Sparkles,
   GraduationCap,
-  DownloadCloud,
+  Sparkles,
 } from 'lucide-react';
 
 export default function CurriculumPage() {
   const courses = universityStore.getCourses();
+
+  const dayNames = ['', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์', 'วันอาทิตย์'];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -20,11 +20,11 @@ export default function CurriculumPage() {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-amber-600 uppercase tracking-wider">
             <BookOpen className="w-4 h-4" />
-            <span>Module 4 • โครงสร้างหลักสูตรและรายวิชาที่เปิดสอน</span>
+            <span>Module 4 • ทะเบียนรายวิชาและหลักสูตร (Course Catalog)</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mt-1">ทะเบียนรายวิชา & หลักสูตรการศึกษา</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mt-1">รายวิชาและแผนการจัดการเรียนรู้</h1>
           <p className="text-xs sm:text-sm text-slate-500">
-            จัดการรหัสวิชา หน่วยกิต บรรยาย/ปฏิบัติ และการซิงค์ข้อมูลจาก Google Sheets (Import Sync)
+            โครงสร้างจริง table: courses ครบทุกฟิลด์: course_code, term, section, target_sessions, calculation_rules
           </p>
         </div>
 
@@ -36,7 +36,7 @@ export default function CurriculumPage() {
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              <span>Import รายวิชาจาก Google Sheets (แนวทางที่ 2)</span>
+              <span>Import รายวิชาจาก Google Sheets (Courses_Master)</span>
             </button>
           </form>
         </div>
@@ -50,48 +50,59 @@ export default function CurriculumPage() {
               <Plus className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-900 text-sm">เพิ่มรายวิชาใหม่ในหลักสูตร</h2>
-              <p className="text-[11px] text-slate-500">บันทึกข้อมูลหลักสูตรสองภาษา (TH/EN)</p>
+              <h2 className="font-bold text-slate-900 text-sm">เพิ่มรายวิชาในหลักสูตร</h2>
+              <p className="text-[11px] text-slate-500">บันทึกลงตาราง courses</p>
             </div>
           </div>
 
           <form action={createCourseAction} className="space-y-4 text-xs">
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">รหัสวิชา (Course Code) *</label>
-              <input
-                type="text"
-                name="code"
-                placeholder="เช่น CS305"
-                required
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 uppercase font-mono"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">รหัสวิชา (courseCode) *</label>
+                <input
+                  type="text"
+                  name="courseCode"
+                  placeholder="เช่น 000105"
+                  required
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">ตอนเรียน (section) *</label>
+                <input
+                  type="text"
+                  name="section"
+                  defaultValue="1"
+                  required
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">ชื่อวิชาภาษาไทย *</label>
+              <label className="block font-semibold text-slate-700 mb-1">ชื่อวิชาภาษาไทย (courseName) *</label>
               <input
                 type="text"
-                name="nameTh"
-                placeholder="เช่น การเรียนรู้เชิงลึกและการประมวลผลภาษาธรรมชาติ"
+                name="courseName"
+                placeholder="เช่น ภาษาบาลีไวยากรณ์ขั้นพื้นฐาน"
                 required
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">ชื่อวิชาภาษาอังกฤษ *</label>
+              <label className="block font-semibold text-slate-700 mb-1">ชื่อวิชาภาษาอังกฤษ (courseNameEn)</label>
               <input
                 type="text"
-                name="nameEn"
-                placeholder="เช่น Deep Learning and Natural Language Processing"
-                required
+                name="courseNameEn"
+                placeholder="เช่น Basic Pali Grammar"
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">หน่วยกิต</label>
+                <label className="block font-semibold text-slate-700 mb-1">หน่วยกิต (credits)</label>
                 <input
                   type="number"
                   name="credits"
@@ -104,44 +115,83 @@ export default function CurriculumPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">ชม. บรรยาย</label>
+                <label className="block font-semibold text-slate-700 mb-1">ภาคการศึกษา (term)</label>
                 <input
-                  type="number"
-                  name="lectureHours"
-                  defaultValue={3}
-                  min={0}
+                  type="text"
+                  name="term"
+                  defaultValue="1/2569"
+                  required
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">ชม. ปฏิบัติ</label>
+                <label className="block font-semibold text-slate-700 mb-1">คาบเป้าหมาย</label>
                 <input
                   type="number"
-                  name="labHours"
-                  defaultValue={0}
-                  min={0}
+                  name="targetSessions"
+                  defaultValue={16}
+                  required
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">ภาควิชา / คณะที่รับผิดชอบ *</label>
+              <label className="block font-semibold text-slate-700 mb-1">ห้องเรียน (room)</label>
               <input
                 type="text"
-                name="department"
-                defaultValue="วิทยาการคอมพิวเตอร์"
-                required
+                name="room"
+                defaultValue="ห้องบรรยาย 301 อาคารเรียนรวม"
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">วันในสัปดาห์</label>
+                <select
+                  name="dayOfWeek"
+                  className="w-full px-2 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                >
+                  <option value="1">จันทร์</option>
+                  <option value="2">อังคาร</option>
+                  <option value="3">พุธ</option>
+                  <option value="4">พฤหัสบดี</option>
+                  <option value="5">ศุกร์</option>
+                  <option value="6">เสาร์</option>
+                  <option value="7">อาทิตย์</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">เวลาเริ่ม</label>
+                <input
+                  type="text"
+                  name="startTime"
+                  defaultValue="09:00"
+                  required
+                  className="w-full px-2 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">เวลาสิ้นสุด</label>
+                <input
+                  type="text"
+                  name="endTime"
+                  defaultValue="12:00"
+                  required
+                  className="w-full px-2 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
             >
-              บันทึกรายวิชาใหม่ (Save Course)
+              บันทึกรายวิชา (Save Course)
             </button>
           </form>
         </div>
@@ -161,28 +211,33 @@ export default function CurriculumPage() {
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">รหัสวิชา</th>
+                  <th className="py-3 px-4">รหัสวิชา (ตอน)</th>
                   <th className="py-3 px-4">ชื่อวิชา (TH / EN)</th>
-                  <th className="py-3 px-4">หน่วยกิต (บรรยาย-ปฏิบัติ)</th>
-                  <th className="py-3 px-4">ภาควิชา</th>
+                  <th className="py-3 px-4">หน่วยกิต (ภาค/ปี)</th>
+                  <th className="py-3 px-4">วันและเวลาเรียน</th>
+                  <th className="py-3 px-4">ห้องเรียน</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {courses.map((c) => (
                   <tr key={c.id} className="hover:bg-slate-50/70 transition">
-                    <td className="py-3 px-4 font-mono font-bold text-blue-700 text-xs">
-                      {c.code}
+                    <td className="py-3 px-4 font-mono font-bold text-blue-700 whitespace-nowrap">
+                      {c.courseCode} <span className="text-slate-500 font-normal">(Sec {c.section})</span>
                     </td>
-                    <td className="py-3 px-4 space-y-0.5">
-                      <p className="font-semibold text-slate-900">{c.nameTh}</p>
-                      <p className="text-[11px] text-slate-400 italic">{c.nameEn}</p>
+                    <td className="py-3 px-4">
+                      <p className="font-semibold text-slate-900">{c.courseName}</p>
+                      {c.courseNameEn && <p className="text-[11px] text-slate-400 italic">{c.courseNameEn}</p>}
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <span className="font-bold text-slate-900">{c.credits}</span> หน่วยกิต{' '}
-                      <span className="text-slate-400 text-[11px]">({c.lectureHours}-{c.labHours}-6)</span>
+                      <span className="font-bold text-slate-900">{c.credits}</span> นก.{' '}
+                      <span className="text-slate-400 text-[11px]">({c.term})</span>
                     </td>
-                    <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
-                      {c.department}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <p className="font-medium text-slate-800">{dayNames[c.dayOfWeek || 1]}</p>
+                      <p className="text-[11px] text-slate-500 font-mono">{c.startTime} - {c.endTime}</p>
+                    </td>
+                    <td className="py-3 px-4 text-slate-600">
+                      {c.room || '-'}
                     </td>
                   </tr>
                 ))}

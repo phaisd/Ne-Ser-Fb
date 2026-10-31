@@ -1,97 +1,81 @@
 import { z } from 'zod';
 
-export type RequestStatus = 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
-export type RequestType = 
-  | 'STUDENT_STATUS_CERTIFICATE' 
-  | 'OFFICIAL_TRANSCRIPT' 
-  | 'STUDENT_LOAN_CERTIFICATE' 
-  | 'MILITARY_DEFERMENT' 
-  | 'LEAVE_REQUEST' 
-  | 'OTHER';
-
-export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'REJECTED';
-export type AttendanceStatus = 'PRESENT' | 'LATE' | 'LEAVE' | 'ABSENT';
-export type StudentStatus = 'ACTIVE' | 'PROBATION' | 'SUSPENDED' | 'GRADUATED' | 'RESIGNED';
-export type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
-
-// -------------------------------------------------------------
-// ZOD VALIDATION SCHEMAS
-// -------------------------------------------------------------
-
+// 1. Certificate Request
 export const CreateCertificateRequestSchema = z.object({
-  tenantId: z.string().default('default'),
-  studentId: z.string().min(1, 'ต้องระบุรหัสนิสิต'),
-  studentName: z.string().min(1, 'ต้องระบุชื่อ-สกุล'),
-  type: z.enum([
-    'STUDENT_STATUS_CERTIFICATE',
-    'OFFICIAL_TRANSCRIPT',
-    'STUDENT_LOAN_CERTIFICATE',
-    'MILITARY_DEFERMENT',
-    'LEAVE_REQUEST',
-    'OTHER'
-  ]),
-  purpose: z.string().min(3, 'กรุณาระบุวัตถุประสงค์ในการขอหนังสือรับรองอย่างน้อย 3 ตัวอักษร'),
-  copiesCount: z.coerce.number().min(1).max(10).default(1),
-  deliveryMethod: z.enum(['DIGITAL', 'PICKUP', 'POSTAL']).default('DIGITAL'),
+  tenantId: z.string().default('a0000000-0000-0000-0000-000000000001'),
+  userId: z.string().default('b0000000-0000-0000-0000-000000000001'),
+  certificateTypeId: z.string().min(1, 'กรุณาเลือกประเภทหนังสือรับรอง'),
+  studentCode: z.string().min(1, 'ระบุรหัสนิสิต'),
+  requesterName: z.string().min(1, 'ระบุชื่อ-สกุลนิสิต'),
+  note: z.string().min(3, 'กรุณาระบุวัตถุประสงค์การขอหนังสือรับรองอย่างน้อย 3 ตัวอักษร'),
 });
 
-export const ApproveRequestSchema = z.object({
-  requestId: z.string(),
-  officerNotes: z.string().optional(),
-  approvedById: z.string().default('staff-admin-01'),
+export const UpdateCertificateStatusSchema = z.object({
+  requestId: z.string().min(1),
+  status: z.enum(['APPROVED', 'REJECTED', 'CANCELLED']),
+  reason: z.string().optional(),
 });
 
-export const RejectRequestSchema = z.object({
-  requestId: z.string(),
-  rejectionReason: z.string().min(3, 'กรุณาระบุเหตุผลการปฏิเสธ'),
-  officerNotes: z.string().optional(),
-});
-
-export const CreateBookingSchema = z.object({
-  tenantId: z.string().default('default'),
+// 2. Meeting Booking
+export const CreateMeetingBookingSchema = z.object({
+  tenantId: z.string().default('a0000000-0000-0000-0000-000000000001'),
   roomId: z.string().min(1, 'กรุณาเลือกห้องประชุม'),
-  userId: z.string().default('user-01'),
-  bookedBy: z.string().min(1, 'กรุณาระบุชื่อผู้จอง'),
-  title: z.string().min(3, 'กรุณาระบุหัวข้อการประชุมอย่างน้อย 3 ตัวอักษร'),
-  description: z.string().optional(),
-  attendeesCount: z.coerce.number().min(1, 'จำนวนผู้เข้าร่วมอย่างน้อย 1 คน'),
-  date: z.string().min(1, 'กรุณาเลือกวันที่'),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'รูปแบบเวลาไม่ถูกต้อง (HH:mm)'),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'รูปแบบเวลาไม่ถูกต้อง (HH:mm)'),
+  requesterId: z.string().default('b0000000-0000-0000-0000-000000000001'),
+  requesterName: z.string().min(1, 'ระบุชื่อผู้จอง/หน่วยงาน'),
+  title: z.string().min(3, 'ระบุหัวข้อการประชุมอย่างน้อย 3 ตัวอักษร'),
+  startTime: z.string().min(1, 'ระบุวันและเวลาเริ่มต้น'),
+  endTime: z.string().min(1, 'ระบุวันและเวลาสิ้นสุด'),
+  remark: z.string().optional(),
 });
 
-export const RecordAttendanceSchema = z.object({
-  sessionId: z.string(),
-  studentId: z.string(),
-  status: z.enum(['PRESENT', 'LATE', 'LEAVE', 'ABSENT']),
-  checkInType: z.enum(['MANUAL', 'QR_SCAN']).default('MANUAL'),
-  notes: z.string().optional(),
+// 3. Student Record
+export const StudentSchema = z.object({
+  tenantId: z.string().default('a0000000-0000-0000-0000-000000000001'),
+  studentCode: z.string().min(1, 'รหัสนิสิต'),
+  title: z.string().default('นาย'),
+  firstName: z.string().min(1, 'ชื่อ'),
+  lastName: z.string().min(1, 'นามสกุล'),
+  yearLevel: z.coerce.number().min(1).max(6).default(1),
+  degree: z.string().default('ปริญญาตรี'),
+  faculty: z.string().default('คณะพุทธศาสตร์'),
+  department: z.string().optional(),
+  major: z.string().optional(),
+  studyStatus: z.string().default('ปกติ'),
+  email: z.string().email().optional().or(z.literal('')),
+  phoneNumber: z.string().optional(),
 });
 
-export const CreateCourseSchema = z.object({
-  tenantId: z.string().default('default'),
-  code: z.string().min(3, 'รหัสวิชาต้องมีอย่างน้อย 3 ตัวอักษร'),
-  nameTh: z.string().min(3, 'ชื่อวิชา (ภาษาไทย)'),
-  nameEn: z.string().min(3, 'ชื่อวิชา (English)'),
+// 4. Course
+export const CourseSchema = z.object({
+  tenantId: z.string().default('a0000000-0000-0000-0000-000000000001'),
+  courseCode: z.string().min(1, 'รหัสวิชา'),
+  courseName: z.string().min(1, 'ชื่อวิชา (ภาษาไทย)'),
+  courseNameEn: z.string().optional(),
   credits: z.coerce.number().min(1).max(6).default(3),
-  lectureHours: z.coerce.number().min(0).default(3),
-  labHours: z.coerce.number().min(0).default(0),
-  department: z.string().min(2, 'ภาควิชา/คณะ'),
+  section: z.string().default('1'),
+  term: z.string().default('1/2569'),
+  academicYear: z.string().default('2569'),
+  semester: z.coerce.number().default(1),
+  room: z.string().optional(),
+  dayOfWeek: z.coerce.number().min(1).max(7).default(1),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'รูปแบบเวลา (HH:mm) เช่น 09:00'),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'รูปแบบเวลา (HH:mm) เช่น 12:00'),
+  targetSessions: z.coerce.number().default(16),
 });
 
-export const CreateScheduleSlotSchema = z.object({
-  tenantId: z.string().default('default'),
-  sectionId: z.string(),
-  dayOfWeek: z.enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/),
-  roomCode: z.string().min(1, 'ระบุห้องเรียน'),
-  instructorName: z.string().min(1, 'ระบุชื่อผู้สอน'),
+// 5. Attendance
+export const RecordAttendanceSchema = z.object({
+  tenantId: z.string().default('a0000000-0000-0000-0000-000000000001'),
+  sessionId: z.string().min(1),
+  enrollmentId: z.string().min(1),
+  status: z.enum(['PRESENT', 'LATE', 'LEAVE', 'ABSENT']).default('PRESENT'),
 });
 
+// 6. Event Registration (Vipassana Meditation)
 export const RegisterEventSchema = z.object({
-  tenantId: z.string().default('default'),
-  eventId: z.string(),
-  studentId: z.string(),
-  studentName: z.string(),
+  tenantId: z.string().default('a0000000-0000-0000-0000-000000000001'),
+  eventId: z.string().min(1),
+  participantName: z.string().min(1, 'ระบุชื่อ-สกุลผู้เข้าร่วม'),
+  groupNumber: z.coerce.number().min(1).max(20).default(1),
+  groupName: z.string().default('กลุ่มเจริญสติ ๑'),
 });

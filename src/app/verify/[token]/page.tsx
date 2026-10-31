@@ -1,8 +1,7 @@
 import { universityStore } from '@/shared/lib/store/university-store';
-import { formatDateFull, formatDateTime } from '@/shared/lib/locale/date-formatter';
-import { notFound } from 'next/navigation';
+import { formatDateFull } from '@/shared/lib/locale/date-formatter';
 import Link from 'next/link';
-import { ShieldCheck, CheckCircle2, FileText, ArrowLeft, Calendar, User, Building } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, ArrowLeft, User } from 'lucide-react';
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -10,7 +9,7 @@ interface Props {
 
 export default async function VerifyCertificatePage({ params }: Props) {
   const { token } = await params;
-  const req = universityStore.getRequestById(token);
+  const req = universityStore.getCertificateRequestById(token);
 
   if (!req) {
     return (
@@ -20,7 +19,7 @@ export default async function VerifyCertificatePage({ params }: Props) {
         </div>
         <h1 className="text-lg font-bold text-slate-900">ไม่พบเอกสารในระบบ (Invalid Document)</h1>
         <p className="text-xs text-slate-500">
-          รหัส Token ไม่ถูกต้อง หรือเอกสารนี้ไม่ได้ออกโดยระบบบริการมหาวิทยาลัยดิจิทัล
+          รหัส Token หรือ Request ID ไม่ถูกต้อง หรือเอกสารนี้ไม่ได้ออกโดยระบบบริการมหาวิทยาลัย
         </p>
         <Link
           href="/"
@@ -32,7 +31,10 @@ export default async function VerifyCertificatePage({ params }: Props) {
     );
   }
 
-  const student = universityStore.getStudentByCode(req.studentId);
+  const student = req.studentCode ? universityStore.getStudentByCode(req.studentCode) : null;
+  const fullName = student
+    ? `${student.title || ''}${student.firstName} ${student.lastName}`
+    : req.requesterName || 'นิสิตมหาวิทยาลัย';
 
   return (
     <div className="max-w-2xl mx-auto my-12 px-4 sm:px-6">
@@ -44,7 +46,7 @@ export default async function VerifyCertificatePage({ params }: Props) {
           </div>
           <h1 className="text-xl font-bold tracking-tight">เอกสารได้รับการรับรองอย่างถูกต้อง</h1>
           <p className="text-emerald-100 text-xs">
-            Authentic Official Document Verified by National Digital University
+            Authentic Official Document Verified by University Registry
           </p>
         </div>
 
@@ -52,51 +54,52 @@ export default async function VerifyCertificatePage({ params }: Props) {
         <div className="p-6 sm:p-8 space-y-6 text-xs sm:text-sm">
           <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-100">
             <div>
-              <p className="text-slate-400 text-xs">เลขที่คำร้อง / อ้างอิง</p>
-              <p className="font-mono font-bold text-slate-900 text-sm mt-0.5">{req.requestNumber}</p>
+              <p className="text-slate-400 text-xs">รหัสคำร้อง (Request ID)</p>
+              <p className="font-mono font-bold text-slate-900 text-sm mt-0.5">{req.id}</p>
             </div>
             <div>
               <p className="text-slate-400 text-xs">สถานะการรับรอง</p>
               <p className="font-bold text-emerald-600 flex items-center gap-1 text-sm mt-0.5">
                 <CheckCircle2 className="w-4 h-4" />
-                {req.status === 'APPROVED' ? 'อนุมัติและมีผลสมบูรณ์' : 'อยู่ระหว่างรอการอนุมัติ'}
+                {req.status === 'APPROVED' ? 'อนุมัติแล้ว (APPROVED)' : req.status}
               </p>
             </div>
           </div>
 
           <div className="space-y-3">
             <div>
-              <p className="text-slate-400 text-xs">ชื่อเอกสาร (Document Name)</p>
-              <p className="font-bold text-slate-900 text-base">{req.titleTh}</p>
-              <p className="text-xs text-slate-500 italic">{req.titleEn}</p>
+              <p className="text-slate-400 text-xs">ประเภทหนังสือรับรอง</p>
+              <p className="font-bold text-slate-900 text-base">{req.certificateTypeName}</p>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-blue-600" />
                 <span className="font-semibold text-slate-800">
-                  {student ? `${student.titleTh} ${student.firstNameTh} ${student.lastNameTh}` : req.studentName}
+                  {fullName}
                 </span>
-                <span className="text-xs text-slate-400">({req.studentId})</span>
+                {req.studentCode && <span className="text-xs text-slate-400 font-mono">({req.studentCode})</span>}
               </div>
               <p className="text-xs text-slate-600">
-                สังกัด: {student?.faculty || 'คณะวิทยาศาสตร์และเทคโนโลยี'} • สาขา: {student?.major || 'วิทยาการคอมพิวเตอร์'}
+                สังกัด: {student?.faculty || 'คณะพุทธศาสตร์'} • สาขา: {student?.major || 'สาขาวิชาพระพุทธศาสนา'}
               </p>
             </div>
 
-            <div>
-              <p className="text-slate-400 text-xs">วัตถุประสงค์ในการขอ</p>
-              <p className="text-slate-700 mt-1">{req.purpose}</p>
-            </div>
+            {req.note && (
+              <div>
+                <p className="text-slate-400 text-xs">วัตถุประสงค์ในการขอ (note)</p>
+                <p className="text-slate-700 mt-1">{req.note}</p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div>
                 <p className="text-slate-400 text-xs">วันที่ออกเอกสาร (พ.ศ.)</p>
-                <p className="font-medium text-slate-800 mt-0.5">{formatDateFull(req.approvedAt || req.createdAt, 'th')}</p>
+                <p className="font-medium text-slate-800 mt-0.5">{formatDateFull(req.updatedAt || req.createdAt, 'th')}</p>
               </div>
               <div>
-                <p className="text-slate-400 text-xs">Date of Issue (A.D.)</p>
-                <p className="font-medium text-slate-800 mt-0.5">{formatDateFull(req.approvedAt || req.createdAt, 'en')}</p>
+                <p className="text-slate-400 text-xs">Date of Issue (C.E.)</p>
+                <p className="font-medium text-slate-800 mt-0.5">{formatDateFull(req.updatedAt || req.createdAt, 'en')}</p>
               </div>
             </div>
           </div>

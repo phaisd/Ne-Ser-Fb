@@ -12,17 +12,16 @@ import {
   Grid3X3,
   BookOpen,
   Award,
-  Layers,
   ArrowRight,
-  Server,
   Cloud,
 } from 'lucide-react';
 
 export default function AdminPage() {
-  const auditLogs = universityStore.getAuditLogs();
-  const requests = universityStore.getRequests();
-  const bookings = universityStore.getBookings();
+  const requests = universityStore.getCertificateRequests();
+  const bookings = universityStore.getMeetingBookings();
   const students = universityStore.getStudents();
+  const courses = universityStore.getCourses();
+  const events = universityStore.getEvents();
   const mode = process.env.DATA_SOURCE_MODE || 'HYBRID';
 
   return (
@@ -36,7 +35,7 @@ export default function AdminPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mt-1">แผงควบคุมระบบบริการมหาวิทยาลัยดิจิทัล</h1>
           <p className="text-xs sm:text-sm text-slate-500">
-            มอนิเตอร์สถานะสถาปัตยกรรม Tri-Mode Google Sheets, Audit Logs, และการอนุมัติแบบเรียลไทม์
+            โครงสร้างจริง Real Production Database (PostgreSQL Prisma + Google Sheets v4 Tri-Mode Engine)
           </p>
         </div>
 
@@ -48,7 +47,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Tri-Mode Architecture Status Grid */}
+      {/* Tri-Mode Architecture Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
@@ -61,7 +60,7 @@ export default function AdminPage() {
           </div>
           <h3 className="font-bold text-slate-900 text-sm">Hybrid Auto-Sync Engine</h3>
           <p className="text-xs text-slate-500 leading-relaxed">
-            อ่าน/เขียนเร็วระดับ Milliseconds ด้วย PostgreSQL (Prisma ORM) พร้อมส่งต่อแถวข้อมูลลง Google Sheets แบบอัตโนมัติ
+            อ่านและเขียนลง PostgreSQL (Prisma ORM) พร้อมส่งสำเนาแถวข้อมูลลง Google Sheets แบบอัตโนมัติ
           </p>
           <div className="pt-2 border-t border-slate-100 text-[11px] text-emerald-600 font-semibold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -80,11 +79,11 @@ export default function AdminPage() {
           </div>
           <h3 className="font-bold text-slate-900 text-sm">Import & Export Center</h3>
           <p className="text-xs text-slate-500 leading-relaxed">
-            ดึงรายชื่อนิสิต (Pull) และส่งออกประวัติ (Push) เชื่อมโยง Google Sheets Tab: Students_Master และ Courses_Master
+            ดึงข้อมูลนิสิต (Pull) และส่งออกรายงานทะเบียน (Push) เชื่อมโยง Google Sheets Tab: Students_Master
           </p>
           <div className="pt-2 border-t border-slate-100 text-[11px] text-emerald-600 font-semibold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Batch Two-Way Synchronization</span>
+            <span>Two-Way Batch Synchronization</span>
           </div>
         </div>
 
@@ -97,20 +96,20 @@ export default function AdminPage() {
               โหมดที่ 3 (Supported)
             </span>
           </div>
-          <h3 className="font-bold text-slate-900 text-sm">Direct Sheets Mode</h3>
+          <h3 className="font-bold text-slate-900 text-sm">Direct Google Sheets Mode</h3>
           <p className="text-xs text-slate-500 leading-relaxed">
-            รองรับการสลับรันแบบ Zero-DB โดยให้ Google Sheets API v4 เป็นฐานข้อมูลหลักโดยตรงผ่านตัวแปรแวดล้อม
+            สลับระบบมารันแบบ Standalone Zero-DB ตรงกับ Google Sheets API v4 ผ่าน DATA_SOURCE_MODE=SHEETS
           </p>
           <div className="pt-2 border-t border-slate-100 text-[11px] text-amber-700 font-semibold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-            <span>DATA_SOURCE_MODE=SHEETS</span>
+            <span>Zero-Infrastructure Standalone</span>
           </div>
         </div>
       </div>
 
-      {/* Quick Admin Actions */}
+      {/* Quick Admin Navigation */}
       <div className="space-y-4">
-        <h2 className="text-sm font-bold text-slate-900">การเข้าถึงระบบควบคุมแต่ละส่วน</h2>
+        <h2 className="text-sm font-bold text-slate-900">แผงควบคุมระบบงานแต่ละโมดูล</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             href="/admin/requests"
@@ -119,7 +118,7 @@ export default function AdminPage() {
             <div className="flex items-center gap-3">
               <FileText className="w-5 h-5 text-blue-600" />
               <div>
-                <p className="font-bold text-xs text-slate-900">อนุมัติคำร้อง</p>
+                <p className="font-bold text-xs text-slate-900">พิจารณาคำร้อง</p>
                 <p className="text-[11px] text-slate-400">{requests.filter(r => r.status === 'PENDING').length} รอดำเนินการ</p>
               </div>
             </div>
@@ -133,7 +132,7 @@ export default function AdminPage() {
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-emerald-600" />
               <div>
-                <p className="font-bold text-xs text-slate-900">จัดการจองห้อง</p>
+                <p className="font-bold text-xs text-slate-900">จองห้องประชุม</p>
                 <p className="text-[11px] text-slate-400">{bookings.length} รายการจอง</p>
               </div>
             </div>
@@ -155,74 +154,18 @@ export default function AdminPage() {
           </Link>
 
           <Link
-            href="/timetable"
-            className="p-4 bg-white rounded-xl border border-slate-200 hover:border-cyan-400 hover:shadow-xs transition flex items-center justify-between group"
+            href="/events"
+            className="p-4 bg-white rounded-xl border border-slate-200 hover:border-rose-400 hover:shadow-xs transition flex items-center justify-between group"
           >
             <div className="flex items-center gap-3">
-              <Grid3X3 className="w-5 h-5 text-cyan-600" />
+              <Award className="w-5 h-5 text-rose-600" />
               <div>
-                <p className="font-bold text-xs text-slate-900">จัดตารางสอน</p>
-                <p className="text-[11px] text-slate-400">Clash Warning On</p>
+                <p className="font-bold text-xs text-slate-900">กลุ่มวิปัสสนากรรมฐาน</p>
+                <p className="text-[11px] text-slate-400">{events.length} โครงการ</p>
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition" />
           </Link>
-        </div>
-      </div>
-
-      {/* Real-time Audit Logs Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-rose-500" />
-            <h2 className="text-sm font-bold text-slate-900">Audit Logs (บันทึกกิจกรรมความปลอดภัยในระบบ)</h2>
-          </div>
-          <span className="text-xs text-slate-400 font-mono">Real-time Stream</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
-              <tr>
-                <th className="py-3 px-4">วันและเวลา</th>
-                <th className="py-3 px-4">Action</th>
-                <th className="py-3 px-4">Resource</th>
-                <th className="py-3 px-4">Resource ID</th>
-                <th className="py-3 px-4">รายละเอียดเพิ่มเติม</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {auditLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400">
-                    ยังไม่มีกิจกรรมใหม่ในเซสชันนี้
-                  </td>
-                </tr>
-              ) : (
-                auditLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/70 transition">
-                    <td className="py-3 px-4 font-mono text-slate-500 whitespace-nowrap">
-                      {formatDateTime(log.createdAt, 'th')}
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-slate-100 text-slate-800">
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-medium text-slate-800">
-                      {log.resource}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">
-                      {log.resourceId || '-'}
-                    </td>
-                    <td className="py-3 px-4 text-slate-500 max-w-xs truncate">
-                      {log.details ? JSON.stringify(log.details) : '-'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

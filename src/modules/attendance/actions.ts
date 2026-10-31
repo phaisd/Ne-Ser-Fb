@@ -7,18 +7,16 @@ import { RecordAttendanceSchema } from '@/shared/lib/validations';
 export async function checkInAttendanceAction(formData: FormData): Promise<void> {
   try {
     const raw = {
+      tenantId: (formData.get('tenantId') as string) || undefined,
       sessionId: formData.get('sessionId') as string || 'default-session',
-      studentId: formData.get('studentId') as string,
+      enrollmentId: formData.get('enrollmentId') as string,
       status: formData.get('status') as any,
-      checkInType: (formData.get('checkInType') as any) || 'MANUAL',
-      notes: (formData.get('notes') as string) || undefined,
     };
 
     const validated = RecordAttendanceSchema.parse(raw);
 
     await universityStore.recordAttendance({
-      studentCode: validated.studentId,
-      courseCode: (formData.get('courseCode') as string) || 'CS201',
+      enrollmentId: validated.enrollmentId,
       status: validated.status,
     });
 

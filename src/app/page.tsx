@@ -10,17 +10,16 @@ import {
   Grid3X3,
   Award,
   ArrowRight,
-  TrendingUp,
   ShieldCheck,
   Building2,
   Clock,
-  Layers,
+  Sparkles,
 } from 'lucide-react';
 
 export default function HomePage() {
-  const requests = universityStore.getRequests();
-  const rooms = universityStore.getRooms();
-  const bookings = universityStore.getBookings();
+  const requests = universityStore.getCertificateRequests();
+  const rooms = universityStore.getMeetingRooms();
+  const bookings = universityStore.getMeetingBookings();
   const students = universityStore.getStudents();
   const courses = universityStore.getCourses();
   const events = universityStore.getEvents();
@@ -41,11 +40,11 @@ export default function HomePage() {
             <span>{formatDateFull(today, 'th')}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            ระบบบริการและบริหารมหาวิทยาลัยดิจิทัล
+            ระบบบริการมหาวิทยาลัยดิจิทัล
           </h1>
           <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
-            ศูนย์กลางบริการการศึกษาครบวงจร รองรับนิสิต คณาจารย์ และเจ้าหน้าที่ ออกแบบด้วย Next.js 16
-            เชื่อมโยงฐานข้อมูลแบบ Tri-Mode พร้อมระบบ Auto-Sync สู่ Google Sheets แบบเรียลไทม์
+            ศูนย์กลางบริการการศึกษาและบริหารมหาวิทยาลัย รองรับนิสิตบรรพชิตและคฤหัสถ์ (พระ, สามเณร, นาย, นางสาว)
+            เชื่อมโยงฐานข้อมูลจริง (Prisma Schema) พร้อมระบบ Auto-Sync สู่ Google Sheets แบบเรียลไทม์
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
             <Link
@@ -53,14 +52,14 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-blue-900 font-semibold text-sm hover:bg-blue-50 shadow-md transition"
             >
               <FileText className="w-4 h-4 text-blue-600" />
-              <span>ยื่นคำร้องออนไลน์</span>
+              <span>ยื่นคำร้องขอหนังสือรับรอง</span>
             </Link>
             <Link
               href="/rooms"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600/40 backdrop-blur-sm border border-white/20 text-white font-semibold text-sm hover:bg-blue-600/60 transition"
             >
               <Calendar className="w-4 h-4 text-emerald-300" />
-              <span>จองห้องประชุม</span>
+              <span>จองห้องประชุมออนไลน์</span>
             </Link>
             <Link
               href="/admin"
@@ -101,7 +100,7 @@ export default function HomePage() {
           </div>
           <div>
             <p className="text-xs text-slate-500 font-medium">นิสิตในทะเบียน</p>
-            <p className="text-2xl font-bold text-slate-900">{students.length} <span className="text-xs font-normal text-slate-400">คน</span></p>
+            <p className="text-2xl font-bold text-slate-900">{students.length} <span className="text-xs font-normal text-slate-400">รูป/คน</span></p>
           </div>
         </div>
 
@@ -118,11 +117,9 @@ export default function HomePage() {
 
       {/* 7 Core Modules Interactive Grid */}
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">7 โมดูลระบบหลัก (Core Modules)</h2>
-            <p className="text-xs text-slate-500">เข้าสู่ระบบการทำงานแต่ละด้านพร้อมสถาปัตยกรรม Tri-Mode Google Sheets</p>
-          </div>
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">โมดูลระบบบริการตามโครงสร้างจริง (Production Modules)</h2>
+          <p className="text-xs text-slate-500">ตรงตามโครงสร้าง Prisma Schema จริง: certificate_requests, meeting_rooms, students, courses, attendance_sessions, events</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -136,10 +133,10 @@ export default function HomePage() {
                 <FileText className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                1. คำร้องและหนังสือรับรองออนไลน์
+                1. คำร้องขอหนังสือรับรอง (certificate_requests)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                ยื่นขอใบรับรองสถานภาพนิสิต, ทรานสคริปต์, หนังสือรับรอง กยศ. พิมพ์ฟอร์ม A4 พร้อม Verification QR Code
+                หนังสือรับรองการเป็นนิสิต, ความประพฤติ, ผ่อนผันการเกณฑ์ทหาร, ทรานสคริปต์ พร้อมพิมพ์ฟอร์ม A4 และ QR Code
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-blue-600">
@@ -155,13 +152,13 @@ export default function HomePage() {
           >
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Calendar className="w-6 h-6" />
+                <Calendar className="w-4 h-4" />
               </div>
               <h3 className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
-                2. จองห้องประชุมออนไลน์ (Anti-Double Booking)
+                2. จองห้องประชุมออนไลน์ (meeting_bookings)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                ปฏิทินตรวจจับการจองซ้อนทับ 100% พร้อมข้อมูลอุปกรณ์ประจำห้อง และบันทึกคิวลง Google Sheets ทันที
+                ตรวจจับการจองซ้อนทับ (Anti-Double Booking 100%) ตรวจสอบอุปกรณ์ประจำห้อง และบันทึกลง Google Sheets ทันที
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-600">
@@ -177,13 +174,13 @@ export default function HomePage() {
           >
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <CheckCircle2 className="w-6 h-6" />
+                <CheckCircle2 className="w-4 h-4" />
               </div>
               <h3 className="font-bold text-slate-900 group-hover:text-purple-600 transition-colors">
-                3. เวลาเรียนและสิทธิ์สอบ (เกณฑ์ 80%)
+                3. เช็คชื่อ & สิทธิ์สอบ 80% (attendance_sessions)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                เช็คชื่อรายคาบ, QR Code เช็คชื่อแบบนับเวลาถอยหลัง และคำนวณสิทธิ์สอบอัตโนมัติพร้อมระบบเตือนภัย
+                เช็คชื่อรายคาบ (เป้าหมาย ๑๖ คาบ) พร้อม Dynamic Timed QR Code และคำนวณเกณฑ์สิทธิ์สอบตาม calculation_rules
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-purple-600">
@@ -199,13 +196,13 @@ export default function HomePage() {
           >
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BookOpen className="w-6 h-6" />
+                <BookOpen className="w-4 h-4" />
               </div>
               <h3 className="font-bold text-slate-900 group-hover:text-amber-600 transition-colors">
-                4. หลักสูตรและทะเบียนวิชาที่เปิดสอน
+                4. ทะเบียนรายวิชา (courses)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                โครงสร้างหลักสูตร TH/EN หน่วยกิต และระบบนำเข้าข้อมูลวิชาจาก Google Sheets (Import Sync)
+                โครงสร้างรายวิชา TH/EN ภาค/ปีการศึกษา คาบเป้าหมาย และระบบนำเข้าข้อมูลจาก Google Sheets (Import Sync)
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-amber-600">
@@ -224,10 +221,10 @@ export default function HomePage() {
                 <Users className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                5. ทะเบียนนิสิต & Google Sheets Sync Center
+                5. ทะเบียนนิสิต & Sheets Center (students)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                แฟ้มประวัตินิสิต พร้อมระบบ Import และ Export ดึง/ส่งข้อมูลทะเบียนกลับสู่ Google Sheets
+                แฟ้มประวัตินิสิตบรรพชิตและคฤหัสถ์ (พระ, สามเณร, นาย, นางสาว) พร้อมระบบ Import (Pull) และ Export (Push)
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-indigo-600">
@@ -249,7 +246,7 @@ export default function HomePage() {
                 6. ตารางเรียน-ตารางสอน (Matrix Grid)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                จัดสรรห้องเรียน วันเวลา พร้อมการแจ้งเตือนตารางชน (Clash Warning) และพิมพ์ตารางสอน
+                จัดสรรห้องเรียน วันเวลา (day_of_week 1-7) พร้อมระบบตรวจจับตารางชน (Clash Detection) และพิมพ์ตารางสอน
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-cyan-600">
@@ -268,14 +265,14 @@ export default function HomePage() {
                 <Award className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 group-hover:text-rose-600 transition-colors">
-                7. กิจกรรมเสริมหลักสูตร & E-Certificate
+                7. กิจกรรม & การอบรมวิปัสสนากรรมฐาน (events)
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                ลงทะเบียนสัมมนา จิตอาสา เช็คชื่อสะสมชั่วโมงกิจกรรม และออก E-Certificate พร้อมรหัสตรวจสอบ
+                จัดกลุ่มปฏิบัติธรรม (group_number, group_name), meditation_config และระบบเช็คชื่อรายวัน (daily_attendance)
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-rose-600">
-              <span>ดูกิจกรรมและเกียรติบัตร</span>
+              <span>ดูกิจกรรมและกลุ่มปฏิบัติธรรม</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
