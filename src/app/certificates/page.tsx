@@ -8,16 +8,17 @@ import {
   CheckCircle,
   XCircle,
   Printer,
-  QrCode,
+  Paperclip,
   Send,
   FileCheck,
-  AlertCircle,
-  Sparkles,
+  ShieldCheck,
+  User,
 } from 'lucide-react';
 
 export default function CertificatesPage() {
   const requests = universityStore.getCertificateRequests();
   const certTypes = universityStore.getCertificateTypes();
+  const users = universityStore.getUsers();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -30,7 +31,7 @@ export default function CertificatesPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mt-1">ยื่นขอหนังสือรับรองออนไลน์</h1>
           <p className="text-xs sm:text-sm text-slate-500">
-            ขอหนังสือรับรองการเป็นนิสิต, หนังสือรับรองความประพฤติ, หนังสือรับรองผ่อนผันการเกณฑ์ทหาร, หรือทรานสคริปต์
+            ขอหนังสือรับรองสภาพนิสิต, ความประพฤติ, ทรานสคริปต์, ขอผ่อนผัน พร้อมระบบแนบไฟล์หลักฐาน (Local/Cloud/Base64)
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -44,6 +45,25 @@ export default function CertificatesPage() {
         </div>
       </div>
 
+      {/* Test Accounts Quick Role Bar */}
+      <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-50 p-4 rounded-2xl border border-blue-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 font-bold text-slate-800">
+          <ShieldCheck className="w-4 h-4 text-blue-600" />
+          <span>บัญชีทดสอบระบบ 3 บทบาท (รหัสผ่าน: <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono text-blue-700">Password123!</code>):</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+          <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs">
+            Super Admin: <strong>admin@mcu.ac.th</strong>
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs">
+            อาจารย์: <strong>teacher@mcu.ac.th</strong>
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs">
+            นิสิต: <strong>student@mcu.ac.th</strong>
+          </span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Form Submission */}
         <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs h-fit space-y-5">
@@ -53,7 +73,7 @@ export default function CertificatesPage() {
             </div>
             <div>
               <h2 className="font-bold text-slate-900 text-sm">แบบฟอร์มยื่นคำร้อง</h2>
-              <p className="text-[11px] text-slate-500">เชื่อมต่อโครงสร้างจริง table: certificate_requests</p>
+              <p className="text-[11px] text-slate-500">รองรับการแนบไฟล์หลักฐานประกอบ</p>
             </div>
           </div>
 
@@ -89,7 +109,7 @@ export default function CertificatesPage() {
               <input
                 type="text"
                 name="requesterName"
-                defaultValue="พระมหาธนพัฒน์ โชติปญฺโญ (สิทธิโชค)"
+                defaultValue="พระมหาธนพัฒน์ โชติปญฺโญ"
                 required
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -104,6 +124,21 @@ export default function CertificatesPage() {
                 placeholder="ระบุเหตุผล เช่น ใช้ประกอบการยื่นขอหนังสือเดินทางเพื่อเข้าร่วมการประชุมพุทธศาสนานานาชาติ..."
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            {/* File Attachment Field */}
+            <div className="pt-2 border-t border-slate-100">
+              <label className="block font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                <Paperclip className="w-3.5 h-3.5 text-blue-600" />
+                <span>แนบไฟล์เอกสารหลักฐาน (PDF, PNG, JPG)</span>
+              </label>
+              <input
+                type="file"
+                name="attachmentFile"
+                accept=".pdf,.png,.jpg,.jpeg"
+                className="w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">รองรับ Local Upload / Vercel Serverless Base64</p>
             </div>
 
             <button
@@ -174,11 +209,6 @@ export default function CertificatesPage() {
                     <p className="text-xs text-slate-600 mt-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                       <strong>วัตถุประสงค์ (Note):</strong> {req.note}
                     </p>
-                  )}
-                  {req.reason && (
-                    <div className="mt-2 text-xs bg-rose-50 text-rose-700 p-2.5 rounded-lg border border-rose-100">
-                      <strong>เหตุผลที่ไม่อนุมัติ (Reason):</strong> {req.reason}
-                    </div>
                   )}
                 </div>
 

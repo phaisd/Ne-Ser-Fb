@@ -7,29 +7,58 @@ import {
   StudentDto,
   CourseDto,
   CourseEnrollmentDto,
-  AttendanceSessionDto,
-  AttendanceRecordDto,
   EventDto,
   EventRegistrationDto,
 } from '@/shared/types';
 
-// ==========================================
-// PRODUCTION SEED DATA (มมร./มจร. Buddhist University Context)
-// ==========================================
+export interface UserDto {
+  id: string;
+  tenantId: string;
+  email: string;
+  fullName: string;
+  role: 'SUPER_ADMIN' | 'TEACHER' | 'STUDENT';
+  avatarUrl?: string;
+}
 
 const DEFAULT_TENANT_ID = 'a0000000-0000-0000-0000-000000000001';
 
+// 1. 3 Test Users (Password: Password123!)
+const INITIAL_USERS: UserDto[] = [
+  {
+    id: 'b0000000-0000-0000-0000-000000000001',
+    tenantId: DEFAULT_TENANT_ID,
+    email: 'admin@mcu.ac.th',
+    fullName: 'พระมหาอดิศักดิ์ วรปญฺโญ (ผู้อำนวยการสำนักทะเบียน)',
+    role: 'SUPER_ADMIN',
+  },
+  {
+    id: 'b0000000-0000-0000-0000-000000000002',
+    tenantId: DEFAULT_TENANT_ID,
+    email: 'teacher@mcu.ac.th',
+    fullName: 'พระครูสุตวราภิรม, ดร. (อาจารย์ประจำภาควิชา)',
+    role: 'TEACHER',
+  },
+  {
+    id: 'b0000000-0000-0000-0000-000000000003',
+    tenantId: DEFAULT_TENANT_ID,
+    email: 'student@mcu.ac.th',
+    fullName: 'พระมหาธนพัฒน์ โชติปญฺโญ (นิสิตปริญญาตรี)',
+    role: 'STUDENT',
+  },
+];
+
+// 2. 4 Certificate Types
 const INITIAL_CERTIFICATE_TYPES: CertificateTypeDto[] = [
   {
-    id: 'ct-01',
+    id: 'c0000000-0000-0000-0000-000000000001',
     tenantId: DEFAULT_TENANT_ID,
-    name: 'หนังสือรับรองการเป็นนิสิต (Certificate of Student Status)',
+    name: 'หนังสือรับรองสภาพนิสิต (Certificate of Student Status)',
     description: 'รับรองสถานภาพการเป็นนิสิตปัจจุบัน สำหรับยื่นขอวีซ่า สมัครงาน หรือหน่วยงานราชการ',
     isActive: true,
     createdAt: new Date(),
   },
   {
-    id: 'ct-02',
+    id: 'c0000000-0000-0000-0000-000000000002',
     tenantId: DEFAULT_TENANT_ID,
     name: 'หนังสือรับรองความประพฤติ (Certificate of Good Conduct)',
     description: 'รับรองความประพฤติและปฏิปทาของนิสิตบรรพชิตและคฤหัสถ์',
@@ -37,144 +66,71 @@ const INITIAL_CERTIFICATE_TYPES: CertificateTypeDto[] = [
     createdAt: new Date(),
   },
   {
-    id: 'ct-03',
+    id: 'c0000000-0000-0000-0000-000000000003',
     tenantId: DEFAULT_TENANT_ID,
-    name: 'หนังสือรับรองเพื่อยื่นขอผ่อนผันการเกณฑ์ทหาร',
-    description: 'สำหรับนิสิตคฤหัสถ์ชายในการนำส่งกองการสัสดีและอำเภอ',
+    name: 'หนังสือรับรองผลการศึกษา (Official Transcript)',
+    description: 'ใบรายงานผลการศึกษาตลอดหลักสูตร พร้อมเกรดเฉลี่ยสะสมและหน่วยกิต',
     isActive: true,
     createdAt: new Date(),
   },
   {
-    id: 'ct-04',
+    id: 'c0000000-0000-0000-0000-000000000004',
     tenantId: DEFAULT_TENANT_ID,
-    name: 'หนังสือรับรองผลการศึกษาฉบับสมบูรณ์ (Official Transcript)',
-    description: 'ใบรายงานผลการศึกษาตลอดหลักสูตร พร้อมเกรดเฉลี่ยสะสม',
-    isActive: true,
-    createdAt: new Date(),
-  },
-  {
-    id: 'ct-05',
-    tenantId: DEFAULT_TENANT_ID,
-    name: 'หนังสือรับรองเพื่อขอรับทุนการศึกษา / กองทุน กยศ.',
-    description: 'เอกสารแสดงข้อมูลผลการเรียนและความประพฤติเพื่อพิจารณาจัดสรรทุน',
+    name: 'หนังสือรับรองเพื่อขอผ่อนผันการเกณฑ์ทหาร',
+    description: 'สำหรับนิสิตคฤหัสถ์ชายในการนำส่งกองการสัสดีและที่ว่าการอำเภอ',
     isActive: true,
     createdAt: new Date(),
   },
 ];
 
-const INITIAL_STUDENTS: StudentDto[] = [
-  {
-    id: 's-01',
-    tenantId: DEFAULT_TENANT_ID,
-    studentCode: '65010214',
-    title: 'พระมหา',
-    firstName: 'ธนพัฒน์',
-    lastName: 'โชติปญฺโญ (สิทธิโชค)',
-    yearLevel: 3,
-    degree: 'ปริญญาตรี',
-    faculty: 'คณะพุทธศาสตร์',
-    department: 'ภาควิชาพระพุทธศาสนา',
-    major: 'สาขาวิชาพระพุทธศาสนา',
-    studyStatus: 'ปกติ',
-    email: '65010214@student.univ.ac.th',
-    phoneNumber: '089-123-4567',
-    isActive: true,
-  },
-  {
-    id: 's-02',
-    tenantId: DEFAULT_TENANT_ID,
-    studentCode: '65010452',
-    title: 'สามเณร',
-    firstName: 'กมลวรรณ',
-    lastName: 'รุ่งอรุณ',
-    yearLevel: 3,
-    degree: 'ปริญญาตรี',
-    faculty: 'คณะพุทธศาสตร์',
-    department: 'ภาควิชาปรัชญาและศาสนา',
-    major: 'สาขาวิชาปรัชญา',
-    studyStatus: 'ปกติ',
-    email: '65010452@student.univ.ac.th',
-    phoneNumber: '081-456-7890',
-    isActive: true,
-  },
-  {
-    id: 's-03',
-    tenantId: DEFAULT_TENANT_ID,
-    studentCode: '66020119',
-    title: 'นาย',
-    firstName: 'วรเมธ',
-    lastName: 'เจริญกิจ',
-    yearLevel: 2,
-    degree: 'ปริญญาตรี',
-    faculty: 'คณะครุศาสตร์',
-    department: 'ภาควิชาหลักสูตรและการสอน',
-    major: 'สาขาวิชาการสอนภาษาไทย',
-    studyStatus: 'ปกติ',
-    email: '66020119@student.univ.ac.th',
-    phoneNumber: '082-987-6543',
-    isActive: true,
-  },
-  {
-    id: 's-04',
-    tenantId: DEFAULT_TENANT_ID,
-    studentCode: '66020334',
-    title: 'นางสาว',
-    firstName: 'พิชญ์นภัส',
-    lastName: 'แก้วมณี',
-    yearLevel: 2,
-    degree: 'ปริญญาตรี',
-    faculty: 'คณะสังคมศาสตร์',
-    department: 'ภาควิชารัฐศาสตร์และเศรษฐศาสตร์',
-    major: 'สาขาวิชารัฐศาสตร์และการปกครอง',
-    studyStatus: 'ปกติ',
-    email: '66020334@student.univ.ac.th',
-    phoneNumber: '095-234-5678',
-    isActive: true,
-  },
-];
-
+// 3. 3 Meeting Rooms
 const INITIAL_ROOMS: MeetingRoomDto[] = [
   {
-    id: 'r-01',
+    id: 'd0000000-0000-0000-0000-000000000001',
     tenantId: DEFAULT_TENANT_ID,
-    name: 'ห้องประชุมวิทยปัญญา (Smart Board Room 501)',
-    capacity: 25,
-    equipment: 'Smart Interactive Screen 85", High-end Video Conference, Wireless Microphones x4, Wi-Fi 6',
+    name: 'ห้องประชุม 101 (Smart Board Room)',
+    capacity: 20,
+    equipment: 'Smart Interactive Board 75", ไมโครโฟนไร้สาย (x2), Wi-Fi 6',
     imageUrl: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=800&q=80',
     isActive: true,
   },
   {
-    id: 'r-02',
+    id: 'd0000000-0000-0000-0000-000000000002',
     tenantId: DEFAULT_TENANT_ID,
-    name: 'หอประชุมพุทธโสธร (Grand Auditorium 100)',
-    capacity: 300,
-    equipment: 'Dual 4K Laser Projectors, ระบบเครื่องเสียงมาตรฐานคอนเสิร์ต, แท่นบรรยายดิจิทัล, Live Broadcast Suite',
+    name: 'ห้องประชุมสัมมนาใหญ่ (Grand Auditorium)',
+    capacity: 250,
+    equipment: 'Dual 4K Laser Projector, ระบบเครื่องเสียงมาตรฐานคอนเสิร์ต, Live Broadcast Suite, แท่นบรรยายดิจิทัล',
     imageUrl: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=800&q=80',
     isActive: true,
   },
   {
-    id: 'r-03',
+    id: 'd0000000-0000-0000-0000-000000000003',
     tenantId: DEFAULT_TENANT_ID,
-    name: 'ห้องประชุมสภาอาจารย์ อาคาร ๑๐๐ ปีสมเด็จพระสังฆราช',
-    capacity: 40,
-    equipment: 'Surround Sound Video System, ไมโครโฟนตั้งโต๊ะรายบุคคล, จอแสดงผลระบบสัมผัส',
+    name: 'ห้องประชุมผู้บริหาร (Executive Boardroom)',
+    capacity: 35,
+    equipment: 'Surround Video System, ไมโครโฟนตั้งโต๊ะรายที่นั่ง, แท็บเล็ตควบคุมระบบแสงและเสียง, VIP Lounge',
     imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80',
-    isActive: true,
-  },
-  {
-    id: 'r-04',
-    tenantId: DEFAULT_TENANT_ID,
-    name: 'ศาลาปฏิบัติธรรมและสัมมนาธรรมสากล',
-    capacity: 120,
-    equipment: 'เครื่องขยายเสียงไร้สาย, อุปกรณ์เจริญจิตตภาวนา, เบาะรองนั่งกรรมฐาน, ระบบควบคุมแสงสว่างสมาธิ',
-    imageUrl: 'https://images.unsplash.com/photo-1545235617-9465d2a55698?auto=format&fit=crop&w=800&q=80',
     isActive: true,
   },
 ];
 
+// 4. 10 Sample Students
+const INITIAL_STUDENTS: StudentDto[] = [
+  { id: 's-65010214', tenantId: DEFAULT_TENANT_ID, studentCode: '65010214', title: 'พระมหา', firstName: 'ธนพัฒน์', lastName: 'โชติปญฺโญ', yearLevel: 3, degree: 'ปริญญาตรี', faculty: 'คณะพุทธศาสตร์', major: 'สาขาวิชาพระพุทธศาสนา', studyStatus: 'ปกติ', email: '65010214@mcu.ac.th', phoneNumber: '081-111-0001', isActive: true },
+  { id: 's-65010452', tenantId: DEFAULT_TENANT_ID, studentCode: '65010452', title: 'สามเณร', firstName: 'กมลวรรณ', lastName: 'รุ่งอรุณ', yearLevel: 3, degree: 'ปริญญาตรี', faculty: 'คณะพุทธศาสตร์', major: 'สาขาวิชาปรัชญา', studyStatus: 'ปกติ', email: '65010452@mcu.ac.th', phoneNumber: '081-111-0002', isActive: true },
+  { id: 's-66020119', tenantId: DEFAULT_TENANT_ID, studentCode: '66020119', title: 'นาย', firstName: 'วรเมธ', lastName: 'เจริญกิจ', yearLevel: 2, degree: 'ปริญญาตรี', faculty: 'คณะครุศาสตร์', major: 'สาขาวิชาการสอนภาษาไทย', studyStatus: 'ปกติ', email: '66020119@mcu.ac.th', phoneNumber: '081-111-0003', isActive: true },
+  { id: 's-66020334', tenantId: DEFAULT_TENANT_ID, studentCode: '66020334', title: 'นางสาว', firstName: 'พิชญ์นภัส', lastName: 'แก้วมณี', yearLevel: 2, degree: 'ปริญญาตรี', faculty: 'คณะสังคมศาสตร์', major: 'สาขาวิชารัฐศาสตร์', studyStatus: 'ปกติ', email: '66020334@mcu.ac.th', phoneNumber: '081-111-0004', isActive: true },
+  { id: 's-65010301', tenantId: DEFAULT_TENANT_ID, studentCode: '65010301', title: 'พระปลัด', firstName: 'สมบูรณ์', lastName: 'วรธมฺโม', yearLevel: 3, degree: 'ปริญญาตรี', faculty: 'คณะพุทธศาสตร์', major: 'สาขาวิชาพระไตรปิฎกศึกษา', studyStatus: 'ปกติ', email: '65010301@mcu.ac.th', phoneNumber: '081-111-0005', isActive: true },
+  { id: 's-66010402', tenantId: DEFAULT_TENANT_ID, studentCode: '66010402', title: 'สามเณร', firstName: 'ชินวรณ์', lastName: 'สุขเกษม', yearLevel: 2, degree: 'ปริญญาตรี', faculty: 'คณะพุทธศาสตร์', major: 'สาขาวิชาพระพุทธศาสนา', studyStatus: 'ปกติ', email: '66010402@mcu.ac.th', phoneNumber: '081-111-0006', isActive: true },
+  { id: 's-67010503', tenantId: DEFAULT_TENANT_ID, studentCode: '67010503', title: 'พระ', firstName: 'กิตติศักดิ์', lastName: 'ปญฺญาธโร', yearLevel: 1, degree: 'ปริญญาตรี', faculty: 'คณะพุทธศาสตร์', major: 'สาขาวิชาบาลีพุทธศาสตร์', studyStatus: 'ปกติ', email: '67010503@mcu.ac.th', phoneNumber: '081-111-0007', isActive: true },
+  { id: 's-66030104', tenantId: DEFAULT_TENANT_ID, studentCode: '66030104', title: 'นาย', firstName: 'ธีรภัทร', lastName: 'สถิตพงษ์', yearLevel: 2, degree: 'ปริญญาตรี', faculty: 'คณะมนุษยศาสตร์', major: 'สาขาวิชาภาษาอังกฤษ', studyStatus: 'ปกติ', email: '66030104@mcu.ac.th', phoneNumber: '081-111-0008', isActive: true },
+  { id: 's-67030205', tenantId: DEFAULT_TENANT_ID, studentCode: '67030205', title: 'นางสาว', firstName: 'ศศิธร', lastName: 'พัฒนพงษ์', yearLevel: 1, degree: 'ปริญญาตรี', faculty: 'คณะครุศาสตร์', major: 'สาขาวิชาการสอนสังคมศึกษา', studyStatus: 'ปกติ', email: '67030205@mcu.ac.th', phoneNumber: '081-111-0009', isActive: true },
+  { id: 's-65020106', tenantId: DEFAULT_TENANT_ID, studentCode: '65020106', title: 'พระครูสมุห์', firstName: 'ณรงค์ชัย', lastName: 'ชิตมาโร', yearLevel: 3, degree: 'ปริญญาตรี', faculty: 'คณะพุทธศาสตร์', major: 'สาขาวิชาพระพุทธศาสนา', studyStatus: 'ปกติ', email: '65020106@mcu.ac.th', phoneNumber: '081-111-0010', isActive: true },
+];
+
 const INITIAL_COURSES: CourseDto[] = [
   {
-    id: 'c-01',
+    id: 'e0000000-0000-0000-0000-000000000001',
     tenantId: DEFAULT_TENANT_ID,
     courseCode: '000101',
     courseName: 'พระไตรปิฎกศึกษา (Tipitaka Studies)',
@@ -184,7 +140,7 @@ const INITIAL_COURSES: CourseDto[] = [
     term: '1/2569',
     academicYear: '2569',
     semester: 1,
-    room: 'ห้องเรียน B-301 อาคารธรรมวิจัย',
+    room: 'ห้องเรียน 101 อาคารมหาจุฬาฯ',
     dayOfWeek: 1, // จันทร์
     startTime: '09:00',
     endTime: '12:00',
@@ -192,7 +148,7 @@ const INITIAL_COURSES: CourseDto[] = [
     calculationRules: { lateCountsAsFull: true, minPercent: 80.0 },
   },
   {
-    id: 'c-02',
+    id: 'e0000000-0000-0000-0000-000000000002',
     tenantId: DEFAULT_TENANT_ID,
     courseCode: '000202',
     courseName: 'ธรรมวิภาคและพุทธธรรมขั้นสูง',
@@ -202,46 +158,10 @@ const INITIAL_COURSES: CourseDto[] = [
     term: '1/2569',
     academicYear: '2569',
     semester: 1,
-    room: 'ห้องบรรยาย 402 อาคารเรียนรวม',
+    room: 'ห้องบรรยาย 205 อาคารเรียนรวม',
     dayOfWeek: 2, // อังคาร
     startTime: '13:00',
     endTime: '16:00',
-    targetSessions: 16,
-    calculationRules: { lateCountsAsFull: true, minPercent: 80.0 },
-  },
-  {
-    id: 'c-03',
-    tenantId: DEFAULT_TENANT_ID,
-    courseCode: '000305',
-    courseName: 'พุทธปรัชญาเปรียบเทียบและปรัชญาอินเดีย',
-    courseNameEn: 'Comparative Buddhist and Indian Philosophy',
-    credits: 3,
-    section: '1',
-    term: '1/2569',
-    academicYear: '2569',
-    semester: 1,
-    room: 'ห้องสัมมนา 204 อาคารพุทธศาสตร์',
-    dayOfWeek: 3, // พุธ
-    startTime: '09:00',
-    endTime: '12:00',
-    targetSessions: 16,
-    calculationRules: { lateCountsAsFull: false, minPercent: 80.0 },
-  },
-  {
-    id: 'c-04',
-    tenantId: DEFAULT_TENANT_ID,
-    courseCode: '000410',
-    courseName: 'การปฏิบัติวิปัสสนากรรมฐาน (Vipassana Meditation Practice)',
-    courseNameEn: 'Practical Vipassana Meditation',
-    credits: 3,
-    section: '1',
-    term: '1/2569',
-    academicYear: '2569',
-    semester: 1,
-    room: 'ศาลาปฏิบัติธรรมสมาธิภาวนา',
-    dayOfWeek: 5, // ศุกร์
-    startTime: '08:30',
-    endTime: '11:30',
     targetSessions: 16,
     calculationRules: { lateCountsAsFull: true, minPercent: 80.0 },
   },
@@ -251,13 +171,13 @@ const INITIAL_ENROLLMENTS: CourseEnrollmentDto[] = [
   {
     id: 'enr-01',
     tenantId: DEFAULT_TENANT_ID,
-    courseId: 'c-01',
-    studentId: 's-01',
+    courseId: 'e0000000-0000-0000-0000-000000000001',
+    studentId: 's-65010214',
     studentCode: '65010214',
-    studentName: 'พระมหาธนพัฒน์ โชติปญฺโญ (สิทธิโชค)',
+    studentName: 'พระมหาธนพัฒน์ โชติปญฺโญ',
     courseCode: '000101',
     courseName: 'พระไตรปิฎกศึกษา (Tipitaka Studies)',
-    attendanceScore: 93.75,
+    attendanceScore: 93.8,
     status: 'ENROLLED',
     presentCount: 14,
     lateCount: 1,
@@ -269,8 +189,8 @@ const INITIAL_ENROLLMENTS: CourseEnrollmentDto[] = [
   {
     id: 'enr-02',
     tenantId: DEFAULT_TENANT_ID,
-    courseId: 'c-01',
-    studentId: 's-02',
+    courseId: 'e0000000-0000-0000-0000-000000000001',
+    studentId: 's-65010452',
     studentCode: '65010452',
     studentName: 'สามเณรกมลวรรณ รุ่งอรุณ',
     courseCode: '000101',
@@ -287,13 +207,13 @@ const INITIAL_ENROLLMENTS: CourseEnrollmentDto[] = [
   {
     id: 'enr-03',
     tenantId: DEFAULT_TENANT_ID,
-    courseId: 'c-01',
-    studentId: 's-03',
+    courseId: 'e0000000-0000-0000-0000-000000000001',
+    studentId: 's-66020119',
     studentCode: '66020119',
     studentName: 'นายวรเมธ เจริญกิจ',
     courseCode: '000101',
     courseName: 'พระไตรปิฎกศึกษา (Tipitaka Studies)',
-    attendanceScore: 68.75,
+    attendanceScore: 68.8,
     status: 'ENROLLED',
     presentCount: 10,
     lateCount: 1,
@@ -302,16 +222,52 @@ const INITIAL_ENROLLMENTS: CourseEnrollmentDto[] = [
     attendancePercent: 68.8,
     isEligible: false, // Ineligible (< 80%)
   },
+  {
+    id: 'enr-04',
+    tenantId: DEFAULT_TENANT_ID,
+    courseId: 'e0000000-0000-0000-0000-000000000001',
+    studentId: 's-66020334',
+    studentCode: '66020334',
+    studentName: 'นางสาวพิชญ์นภัส แก้วมณี',
+    courseCode: '000101',
+    courseName: 'พระไตรปิฎกศึกษา (Tipitaka Studies)',
+    attendanceScore: 100.0,
+    status: 'ENROLLED',
+    presentCount: 16,
+    lateCount: 0,
+    leaveCount: 0,
+    absentCount: 0,
+    attendancePercent: 100.0,
+    isEligible: true,
+  },
+  {
+    id: 'enr-05',
+    tenantId: DEFAULT_TENANT_ID,
+    courseId: 'e0000000-0000-0000-0000-000000000001',
+    studentId: 's-65010301',
+    studentCode: '65010301',
+    studentName: 'พระปลัดสมบูรณ์ วรธมฺโม',
+    courseCode: '000101',
+    courseName: 'พระไตรปิฎกศึกษา (Tipitaka Studies)',
+    attendanceScore: 81.3,
+    status: 'ENROLLED',
+    presentCount: 12,
+    lateCount: 1,
+    leaveCount: 2,
+    absentCount: 1,
+    attendancePercent: 81.3,
+    isEligible: true,
+  },
 ];
 
 const INITIAL_REQUESTS: CertificateRequestDto[] = [
   {
     id: 'req-01',
     tenantId: DEFAULT_TENANT_ID,
-    userId: 'b0000000-0000-0000-0000-000000000001',
-    certificateTypeId: 'ct-01',
-    certificateTypeName: 'หนังสือรับรองการเป็นนิสิต (Certificate of Student Status)',
-    requesterName: 'พระมหาธนพัฒน์ โชติปญฺโญ (สิทธิโชค)',
+    userId: 'b0000000-0000-0000-0000-000000000003',
+    certificateTypeId: 'c0000000-0000-0000-0000-000000000001',
+    certificateTypeName: 'หนังสือรับรองสภาพนิสิต (Certificate of Student Status)',
+    requesterName: 'พระมหาธนพัฒน์ โชติปญฺโญ',
     studentCode: '65010214',
     status: 'APPROVED',
     note: 'ใช้ประกอบการยื่นขอหนังสือเดินทางเพื่อเข้าร่วมการประชุมพุทธศาสนานานาชาติ ณ ประเทศอินเดีย',
@@ -322,28 +278,15 @@ const INITIAL_REQUESTS: CertificateRequestDto[] = [
   {
     id: 'req-02',
     tenantId: DEFAULT_TENANT_ID,
-    userId: 'b0000000-0000-0000-0000-000000000002',
-    certificateTypeId: 'ct-05',
-    certificateTypeName: 'หนังสือรับรองเพื่อขอรับทุนการศึกษา / กองทุน กยศ.',
-    requesterName: 'สามเณรกมลวรรณ รุ่งอรุณ',
-    studentCode: '65010452',
-    status: 'PENDING',
-    note: 'ยื่นส่งหลักฐานขอรับทุนอุดหนุนการศึกษานิสิตบรรพชิต ประจำปีการศึกษา ๒๕๖๙',
-    createdAt: new Date(Date.now() - 3600 * 1000 * 8),
-    updatedAt: new Date(Date.now() - 3600 * 1000 * 8),
-  },
-  {
-    id: 'req-03',
-    tenantId: DEFAULT_TENANT_ID,
     userId: 'b0000000-0000-0000-0000-000000000003',
-    certificateTypeId: 'ct-04',
-    certificateTypeName: 'หนังสือรับรองผลการศึกษาฉบับสมบูรณ์ (Official Transcript)',
+    certificateTypeId: 'c0000000-0000-0000-0000-000000000004',
+    certificateTypeName: 'หนังสือรับรองเพื่อขอผ่อนผันการเกณฑ์ทหาร',
     requesterName: 'นายวรเมธ เจริญกิจ',
     studentCode: '66020119',
     status: 'PENDING',
-    note: 'ใช้ยื่นสมัครสอบคัดเลือกทุนพัฒนาอาจารย์ประจำสถาบัน',
-    createdAt: new Date(Date.now() - 3600 * 1000 * 2),
-    updatedAt: new Date(Date.now() - 3600 * 1000 * 2),
+    note: 'นำส่งสัสดีอำเภอเมือง จังหวัดนครปฐม',
+    createdAt: new Date(Date.now() - 3600 * 1000 * 8),
+    updatedAt: new Date(Date.now() - 3600 * 1000 * 8),
   },
 ];
 
@@ -351,36 +294,22 @@ const INITIAL_BOOKINGS: MeetingBookingDto[] = [
   {
     id: 'bk-01',
     tenantId: DEFAULT_TENANT_ID,
-    roomId: 'r-01',
-    roomName: 'ห้องประชุมวิทยปัญญา (Smart Board Room 501)',
-    requesterId: 'staff-01',
-    requesterName: 'พระครูสุตวราภิรม, ดร. (หัวหน้าภาควิชาพระพุทธศาสนา)',
-    title: 'ประชุมคณะกรรมการพัฒนาหลักสูตรพุทธศาสตรบัณฑิต ปรับปรุง พ.ศ. ๒๕๖๙',
+    roomId: 'd0000000-0000-0000-0000-000000000001',
+    roomName: 'ห้องประชุม 101 (Smart Board Room)',
+    requesterId: 'b0000000-0000-0000-0000-000000000002',
+    requesterName: 'พระครูสุตวราภิรม, ดร. (อาจารย์ประจำภาควิชา)',
+    title: 'ประชุมคณะกรรมการพัฒนาหลักสูตรพุทธศาสตรบัณฑิต ๒๕๖๙',
     startTime: new Date(Date.now() + 86400000 * 2 + 3600000 * 9),
     endTime: new Date(Date.now() + 86400000 * 2 + 3600000 * 12),
     status: 'APPROVED',
-    remark: 'ประสานงานฝ่ายเทคโนโลยีสารสนเทศเพื่อเปิดระบบ Video Conference สากล',
+    remark: 'ประสานงานฝ่ายเทคโนโลยีสารสนเทศเพื่อเชื่อมต่อ Smart Board และระบบบันทึกเสียง',
     createdAt: new Date(Date.now() - 3600 * 1000 * 12),
-  },
-  {
-    id: 'bk-02',
-    tenantId: DEFAULT_TENANT_ID,
-    roomId: 'r-04',
-    roomName: 'ศาลาปฏิบัติธรรมและสัมมนาธรรมสากล',
-    requesterId: 'student-01',
-    requesterName: 'สโมสรนิสิตคณะพุทธศาสตร์',
-    title: 'เตรียมการฝึกซ้อมการนำนั่งสมาธิและวิปัสสนากรรมฐานสำหรับนิสิตใหม่',
-    startTime: new Date(Date.now() + 86400000 * 3 + 3600000 * 13),
-    endTime: new Date(Date.now() + 86400000 * 3 + 3600000 * 16),
-    status: 'APPROVED',
-    remark: 'ขอใช้เครื่องเสียงไร้สายและเบาะรองนั่งกรรมฐานจำนวน ๕๐ ชุด',
-    createdAt: new Date(Date.now() - 3600 * 1000 * 5),
   },
 ];
 
 const INITIAL_EVENTS: EventDto[] = [
   {
-    id: 'ev-01',
+    id: 'f0000000-0000-0000-0000-000000000001',
     tenantId: DEFAULT_TENANT_ID,
     title: 'โครงการอบรมและปฏิบัติธรรมวิปัสสนากรรมฐานเข้มข้น ประจำภาคการศึกษา ๒๕๖๙',
     startDate: new Date('2026-11-15T08:00:00+07:00'),
@@ -391,29 +320,8 @@ const INITIAL_EVENTS: EventDto[] = [
       location: 'ศูนย์ปฏิบัติธรรมสมาธิภาวนา นครนายก',
       roundsPerDay: 4,
       leaderMonk: 'พระราชภาวนาโกศล (พระอาจารย์ใหญ่ฝ่ายวิปัสสนาธุระ)',
-      dietaryRules: 'ปานะบ่าย และมังสวิรัติเพื่อความสัปปายะ',
     },
     registrationsCount: 86,
-  },
-  {
-    id: 'ev-02',
-    tenantId: DEFAULT_TENANT_ID,
-    title: 'สัมมนาวิชาการระดับชาติ: พุทธนวัตกรรมกับสังคมดิจิทัลร่วมสมัย (Buddhism & AI Era)',
-    startDate: new Date('2026-11-25T09:00:00+07:00'),
-    endDate: new Date('2026-11-25T16:30:00+07:00'),
-    activityHours: 6,
-    meditationConfig: null,
-    registrationsCount: 142,
-  },
-  {
-    id: 'ev-03',
-    tenantId: DEFAULT_TENANT_ID,
-    title: 'โครงการธรรมสัญจรจิตอาสาพัฒนาโรงเรียนชุมชนชนบทและเผยแผ่พระธรรม',
-    startDate: new Date('2026-12-05T07:30:00+07:00'),
-    endDate: new Date('2026-12-06T18:00:00+07:00'),
-    activityHours: 16,
-    meditationConfig: null,
-    registrationsCount: 50,
   },
 ];
 
@@ -421,34 +329,19 @@ const INITIAL_EVENT_REGISTRATIONS: EventRegistrationDto[] = [
   {
     id: 'reg-01',
     tenantId: DEFAULT_TENANT_ID,
-    eventId: 'ev-01',
+    eventId: 'f0000000-0000-0000-0000-000000000001',
     eventTitle: 'โครงการอบรมและปฏิบัติธรรมวิปัสสนากรรมฐานเข้มข้น ประจำภาคการศึกษา ๒๕๖๙',
-    participantName: 'พระมหาธนพัฒน์ โชติปญฺโญ (สิทธิโชค)',
+    participantName: 'พระมหาธนพัฒน์ โชติปญฺโญ',
     groupNumber: 1,
     groupName: 'กลุ่มเจริญสติปัญญา ๑',
     attendedAt: new Date(Date.now() - 3600 * 1000 * 24 * 5),
-    dailyAttendance: { 'Day 1': true, 'Day 2': true, 'Day 3': true },
+    dailyAttendance: { 'วันแรก': true, 'วันที่สอง': true, 'วันสุดท้าย': true },
     certCode: 'CERT-VIPASSANA-2569-001',
-  },
-  {
-    id: 'reg-02',
-    tenantId: DEFAULT_TENANT_ID,
-    eventId: 'ev-01',
-    eventTitle: 'โครงการอบรมและปฏิบัติธรรมวิปัสสนากรรมฐานเข้มข้น ประจำภาคการศึกษา ๒๕๖๙',
-    participantName: 'สามเณรกมลวรรณ รุ่งอรุณ',
-    groupNumber: 1,
-    groupName: 'กลุ่มเจริญสติปัญญา ๑',
-    attendedAt: new Date(Date.now() - 3600 * 1000 * 24 * 5),
-    dailyAttendance: { 'Day 1': true, 'Day 2': true, 'Day 3': true },
-    certCode: 'CERT-VIPASSANA-2569-002',
   },
 ];
 
-// ==========================================
-// UNIFIED STATE STORE CLASS (Matching Real Schema)
-// ==========================================
-
 class UniversityStore {
+  private users: UserDto[] = [...INITIAL_USERS];
   private certificateTypes: CertificateTypeDto[] = [...INITIAL_CERTIFICATE_TYPES];
   private certificateRequests: CertificateRequestDto[] = [...INITIAL_REQUESTS];
   private meetingRooms: MeetingRoomDto[] = [...INITIAL_ROOMS];
@@ -460,7 +353,18 @@ class UniversityStore {
   private eventRegistrations: EventRegistrationDto[] = [...INITIAL_EVENT_REGISTRATIONS];
 
   // -----------------------------------------------------------
-  // 1. CERTIFICATE TYPES & REQUESTS
+  // AUTHENTICATION & USERS
+  // -----------------------------------------------------------
+  getUsers() {
+    return this.users;
+  }
+
+  getUserByEmail(email: string) {
+    return this.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  }
+
+  // -----------------------------------------------------------
+  // CERTIFICATE TYPES & REQUESTS (with File Attachment)
   // -----------------------------------------------------------
   getCertificateTypes(tenantId: string = DEFAULT_TENANT_ID) {
     return this.certificateTypes.filter((ct) => ct.tenantId === tenantId && ct.isActive);
@@ -481,6 +385,9 @@ class UniversityStore {
     studentCode: string;
     requesterName: string;
     note?: string;
+    attachmentName?: string;
+    attachmentUrl?: string;
+    attachmentBase64?: string;
   }) {
     const tenantId = input.tenantId || DEFAULT_TENANT_ID;
     const certType = this.certificateTypes.find((t) => t.id === input.certificateTypeId);
@@ -489,7 +396,7 @@ class UniversityStore {
     const newRequest: CertificateRequestDto = {
       id,
       tenantId,
-      userId: input.userId || 'b0000000-0000-0000-0000-000000000001',
+      userId: input.userId || 'b0000000-0000-0000-0000-000000000003',
       certificateTypeId: input.certificateTypeId,
       certificateTypeName: certType?.name || 'หนังสือรับรอง',
       requesterName: input.requesterName,
@@ -503,7 +410,7 @@ class UniversityStore {
 
     this.certificateRequests.unshift(newRequest);
 
-    // [แนวทางที่ 1: Hybrid Auto-Sync] ส่งแถวข้อมูลไปยัง Google Sheets อัตโนมัติ
+    // Auto-sync row to Sheets
     try {
       await googleSheetsService.appendRow(undefined, 'Certificate_Requests', [
         newRequest.id,
@@ -513,10 +420,11 @@ class UniversityStore {
         newRequest.certificateTypeName || '',
         newRequest.status,
         newRequest.note || '',
+        input.attachmentName ? `Attached: ${input.attachmentName}` : 'No file',
         newRequest.createdAt.toISOString(),
       ]);
     } catch (e) {
-      console.warn('[Sync:Sheets] Certificate request auto-sync error:', e);
+      console.warn('[Sync:Sheets] Certificate request sync error:', e);
     }
 
     return newRequest;
@@ -534,7 +442,6 @@ class UniversityStore {
     req.reason = reason || null;
     req.updatedAt = new Date();
 
-    // Auto-sync update row
     try {
       await googleSheetsService.appendRow(undefined, 'Certificate_Requests_Updates', [
         req.id,
@@ -550,7 +457,7 @@ class UniversityStore {
   }
 
   // -----------------------------------------------------------
-  // 2. MEETING ROOMS & BOOKINGS (Anti-Double Booking 100%)
+  // MEETING ROOMS & BOOKINGS
   // -----------------------------------------------------------
   getMeetingRooms(tenantId: string = DEFAULT_TENANT_ID) {
     return this.meetingRooms.filter((r) => r.tenantId === tenantId && r.isActive);
@@ -577,7 +484,6 @@ class UniversityStore {
       const bStart = new Date(b.startTime).getTime();
       const bEnd = new Date(b.endTime).getTime();
 
-      // Overlap: startA < endB AND endA > startB
       return startMs < bEnd && endMs > bStart;
     });
 
@@ -619,7 +525,7 @@ class UniversityStore {
       tenantId,
       roomId: room.id,
       roomName: room.name,
-      requesterId: input.requesterId || 'staff-01',
+      requesterId: input.requesterId || 'b0000000-0000-0000-0000-000000000002',
       requesterName: input.requesterName,
       title: input.title,
       startTime: startDate,
@@ -631,7 +537,6 @@ class UniversityStore {
 
     this.meetingBookings.push(newBooking);
 
-    // Auto-sync to Sheets
     try {
       await googleSheetsService.appendRow(undefined, 'Meeting_Bookings_Log', [
         newBooking.id,
@@ -659,7 +564,7 @@ class UniversityStore {
   }
 
   // -----------------------------------------------------------
-  // 3. STUDENT DIRECTORY (Import & Export Center)
+  // STUDENTS DIRECTORY
   // -----------------------------------------------------------
   getStudents(tenantId: string = DEFAULT_TENANT_ID) {
     return this.students.filter((s) => s.tenantId === tenantId && s.isActive);
@@ -678,7 +583,7 @@ class UniversityStore {
 
     const newStudent: StudentDto = {
       ...student,
-      id: `s-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      id: `s-${student.studentCode}`,
       isActive: true,
     };
     this.students.push(newStudent);
@@ -698,13 +603,13 @@ class UniversityStore {
         firstName: r[2] || 'ชื่อนิสิต',
         lastName: r[3] || 'นามสกุล',
         yearLevel: parseInt(r[4], 10) || 1,
-        degree: r[5] || 'ปริญญาตรี',
-        faculty: r[6] || 'คณะพุทธศาสตร์',
-        department: r[7] || 'ภาควิชาพระพุทธศาสนา',
-        major: r[8] || 'สาขาวิชาพระพุทธศาสนา',
-        studyStatus: r[9] || 'ปกติ',
-        email: r[10] || `${r[0].trim()}@student.univ.ac.th`,
-        phoneNumber: r[11] || '080-000-0000',
+        degree: 'ปริญญาตรี',
+        faculty: r[5] || 'คณะพุทธศาสตร์',
+        department: r[6] || 'ภาควิชาพระพุทธศาสนา',
+        major: r[7] || 'สาขาวิชาพระพุทธศาสนา',
+        studyStatus: r[8] || 'ปกติ',
+        email: `${r[0].trim()}@mcu.ac.th`,
+        phoneNumber: '081-000-0000',
       });
       count++;
     }
@@ -746,14 +651,10 @@ class UniversityStore {
   }
 
   // -----------------------------------------------------------
-  // 4. COURSES & TIMETABLE (Clash Detection)
+  // COURSES & TIMETABLE
   // -----------------------------------------------------------
   getCourses(tenantId: string = DEFAULT_TENANT_ID) {
     return this.courses.filter((c) => c.tenantId === tenantId);
-  }
-
-  getCourseById(id: string) {
-    return this.courses.find((c) => c.id === id);
   }
 
   async addCourse(course: Omit<CourseDto, 'id'>) {
@@ -801,7 +702,7 @@ class UniversityStore {
   }
 
   // -----------------------------------------------------------
-  // 5. ENROLLMENTS, ATTENDANCE & 80% EXAM ELIGIBILITY
+  // ATTENDANCE & 80% EXAM ELIGIBILITY
   // -----------------------------------------------------------
   getEnrollments(courseId?: string) {
     if (courseId) {
@@ -832,7 +733,6 @@ class UniversityStore {
     else if (input.status === 'LEAVE') enr.leaveCount += 1;
     else if (input.status === 'ABSENT') enr.absentCount += 1;
 
-    // Calculation Rule
     const effectivePresent = enr.presentCount + (lateCountsAsFull ? enr.lateCount : enr.lateCount * 0.5);
     const percent = Math.min(100, Math.round((effectivePresent / targetSessions) * 1000) / 10);
 
@@ -840,7 +740,6 @@ class UniversityStore {
     enr.attendancePercent = percent;
     enr.isEligible = percent >= minPercent;
 
-    // Auto-sync attendance row
     try {
       await googleSheetsService.appendRow(undefined, 'Attendance_Records', [
         `rec-${Date.now()}`,
@@ -861,14 +760,10 @@ class UniversityStore {
   }
 
   // -----------------------------------------------------------
-  // 6. EVENTS & VIPASSANA MEDITATION REGISTRATIONS
+  // EVENTS & VIPASSANA REGISTRATIONS
   // -----------------------------------------------------------
   getEvents(tenantId: string = DEFAULT_TENANT_ID) {
     return this.events.filter((e) => e.tenantId === tenantId);
-  }
-
-  getEventById(id: string) {
-    return this.events.find((e) => e.id === id);
   }
 
   getEventRegistrations(eventId?: string) {
@@ -905,7 +800,6 @@ class UniversityStore {
     this.eventRegistrations.push(newReg);
     event.registrationsCount = (event.registrationsCount || 0) + 1;
 
-    // Auto-sync to Sheets
     try {
       await googleSheetsService.appendRow(undefined, 'Event_Registrations', [
         newReg.id,

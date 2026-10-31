@@ -8,6 +8,23 @@ generator client {
 }
 
 // -------------------------------------------------------------
+// 0. บัญชีผู้ใช้งานและการพิสูจน์ตัวตน (Authentication)
+// -------------------------------------------------------------
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  fullName     String   @map("full_name") @db.VarChar(255)
+  role         String   @default("STUDENT") // SUPER_ADMIN, TEACHER, STUDENT
+  avatarUrl    String?  @map("avatar_url") @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("users")
+}
+
+// -------------------------------------------------------------
 // 1. ระบบคำร้องขอหนังสือรับรอง
 // -------------------------------------------------------------
 model CertificateType {
@@ -31,6 +48,9 @@ model CertificateRequest {
   reason            String?         @db.Text // เหตุผลกรณีปฏิเสธ
   note              String?         @db.Text // วัตถุประสงค์การขอ
   issuedDocumentUrl String?         @map("issued_document_url") @db.VarChar(500)
+  attachmentUrl     String?         @map("attachment_url") @db.Text // Local upload or Cloud storage
+  attachmentName    String?         @map("attachment_name") @db.VarChar(255)
+  attachmentBase64  String?         @map("attachment_base64") @db.Text // Base64 fallback for Vercel Serverless
   createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz()
 

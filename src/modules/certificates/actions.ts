@@ -17,6 +17,19 @@ export async function submitCertificateRequestAction(formData: FormData): Promis
 
     const validated = CreateCertificateRequestSchema.parse(raw);
 
+    // Process file attachment (Local / Vercel Serverless Base64 / Cloud)
+    let attachmentName: string | undefined;
+    let attachmentBase64: string | undefined;
+
+    const file = formData.get('attachmentFile') as File | null;
+    if (file && file.size > 0) {
+      attachmentName = file.name;
+      // Convert to Base64 (Vercel Serverless compatible)
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      attachmentBase64 = `data:${file.type || 'application/octet-stream'};base64,${buffer.toString('base64')}`;
+    }
+
     await universityStore.createCertificateRequest({
       tenantId: validated.tenantId,
       userId: validated.userId,
@@ -24,6 +37,9 @@ export async function submitCertificateRequestAction(formData: FormData): Promis
       studentCode: validated.studentCode,
       requesterName: validated.requesterName,
       note: validated.note,
+      attachmentName,
+      attachmentBase64,
+      attachmentUrl: attachmentBase64 ? `/api/files/download` : undefined,
     });
 
     revalidatePath('/certificates');
