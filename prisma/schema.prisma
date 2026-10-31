@@ -1,0 +1,398 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  FACULTY
+  STAFF
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum RequestType {
+  STUDENT_STATUS_CERTIFICATE
+  OFFICIAL_TRANSCRIPT
+  STUDENT_LOAN_CERTIFICATE
+  MILITARY_DEFERMENT
+  LEAVE_REQUEST
+  OTHER
+}
+
+enum RequestStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REJECTED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  LEAVE
+  ABSENT
+}
+
+enum StudentStatus {
+  ACTIVE
+  PROBATION
+  SUSPENDED
+  GRADUATED
+  RESIGNED
+  DISMISSED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  nameTh    String
+  nameEn    String
+  sheetId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  courses   Course[]
+  rooms     MeetingRoom[]
+  events    UniversityEvent[]
+
+  @@index([code])
+}
+
+model User {
+  id           String    @id @default(uuid())
+  tenantId     String    @default("default")
+  username     String
+  passwordHash String
+  email        String?
+  role         Role      @default(STUDENT)
+  firstNameTh  String
+  lastNameTh   String
+  firstNameEn  String
+  lastNameEn   String
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  student      StudentProfile?
+  requests     CertificateRequest[] @relation("StudentRequests")
+  approvedReqs CertificateRequest[] @relation("ApprovedByOfficer")
+  bookings     RoomBooking[]
+  auditLogs    AuditLog[]
+
+  @@unique([tenantId, username])
+  @@index([tenantId, role])
+}
+
+model CertificateRequest {
+  id                String        @id @default(uuid())
+  tenantId          String        @default("default")
+  requestNumber     String        @unique
+  userId            String
+  type              RequestType
+  titleTh           String
+  titleEn           String
+  purpose           String
+  copiesCount       Int           @default(1)
+  deliveryMethod    String        @default("DIGITAL")
+  status            RequestStatus @default(PENDING)
+  officerNotes      String?
+  rejectionReason   String?
+  verificationToken String        @unique @default(uuid())
+  documentUrl       String?
+  approvedById      String?
+  approvedAt        DateTime?
+  syncedToSheets    Boolean       @default(false)
+  syncedAt          DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user              User          @relation("StudentRequests", fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy        User?         @relation("ApprovedByOfficer", fields: [approvedById], references: [id])
+  attachments       RequestAttachment[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, userId])
+  @@index([verificationToken])
+}
+
+model RequestAttachment {
+  id          String   @id @default(uuid())
+  requestId   String
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  fileType    String
+  createdAt   DateTime @default(now())
+
+  request     CertificateRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+model MeetingRoom {
+  id          String        @id @default(uuid())
+  tenantId    String        @default("default")
+  roomCode    String
+  nameTh      String
+  nameEn      String
+  building    String
+  floor       Int
+  capacity    Int
+  imageUrl    String?
+  equipments  String[]
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings    RoomBooking[]
+
+  @@unique([tenantId, roomCode])
+  @@index([tenantId, isActive])
+}
+
+model RoomBooking {
+  id             String        @id @default(uuid())
+  tenantId       String        @default("default")
+  roomId         String
+  userId         String
+  title          String
+  description    String?
+  attendeesCount Int
+  startTime      DateTime
+  endTime        DateTime
+  status         BookingStatus @default(CONFIRMED)
+  cancelReason   String?
+  syncedToSheets Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  room           MeetingRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, roomId, startTime, endTime])
+  @@index([tenantId, status])
+}
+
+model Course {
+  id           String          @id @default(uuid())
+  tenantId     String          @default("default")
+  code         String
+  nameTh       String
+  nameEn       String
+  credits      Int             @default(3)
+  lectureHours Int             @default(3)
+  labHours     Int             @default(0)
+  department   String
+  description  String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sections     CourseSection[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, code])
+}
+
+model CourseSection {
+  id             String              @id @default(uuid())
+  tenantId       String              @default("default")
+  courseId       String
+  sectionNumber  String
+  semester       Int
+  academicYear   Int
+  capacity       Int                 @default(50)
+  instructorName String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  course         Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrollments    StudentEnrollment[]
+  sessions       AttendanceSession[]
+  schedules      ScheduleSlot[]
+
+  @@unique([tenantId, courseId, semester, academicYear, sectionNumber])
+  @@index([tenantId, academicYear, semester])
+}
+
+model AttendanceSession {
+  id           String             @id @default(uuid())
+  tenantId     String             @default("default")
+  sectionId    String
+  sessionIndex Int
+  sessionDate  DateTime
+  topic        String?
+  qrToken      String?            @unique
+  qrExpiresAt  DateTime?
+  allowCheckIn Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  section      CourseSection      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  records      AttendanceRecord[]
+
+  @@index([tenantId, sectionId, sessionDate])
+}
+
+model AttendanceRecord {
+  id          String           @id @default(uuid())
+  tenantId    String           @default("default")
+  sessionId   String
+  studentId   String
+  status      AttendanceStatus @default(ABSENT)
+  checkInAt   DateTime?
+  checkInType String           @default("MANUAL")
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  session     AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student     StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@index([tenantId, studentId])
+}
+
+model StudentProfile {
+  id            String             @id @default(uuid())
+  tenantId      String             @default("default")
+  userId        String             @unique
+  studentCode   String             @unique
+  citizenId     String?
+  faculty       String
+  major         String
+  academicYear  Int
+  yearLevel     Int                @default(1)
+  status        StudentStatus      @default(ACTIVE)
+  gpa           Float?             @default(0.0)
+  creditsEarned Int                @default(0)
+  phone         String?
+  advisorName   String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollments   StudentEnrollment[]
+  attendance    AttendanceRecord[]
+  eventRecords  EventParticipation[]
+
+  @@index([tenantId, studentCode])
+  @@index([tenantId, faculty, major])
+}
+
+model StudentEnrollment {
+  id        String        @id @default(uuid())
+  tenantId  String        @default("default")
+  studentId String
+  sectionId String
+  grade     String?
+  createdAt DateTime      @default(now())
+
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  section   CourseSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, sectionId])
+  @@index([tenantId, studentId])
+}
+
+model ScheduleSlot {
+  id        String        @id @default(uuid())
+  tenantId  String        @default("default")
+  sectionId String
+  dayOfWeek DayOfWeek
+  startTime String
+  endTime   String
+  roomCode  String?
+  building  String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  section   CourseSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, dayOfWeek, startTime, endTime])
+  @@index([tenantId, roomCode, dayOfWeek])
+}
+
+model UniversityEvent {
+  id              String               @id @default(uuid())
+  tenantId        String               @default("default")
+  titleTh         String
+  titleEn         String
+  category        String
+  activityHours   Float                @default(1.0)
+  location        String
+  startDate       DateTime
+  endDate         DateTime
+  maxParticipants Int                  @default(100)
+  coverImageUrl   String?
+  isPublished     Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  participations  EventParticipation[]
+
+  @@index([tenantId, startDate])
+}
+
+model EventParticipation {
+  id           String          @id @default(uuid())
+  tenantId     String          @default("default")
+  eventId      String
+  studentId    String
+  attended     Boolean         @default(false)
+  attendedAt   DateTime?
+  certCode     String?         @unique
+  certIssuedAt DateTime?
+  createdAt    DateTime        @default(now())
+
+  event        UniversityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  student      StudentProfile  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, studentId])
+  @@index([tenantId, studentId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String   @default("default")
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, action])
+  @@index([tenantId, createdAt])
+}
