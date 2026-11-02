@@ -1,90 +1,63 @@
-# ระบบบริการมหาวิทยาลัยดิจิทัล (Digital University Hub)
-### Full-Stack Next.js 16 + Vercel + Tri-Mode Google Sheets (PostgreSQL + Cloud Sheets)
+# FB Academic & Student Services Portal (Google Sheets Edition)
 
-ระบบบริการการศึกษาและบริหารมหาวิทยาลัยดิจิทัลแบบ **Modular Monolith** ที่ออกแบบมาสำหรับ **Vercel Hobby Free Tier** โดยเฉพาะ รองรับ **Multi-Tenancy (`tenantId`)**, สองภาษา **(TH/EN พร้อมวันที่ พ.ศ./ค.ศ.)**, และมีสถาปัตยกรรมข้อมูลยืดหยุ่นสูง **Tri-Mode Google Sheets Data Engine**
-
----
-
-## 🚀 สถาปัตยกรรม Tri-Mode Data Engine (3 แนวทาง)
-
-1. **[แนวทางที่ 1] Hybrid Auto-Sync (โหมดหลักสำหรับ Vercel + Cloud PostgreSQL):**
-   - ใช้ PostgreSQL (Prisma ORM) ทำงานรวดเร็วระดับ Milliseconds และป้องกันความผิดพลาดด้วย ACID Transactions
-   - เมื่อเกิด Event สำคัญ (เช่น ยื่นคำร้องใหม่, อนุมัติคำร้อง, จองห้องสำเร็จ) ระบบจะส่งแถวข้อมูล (Append Row) สำเนาไปยัง Google Sheets อัตโนมัติทันที
-2. **[แนวทางที่ 2] Import & Export Synchronization:**
-   - หน้าจอ Import/Export Center ให้เจ้าหน้าที่ดึงข้อมูลเข้า (Pull/Import) จาก Google Sheets หรือส่งออกข้อมูล (Push/Export) กลับไปยัง Google Sheets ได้ตลอดเวลา (ทะเบียนนิสิต, รายวิชาที่เปิดสอน)
-3. **[แนวทางที่ 3] Direct Google Sheets Mode (Standalone Sheets Storage):**
-   - สลับระบบมาอ่าน/เขียนตรงกับ Google Sheets API v4 100% ได้ผ่านการตั้งค่า `DATA_SOURCE_MODE=SHEETS` ใน Environment Variables โดยไม่ต้องมี PostgreSQL
+ระบบบริการนิสิตและวิชาการ คณะพุทธศาสตร์ (เชื่อมต่อข้อมูลกับ Google Sheets)
 
 ---
 
-## 🏛️ 7 โมดูลระบบหลัก (Core Modules)
+## ฟังก์ชันการทำงานหลัก (Features)
 
-| โมดูล | คำอธิบายและความสามารถ | เส้นทาง (Route) |
-| :--- | :--- | :--- |
-| **1. คำร้องและใบรับรอง** | ยื่นขอใบรับรองสถานภาพ, ทรานสคริปต์, หนังสือรับรอง กยศ. อนุมัติ/ปฏิเสธ พิมพ์ฟอร์ม A4 มาตรฐาน พร้อม Verification QR Code | `/certificates`, `/certificates/[id]`, `/admin/requests` |
-| **2. จองห้องประชุมออนไลน์** | แคตตาล็อกห้องประชุม ตรวจสอบอุปกรณ์ ปฏิทินตรวจจับและป้องกันการจองเวลาซ้อนทับ (Anti-Double Booking 100%) | `/rooms` |
-| **3. เวลาเรียนและสิทธิ์สอบ** | อาจารย์เช็คชื่อรายคาบ, Dynamic Countdown QR Code เช็คชื่อ, คำนวณเกณฑ์สิทธิ์สอบอัตโนมัติ (เกณฑ์ 80%) พร้อมป้ายเตือน | `/attendance` |
-| **4. ทะเบียนรายวิชา & หลักสูตร** | จัดการโครงสร้างหลักสูตร TH/EN, รหัสวิชา, หน่วยกิต, และนำเข้าวิชาจาก Google Sheets (แนวทางที่ 2) | `/curriculum` |
-| **5. ทะเบียนนิสิต & Sheets Center** | แฟ้มประวัตินิสิต, Import นิสิตใหม่จาก Sheets (Pull) และ Export รายชื่อกลับไปยัง Google Sheets (Push) | `/students` |
-| **6. ตารางเรียน-ตารางสอน** | Matrix Grid สองภาษา (TH/EN), ตรวจสอบห้องและคาบชน (Clash Detection), รองรับการสั่งพิมพ์ตาราง | `/timetable` |
-| **7. กิจกรรม & E-Certificate** | ลงทะเบียนสัมมนา/จิตอาสา เช็คชื่อสะสมชั่วโมง และออกใบประกาศอิเล็กทรอนิกส์พร้อม Verification Code | `/events` |
-
----
-
-## 🛠️ โครงสร้างเทคโนโลยี (Tech Stack)
-
-- **Framework:** Next.js 16 (App Router, Turbopack)
-- **UI & Components:** React 19, Tailwind CSS v4, Lucide React
-- **ORM & Database:** Prisma ORM, PostgreSQL (Neon / Supabase / Vercel Postgres)
-- **Google Sheets API:** `googleapis` v4 (Service Account JWT Auth)
-- **Validation & QR:** Zod v4, QRCode Generator
-- **Localization:** Thai Buddhist Era (พ.ศ. = ค.ศ. + 543) & Western Gregorian (C.E.)
+1. **ระบบทะเบียนนิสิต (Student Directory):**
+   - ฐานข้อมูลนิสิต 527 รูป/คน ค้นหาด้วยรหัสนิสิต หรือชื่อ-สกุล
+   - กรองตามชั้นปี (ปี 1–4) สาขาวิชา และดูข้อมูลรายละเอียด
+2. **ระบบตารางเรียนและรายวิชาสอน (Courses & Timetable):**
+   - ตารางเรียนรายสัปดาห์ตามชั้นปี ห้องเรียน เวลาเรียน และอาจารย์ผู้สอน
+   - ฐานข้อมูล 213 รายวิชา ค้นหารหัสวิชาและหน่วยกิต
+3. **ระบบตรวจเข้าเรียน (Class Attendance Tracking):**
+   - เช็คชื่อเข้าชั้นเรียนแบบเรียลไทม์ (มา / สาย / ขาด / ลา)
+   - สรุปสถิติเวลาเรียน และบันทึกลง Google Sheets ทันที
+4. **ระบบหนังสือรับรองและคำร้อง (Certificates & Requests):**
+   - แบบฟอร์มยื่นขอหนังสือรับรอง (รับรองสภาพนิสิต, ขอวีซ่า, ทรานสคริปต์ ฯลฯ)
+   - ค้นหาและตรวจสอบสถานะคำร้อง (รอตรวจสอบ / อนุมัติ / ปฏิเสธ)
+   - แผงจัดการคำร้องสำหรับเจ้าหน้าที่
+5. **ระบบเชื่อมต่อ Google Sheets:**
+   - ตรวจสอบสถานะการเชื่อมต่อ API สด
+   - ปุ่มซิงค์ข้อมูลเริ่มต้น (1-Click Initial Sync) ส่งข้อมูลขึ้น Google Sheets ทั้ง 5 แท็บ
 
 ---
 
-## 📦 การติดตั้งและการรันในเครื่อง (Local Setup)
+## วิธีเริ่มต้นใช้งาน (Quick Start)
 
-1. **ติดตั้ง Dependencies:**
-   ```bash
-   npm install
-   ```
+### 1. ติดตั้งและเริ่มรันโปรเจกต์
+```bash
+cd F:\FB-service-sheets
+npm run dev
+```
+เปิดบราวเซอร์ไปที่: [http://localhost:3020](http://localhost:3020)
 
-2. **คัดลอกไฟล์ Environment Variables:**
-   ```bash
-   cp .env.example .env
-   ```
+*(โปรเจกต์นี้ตั้งค่าเริ่มต้นรันที่ Port 3020 เพื่อไม่ให้ชนกับระบบเดิม Port 3010)*
 
-3. **ตั้งค่า Google Sheets API (เมื่อต้องการเชื่อมต่อ Google Sheets จริง):**
-   - นำ Service Account Email และ Private Key มาใส่ใน `.env`
-   - กำหนด `GOOGLE_SPREADSHEET_ID` ที่สร้างขึ้น
-   - แชร์สิทธิ์เข้าถึงชีตให้กับอีเมล Service Account เป็น **Editor**
-
-4. **สร้าง Prisma Client:**
-   ```bash
-   npx prisma generate
-   ```
-
-5. **รันโปรเจกต์:**
-   ```bash
-   npm run dev
-   ```
-   เปิดบราวเซอร์ที่: [http://localhost:3000](http://localhost:3000)
-
-6. **ทดสอบ Build สำหรับ Production (Vercel Ready):**
-   ```bash
-   npm run build
-   ```
+### 2. การเชื่อมต่อกับ Google Sheets
+1. สร้าง Google Spreadsheet ใหม่ใน Google Drive และสร้าง 5 แท็บ:
+   - `Students`
+   - `Courses`
+   - `Timetables`
+   - `CertificateRequests`
+   - `Attendance`
+2. สร้าง Service Account ใน Google Cloud Console พร้อมเปิดใช้ **Google Sheets API**
+3. กดแชร์ (Share) Spreadsheet ให้สิทธิ์ Editor กับอีเมล Service Account
+4. ใส่ค่าในไฟล์ `.env.local`:
+```env
+GOOGLE_SHEET_ID="รหัส_Spreadsheet_ID"
+GOOGLE_SERVICE_ACCOUNT_EMAIL="your-service-account@xxx.iam.gserviceaccount.com"
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
+5. เข้าไปที่เมนู **Google Sheets** (`/settings`) ในเว็บไซต์ แล้วกดปุ่ม **"ซิงค์ข้อมูลเริ่มต้นเข้าสู่ Google Sheets ตอนนี้"**
 
 ---
 
-## ☁️ การ Deploy ขึ้น Vercel (Hobby Tier Free)
-
-1. เชื่อมต่อ Git Repository เข้ากับ **Vercel**
-2. ในส่วน **Settings > Environment Variables** กำหนดค่าดังนี้:
-   - `DATA_SOURCE_MODE` = `HYBRID` (หรือ `SHEETS`)
-   - `DATABASE_URL` = `postgresql://...` (จาก Neon.tech ฟรี หรือ Supabase ฟรี)
-   - `GOOGLE_SERVICE_ACCOUNT_EMAIL` = `your-sa@project.iam.gserviceaccount.com`
-   - `GOOGLE_PRIVATE_KEY` = `-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n`
-   - `GOOGLE_SPREADSHEET_ID` = `1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms`
-   - `NEXT_PUBLIC_APP_URL` = `https://your-app.vercel.app`
-3. กด **Deploy** ระบบจะ Build และพร้อมใช้งานได้ทันที 100%
+## ข้อมูลตั้งต้นที่เตรียมไว้ในโฟลเดอร์ `data/`
+- `students.csv` / `students.json` (ข้อมูลนิสิต 527 รูป/คน)
+- `courses.csv` / `courses.json` (ข้อมูล 213 รายวิชา)
+- `timetables.csv` / `timetables.json` (ข้อมูลตารางสอน 60 ตาราง)
+- `certificate_requests.csv` / `certificate_requests.json` (ประวัติคำร้อง 25 รายการ)
+- `attendance_records.csv` / `attendance_records.json` (ประวัติการเช็คชื่อ 31 รายการ)

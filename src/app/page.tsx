@@ -1,281 +1,251 @@
 import Link from 'next/link';
-import { universityStore } from '@/shared/lib/store/university-store';
-import { formatDateFull } from '@/shared/lib/locale/date-formatter';
-import {
-  FileText,
-  Calendar,
-  CheckCircle2,
-  BookOpen,
-  Users,
-  Grid3X3,
-  Award,
+import { 
+  Users, 
+  Calendar, 
+  CheckSquare, 
+  FileText, 
+  Table2, 
   ArrowRight,
   ShieldCheck,
-  Building2,
+  GraduationCap,
+  Search,
+  Globe,
   Clock,
   Sparkles,
+  Phone,
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
+import { getStudents, getCourses, getCertificateRequests, getAttendanceRecords } from '@/lib/data-store';
 
-export default function HomePage() {
-  const requests = universityStore.getCertificateRequests();
-  const rooms = universityStore.getMeetingRooms();
-  const bookings = universityStore.getMeetingBookings();
-  const students = universityStore.getStudents();
-  const courses = universityStore.getCourses();
-  const events = universityStore.getEvents();
+export const revalidate = 0;
 
-  const pendingRequests = requests.filter((r) => r.status === 'PENDING').length;
-  const today = new Date();
+export default async function HomePage() {
+  const [students, courses, certRequests, attendance] = await Promise.all([
+    getStudents(),
+    getCourses(),
+    getCertificateRequests(),
+    getAttendanceRecords(),
+  ]);
+
+  const hasSheets = !!process.env.GOOGLE_SHEET_ID && !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const pendingRequests = certRequests.filter((r) => r.status === 'PENDING');
+  const thaiStudents = students.filter((s) => s.nationality === 'ไทย' || s.nationality === 'Thai').length;
+  const intlStudents = students.length - thaiStudents;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Hero Welcome Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-800 p-8 text-white shadow-xl overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
-          <Building2 className="w-96 h-96" />
-        </div>
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium">
-            <Clock className="w-3.5 h-3.5 text-blue-200" />
-            <span>{formatDateFull(today, 'th')}</span>
+    <div className="space-y-8">
+      {/* 1. Public Hero Banner (สำหรับนักศึกษาและบุคคลภายนอก) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-600 via-amber-600 to-amber-500 p-8 sm:p-10 text-white shadow-xl">
+        <div className="relative z-10 max-w-3xl space-y-4">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3.5 py-1 text-xs font-bold backdrop-blur">
+            <GraduationCap className="w-4 h-4" />
+            คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            ระบบบริการมหาวิทยาลัยดิจิทัล
+
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+            ระบบบริการนิสิตและวิชาการออนไลน์
+            <span className="block text-amber-200 text-2xl sm:text-3xl font-bold mt-1">
+              Public Academic & Student Services Portal
+            </span>
           </h1>
-          <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
-            ศูนย์กลางบริการการศึกษาและบริหารมหาวิทยาลัย รองรับนิสิตบรรพชิตและคฤหัสถ์ (พระ, สามเณร, นาย, นางสาว)
-            เชื่อมโยงฐานข้อมูลจริง (Prisma Schema) พร้อมระบบ Auto-Sync สู่ Google Sheets แบบเรียลไทม์
+
+          <p className="text-orange-100 text-sm sm:text-base leading-relaxed">
+            ศูนย์รวมบริการสำหรับนิสิตและบุคคลภายนอก: ยื่นขอหนังสือรับรองทุกประเภท (สำหรับคนไทยและนิสิตต่างประเทศ), 
+            ตรวจสอบสถานะคำร้อง, และค้นหาตารางเรียนห้องเรียนประจำภาคการศึกษา
           </p>
-          <div className="flex flex-wrap gap-3 pt-2">
+
+          {/* Quick Action Buttons for Students */}
+          <div className="pt-3 flex flex-wrap items-center gap-3">
             <Link
               href="/certificates"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-blue-900 font-semibold text-sm hover:bg-blue-50 shadow-md transition"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-orange-700 shadow-md hover:bg-orange-50 transition"
             >
-              <FileText className="w-4 h-4 text-blue-600" />
-              <span>ยื่นคำร้องขอหนังสือรับรอง</span>
+              <FileText className="w-4 h-4" />
+              ยื่นคำร้องขอหนังสือรับรอง (เลือกการ์ด)
             </Link>
+
             <Link
-              href="/rooms"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600/40 backdrop-blur-sm border border-white/20 text-white font-semibold text-sm hover:bg-blue-600/60 transition"
+              href="/certificates"
+              className="inline-flex items-center gap-2 rounded-xl bg-orange-800/80 hover:bg-orange-900 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition border border-white/20"
             >
-              <Calendar className="w-4 h-4 text-emerald-300" />
-              <span>จองห้องประชุมออนไลน์</span>
+              <Search className="w-4 h-4" />
+              ตรวจสอบสถานะคำร้อง
             </Link>
+
             <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/60 backdrop-blur-sm border border-slate-700 text-amber-300 font-semibold text-sm hover:bg-slate-900 transition"
+              href="/courses"
+              className="inline-flex items-center gap-2 rounded-xl bg-black/20 hover:bg-black/30 px-4 py-3 text-sm font-semibold text-white backdrop-blur transition border border-white/20"
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>แผงควบคุมเจ้าหน้าที่ (Admin)</span>
+              <Calendar className="w-4 h-4" />
+              ตารางเรียนและรายวิชา
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Key Metric Counters */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-            <FileText className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-xs text-slate-500 font-medium">คำร้องรอพิจารณา</p>
-            <p className="text-2xl font-bold text-slate-900">{pendingRequests} <span className="text-xs font-normal text-slate-400">รายการ</span></p>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-            <Calendar className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-xs text-slate-500 font-medium">ห้องประชุมพร้อมใช้งาน</p>
-            <p className="text-2xl font-bold text-slate-900">{rooms.length} <span className="text-xs font-normal text-slate-400">ห้อง</span></p>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-            <Users className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-xs text-slate-500 font-medium">นิสิตในทะเบียน</p>
-            <p className="text-2xl font-bold text-slate-900">{students.length} <span className="text-xs font-normal text-slate-400">รูป/คน</span></p>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-xs text-slate-500 font-medium">วิชาที่เปิดสอน</p>
-            <p className="text-2xl font-bold text-slate-900">{courses.length} <span className="text-xs font-normal text-slate-400">รายวิชา</span></p>
-          </div>
-        </div>
-      </div>
-
-      {/* 7 Core Modules Interactive Grid */}
+      {/* 2. Public Services Grid (สำหรับนักศึกษา & บุคคลภายนอก) */}
       <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">โมดูลระบบบริการตามโครงสร้างจริง (Production Modules)</h2>
-          <p className="text-xs text-slate-500">ตรงตามโครงสร้าง Prisma Schema จริง: certificate_requests, meeting_rooms, students, courses, attendance_sessions, events</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-600" />
+              บริการออนไลน์สำหรับนิสิต (Student Services)
+            </h2>
+            <p className="text-xs text-slate-500">เลือกบริการที่ต้องการใช้งานได้ทันที</p>
+          </div>
+          <span className="text-xs font-bold text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
+            Public Portal
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Module 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Service 1: ยื่นคำร้องขอหนังสือรับรอง */}
           <Link
             href="/certificates"
-            className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
+            className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-300 transition-all flex flex-col justify-between"
           >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <FileText className="w-6 h-6" />
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center group-hover:scale-105 transition">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">
+                  ระบบการ์ด 16 เรื่อง
+                </span>
               </div>
-              <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                1. คำร้องขอหนังสือรับรอง (certificate_requests)
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                หนังสือรับรองการเป็นนิสิต, ความประพฤติ, ผ่อนผันการเกณฑ์ทหาร, ทรานสคริปต์ พร้อมพิมพ์ฟอร์ม A4 และ QR Code
+              <h3 className="text-base font-bold text-slate-900">ยื่นคำร้องขอหนังสือรับรอง</h3>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                เลือกประเภทการ์ดเอกสารได้ตรงใจ: หนังสือรับรองสภาพนิสิต, เปิดบัญชีธนาคาร, ต่ออายุ Visa, ขอหอพัก, ทุนการศึกษา 
+                (แยกสำหรับนิสิตไทยและต่างชาติ)
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-blue-600">
-              <span>เข้าสู่บริการยื่นคำร้อง</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-purple-700">
+              <span>เลือกการ์ดเอกสาร &rarr;</span>
+              <span className="text-slate-400 font-normal">Auto-fill จากรหัสนิสิต</span>
             </div>
           </Link>
 
-          {/* Module 2 */}
+          {/* Service 2: ตารางเรียนและรายวิชา */}
           <Link
-            href="/rooms"
-            className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-emerald-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
+            href="/courses"
+            className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between"
           >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Calendar className="w-4 h-4" />
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center group-hover:scale-105 transition">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                  213 รายวิชา
+                </span>
               </div>
-              <h3 className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
-                2. จองห้องประชุมออนไลน์ (meeting_bookings)
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                ตรวจจับการจองซ้อนทับ (Anti-Double Booking 100%) ตรวจสอบอุปกรณ์ประจำห้อง และบันทึกลง Google Sheets ทันที
+              <h3 className="text-base font-bold text-slate-900">ตารางเรียนและรายวิชา</h3>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                ดูตารางสอนรายสัปดาห์ตามชั้นปีที่ 1–4 ห้องเรียน เวลาเรียน และอาจารย์ผู้สอน พร้อมฐานข้อมูลค้นหารหัสวิชาและหน่วยกิต
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-600">
-              <span>จองห้องประชุม</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-700">
+              <span>ดูตารางสอน &rarr;</span>
+              <span className="text-slate-400 font-normal">ทุกชั้นปี</span>
             </div>
           </Link>
 
-          {/* Module 3 */}
-          <Link
-            href="/attendance"
-            className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-purple-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-              <h3 className="font-bold text-slate-900 group-hover:text-purple-600 transition-colors">
-                3. เช็คชื่อ & สิทธิ์สอบ 80% (attendance_sessions)
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                เช็คชื่อรายคาบ (เป้าหมาย ๑๖ คาบ) พร้อม Dynamic Timed QR Code และคำนวณเกณฑ์สิทธิ์สอบตาม calculation_rules
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-purple-600">
-              <span>ตรวจสอบสิทธิ์สอบ</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-
-          {/* Module 4 */}
-          <Link
-            href="/curriculum"
-            className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-amber-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BookOpen className="w-4 h-4" />
-              </div>
-              <h3 className="font-bold text-slate-900 group-hover:text-amber-600 transition-colors">
-                4. ทะเบียนรายวิชา (courses)
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                โครงสร้างรายวิชา TH/EN ภาค/ปีการศึกษา คาบเป้าหมาย และระบบนำเข้าข้อมูลจาก Google Sheets (Import Sync)
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-amber-600">
-              <span>ดูรายวิชาที่เปิดสอน</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-
-          {/* Module 5 */}
+          {/* Service 3: ตรวจสอบทะเบียนนิสิต */}
           <Link
             href="/students"
-            className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-indigo-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
+            className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-orange-300 transition-all flex flex-col justify-between"
           >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Users className="w-6 h-6" />
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center group-hover:scale-105 transition">
+                  <Users className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700">
+                  {students.length} รูป/คน
+                </span>
               </div>
-              <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                5. ทะเบียนนิสิต & Sheets Center (students)
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                แฟ้มประวัตินิสิตบรรพชิตและคฤหัสถ์ (พระ, สามเณร, นาย, นางสาว) พร้อมระบบ Import (Pull) และ Export (Push)
+              <h3 className="text-base font-bold text-slate-900">ค้นหาทะเบียนนิสิต</h3>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                ตรวจสอบข้อมูลทะเบียนนิสิต ค้นหาด้วยรหัสนิสิตหรือชื่อ-สกุล ข้อมูลสัญชาติ หนังสือเดินทาง และสาขาวิชา
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-indigo-600">
-              <span>จัดการทะเบียนนิสิต</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-orange-700">
+              <span>ค้นหาทะเบียน &rarr;</span>
+              <span className="text-slate-400 font-normal">ไทย {thaiStudents} • ต่างชาติ {intlStudents}</span>
             </div>
           </Link>
+        </div>
+      </div>
 
-          {/* Module 6 */}
-          <Link
-            href="/timetable"
-            className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-cyan-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Grid3X3 className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-slate-900 group-hover:text-cyan-600 transition-colors">
-                6. ตารางเรียน-ตารางสอน (Matrix Grid)
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                จัดสรรห้องเรียน วันเวลา (day_of_week 1-7) พร้อมระบบตรวจจับตารางชน (Clash Detection) และพิมพ์ตารางสอน
-              </p>
+      {/* 3. Admin Console Entry Box (สำหรับอาจารย์และเจ้าหน้าที่) */}
+      <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">
+              <ShieldCheck className="w-4 h-4" />
+              สำหรับเจ้าหน้าที่คณะและอาจารย์ผู้สอน (Admin Console)
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-cyan-600">
-              <span>เปิดตารางเรียน</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
+            <h3 className="text-xl sm:text-2xl font-black">
+              แผงควบคุมหลังบ้าน: จัดการคำร้อง, เช็คชื่อ และเชื่อมต่อ Google Sheets
+            </h3>
+            <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+              เข้าถึงเครื่องมือสำหรับบุคลากร: พิจารณาและอนุมัติคำร้อง, ออกเลขที่หนังสือ อว 8002/xxx, 
+              พิมพ์หนังสือรับรองพร้อมลายเซ็น, ระบบเช็คชื่อเข้าชั้นเรียนสำหรับอาจารย์ และตรวจสอบการซิงค์ข้อมูล Google Sheets
+            </p>
 
-          {/* Module 7 */}
-          <Link
-            href="/events"
-            className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-rose-500/50 hover:shadow-lg transition-all duration-200 flex flex-col justify-between md:col-span-2 lg:col-span-1"
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
+              <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-400 font-semibold border border-slate-700">
+                ⏳ คำร้องรอตรวจสอบ: {pendingRequests.length} รายการ
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-emerald-400 font-semibold border border-slate-700">
+                ✓ บันทึกเช็คชื่อ: {attendance.length} รายการ
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-semibold border border-slate-700">
+                📊 Google Sheets: 5 แท็บข้อมูล
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+            <Link
+              href="/admin"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition text-center"
+            >
+              <Lock className="w-4 h-4" />
+              เข้าสู่ระบบ Admin Console
+            </Link>
+
+            <Link
+              href="/attendance"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition text-center"
+            >
+              <CheckSquare className="w-4 h-4 text-emerald-400" />
+              เปิดระบบเช็คชื่อ (อาจารย์)
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Faculty Contact Information Footer */}
+      <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs text-slate-600">
+        <div>
+          <span className="font-bold text-slate-800 block text-sm">สำนักงานคณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</span>
+          <p className="mt-0.5">อาคารเรียนรวม ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170</p>
+        </div>
+        <div className="flex items-center gap-4 text-slate-700">
+          <div className="flex items-center gap-1.5">
+            <Phone className="w-4 h-4 text-slate-400" />
+            <span>035-247-8000 ต่อ 8323</span>
+          </div>
+          <a
+            href="https://fb.mcu.ac.th/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-700 font-bold hover:underline"
           >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Award className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-slate-900 group-hover:text-rose-600 transition-colors">
-                7. กิจกรรม & การอบรมวิปัสสนากรรมฐาน (events)
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                จัดกลุ่มปฏิบัติธรรม (group_number, group_name), meditation_config และระบบเช็คชื่อรายวัน (daily_attendance)
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-rose-600">
-              <span>ดูกิจกรรมและกลุ่มปฏิบัติธรรม</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
+            https://fb.mcu.ac.th/
+          </a>
         </div>
       </div>
     </div>

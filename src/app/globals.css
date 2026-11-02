@@ -1,21 +1,13 @@
 @import "tailwindcss";
 
-@layer base {
-  body {
-    background-color: #f8fafc;
-    color: #0f172a;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Sarabun', 'Prompt', 'Segoe UI', Roboto, sans-serif;
-  }
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
-@media print {
-  body {
-    background: #ffffff !important;
-  }
-  .no-print {
-    display: none !important;
-  }
-  .print-only {
-    display: block !important;
-  }
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, "Sarabun", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
 }
