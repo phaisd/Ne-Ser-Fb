@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { 
   CheckSquare, 
@@ -24,7 +24,14 @@ import {
   AlertTriangle,
   RefreshCw,
   Info,
-  ShieldAlert
+  ShieldAlert,
+  Award,
+  Printer,
+  FileSpreadsheet,
+  SlidersHorizontal,
+  CheckCircle2,
+  XCircle,
+  HelpCircle
 } from 'lucide-react';
 
 interface Student {
@@ -106,11 +113,9 @@ function matchInstructorStrict(user: any, instString?: string): boolean {
   if (tokens.length === 0) return false;
 
   return tokens.some((token) => {
-    // If Thai script: check substring (Thai script does not use spaces between words)
     if (/[\u0E00-\u0E7F]/.test(token)) {
       return targetLower.includes(token);
     }
-    // If Latin/English script: use regex word boundary to prevent false positives (e.g. 'phra' matching 'phramaha')
     try {
       const reg = new RegExp('\\b' + token + '\\b', 'i');
       return reg.test(targetLower);
@@ -130,7 +135,7 @@ const DEMO_INSTRUCTORS = [
 ];
 
 export default function AttendancePage() {
-  const [activeMode, setActiveMode] = useState<'ROLL_CALL' | 'QR_CODE' | 'HISTORY'>('ROLL_CALL');
+  const [activeMode, setActiveMode] = useState<'ROLL_CALL' | 'QR_CODE' | 'ELIGIBILITY' | 'HISTORY'>('ROLL_CALL');
   
   // Data states
   const [timetables, setTimetables] = useState<TimetableItem[]>([]);
@@ -155,6 +160,17 @@ export default function AttendancePage() {
 
   // Student filter mode
   const [showOnlyTargetYear, setShowOnlyTargetYear] = useState(true);
+
+  // ─────────────────────────────────────────────────────────────
+  // Exam Eligibility States & Settings
+  // ─────────────────────────────────────────────────────────────
+  const [semesterTotalSessions, setSemesterTotalSessions] = useState<number>(16);
+  const [minAttendancePercent, setMinAttendancePercent] = useState<number>(80);
+  const [lateToAbsentRatio, setLateToAbsentRatio] = useState<number>(3);
+  const [includeLeaveAsExcused, setIncludeLeaveAsExcused] = useState<boolean>(true);
+  const [eligibilitySearch, setEligibilitySearch] = useState<string>('');
+  const [eligibilityStatusFilter, setEligibilityStatusFilter] = useState<'ALL' | 'ELIGIBLE' | 'WARNING' | 'INELIGIBLE'>('ALL');
+  const [showEligibilitySettings, setShowEligibilitySettings] = useState<boolean>(false);
 
   // Load User from LocalStorage or API on mount
   useEffect(() => {
@@ -240,7 +256,6 @@ export default function AttendancePage() {
   // Available courses strictly filtered for teacher
   const availableCourses = useMemo(() => {
     if (isTeacher) {
-      // Teacher can strictly ONLY see and check courses where they are the instructor
       return timetables.filter((t) => matchInstructorStrict(currentUser, t.instructor));
     }
     if (selectedInstructor === 'ALL') return timetables;
@@ -305,7 +320,7 @@ export default function AttendancePage() {
     setAttendanceMap(nextMap);
   };
 
-  // Live stats
+  // Live stats for roll call
   const total = targetStudents.length;
   const present = targetStudents.filter((s) => (attendanceMap[s.studentCode] || 'PRESENT') === 'PRESENT').length;
   const late = targetStudents.filter((s) => attendanceMap[s.studentCode] === 'LATE').length;
@@ -325,6 +340,234 @@ export default function AttendancePage() {
     }
     return historyRecords;
   }, [historyRecords, isTeacher, availableCourses, currentUser]);
+
+  // ─────────────────────────────────────────────────────────────
+  // Exam Eligibility Calculation Engine
+  // ─────────────────────────────────────────────────────────────
+  const { eligibilityList, eligibilityStats, recordedSessionsCount, maxAllowedAbsences } = useMemo(() => {
+    if (!currentCourse) {
+      return {
+        eligibilityList: [],
+        eligibilityStats: { total: 0, eligible: 0, warning: 0, ineligible: 0 },
+        recordedSessionsCount: 0,
+        maxAllowedAbsences: 3,
+      };
+    }
+
+    const courseRecords = historyRecords.filter((h) => h.courseCode === currentCourse.courseCode);
+    const uniqueDates = Array.from(new Set(courseRecords.map((h) => h.date).filter(Boolean)));
+    const sessionsRecorded = uniqueDates.length;
+
+    // University regulation: Maximum allowed absences based on percentage requirement (e.g. 16 * 20% = 3 absences)
+    const maxAbsences = Math.max(1, Math.floor(semesterTotalSessions * (1 - minAttendancePercent / 100)));
+
+    const list = targetStudents.map((s) => {
+      const sRecords = courseRecords.filter((r) => r.studentCode === s.studentCode);
+      const sPresent = sRecords.filter((r) => r.status === 'PRESENT').length;
+      const sLate = sRecords.filter((r) => r.status === 'LATE').length;
+      const sLeave = sRecords.filter((r) => r.status === 'LEAVE').length;
+      const sAbsent = sRecords.filter((r) => r.status === 'ABSENT').length;
+
+      // Effective absences = Absent + floor(Late / 3)
+      const effectiveAbsences = sAbsent + Math.floor(sLate / lateToAbsentRatio);
+      const remainingAbsences = maxAbsences - effectiveAbsences;
+
+      // Attended Score
+      const attendedScore = sPresent + (sLate * 0.75) + (includeLeaveAsExcused ? sLeave : 0);
+
+      // Percentage of class attended so far
+      const attendedPercent = sessionsRecorded > 0
+        ? Math.min(100, Math.round((attendedScore / sessionsRecorded) * 100))
+        : 100;
+
+      // Overall Semester Status
+      let status: 'ELIGIBLE' | 'WARNING' | 'INELIGIBLE' = 'ELIGIBLE';
+      let statusText = 'มีสิทธิ์สอบ';
+      let reason = `อยู่ในเกณฑ์ (ยังขาดได้อีก ${Math.max(0, remainingAbsences)} ครั้ง)`;
+
+      if (effectiveAbsences > maxAbsences) {
+        status = 'INELIGIBLE';
+        statusText = 'หมดสิทธิ์สอบ';
+        reason = `ขาดเรียน ${effectiveAbsences} ครั้ง (เกินเกณฑ์ ${maxAbsences} ครั้ง)`;
+      } else if (remainingAbsences === 0 || attendedPercent < minAttendancePercent) {
+        status = 'WARNING';
+        statusText = 'เฝ้าระวัง/เสี่ยงหมดสิทธิ์';
+        reason = remainingAbsences === 0
+          ? `ใช้โควตาขาดครบ ${maxAbsences} ครั้งแล้ว (ห้ามขาดอีก)`
+          : `เวลาเรียนปัจจุบัน ${attendedPercent}% (ต่ำกว่าเกณฑ์ ${minAttendancePercent}%)`;
+      }
+
+      return {
+        studentCode: s.studentCode,
+        studentName: s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`,
+        major: s.major,
+        yearLevel: s.yearLevel,
+        present: sPresent,
+        late: sLate,
+        leave: sLeave,
+        absent: sAbsent,
+        effectiveAbsences,
+        attendedScore,
+        attendedPercent,
+        remainingAbsences,
+        status,
+        statusText,
+        reason,
+      };
+    });
+
+    const eligible = list.filter((i) => i.status === 'ELIGIBLE').length;
+    const warning = list.filter((i) => i.status === 'WARNING').length;
+    const ineligible = list.filter((i) => i.status === 'INELIGIBLE').length;
+
+    return {
+      eligibilityList: list,
+      eligibilityStats: {
+        total: list.length,
+        eligible,
+        warning,
+        ineligible,
+      },
+      recordedSessionsCount: sessionsRecorded,
+      maxAllowedAbsences: maxAbsences,
+    };
+  }, [
+    currentCourse,
+    historyRecords,
+    targetStudents,
+    semesterTotalSessions,
+    minAttendancePercent,
+    lateToAbsentRatio,
+    includeLeaveAsExcused,
+  ]);
+
+  // Filtered list for Exam Eligibility view
+  const filteredEligibilityList = useMemo(() => {
+    return eligibilityList.filter((item) => {
+      if (eligibilityStatusFilter !== 'ALL' && item.status !== eligibilityStatusFilter) {
+        return false;
+      }
+      if (eligibilitySearch.trim()) {
+        const q = eligibilitySearch.toLowerCase().trim();
+        const matchCode = item.studentCode.toLowerCase().includes(q);
+        const matchName = item.studentName.toLowerCase().includes(q);
+        const matchMajor = item.major?.toLowerCase().includes(q);
+        if (!matchCode && !matchName && !matchMajor) return false;
+      }
+      return true;
+    });
+  }, [eligibilityList, eligibilityStatusFilter, eligibilitySearch]);
+
+  // Export Eligibility Roster to CSV/Excel
+  const handleExportEligibilityCsv = () => {
+    if (!currentCourse || eligibilityList.length === 0) return;
+    const headers = [
+      'ลำดับ',
+      'รหัสนิสิต',
+      'ชื่อ-นามสกุล',
+      'สาขาวิชา',
+      'ชั้นปี',
+      'มา(ครั้ง)',
+      'สาย(ครั้ง)',
+      'ลา(ครั้ง)',
+      'ขาด(ครั้ง)',
+      'ขาดสุทธิ(ครั้ง)',
+      'เวลาเรียนจริง(%)',
+      'โควตาขาดที่เหลือ(ครั้ง)',
+      'ผลการประเมินสิทธิ์สอบ',
+      'เหตุผล/เงื่อนไข',
+    ];
+
+    const rows = eligibilityList.map((item, idx) => [
+      idx + 1,
+      `="${item.studentCode}"`,
+      `"${item.studentName}"`,
+      `"${item.major || '-'}"`,
+      item.yearLevel || 1,
+      item.present,
+      item.late,
+      item.leave,
+      item.absent,
+      item.effectiveAbsences,
+      `${item.attendedPercent}%`,
+      item.remainingAbsences >= 0 ? item.remainingAbsences : 0,
+      `"${item.statusText}"`,
+      `"${item.reason}"`,
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Exam_Eligibility_${currentCourse.courseCode.replace(/\s+/g, '_')}_${new Date().toISOString().substring(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Simulate Attendance Data for Testing
+  const handleSimulateAttendance = async () => {
+    if (!currentCourse) return;
+    if (
+      !confirm(
+        `ต้องการจำลองการบันทึกเวลาเรียน 12 คาบ สำหรับวิชา ${currentCourse.courseCode} (${currentCourse.courseName}) เพื่อทดสอบระบบคำนวณสิทธิ์สอบใช่หรือไม่?`
+      )
+    )
+      return;
+
+    const baseDates = [
+      '2026-06-15', '2026-06-22', '2026-06-29', '2026-07-06',
+      '2026-07-13', '2026-07-20', '2026-07-27', '2026-08-03',
+      '2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31'
+    ];
+
+    const records: any[] = [];
+    baseDates.forEach((dt, dateIdx) => {
+      targetStudents.forEach((s, sIdx) => {
+        let status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE' = 'PRESENT';
+        if (sIdx % 17 === 0 && dateIdx % 2 === 0) {
+          status = 'ABSENT';
+        } else if (sIdx % 11 === 0 && (dateIdx === 2 || dateIdx === 5 || dateIdx === 9)) {
+          status = 'ABSENT';
+        } else if (sIdx % 7 === 0 && dateIdx % 3 === 0) {
+          status = 'LATE';
+        } else if (sIdx % 13 === 0 && dateIdx === 4) {
+          status = 'LEAVE';
+        }
+
+        records.push({
+          courseCode: currentCourse.courseCode,
+          courseName: currentCourse.courseName,
+          date: dt,
+          studentCode: s.studentCode,
+          studentName: s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`,
+          status,
+          recordedBy: currentUser ? currentUser.name : (currentCourse.instructor || 'อาจารย์ผู้สอน'),
+        });
+      });
+    });
+
+    try {
+      setSaving(true);
+      const res = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ records }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ จำลองบันทึกข้อมูลเวลาเรียนสำเร็จ ${data.count} รายการ (12 สัปดาห์) ระบบได้คำนวณสิทธิ์สอบให้นิสิตทุกคนเรียบร้อยแล้ว!`);
+        const refRes = await fetch('/api/attendance');
+        const refData = await refRes.json();
+        if (refData.success) setHistoryRecords(refData.data);
+      }
+    } catch (e: any) {
+      alert('เกิดข้อผิดพลาด: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Submit attendance to Google Sheets & local cache
   const handleSave = async () => {
@@ -360,7 +603,6 @@ export default function AttendancePage() {
       const resData = await res.json();
       if (resData.success) {
         setSavedSuccess(`บันทึกการเช็คชื่อ ${resData.count} รายการ ส่งตรงเข้า Google Sheets (แท็บ Attendance) สำเร็จเรียบร้อย!`);
-        // Refresh history
         fetch('/api/attendance')
           .then((r) => r.json())
           .then((d) => d.success && setHistoryRecords(d.data));
@@ -376,35 +618,59 @@ export default function AttendancePage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* ─────────────────────────────────────────────────────────────
+          PRINT ONLY HEADER (OFFICIAL FACULTY REPORT)
+         ───────────────────────────────────────────────────────────── */}
+      <div className="hidden print:block text-slate-900 border-b pb-4 mb-6 space-y-1">
+        <div className="text-center font-bold text-lg">คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</div>
+        <div className="text-center font-bold text-base">รายงานสรุปเวลาเรียนและการประเมินสิทธิ์สอบไล่ปลายภาค ภาคการศึกษาที่ 1 ปีการศึกษา 2569</div>
+        {currentCourse && (
+          <div className="text-xs text-center text-slate-600 pt-1">
+            รายวิชา: <strong>{currentCourse.courseCode} {currentCourse.courseName}</strong> (ชั้นปีที่ {currentCourse.yearLevel}) | ผู้สอน: <strong>{currentCourse.instructor}</strong> | เกณฑ์เวลาเรียนขั้นต่ำ: <strong>{minAttendancePercent}%</strong> (ไม่น้อยกว่า {Math.ceil(semesterTotalSessions * (minAttendancePercent/100))} จาก {semesterTotalSessions} คาบ)
+          </div>
+        )}
+      </div>
+
+      {/* Page Header (Hidden on Print) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 flex items-center gap-3">
             <CheckSquare className="w-8 h-8 text-emerald-600" />
-            ระบบตรวจเข้าเรียนสำหรับอาจารย์ประจำวิชา
+            ระบบตรวจเข้าเรียน & สรุปสิทธิ์สอบปลายภาค
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            เช็คชื่อเข้าชั้นเรียนเฉพาะรายวิชาที่อาจารย์รับผิดชอบสอน พร้อมบันทึกลง Google Sheets แบบ Real-time
+            เช็คชื่อเข้าชั้นเรียนและประเมินสิทธิ์สอบไล่ตามเกณฑ์เวลาเรียน 80% ตลอดทั้งภาคการศึกษา
           </p>
         </div>
 
         {/* Mode switcher tabs */}
-        <div className="flex p-1 bg-slate-200/80 rounded-xl self-start sm:self-auto text-sm font-semibold">
+        <div className="flex flex-wrap p-1 bg-slate-200/80 rounded-xl self-start sm:self-auto text-xs sm:text-sm font-semibold gap-1">
           <button
             onClick={() => setActiveMode('ROLL_CALL')}
-            className={`px-3.5 py-2 rounded-lg transition cursor-pointer ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer ${
               activeMode === 'ROLL_CALL'
-                ? 'bg-white text-emerald-700 shadow-sm'
+                ? 'bg-white text-emerald-700 shadow-sm font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             อาจารย์เช็คชื่อ (Roll-Call)
           </button>
           <button
+            onClick={() => setActiveMode('ELIGIBILITY')}
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+              activeMode === 'ELIGIBILITY'
+                ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                : 'text-slate-700 hover:text-emerald-700 font-bold bg-emerald-50/50'
+            }`}
+          >
+            <Award className="w-4 h-4" />
+            <span>สรุปสิทธิ์สอบ (Exam Eligibility)</span>
+          </button>
+          <button
             onClick={() => setActiveMode('QR_CODE')}
-            className={`px-3.5 py-2 rounded-lg transition cursor-pointer ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer ${
               activeMode === 'QR_CODE'
-                ? 'bg-white text-emerald-700 shadow-sm'
+                ? 'bg-white text-emerald-700 shadow-sm font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -412,9 +678,9 @@ export default function AttendancePage() {
           </button>
           <button
             onClick={() => setActiveMode('HISTORY')}
-            className={`px-3.5 py-2 rounded-lg transition cursor-pointer ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer ${
               activeMode === 'HISTORY'
-                ? 'bg-white text-emerald-700 shadow-sm'
+                ? 'bg-white text-emerald-700 shadow-sm font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -424,7 +690,7 @@ export default function AttendancePage() {
       </div>
 
       {savedSuccess && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center justify-between shadow-sm animate-in fade-in duration-200 print:hidden">
           <div className="flex items-center gap-2">
             <Check className="w-5 h-5 text-emerald-600 shrink-0" />
             <span className="font-semibold">{savedSuccess}</span>
@@ -436,143 +702,566 @@ export default function AttendancePage() {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          AUTH STATUS BAR / LOGIN PROMPT
+          AUTH STATUS BAR / LOGIN PROMPT (Hidden on Print)
          ───────────────────────────────────────────────────────────── */}
-      {currentUser ? (
-        <div
-          className={`rounded-2xl p-4 sm:p-5 shadow-sm border flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-            isAdmin
-              ? 'bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white border-purple-800'
-              : 'bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white border-emerald-800'
-          }`}
-        >
-          <div className="flex items-center gap-3.5">
-            <div
-              className={`w-12 h-12 rounded-xl backdrop-blur border flex items-center justify-center font-bold text-lg shrink-0 shadow-inner ${
-                isAdmin ? 'bg-purple-500/20 border-purple-400/30 text-purple-200' : 'bg-emerald-500/20 border-emerald-400/30 text-emerald-300'
-              }`}
-            >
-              {isAdmin ? '👑' : currentUser.name ? currentUser.name.charAt(0) : 'อ'}
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`text-xs font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
-                    isAdmin
-                      ? 'bg-purple-500/30 text-purple-200 border-purple-400/30'
-                      : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/30'
-                  }`}
-                >
-                  {isAdmin ? '👑 สิทธิ์ผู้ดูแลระบบ (Admin Mode)' : '🔒 สิทธิ์อาจารย์ผู้สอนประจำวิชา'}
-                </span>
-                <span className="text-xs text-white/70 font-mono">
-                  {currentUser.email}
-                </span>
+      <div className="print:hidden">
+        {currentUser ? (
+          <div
+            className={`rounded-2xl p-4 sm:p-5 shadow-sm border flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+              isAdmin
+                ? 'bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white border-purple-800'
+                : 'bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white border-emerald-800'
+            }`}
+          >
+            <div className="flex items-center gap-3.5">
+              <div
+                className={`w-12 h-12 rounded-xl backdrop-blur border flex items-center justify-center font-bold text-lg shrink-0 shadow-inner ${
+                  isAdmin ? 'bg-purple-500/20 border-purple-400/30 text-purple-200' : 'bg-emerald-500/20 border-emerald-400/30 text-emerald-300'
+                }`}
+              >
+                {isAdmin ? '👑' : currentUser.name ? currentUser.name.charAt(0) : 'อ'}
               </div>
-              <h2 className="text-lg font-bold text-white mt-0.5">
-                ยินดีต้อนรับ: {currentUser.name}
-              </h2>
-              <p className="text-xs text-white/80">
-                {isAdmin
-                  ? 'ผู้ดูแลระบบสามารถตรวจสอบและดูรายวิชาของอาจารย์ทุกท่านในคณะได้'
-                  : `ระบบจำกัดการเข้าถึงเฉพาะรายวิชาที่ท่านรับผิดชอบบรรยายเท่านั้น (พบ ${availableCourses.length} รายวิชาในภาคเรียนนี้)`}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Quick Switch Dropdown for Demo/Testing */}
-            <select
-              onChange={(e) => {
-                if (e.target.value) handleQuickSwitchInstructor(e.target.value);
-              }}
-              value=""
-              className="px-3 py-2 text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl cursor-pointer"
-              title="สลับบัญชีอาจารย์เพื่อทดสอบการแสดงผลเฉพาะรายวิชาของตนเอง"
-            >
-              <option value="" disabled className="text-slate-800">
-                🔄 สลับทดสอบอาจารย์ท่านอื่น...
-              </option>
-              {DEMO_INSTRUCTORS.map((d, idx) => (
-                <option key={idx} value={d.email} className="text-slate-800">
-                  {d.name} ({d.title})
-                </option>
-              ))}
-            </select>
-
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-200 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl transition cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>ออกจากระบบ</span>
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-700 shrink-0 shadow-inner">
-                <Lock className="w-6 h-6 text-amber-700" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300">
-                    ระบบจำกัดสิทธิ์เฉพาะอาจารย์ผู้สอน
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`text-xs font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                      isAdmin
+                        ? 'bg-purple-500/30 text-purple-200 border-purple-400/30'
+                        : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/30'
+                    }`}
+                  >
+                    {isAdmin ? '👑 สิทธิ์ผู้ดูแลระบบ (Admin Mode)' : '🔒 สิทธิ์อาจารย์ผู้สอนประจำวิชา'}
+                  </span>
+                  <span className="text-xs text-white/70 font-mono">
+                    {currentUser.email}
                   </span>
                 </div>
-                <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                  กรุณาเข้าสู่ระบบอาจารย์ผู้สอนเพื่อดำเนินการเช็คชื่อเข้าเรียน
+                <h2 className="text-lg font-bold text-white mt-0.5">
+                  ยินดีต้อนรับ: {currentUser.name}
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl">
-                  ตามนโยบายของคณะพุทธศาสตร์ อาจารย์ผู้สอนแต่ละท่านสามารถตรวจเช็คชื่อเข้าชั้นเรียนได้<strong>เฉพาะรายวิชาที่ตนเองรับผิดชอบบรรยายเท่านั้น</strong> และไม่สามารถเข้าดูหรือแก้ไขรายวิชาที่ไม่ได้เป็นอาจารย์ผู้สอนได้
+                <p className="text-xs text-white/80">
+                  {isAdmin
+                    ? 'ผู้ดูแลระบบสามารถตรวจสอบและดูรายวิชาของอาจารย์ทุกท่านในคณะได้'
+                    : `ระบบจำกัดการเข้าถึงเฉพาะรายวิชาที่ท่านรับผิดชอบบรรยายเท่านั้น (พบ ${availableCourses.length} รายวิชาในภาคเรียนนี้)`}
                 </p>
               </div>
             </div>
 
-            <Link
-              href="/login?redirect=/attendance"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl shadow-md transition shrink-0 cursor-pointer"
-            >
-              <KeyRound className="w-4 h-4" />
-              <span>เข้าสู่ระบบอาจารย์ผู้สอน</span>
-            </Link>
-          </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                onChange={(e) => {
+                  if (e.target.value) handleQuickSwitchInstructor(e.target.value);
+                }}
+                value=""
+                className="px-3 py-2 text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl cursor-pointer"
+                title="สลับบัญชีอาจารย์เพื่อทดสอบการแสดงผลเฉพาะรายวิชาของตนเอง"
+              >
+                <option value="" disabled className="text-slate-800">
+                  🔄 สลับทดสอบอาจารย์ท่านอื่น...
+                </option>
+                {DEMO_INSTRUCTORS.map((d, idx) => (
+                  <option key={idx} value={d.email} className="text-slate-800">
+                    {d.name} ({d.title})
+                  </option>
+                ))}
+              </select>
 
-          {/* Demo Account Quick Switcher for Testing */}
-          <div className="pt-4 border-t border-amber-200/60">
-            <div className="text-xs font-bold text-amber-900 mb-2.5 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>หรือเลือกจำลองเข้าสู่ระบบเป็นอาจารย์ท่านใดท่านหนึ่ง เพื่อทดสอบระบบได้ทันที:</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {DEMO_INSTRUCTORS.map((d, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleQuickSwitchInstructor(d.email)}
-                  className="text-left p-3 rounded-xl bg-white hover:bg-emerald-50 border border-amber-200 hover:border-emerald-300 shadow-sm transition group cursor-pointer"
-                >
-                  <div className="font-bold text-xs text-slate-800 group-hover:text-emerald-800 truncate">
-                    {d.name}
-                  </div>
-                  <div className="text-[11px] text-slate-400 group-hover:text-emerald-600 truncate">
-                    {d.title}
-                  </div>
-                </button>
-              ))}
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-200 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl transition cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>ออกจากระบบ</span>
+              </button>
             </div>
           </div>
+        ) : (
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-700 shrink-0 shadow-inner">
+                  <Lock className="w-6 h-6 text-amber-700" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300">
+                      ระบบจำกัดสิทธิ์เฉพาะอาจารย์ผู้สอน
+                    </span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                    กรุณาเข้าสู่ระบบอาจารย์ผู้สอนเพื่อดำเนินการเช็คชื่อและสรุปสิทธิ์สอบ
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl">
+                    ตามนโยบายของคณะพุทธศาสตร์ อาจารย์ผู้สอนแต่ละท่านสามารถตรวจเช็คชื่อเข้าชั้นเรียนและประเมินสิทธิ์สอบได้<strong>เฉพาะรายวิชาที่ตนเองรับผิดชอบบรรยายเท่านั้น</strong>
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                href="/login?redirect=/attendance"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl shadow-md transition shrink-0 cursor-pointer"
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>เข้าสู่ระบบอาจารย์ผู้สอน</span>
+              </Link>
+            </div>
+
+            <div className="pt-4 border-t border-amber-200/60">
+              <div className="text-xs font-bold text-amber-900 mb-2.5 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>หรือเลือกจำลองเข้าสู่ระบบเป็นอาจารย์ท่านใดท่านหนึ่ง เพื่อทดสอบระบบได้ทันที:</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {DEMO_INSTRUCTORS.map((d, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleQuickSwitchInstructor(d.email)}
+                    className="text-left p-3 rounded-xl bg-white hover:bg-emerald-50 border border-amber-200 hover:border-emerald-300 shadow-sm transition group cursor-pointer"
+                  >
+                    <div className="font-bold text-xs text-slate-800 group-hover:text-emerald-800 truncate">
+                      {d.name}
+                    </div>
+                    <div className="text-[11px] text-slate-400 group-hover:text-emerald-600 truncate">
+                      {d.title}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODE: EXAM ELIGIBILITY SUMMARY (สรุปสิทธิ์สอบทั้งภาคการศึกษา)
+         ───────────────────────────────────────────────────────────── */}
+      {activeMode === 'ELIGIBILITY' && (
+        <div className="space-y-6">
+          {!currentUser ? (
+            <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-4">
+              <Lock className="w-10 h-10 text-slate-400 mx-auto" />
+              <h3 className="font-bold text-slate-800 text-base">
+                เข้าสู่ระบบอาจารย์ผู้สอนเพื่อดูสรุปสิทธิ์สอบ
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                ระบบคำนวณสิทธิ์สอบอ้างอิงจากเวลาเรียน 80% ทั้งภาคการศึกษาเฉพาะในรายวิชาที่ท่านเป็นอาจารย์ผู้สอนเท่านั้น
+              </p>
+            </div>
+          ) : !currentCourse ? (
+            <div className="p-8 rounded-2xl bg-amber-50 border border-amber-200 text-center text-amber-900 space-y-2">
+              <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto" />
+              <p className="font-bold text-sm">ไม่พบรายวิชาที่ท่านรับผิดชอบบรรยายในภาคเรียนนี้</p>
+            </div>
+          ) : (
+            <>
+              {/* Top Selector & Controls Bar */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 print:hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  {/* Course Dropdown */}
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+                      เลือกรายวิชาที่ต้องการประเมินสิทธิ์สอบ ({availableCourses.length} วิชา):
+                    </label>
+                    <select
+                      value={selectedCourseCode}
+                      onChange={(e) => handleCourseChange(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                    >
+                      {availableCourses.map((c, i) => (
+                        <option key={i} value={c.courseCode}>
+                          {c.courseCode} — {c.courseName} (ชั้นปีที่ {c.yearLevel})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Actions & Settings Toggles */}
+                  <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setShowEligibilitySettings(!showEligibilitySettings)}
+                      className="px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                      title="ปรับเปลี่ยนเกณฑ์การคำนวณ (จำนวนคาบ, เกณฑ์ %)"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+                      <span>เกณฑ์คำนวณ ({minAttendancePercent}%)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportEligibilityCsv}
+                      className="px-3.5 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>ส่งออก Excel/CSV</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="px-3.5 py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>พิมพ์รายงาน (Print/PDF)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Collapsible Settings Panel */}
+                {showEligibilitySettings && (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
+                        ตั้งค่าเกณฑ์เวลาเรียนและการประเมินสิทธิ์สอบ (University Exam Rules)
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        ตามระเบียบมหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          จำนวนคาบเรียนทั้งเทอม:
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="1"
+                            max="30"
+                            value={semesterTotalSessions}
+                            onChange={(e) => setSemesterTotalSessions(Math.max(1, parseInt(e.target.value) || 16))}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-bold"
+                          />
+                          <span className="text-slate-400 font-medium">คาบ</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          เกณฑ์เวลาเรียนขั้นต่ำ:
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="50"
+                            max="100"
+                            value={minAttendancePercent}
+                            onChange={(e) => setMinAttendancePercent(Math.max(50, Math.min(100, parseInt(e.target.value) || 80)))}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-bold text-emerald-700"
+                          />
+                          <span className="text-slate-400 font-medium">%</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          สัดส่วนการมาสาย:
+                        </label>
+                        <select
+                          value={lateToAbsentRatio}
+                          onChange={(e) => setLateToAbsentRatio(parseInt(e.target.value))}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-semibold"
+                        >
+                          <option value="3">สาย 3 ครั้ง = ขาด 1 ครั้ง</option>
+                          <option value="2">สาย 2 ครั้ง = ขาด 1 ครั้ง</option>
+                          <option value="4">สาย 4 ครั้ง = ขาด 1 ครั้ง</option>
+                          <option value="999">ไม่นับสายเป็นขาด</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-end">
+                        <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700 pb-2">
+                          <input
+                            type="checkbox"
+                            checked={includeLeaveAsExcused}
+                            onChange={(e) => setIncludeLeaveAsExcused(e.target.checked)}
+                            className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                          />
+                          <span>ลามีใบรับรอง = อนุโลม</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Real-time Summary Statistics Banner */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+                <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+                  <div className="text-[11px] font-bold text-slate-500">นิสิตทั้งหมด</div>
+                  <div className="text-2xl font-black text-slate-900 mt-0.5">{eligibilityStats.total}</div>
+                  <div className="text-[10px] text-slate-400">รูป/คน</div>
+                </div>
+
+                <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+                  <div className="text-[11px] font-bold text-slate-500">เช็คชื่อแล้วในระบบ</div>
+                  <div className="text-2xl font-black text-indigo-700 mt-0.5">
+                    {recordedSessionsCount} <span className="text-xs text-slate-400 font-normal">/ {semesterTotalSessions}</span>
+                  </div>
+                  <div className="text-[10px] text-indigo-600 font-semibold">
+                    {Math.round((recordedSessionsCount / semesterTotalSessions) * 100)}% ของเทอม
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200/80 shadow-sm">
+                  <div className="text-[11px] font-bold text-emerald-800 flex items-center justify-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> มีสิทธิ์สอบ (≥{minAttendancePercent}%)
+                  </div>
+                  <div className="text-2xl font-black text-emerald-700 mt-0.5">{eligibilityStats.eligible}</div>
+                  <div className="text-[10px] text-emerald-600 font-semibold">
+                    {eligibilityStats.total > 0 ? Math.round((eligibilityStats.eligible / eligibilityStats.total) * 100) : 0}% ของชั้นเรียน
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200/80 shadow-sm">
+                  <div className="text-[11px] font-bold text-amber-800 flex items-center justify-center gap-1">
+                    <AlertTriangle className="w-3 h-3 text-amber-600" /> กลุ่มเฝ้าระวัง
+                  </div>
+                  <div className="text-2xl font-black text-amber-700 mt-0.5">{eligibilityStats.warning}</div>
+                  <div className="text-[10px] text-amber-700">ขาดครบโควตา ({maxAllowedAbsences} คาบ)</div>
+                </div>
+
+                <div className="p-3.5 bg-rose-50 rounded-2xl border border-rose-200/80 shadow-sm col-span-2 sm:col-span-1">
+                  <div className="text-[11px] font-bold text-rose-800 flex items-center justify-center gap-1">
+                    <XCircle className="w-3 h-3 text-rose-600" /> หมดสิทธิ์สอบ (&lt;{minAttendancePercent}%)
+                  </div>
+                  <div className="text-2xl font-black text-rose-700 mt-0.5">{eligibilityStats.ineligible}</div>
+                  <div className="text-[10px] text-rose-600 font-semibold">ขาดเกิน {maxAllowedAbsences} ครั้ง</div>
+                </div>
+              </div>
+
+              {/* If no sessions recorded yet, show a simulation prompt */}
+              {recordedSessionsCount === 0 && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
+                  <div className="flex items-center gap-2.5">
+                    <Info className="w-5 h-5 text-sky-600 shrink-0" />
+                    <div>
+                      <span className="font-bold text-slate-900 block">วิชานี้ยังไม่มีบันทึกเวลาเรียนในระบบ:</span>
+                      <span className="text-slate-500">
+                        ระบบคำนวณเบื้องต้นให้นิสิตทุกคนมีสิทธิ์สอบเต็ม 100% ท่านสามารถคลิกปุ่มเพื่อจำลองข้อมูลการสอน 12 คาบสำหรับทดสอบคำนวณสิทธิ์สอบได้ทันที
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSimulateAttendance}
+                    className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shrink-0 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>⚡ จำลองบันทึก 12 คาบเพื่อทดสอบ</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Filter Toolbar & Search */}
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาด้วยรหัสนิสิต หรือชื่อ-นามสกุล..."
+                    value={eligibilitySearch}
+                    onChange={(e) => setEligibilitySearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold w-full sm:w-auto shrink-0 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setEligibilityStatusFilter('ALL')}
+                    className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                      eligibilityStatusFilter === 'ALL'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    ทั้งหมด ({eligibilityList.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEligibilityStatusFilter('ELIGIBLE')}
+                    className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                      eligibilityStatusFilter === 'ELIGIBLE'
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-emerald-700 hover:bg-emerald-50'
+                    }`}
+                  >
+                    มีสิทธิ์สอบ ({eligibilityStats.eligible})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEligibilityStatusFilter('WARNING')}
+                    className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                      eligibilityStatusFilter === 'WARNING'
+                        ? 'bg-amber-600 text-white shadow-sm'
+                        : 'text-amber-800 hover:bg-amber-50'
+                    }`}
+                  >
+                    เฝ้าระวัง ({eligibilityStats.warning})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEligibilityStatusFilter('INELIGIBLE')}
+                    className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+                      eligibilityStatusFilter === 'INELIGIBLE'
+                        ? 'bg-rose-600 text-white shadow-sm'
+                        : 'text-rose-700 hover:bg-rose-50'
+                    }`}
+                  >
+                    หมดสิทธิ์สอบ ({eligibilityStats.ineligible})
+                  </button>
+                </div>
+              </div>
+
+              {/* Roster & Exam Eligibility Table */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden print:border-none print:shadow-none">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-600 print:text-[10px]">
+                    <thead className="bg-slate-50 uppercase text-[11px] font-bold text-slate-500 border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3 w-12 text-center">ลำดับ</th>
+                        <th className="px-4 py-3 w-28">รหัสนิสิต</th>
+                        <th className="px-4 py-3">ชื่อ - นามสกุล</th>
+                        <th className="px-3 py-3 text-center w-12 text-emerald-700">มา</th>
+                        <th className="px-3 py-3 text-center w-12 text-yellow-700">สาย</th>
+                        <th className="px-3 py-3 text-center w-12 text-blue-700">ลา</th>
+                        <th className="px-3 py-3 text-center w-12 text-rose-700">ขาด</th>
+                        <th className="px-4 py-3 text-center w-36">เวลาเรียนจริง (%)</th>
+                        <th className="px-4 py-3 text-center w-28">โควตาขาดที่เหลือ</th>
+                        <th className="px-4 py-3 text-center w-32">สิทธิ์เข้าสอบ</th>
+                        <th className="px-4 py-3">เหตุผล / เงื่อนไข</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredEligibilityList.length === 0 ? (
+                        <tr>
+                          <td colSpan={11} className="text-center py-12 text-slate-400">
+                            ไม่พบข้อมูลนิสิตตามเงื่อนไขที่เลือก
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredEligibilityList.map((row, idx) => (
+                          <tr
+                            key={row.studentCode}
+                            className={`hover:bg-slate-50/80 transition ${
+                              row.status === 'INELIGIBLE'
+                                ? 'bg-rose-50/30'
+                                : row.status === 'WARNING'
+                                ? 'bg-amber-50/20'
+                                : ''
+                            }`}
+                          >
+                            <td className="px-4 py-2.5 text-center font-mono text-slate-400">
+                              {idx + 1}
+                            </td>
+                            <td className="px-4 py-2.5 font-mono font-bold text-slate-800">
+                              {row.studentCode}
+                            </td>
+                            <td className="px-4 py-2.5 font-medium text-slate-900">
+                              <div>{row.studentName}</div>
+                              {row.major && (
+                                <div className="text-[10px] text-slate-400">{row.major}</div>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-center font-bold text-emerald-700 bg-emerald-50/30">
+                              {row.present}
+                            </td>
+                            <td className="px-3 py-2.5 text-center font-bold text-yellow-700 bg-yellow-50/30">
+                              {row.late}
+                            </td>
+                            <td className="px-3 py-2.5 text-center font-bold text-blue-700 bg-blue-50/30">
+                              {row.leave}
+                            </td>
+                            <td className="px-3 py-2.5 text-center font-bold text-rose-700 bg-rose-50/30">
+                              {row.absent}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-slate-100 rounded-full h-2 overflow-hidden flex-1">
+                                  <div
+                                    className={`h-full rounded-full ${
+                                      row.attendedPercent >= minAttendancePercent
+                                        ? 'bg-emerald-500'
+                                        : row.attendedPercent >= 70
+                                        ? 'bg-amber-500'
+                                        : 'bg-rose-500'
+                                    }`}
+                                    style={{ width: `${row.attendedPercent}%` }}
+                                  />
+                                </div>
+                                <span className="font-mono font-bold text-slate-700 w-10 text-right">
+                                  {row.attendedPercent}%
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 text-center font-medium">
+                              {row.remainingAbsences > 0 ? (
+                                <span className="text-emerald-700 font-semibold">
+                                  ขาดได้อีก {row.remainingAbsences} ครั้ง
+                                </span>
+                              ) : row.remainingAbsences === 0 ? (
+                                <span className="text-amber-800 font-bold px-2 py-0.5 rounded bg-amber-100">
+                                  ห้ามขาดอีก
+                                </span>
+                              ) : (
+                                <span className="text-rose-700 font-bold px-2 py-0.5 rounded bg-rose-100">
+                                  เกิน {Math.abs(row.remainingAbsences)} ครั้ง
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                                  row.status === 'ELIGIBLE'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : row.status === 'WARNING'
+                                    ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                    : 'bg-rose-100 text-rose-800 border-rose-300'
+                                }`}
+                              >
+                                {row.status === 'ELIGIBLE' && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+                                {row.status === 'WARNING' && <AlertTriangle className="w-3 h-3 text-amber-600" />}
+                                {row.status === 'INELIGIBLE' && <XCircle className="w-3 h-3 text-rose-600" />}
+                                <span>{row.statusText}</span>
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5 text-slate-500 text-[11px]">
+                              {row.reason}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Official Sign-off block for Print */}
+              <div className="hidden print:grid grid-cols-2 gap-8 pt-8 mt-6 text-xs text-slate-800 text-center">
+                <div className="space-y-12">
+                  <div>ลงชื่อ..................................................................</div>
+                  <div>( {currentUser ? currentUser.name : (currentCourse.instructor || 'อาจารย์ผู้รับผิดชอบรายวิชา')} )<br /><span className="text-slate-500">อาจารย์ผู้รับผิดชอบรายวิชา</span></div>
+                </div>
+                <div className="space-y-12">
+                  <div>ลงชื่อ..................................................................</div>
+                  <div>( พระครูสุธีกิตติบัณฑิต, รศ.ดร. )<br /><span className="text-slate-500">คณบดีคณะพุทธศาสตร์</span></div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          MODE 1: ROLL CALL
+          MODE 1: ROLL CALL (Hidden on Print)
          ───────────────────────────────────────────────────────────── */}
       {activeMode === 'ROLL_CALL' && (
-        <div className="space-y-6">
-          {/* If NOT logged in, show lock guard */}
+        <div className="space-y-6 print:hidden">
           {!currentUser ? (
             <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-4">
               <div className="w-16 h-16 rounded-3xl bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
@@ -675,19 +1364,6 @@ export default function AttendancePage() {
                   </div>
                 </div>
 
-                {/* Warning if no courses matched */}
-                {isTeacher && availableCourses.length === 0 && (
-                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed space-y-1">
-                    <div className="font-bold flex items-center gap-1.5 text-amber-800">
-                      <ShieldAlert className="w-4 h-4 text-amber-600" />
-                      <span>ไม่พบรายวิชาที่ท่านเป็นอาจารย์ผู้สอนในตารางสอนภาคเรียนนี้</span>
-                    </div>
-                    <p className="text-slate-600">
-                      ระบบตรวจเช็คชื่อถูกจำกัดสิทธิ์ให้แสดงเฉพาะวิชาที่ท่านเป็นผู้สอนเท่านั้น หากท่านมีชั่วโมงสอนแต่ไม่พบวิชา โปรดติดต่อฝ่ายทะเบียนและประมวลผลการศึกษาเพื่อตรวจสอบชื่อในตารางสอน
-                    </p>
-                  </div>
-                )}
-
                 {/* Course info banner */}
                 {currentCourse && (() => {
                   const isEn = /inter|eng|english|นานาชาติ/i.test(currentCourse.timetableTitle || '') || /^[A-Za-z0-9\s:,-]+$/.test(currentCourse.courseName);
@@ -756,7 +1432,6 @@ export default function AttendancePage() {
                       </span>
                     </div>
 
-                    {/* Quick shortcut buttons */}
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -905,10 +1580,10 @@ export default function AttendancePage() {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          MODE 2: CLASSROOM QR CODE CHECK-IN
+          MODE 2: CLASSROOM QR CODE CHECK-IN (Hidden on Print)
          ───────────────────────────────────────────────────────────── */}
       {activeMode === 'QR_CODE' && (
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm text-center space-y-6">
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm text-center space-y-6 print:hidden">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">
             <Sparkles className="w-4 h-4" />
             โหมดฉายโปรเจกเตอร์ในชั้นเรียน
@@ -961,10 +1636,10 @@ export default function AttendancePage() {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          MODE 3: ATTENDANCE HISTORY
+          MODE 3: ATTENDANCE HISTORY (Hidden on Print)
          ───────────────────────────────────────────────────────────── */}
       {activeMode === 'HISTORY' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden print:hidden">
           <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
