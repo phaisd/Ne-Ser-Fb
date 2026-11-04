@@ -1272,55 +1272,19 @@ export default function CertificatesPage() {
                     )}
                   </div>
 
-                  {/* Document 2: รูปถ่าย 1.5 - 2 นิ้ว */}
-                  <div className="p-3 bg-white rounded-xl border border-purple-100 shadow-sm space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Camera className="w-3.5 h-3.5 text-amber-600" />
-                        รูปถ่าย 1.5 - 2 นิ้ว
-                      </span>
-                      {photoUrl && (
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                          แนบแล้ว ✓
-                        </span>
-                      )}
+                  {/* Photo Instruction Notice Box (ไม่ต้องอัปโหลดรูป นำมาติดเอง) */}
+                  <div className="p-3.5 bg-amber-50/80 rounded-xl border border-amber-200/90 shadow-sm space-y-1.5 flex items-start gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                      <Camera className="w-4 h-4 text-white" />
                     </div>
-                    <p className="text-[11px] text-slate-500">
-                      หน้าตรงชุดสุภาพ สำหรับติดหนังสือรับรอง
-                    </p>
-                    {photoUrl ? (
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50/60 border border-amber-200 text-xs">
-                        <a
-                          href={photoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-amber-800 underline truncate max-w-[150px] font-medium"
-                        >
-                          ดูรูปถ่าย
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => setPhotoUrl('')}
-                          className="text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
-                        >
-                          ลบ
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-dashed border-amber-300 text-amber-700 hover:bg-amber-50 text-xs font-bold cursor-pointer transition">
-                        <UploadCloud className="w-4 h-4" />
-                        <span>{uploadingDoc === 'photo' ? 'กำลังอัปโหลด...' : 'เลือกรูปถ่าย'}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) handleFileUpload(f, 'photo');
-                          }}
-                        />
-                      </label>
-                    )}
+                    <div className="space-y-1 text-xs">
+                      <span className="font-extrabold text-amber-950 block">
+                        📸 รูปถ่ายขนาด 1.5 - 2 นิ้ว (นำมาติดเอง):
+                      </span>
+                      <p className="text-[11px] text-amber-900 leading-relaxed">
+                        <strong>ไม่ต้องอัปโหลดรูปถ่ายในระบบ</strong> ให้นิสิตเตรียมรูปถ่ายขนาด 1.5 - 2 นิ้ว (หน้าตรง สวมชุดสุภาพ) มาติดด้วยตนเองบนเอกสารฉบับจริงในวันมารับหนังสือ ณ สำนักงานคณะ
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
