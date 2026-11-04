@@ -29,6 +29,12 @@ import {
   Printer,
   FileSpreadsheet,
   SlidersHorizontal,
+  MapPin,
+  Users,
+  Tag,
+  Plus,
+  X,
+  Edit3,
   CheckCircle2,
   XCircle,
   HelpCircle
@@ -152,6 +158,39 @@ export default function AttendancePage() {
   const [selectedCourseCode, setSelectedCourseCode] = useState<string>('');
   const [date, setDate] = useState<string>(new Date().toISOString().substring(0, 10));
   const [recordedBy, setRecordedBy] = useState<string>('');
+
+  // ─────────────────────────────────────────────────────────────
+  // Session Customization States (Date / Time / Room / Co-instructors / TAs)
+  // ─────────────────────────────────────────────────────────────
+  const [sessionCustom, setSessionCustom] = useState<{
+    sessionNumber: number;
+    sessionType: 'NORMAL' | 'MAKEUP' | 'SPECIAL' | 'EXAM';
+    date: string;
+    startTime: string;
+    endTime: string;
+    room: string;
+    leadInstructor: string;
+    coInstructors: string[];
+    customCoInstructorText: string;
+    sessionTopic: string;
+    note: string;
+    isCustomized: boolean;
+  }>({
+    sessionNumber: 1,
+    sessionType: 'NORMAL',
+    date: new Date().toISOString().substring(0, 10),
+    startTime: '09:00',
+    endTime: '12:00',
+    room: 'C301',
+    leadInstructor: '',
+    coInstructors: [],
+    customCoInstructorText: '',
+    sessionTopic: '',
+    note: '',
+    isCustomized: false,
+  });
+  const [showSessionModal, setShowSessionModal] = useState<boolean>(false);
+  const [coInstructorSearch, setCoInstructorSearch] = useState<string>('');
 
   // Attendance state: studentCode -> status
   const [attendanceMap, setAttendanceMap] = useState<Record<string, 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE'>>({});
@@ -279,6 +318,32 @@ export default function AttendancePage() {
       setSelectedCourseCode('');
     }
   }, [availableCourses, selectedCourseCode, currentUser]);
+
+  // Sync session details when currentCourse changes (unless customized)
+  useEffect(() => {
+    if (currentCourse) {
+      setSessionCustom((prev) => {
+        if (prev.isCustomized) return prev;
+        const distinctDates = new Set(
+          historyRecords
+            .filter((h) => h.courseCode === currentCourse.courseCode)
+            .map((h) => h.date)
+        );
+        const nextSessionNum = Math.min(16, distinctDates.size + 1);
+
+        return {
+          ...prev,
+          sessionNumber: nextSessionNum,
+          date: date,
+          startTime: currentCourse.startTime || '09:00',
+          endTime: currentCourse.endTime || '12:00',
+          room: currentCourse.room || 'C301',
+          leadInstructor: currentUser ? currentUser.name : (currentCourse.instructor || ''),
+          isCustomized: false,
+        };
+      });
+    }
+  }, [currentCourse, currentUser, historyRecords, date]);
 
   const handleCourseChange = (code: string) => {
     const found = availableCourses.find((t) => t.courseCode === code);
@@ -584,14 +649,35 @@ export default function AttendancePage() {
     setSavedSuccess(null);
 
     try {
+      const allCoInstructors = [
+        ...sessionCustom.coInstructors,
+        ...(sessionCustom.customCoInstructorText ? sessionCustom.customCoInstructorText.split(',').map((s) => s.trim()) : [])
+      ].filter(Boolean);
+
+      const lead = sessionCustom.leadInstructor || (currentUser ? currentUser.name : (recordedBy || 'อาจารย์ประจำวิชา'));
+      const fullRecordedBy = allCoInstructors.length > 0
+        ? `${lead} [ร่วมกับ: ${allCoInstructors.join(', ')}]`
+        : lead;
+
+      const typeLabel = sessionCustom.sessionType === 'MAKEUP' ? 'สอนชดเชย' : sessionCustom.sessionType === 'SPECIAL' ? 'บรรยายพิเศษ' : sessionCustom.sessionType === 'EXAM' ? 'สอบเก็บคะแนน' : 'คาบปกติ';
+      const sessionNote = [
+        `คาบที่ ${sessionCustom.sessionNumber} (${typeLabel})`,
+        sessionCustom.sessionTopic ? `หัวข้อ: ${sessionCustom.sessionTopic}` : null,
+        `ห้อง: ${sessionCustom.room} (${sessionCustom.startTime}-${sessionCustom.endTime} น.)`,
+        sessionCustom.note ? `บันทึก: ${sessionCustom.note}` : null
+      ].filter(Boolean).join(' | ');
+
+      const targetDate = sessionCustom.date || date;
+
       const records = targetStudents.map((s) => ({
         courseCode: currentCourse.courseCode,
         courseName: currentCourse.courseName,
-        date,
+        date: targetDate,
         studentCode: s.studentCode,
         studentName: s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`,
         status: attendanceMap[s.studentCode] || 'PRESENT',
-        recordedBy: currentUser ? currentUser.name : (recordedBy || 'อาจารย์ประจำวิชา'),
+        recordedBy: fullRecordedBy,
+        note: sessionNote,
       }));
 
       const res = await fetch('/api/attendance', {
@@ -1364,48 +1450,158 @@ export default function AttendancePage() {
                   </div>
                 </div>
 
-                {/* Course info banner */}
+                {/* ─────────────────────────────────────────────────────────────
+                    ENHANCED SESSION BANNER & CUSTOMIZATION CONTROLS
+                   ───────────────────────────────────────────────────────────── */}
                 {currentCourse && (() => {
                   const isEn = /inter|eng|english|นานาชาติ/i.test(currentCourse.timetableTitle || '') || /^[A-Za-z0-9\s:,-]+$/.test(currentCourse.courseName);
+                  const allCo = [
+                    ...sessionCustom.coInstructors,
+                    ...(sessionCustom.customCoInstructorText ? sessionCustom.customCoInstructorText.split(',').map((s) => s.trim()) : [])
+                  ].filter(Boolean);
+
+                  const sessionTypeConfig = {
+                    NORMAL: { label: 'คาบเรียนปกติ', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+                    MAKEUP: { label: 'คาบสอนชดเชย', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+                    SPECIAL: { label: 'บรรยายพิเศษ', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+                    EXAM: { label: 'สอบย่อย/เก็บคะแนน', color: 'bg-rose-100 text-rose-800 border-rose-300' },
+                  }[sessionCustom.sessionType] || { label: 'คาบเรียนปกติ', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+
                   return (
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className={`px-2.5 py-1 rounded-lg font-bold border ${isEn ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
-                          {isEn ? '🌐 หลักสูตรนานาชาติ (International/EN)' : '🇹🇭 หลักสูตรภาษาไทย (Thai Program)'}
-                        </span>
-                        <div>
-                          <span className="text-slate-400">วิชา:</span>{' '}
-                          <strong className="text-slate-800 font-mono">{currentCourse.courseCode}</strong> {currentCourse.courseName}
-                        </div>
-                        <div>
-                          <span className="text-slate-400">ชั้นปี:</span>{' '}
-                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
-                            ชั้นปีที่ {currentCourse.yearLevel}
+                    <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-emerald-50/20 p-4 shadow-sm space-y-3">
+                      {/* Top Header Row */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-slate-200/70">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${isEn ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+                            {isEn ? '🌐 หลักสูตรนานาชาติ (Inter/EN)' : '🇹🇭 หลักสูตรภาษาไทย (Thai)'}
                           </span>
+                          <span className="font-mono font-bold text-slate-900 text-sm">
+                            {currentCourse.courseCode}
+                          </span>
+                          <span className="font-bold text-slate-800 text-sm">
+                            {currentCourse.courseName}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold">
+                            ปี {currentCourse.yearLevel}
+                          </span>
+
+                          {/* Session Number & Type Badge */}
+                          <div className="flex items-center gap-1.5 ml-1">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-slate-900 text-white shadow-xs">
+                              คาบที่ {sessionCustom.sessionNumber}
+                            </span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${sessionTypeConfig.color}`}>
+                              {sessionTypeConfig.label}
+                            </span>
+                            {sessionCustom.isCustomized && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-xs">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                ปรับแต่งแล้ว
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-slate-400">ผู้สอน:</span>{' '}
-                          <strong className="text-slate-700">{currentCourse.instructor}</strong>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">เวลาเรียน:</span> {currentCourse.startTime || '-'} - {currentCourse.endTime || '-'} น.
-                        </div>
-                        <div>
-                          <span className="text-slate-400">ห้องเรียน:</span> {currentCourse.room || '-'}
+
+                        {/* Button to Open Session Customization Modal */}
+                        <div className="flex items-center gap-2 ml-auto">
+                          <button
+                            type="button"
+                            onClick={() => setShowSessionModal(true)}
+                            className="px-3.5 py-1.5 bg-white hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                            title="ปรับแต่ง วันที่ / เวลา / ห้องเรียน / เลือกอาจารย์ผู้สอนร่วม-ผู้ช่วยสอน"
+                          >
+                            <SlidersHorizontal className="w-3.5 h-3.5" />
+                            <span>⚙️ ปรับแต่งคาบเรียน (วัน/เวลา/ห้อง/ผู้ช่วยสอน)</span>
+                          </button>
+
+                          <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 text-xs pl-2 border-l border-slate-200">
+                            <input
+                              type="checkbox"
+                              checked={showOnlyTargetYear}
+                              onChange={(e) => setShowOnlyTargetYear(e.target.checked)}
+                              className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                            />
+                            <span>เฉพาะปี {currentCourse.yearLevel}</span>
+                          </label>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={showOnlyTargetYear}
-                            onChange={(e) => setShowOnlyTargetYear(e.target.checked)}
-                            className="rounded text-emerald-600 focus:ring-emerald-500"
-                          />
-                          <span>เฉพาะนิสิตชั้นปีที่ {currentCourse.yearLevel}</span>
-                        </label>
+                      {/* Session Parameters Display */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                        <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
+                          <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <div className="text-[10px] text-slate-400 font-semibold">วันที่สอนจริง:</div>
+                            <div className="font-bold text-slate-800">{sessionCustom.date || date}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
+                          <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <div className="text-[10px] text-slate-400 font-semibold">เวลาเรียน:</div>
+                            <div className="font-bold text-slate-800">
+                              {sessionCustom.startTime} - {sessionCustom.endTime} น.
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
+                          <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <div className="text-[10px] text-slate-400 font-semibold">ห้องเรียน / สถานที่:</div>
+                            <div className="font-bold text-slate-800 truncate">{sessionCustom.room}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
+                          <User className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div className="truncate">
+                            <div className="text-[10px] text-slate-400 font-semibold">อาจารย์ผู้สอนหลัก:</div>
+                            <div className="font-bold text-slate-800 truncate">
+                              {sessionCustom.leadInstructor || currentCourse.instructor || 'อาจารย์ประจำวิชา'}
+                            </div>
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Co-instructors / Teaching Assistants Banner if present */}
+                      {allCo.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 text-xs">
+                          <span className="font-bold text-indigo-900 flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-indigo-600" />
+                            อาจารย์ผู้สอนร่วม / ผู้ช่วยสอน (TAs) ในคาบนี้ ({allCo.length} ท่าน):
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {allCo.map((inst, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 text-[11px] font-semibold"
+                              >
+                                <span>👨‍🏫 {inst}</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Session Topic / Note if entered */}
+                      {(sessionCustom.sessionTopic || sessionCustom.note) && (
+                        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200/60 text-xs text-slate-600">
+                          {sessionCustom.sessionTopic && (
+                            <div>
+                              <span className="font-bold text-slate-700">📖 หัวข้อการสอน:</span>{' '}
+                              <span className="text-slate-900 font-medium">{sessionCustom.sessionTopic}</span>
+                            </div>
+                          )}
+                          {sessionCustom.note && (
+                            <div>
+                              <span className="font-bold text-slate-700">📝 บันทึกคาบ:</span>{' '}
+                              <span className="text-slate-600">{sessionCustom.note}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
