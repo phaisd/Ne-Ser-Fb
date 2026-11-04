@@ -71,6 +71,19 @@ import {
   Copy
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
+import {
+  AdminSheetsTab,
+  AdminTimetablesTab,
+  AdminAttendanceTab,
+  AdminCoursesTab,
+  AdminStudentsTab,
+} from '@/components/admin/tabs';
+import {
+  StudentDeleteModal,
+  TeachingSlipModal,
+  EditUserModal,
+  AutoProvisionModal,
+} from '@/components/admin/modals';
 
 import {
   CertificateRequest,
@@ -3856,824 +3869,87 @@ ${coursesText}
               TAB E: GOOGLE SHEETS SETTINGS
              ───────────────────────────────────────────────────────── */}
           {activeTab === 'SHEETS' && (
-            <div className="space-y-6 max-w-4xl">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
-                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <Table2 className="w-5 h-5 text-emerald-600" />
-                  การเชื่อมต่อ Google Sheets API (Database & Real-time Sync)
-                </h2>
-                <p className="text-xs text-slate-500">
-                  ตรวจสอบการเชื่อมต่อสองทาง (Two-Way Sync) ระหว่างระบบกับ Google Sheets
-                </p>
-              </div>
-
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-                {sheetStatus?.connected ? (
-                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-bold text-sm">เชื่อมต่อกับ Google Sheets สำเร็จเรียบร้อย</div>
-                      <div className="text-xs text-emerald-700 mt-0.5">
-                        ชื่อ Spreadsheet: <span className="font-semibold">{sheetStatus.spreadsheetTitle}</span>
-                      </div>
-                      {sheetStatus.sheets && (
-                        <div className="text-xs text-emerald-700 mt-1">
-                          แท็บที่พบในชีต: {sheetStatus.sheets.join(', ')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-bold text-sm">โหมดข้อมูลภายใน (Local JSON Data Mode)</div>
-                      <div className="text-xs text-amber-700 mt-0.5">
-                        ระบบกำลังอ่านและบันทึกข้อมูลผ่านไฟล์ในเครื่องอย่างสมบูรณ์
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="pt-2">
-                  <button
-                    onClick={handleInitialSync}
-                    disabled={syncingSheet}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-50 transition shadow-md shadow-emerald-600/20 cursor-pointer"
-                  >
-                    <UploadCloud className="w-4 h-4" />
-                    <span>
-                      {syncingSheet
-                        ? 'กำลังส่งข้อมูลขึ้น Google Sheets...'
-                        : 'ส่งออกข้อมูลตั้งต้นขึ้นสู่ Google Sheets (Initial Sync)'}
-                    </span>
-                  </button>
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1.5">
-                  <div className="font-bold text-slate-800">📌 ข้อชี้แจงการทำงาน:</div>
-                  <p>• เมื่อมีการบันทึกการเช็คชื่อ หรือแก้ไขข้อมูลนิสิต ข้อมูลจะถูกเขียนลง Google Sheets ให้อัตโนมัติในทันที</p>
-                  <p>• เมื่อขึ้นปีใหม่ ไม่จำเป็นต้องกดปุ่ม Initial Sync ซ้ำ ข้อมูลปีก่อนหน้าจะถูกแยกเก็บตามปี พ.ศ. และปีการศึกษาอย่างปลอดภัย</p>
-                </div>
-              </div>
-            </div>
+            <AdminSheetsTab
+              sheetStatus={sheetStatus}
+              syncingSheet={syncingSheet}
+              onInitialSync={handleInitialSync}
+            />
           )}
 
           {/* ─────────────────────────────────────────────────────────
               TAB F: STUDENTS MANAGEMENT VIEW (ทะเบียนนิสิต)
              ───────────────────────────────────────────────────────── */}
           {activeTab === 'STUDENTS' && (
-            <div className="space-y-4">
-              {/* Header Card */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-orange-600" />
-                    ระบบทะเบียนนิสิต (Student Directory & Registry)
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    ข้อมูลทะเบียนนิสิตทั้งหมด {studentsCount.total} รูป/คน (ภาคภาษาไทย {studentsCount.thai} • ภาคภาษาอังกฤษ {studentsCount.intl})
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={openPromotionModal}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"
-                  >
-                    <GraduationCap className="w-4 h-4" />
-                    <span>🎓 เลื่อนชั้นปีการศึกษา (Bulk Promotion)</span>
-                  </button>
-                  <Link
-                    href="/students"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition cursor-pointer"
-                  >
-                    <span>เปิดหน้าจอจัดการทะเบียนนิสิตเต็มรูปแบบ</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Filters & Search Toolbar */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
-                <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
-                  <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="ค้นหาด้วยรหัสนิสิต, ชื่อ-สกุล, สัญชาติ หรือ Passport..."
-                      value={studentSearch}
-                      onChange={(e) => setStudentSearch(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                    />
-                  </div>
-
-                  {/* Program Filter Pills */}
-                  <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl text-xs font-bold w-full md:w-auto shrink-0">
-                    <button
-                      onClick={() => setStudentProgramFilter('ALL')}
-                      className={`px-3 py-1.5 rounded-lg transition ${
-                        studentProgramFilter === 'ALL' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-                      }`}
-                    >
-                      ทุกหลักสูตร
-                    </button>
-                    <button
-                      onClick={() => setStudentProgramFilter('THAI')}
-                      className={`px-3 py-1.5 rounded-lg transition ${
-                        studentProgramFilter === 'THAI' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700'
-                      }`}
-                    >
-                      🇹🇭 ภาคไทย
-                    </button>
-                    <button
-                      onClick={() => setStudentProgramFilter('ENGLISH')}
-                      className={`px-3 py-1.5 rounded-lg transition ${
-                        studentProgramFilter === 'ENGLISH' ? 'bg-purple-600 text-white shadow-sm' : 'text-purple-700'
-                      }`}
-                    >
-                      🌐 ภาคอังกฤษ (EN)
-                    </button>
-                  </div>
-                </div>
-
-                {/* Secondary Filters */}
-                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
-                  <select
-                    value={studentStatusFilter}
-                    onChange={(e) => setStudentStatusFilter(e.target.value)}
-                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium"
-                  >
-                    <option value="ALL">สถานภาพ: ทั้งหมด</option>
-                    <option value="กำลังศึกษา">กำลังศึกษา (ปกติ)</option>
-                    <option value="ย้ายเข้า">ย้ายเข้า</option>
-                    <option value="ย้ายออก">ย้ายออก</option>
-                    <option value="เทียบโอน">เทียบโอน</option>
-                    <option value="สำเร็จการศึกษา">สำเร็จการศึกษา</option>
-                  </select>
-
-                  <select
-                    value={studentYearFilter}
-                    onChange={(e) => setStudentYearFilter(e.target.value)}
-                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium"
-                  >
-                    <option value="ALL">ชั้นปี: ทั้งหมด</option>
-                    <option value="1">ชั้นปีที่ 1</option>
-                    <option value="2">ชั้นปีที่ 2</option>
-                    <option value="3">ชั้นปีที่ 3</option>
-                    <option value="4">ชั้นปีที่ 4</option>
-                  </select>
-
-                  <button
-                    type="button"
-                    onClick={() => setUnmaskPassport(!unmaskPassport)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition ml-auto cursor-pointer ${
-                      unmaskPassport
-                        ? 'bg-amber-50 border-amber-300 text-amber-900 shadow-sm'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    {unmaskPassport ? <Eye className="w-3.5 h-3.5 text-amber-600" /> : <EyeOff className="w-3.5 h-3.5 text-slate-400" />}
-                    <span>{unmaskPassport ? 'แสดง Passport เต็ม' : '🔒 ซ่อนเลข Passport (PDPA)'}</span>
-                  </button>
-
-                  <span className="text-slate-400 font-medium">
-                    แสดง {filteredStudents.length} รายการ
-                  </span>
-                </div>
-              </div>
-
-              {/* Bulk Deletion Action Banner */}
-              {adminSelectedStudentCodes.size > 0 && (
-                <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm animate-in fade-in">
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-xl bg-rose-600 text-white font-bold text-sm flex items-center justify-center shadow-sm">
-                      {adminSelectedStudentCodes.size}
-                    </span>
-                    <div>
-                      <div className="text-xs font-bold text-rose-900">
-                        เลือกนิสิต {adminSelectedStudentCodes.size} รูป/คน
-                      </div>
-                      <div className="text-[11px] text-rose-600">
-                        สามารถเลือกดำเนินการลบข้อมูลนิสิตตัวอย่างหรือข้อมูลที่ไม่ต้องการออกยกชุดได้ทันที
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setAdminSelectedStudentCodes(new Set())}
-                      className="text-xs text-rose-700 hover:text-rose-900 underline font-semibold ml-2 cursor-pointer"
-                    >
-                      ยกเลิกการเลือก
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={openDeleteBulkStudentsModal}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-600/20 flex items-center gap-2 transition cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>🗑️ ลบนิสิตที่เลือกยกชุด ({adminSelectedStudentCodes.size} คน)</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Students Data Table */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b">
-                      <tr>
-                        <th className="px-3.5 py-3.5 w-10 text-center">
-                          <input
-                            type="checkbox"
-                            checked={isAllAdminStudentsSelected}
-                            onChange={toggleSelectAllAdminStudents}
-                            className="rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
-                            title={isAllAdminStudentsSelected ? 'ยกเลิกการเลือกทั้งหมด' : 'เลือกทั้งหมดที่แสดง'}
-                          />
-                        </th>
-                        <th className="px-4 py-3.5">รหัสนิสิต</th>
-                        <th className="px-4 py-3.5">ชื่อ - นามสกุล</th>
-                        <th className="px-4 py-3.5">สัญชาติ / Passport</th>
-                        <th className="px-4 py-3.5">หลักสูตร / ชั้นปี</th>
-                        <th className="px-4 py-3.5 text-center">สถานภาพ</th>
-                        <th className="px-4 py-3.5 text-center">เกรด (GPA)</th>
-                        <th className="px-4 py-3.5 text-right">การจัดการ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
-                      {filteredStudents.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="text-center py-10 text-slate-400">
-                            ไม่พบข้อมูลนิสิตตามเงื่อนไขที่เลือก
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredStudents.slice(0, 100).map((s) => {
-                          const isEnglish = s.programType === 'ENGLISH' || (s.nationality !== 'ไทย' && s.nationality !== 'Thai' && Boolean(s.passportNo));
-                          const isSelected = adminSelectedStudentCodes.has(s.studentCode);
-
-                          return (
-                            <tr
-                              key={s.studentCode || s.id}
-                              className={`hover:bg-slate-50/80 transition-colors ${
-                                isSelected ? 'bg-rose-50/40' : ''
-                              }`}
-                            >
-                              <td className="px-3.5 py-3.5 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => toggleSelectAdminStudent(s.studentCode)}
-                                  className="rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
-                                />
-                              </td>
-                              <td className="px-4 py-3.5 font-mono font-bold text-orange-700">
-                                {s.studentCode}
-                              </td>
-                              <td className="px-4 py-3.5 font-medium text-slate-900">
-                                <div>{s.fullName || `${s.firstName || ''} ${s.lastName || ''}`}</div>
-                                <div className="text-[11px] text-slate-400">{s.email || '-'}</div>
-                              </td>
-                              <td className="px-4 py-3.5">
-                                <div className="text-slate-700 font-medium">
-                                  {s.nationality === 'ไทย' || s.nationality === 'Thai' ? '🇹🇭 ไทย' : `🌐 ${s.nationality || 'ต่างชาติ'}`}
-                                </div>
-                                {s.passportNo && (
-                                  <div className="font-mono text-[11px] text-purple-700">
-                                    Pass: {formatPassport(s.passportNo)}
-                                  </div>
-                                )}
-                              </td>
-                              <td className="px-4 py-3.5">
-                                <span
-                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                    isEnglish
-                                      ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  }`}
-                                >
-                                  {isEnglish ? '🌐 EN Program' : '🇹🇭 ภาคไทย'}
-                                </span>
-                                <span className="ml-1.5 text-slate-500 text-[11px]">
-                                  ปี {s.yearLevel || 1}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 text-center">
-                                <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                                    s.studyStatus === 'สำเร็จการศึกษา'
-                                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                                      : s.studyStatus === 'ย้ายออก'
-                                      ? 'bg-rose-100 text-rose-800 border-rose-200'
-                                      : s.studyStatus === 'ย้ายเข้า'
-                                      ? 'bg-sky-100 text-sky-800 border-sky-200'
-                                      : s.studyStatus === 'เทียบโอน'
-                                      ? 'bg-indigo-100 text-indigo-800 border-indigo-200'
-                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  }`}
-                                >
-                                  {s.studyStatus || 'ปกติ'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 text-center font-mono font-bold text-slate-700">
-                                {s.gpa ? Number(s.gpa).toFixed(2) : '-'}
-                              </td>
-                              <td className="px-4 py-3.5 text-right">
-                                <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                                  <Link
-                                    href={`/students?search=${s.studentCode}`}
-                                    className="px-2.5 py-1 rounded-lg text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 transition inline-flex items-center gap-1"
-                                  >
-                                    <span>แก้ไข</span>
-                                    <ExternalLink className="w-3 h-3" />
-                                  </Link>
-                                  <button
-                                    type="button"
-                                    onClick={() => openDeleteSingleStudentModal(s)}
-                                    className="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition inline-flex items-center gap-1 cursor-pointer"
-                                    title="ลบนิสิตท่านนี้ออกจากระบบ"
-                                  >
-                                    <Trash2 className="w-3 h-3 text-rose-600" />
-                                    <span>ลบ</span>
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                {filteredStudents.length > 100 && (
-                  <div className="p-3.5 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
-                    แสดง 100 รายการแรกจากทั้งหมด {filteredStudents.length} รายการ (ใช้ช่องค้นหาเพื่อค้นหานิสิตที่ต้องการ)
-                  </div>
-                )}
-              </div>
-            </div>
+            <AdminStudentsTab
+              studentsCount={studentsCount}
+              filteredStudents={filteredStudents}
+              studentSearch={studentSearch}
+              setStudentSearch={setStudentSearch}
+              studentProgramFilter={studentProgramFilter}
+              setStudentProgramFilter={setStudentProgramFilter}
+              studentStatusFilter={studentStatusFilter}
+              setStudentStatusFilter={setStudentStatusFilter}
+              studentYearFilter={studentYearFilter}
+              setStudentYearFilter={setStudentYearFilter}
+              unmaskPassport={unmaskPassport}
+              setUnmaskPassport={setUnmaskPassport}
+              adminSelectedStudentCodes={adminSelectedStudentCodes}
+              setAdminSelectedStudentCodes={setAdminSelectedStudentCodes}
+              isAllAdminStudentsSelected={isAllAdminStudentsSelected}
+              toggleSelectAllAdminStudents={toggleSelectAllAdminStudents}
+              toggleSelectAdminStudent={toggleSelectAdminStudent}
+              openPromotionModal={openPromotionModal}
+              openDeleteBulkStudentsModal={openDeleteBulkStudentsModal}
+              openDeleteSingleStudentModal={openDeleteSingleStudentModal}
+            />
           )}
 
           {/* ─────────────────────────────────────────────────────────
               TAB G: COURSES MANAGEMENT VIEW (หลักสูตร & รายวิชา)
              ───────────────────────────────────────────────────────── */}
           {activeTab === 'COURSES' && (
-            <div className="space-y-4">
-              {/* Header Card */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-emerald-600" />
-                    คลังหลักสูตรและรายวิชา (Curriculum & Courses Management)
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    รายวิชาทั้งหมด {coursesCount} วิชา (ภาคภาษาไทยและภาษาอังกฤษ, หน่วยกิต, ระดับปริญญา)
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/courses"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
-                  >
-                    <span>เปิดหน้าจอหลักสูตรเต็มรูปแบบ</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Filters & Search Toolbar */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
-                <div className="relative flex-1 w-full">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาด้วยรหัสวิชา, ชื่อวิชา (ไทย/อังกฤษ) หรืออาจารย์ผู้สอน..."
-                    value={courseSearch}
-                    onChange={(e) => setCourseSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
-
-                <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl font-bold w-full md:w-auto shrink-0">
-                  <button
-                    onClick={() => setCourseProgramFilter('ALL')}
-                    className={`px-3 py-1.5 rounded-lg transition ${
-                      courseProgramFilter === 'ALL' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-                    }`}
-                  >
-                    ทุกหลักสูตร
-                  </button>
-                  <button
-                    onClick={() => setCourseProgramFilter('THAI')}
-                    className={`px-3 py-1.5 rounded-lg transition ${
-                      courseProgramFilter === 'THAI' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700'
-                    }`}
-                  >
-                    🇹🇭 ภาคไทย
-                  </button>
-                  <button
-                    onClick={() => setCourseProgramFilter('ENGLISH')}
-                    className={`px-3 py-1.5 rounded-lg transition ${
-                      courseProgramFilter === 'ENGLISH' ? 'bg-purple-600 text-white shadow-sm' : 'text-purple-700'
-                    }`}
-                  >
-                    🌐 ภาคอังกฤษ (EN)
-                  </button>
-                </div>
-              </div>
-
-              {/* Courses Data Table */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b">
-                      <tr>
-                        <th className="px-5 py-3.5">รหัสวิชา</th>
-                        <th className="px-5 py-3.5">ชื่อรายวิชา</th>
-                        <th className="px-5 py-3.5">หลักสูตร</th>
-                        <th className="px-5 py-3.5 text-center">หน่วยกิต</th>
-                        <th className="px-5 py-3.5">อาจารย์ผู้สอน</th>
-                        <th className="px-5 py-3.5">ระดับหลักสูตร</th>
-                        <th className="px-5 py-3.5 text-right">การจัดการ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
-                      {filteredCourses.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="text-center py-10 text-slate-400">
-                            ไม่พบรายวิชาตามเงื่อนไขที่เลือก
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredCourses.slice(0, 50).map((c) => {
-                          const isEnglish = c.programType === 'ENGLISH';
-
-                          return (
-                            <tr key={c.id || c.courseCode} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="px-5 py-3.5 font-mono font-bold text-emerald-800">
-                                {c.courseCode}
-                              </td>
-                              <td className="px-5 py-3.5 font-medium text-slate-900">
-                                <div className="font-bold">{c.courseName}</div>
-                                {c.courseNameEn && (
-                                  <div className="text-[11px] text-slate-400 font-normal">{c.courseNameEn}</div>
-                                )}
-                              </td>
-                              <td className="px-5 py-3.5">
-                                <span
-                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                    isEnglish
-                                      ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  }`}
-                                >
-                                  {isEnglish ? '🌐 ภาคอังกฤษ' : '🇹🇭 ภาคไทย'}
-                                </span>
-                              </td>
-                              <td className="px-5 py-3.5 text-center font-mono font-bold text-slate-800">
-                                {c.credits || 3}
-                              </td>
-                              <td className="px-5 py-3.5 text-slate-700">
-                                {c.primaryTeacherName || c.instructor || '-'}
-                              </td>
-                              <td className="px-5 py-3.5 text-slate-600">
-                                <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px]">
-                                  {c.degreeLevel || 'ปริญญาตรี'}
-                                </span>
-                              </td>
-                              <td className="px-5 py-3.5 text-right">
-                                <Link
-                                  href={`/courses?search=${c.courseCode}`}
-                                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition inline-flex items-center gap-1"
-                                >
-                                  <span>จัดการ</span>
-                                  <ExternalLink className="w-3 h-3" />
-                                </Link>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            <AdminCoursesTab
+              coursesCount={coursesCount}
+              filteredCourses={filteredCourses}
+              courseSearch={courseSearch}
+              setCourseSearch={setCourseSearch}
+              courseProgramFilter={courseProgramFilter}
+              setCourseProgramFilter={setCourseProgramFilter}
+            />
           )}
 
           {/* ─────────────────────────────────────────────────────────
               TAB H: TIMETABLES MANAGEMENT VIEW (ตารางเรียน & ตารางสอน)
              ───────────────────────────────────────────────────────── */}
           {activeTab === 'TIMETABLES' && (
-            <div className="space-y-4">
-              {/* Header Card */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-indigo-600" />
-                    ตารางเรียนและตารางสอน (Class Schedules & Timetables)
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    รายการคาบสอนทั้งหมด {timetablesList.length} คาบ พร้อมข้อมูลห้องเรียนและอาจารย์ผู้สอน
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleScanTimetables}
-                    disabled={isScanningInstructors}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
-                    title="สแกนตารางสอนและตรวจสอบไอดีอาจารย์ผู้สอน"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isScanningInstructors ? 'animate-spin' : ''}`} />
-                    <span>🔄 ซิงค์และสร้างไอดีอาจารย์จากตารางสอน</span>
-                  </button>
-
-                  <Link
-                    href="/courses"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"
-                  >
-                    <span>ดูตารางสอนรายสัปดาห์</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Filters Toolbar */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-wrap items-center gap-2 text-xs">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาด้วยรหัสวิชา, ชื่อวิชา, ห้องเรียน หรือผู้สอน..."
-                    value={timetableSearch}
-                    onChange={(e) => setTimetableSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                  />
-                </div>
-
-                <select
-                  value={timetableYearFilter}
-                  onChange={(e) => setTimetableYearFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium"
-                >
-                  <option value="ALL">ปีการศึกษา: ทั้งหมด</option>
-                  <option value="2569">ปีการศึกษา 2569</option>
-                  <option value="2570">ปีการศึกษา 2570</option>
-                </select>
-
-                <select
-                  value={timetableSemesterFilter}
-                  onChange={(e) => setTimetableSemesterFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium"
-                >
-                  <option value="ALL">ภาคเรียน: ทั้งหมด</option>
-                  <option value="1">ภาคเรียนที่ 1</option>
-                  <option value="2">ภาคเรียนที่ 2</option>
-                </select>
-
-                <select
-                  value={timetableDayFilter}
-                  onChange={(e) => setTimetableDayFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium"
-                >
-                  <option value="ALL">วัน: ทุกวัน</option>
-                  <option value="1">วันจันทร์</option>
-                  <option value="2">วันอังคาร</option>
-                  <option value="3">วันพุธ</option>
-                  <option value="4">วันพฤหัสบดี</option>
-                  <option value="5">วันศุกร์</option>
-                  <option value="6">วันเสาร์</option>
-                  <option value="0">วันอาทิตย์</option>
-                </select>
-
-                <span className="text-slate-400 font-medium ml-auto">
-                  พบ {filteredTimetables.length} รายการ
-                </span>
-              </div>
-
-              {/* Timetables Data Table */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b">
-                      <tr>
-                        <th className="px-5 py-3.5">วันในสัปดาห์</th>
-                        <th className="px-5 py-3.5">เวลาเรียน</th>
-                        <th className="px-5 py-3.5">รหัสวิชา</th>
-                        <th className="px-5 py-3.5">ชื่อรายวิชา</th>
-                        <th className="px-5 py-3.5">ชั้นปี / ภาคเรียน</th>
-                        <th className="px-5 py-3.5">ห้องเรียน</th>
-                        <th className="px-5 py-3.5">อาจารย์ผู้สอน</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
-                      {filteredTimetables.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="text-center py-10 text-slate-400">
-                            ไม่พบตารางสอนตามเงื่อนไขที่เลือก
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredTimetables.slice(0, 50).map((t, idx) => {
-                          const dayColor = DAY_COLORS[t.dayOfWeek] || 'bg-slate-50 text-slate-700 border-slate-200';
-                          const dayLabel = DAY_NAMES[t.dayOfWeek] || `วัน ${t.dayOfWeek}`;
-
-                          return (
-                            <tr key={`${t.courseCode}-${t.dayOfWeek}-${idx}`} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="px-5 py-3.5">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${dayColor}`}>
-                                  {dayLabel}
-                                </span>
-                              </td>
-                              <td className="px-5 py-3.5 font-mono font-medium text-slate-800">
-                                {t.startTime} - {t.endTime}
-                              </td>
-                              <td className="px-5 py-3.5 font-mono font-bold text-indigo-700">
-                                {t.courseCode}
-                              </td>
-                              <td className="px-5 py-3.5 font-medium text-slate-900">
-                                {t.courseName}
-                              </td>
-                              <td className="px-5 py-3.5 text-slate-600">
-                                ปี {t.yearLevel} (เทอม {t.semester}/{t.academicYear})
-                              </td>
-                              <td className="px-5 py-3.5">
-                                <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                                  {t.room || 'อาคารเรียน'}
-                                </span>
-                              </td>
-                              <td className="px-5 py-3.5 text-slate-700 font-medium">
-                                {t.instructor || '-'}
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            <AdminTimetablesTab
+              timetablesList={timetablesList}
+              filteredTimetables={filteredTimetables}
+              timetableSearch={timetableSearch}
+              setTimetableSearch={setTimetableSearch}
+              timetableYearFilter={timetableYearFilter}
+              setTimetableYearFilter={setTimetableYearFilter}
+              timetableSemesterFilter={timetableSemesterFilter}
+              setTimetableSemesterFilter={setTimetableSemesterFilter}
+              timetableDayFilter={timetableDayFilter}
+              setTimetableDayFilter={setTimetableDayFilter}
+              handleScanTimetables={handleScanTimetables}
+              isScanningInstructors={isScanningInstructors}
+            />
           )}
 
           {/* ─────────────────────────────────────────────────────────
               TAB I: ATTENDANCE MANAGEMENT VIEW (บันทึกตรวจเวลาเรียน)
              ───────────────────────────────────────────────────────── */}
           {activeTab === 'ATTENDANCE' && (
-            <div className="space-y-4">
-              {/* Header Card */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <CheckSquare className="w-5 h-5 text-teal-600" />
-                    บันทึกตรวจเวลาเรียน (Attendance Records & Logs)
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    ประวัติการเช็คชื่อเข้าชั้นเรียนของนิสิตทั้งหมด {attendanceList.length} รายการ
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/attendance"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-600/20 transition cursor-pointer"
-                  >
-                    <span>เปิดหน้าระบบเช็คชื่ออาจารย์</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Filters Toolbar */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                <div className="relative flex-1 w-full">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาด้วยรหัสวิชา, รหัสนิสิต, ชื่อ หรือผู้บันทึก..."
-                    value={attendanceSearch}
-                    onChange={(e) => setAttendanceSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                  />
-                </div>
-
-                <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl font-bold w-full sm:w-auto shrink-0">
-                  <button
-                    onClick={() => setAttendanceStatusFilter('ALL')}
-                    className={`px-3 py-1.5 rounded-lg transition ${
-                      attendanceStatusFilter === 'ALL' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-                    }`}
-                  >
-                    ทั้งหมด
-                  </button>
-                  <button
-                    onClick={() => setAttendanceStatusFilter('PRESENT')}
-                    className={`px-3 py-1.5 rounded-lg transition ${
-                      attendanceStatusFilter === 'PRESENT' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700'
-                    }`}
-                  >
-                    🟢 มาเรียน
-                  </button>
-                  <button
-                    onClick={() => setAttendanceStatusFilter('LATE')}
-                    className={`px-3 py-1.5 rounded-lg transition ${
-                      attendanceStatusFilter === 'LATE' ? 'bg-amber-600 text-white shadow-sm' : 'text-amber-700'
-                    }`}
-                  >
-                    🟡 มาสาย
-                  </button>
-                  <button
-                    onClick={() => setAttendanceStatusFilter('ABSENT')}
-                    className={`px-3 py-1.5 rounded-lg transition ${
-                      attendanceStatusFilter === 'ABSENT' ? 'bg-rose-600 text-white shadow-sm' : 'text-rose-700'
-                    }`}
-                  >
-                    🔴 ขาด
-                  </button>
-                  <button
-                    onClick={() => setAttendanceStatusFilter('LEAVE')}
-                    className={`px-3 py-1.5 rounded-lg transition ${
-                      attendanceStatusFilter === 'LEAVE' ? 'bg-blue-600 text-white shadow-sm' : 'text-blue-700'
-                    }`}
-                  >
-                    🔵 ลา
-                  </button>
-                </div>
-              </div>
-
-              {/* Attendance Data Table */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b">
-                      <tr>
-                        <th className="px-5 py-3.5">วันที่ / เวลา</th>
-                        <th className="px-5 py-3.5">รหัสวิชา</th>
-                        <th className="px-5 py-3.5">รหัสนิสิต</th>
-                        <th className="px-5 py-3.5">ชื่อนิสิต</th>
-                        <th className="px-5 py-3.5 text-center">สถานะ</th>
-                        <th className="px-5 py-3.5">ผู้บันทึกข้อมูล</th>
-                        <th className="px-5 py-3.5">หมายเหตุ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
-                      {filteredAttendance.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="text-center py-10 text-slate-400">
-                            ไม่พบประวัติการเช็คชื่อตามเงื่อนไขที่เลือก
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredAttendance.map((a) => (
-                          <tr key={a.id} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">
-                              {a.date ? new Date(a.date).toLocaleDateString('th-TH') : '-'}
-                            </td>
-                            <td className="px-5 py-3.5 font-mono font-bold text-teal-800">
-                              {a.courseCode || '-'}
-                            </td>
-                            <td className="px-5 py-3.5 font-mono text-slate-700">
-                              {a.studentCode}
-                            </td>
-                            <td className="px-5 py-3.5 font-medium text-slate-900">
-                              {a.studentName}
-                            </td>
-                            <td className="px-5 py-3.5 text-center">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                                  a.status === 'PRESENT'
-                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                                    : a.status === 'LATE'
-                                    ? 'bg-amber-100 text-amber-800 border-amber-200'
-                                    : a.status === 'ABSENT'
-                                    ? 'bg-rose-100 text-rose-800 border-rose-200'
-                                    : 'bg-blue-100 text-blue-800 border-blue-200'
-                                }`}
-                              >
-                                {a.status === 'PRESENT'
-                                  ? 'เข้าเรียน'
-                                  : a.status === 'LATE'
-                                  ? 'มาสาย'
-                                  : a.status === 'ABSENT'
-                                  ? 'ขาดเรียน'
-                                  : 'ลา'}
-                              </span>
-                            </td>
-                            <td className="px-5 py-3.5 text-slate-600">
-                              {a.recordedBy || 'อาจารย์ผู้สอน'}
-                            </td>
-                            <td className="px-5 py-3.5 text-slate-400 text-[11px]">
-                              {a.note || '-'}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            <AdminAttendanceTab
+              attendanceList={attendanceList}
+              filteredAttendance={filteredAttendance}
+              attendanceSearch={attendanceSearch}
+              setAttendanceSearch={setAttendanceSearch}
+              attendanceStatusFilter={attendanceStatusFilter}
+              setAttendanceStatusFilter={setAttendanceStatusFilter}
+            />
           )}
         </main>
       </div>
@@ -4776,117 +4052,14 @@ ${coursesText}
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          MODAL 2: EDIT USER & REAL EMAIL MODAL
-         ───────────────────────────────────────────────────────────── */}
-      {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <Edit className="w-4 h-4 text-sky-600" />
-                <span>แก้ไขข้อมูลผู้ใช้งาน & อีเมลจริง</span>
-              </h3>
-              <button
-                onClick={() => setEditingUser(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditUser} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">ชื่อ - นามสกุล / สมณศักดิ์:</label>
-                <input
-                  type="text"
-                  required
-                  value={editUserForm.name}
-                  onChange={(e) => setEditUserForm({ ...editUserForm, name: e.target.value })}
-                  placeholder="เช่น พระมหาดวงเด่น หรือ ดร.สมชาย"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  อีเมลทางการ (@mcu.ac.th):
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={editUserForm.email}
-                  onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
-                  placeholder="name@mcu.ac.th"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1 flex items-center justify-between">
-                  <span>อีเมล Gmail จริงของอาจารย์:</span>
-                  <span className="text-[10px] text-amber-600 font-normal">สำหรับเข้าสู่ระบบด้วย Google</span>
-                </label>
-                <input
-                  type="email"
-                  value={editUserForm.gmail}
-                  onChange={(e) => setEditUserForm({ ...editUserForm, gmail: e.target.value })}
-                  placeholder="teacher.real@gmail.com"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono"
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  * เมื่อบันทึกแล้ว อาจารย์สามารถใช้ Gmail จริงนี้เข้าสู่ระบบผ่านปุ่ม Google ได้ทันที
-                </span>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">หน่วยงาน / ภาควิชา:</label>
-                <input
-                  type="text"
-                  value={editUserForm.department}
-                  onChange={(e) => setEditUserForm({ ...editUserForm, department: e.target.value })}
-                  placeholder="เช่น คณะพุทธศาสตร์ ภาควิชาพระพุทธศาสนา"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">บทบาทและสิทธิ์การใช้งาน (Role):</label>
-                <select
-                  value={editUserForm.role}
-                  disabled={editingUser.email === 'phaisal.dis@mcu.ac.th' || editingUser.isSuperAdmin}
-                  onChange={(e) => setEditUserForm({ ...editUserForm, role: e.target.value as any })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold disabled:bg-slate-100 disabled:text-slate-400"
-                >
-                  <option value="INSTRUCTOR">อาจารย์ผู้สอน (INSTRUCTOR)</option>
-                  <option value="OFFICER">เจ้าหน้าที่บริการการศึกษา (OFFICER)</option>
-                  <option value="ADMIN">ผู้ดูแลระบบ (ADMIN)</option>
-                  {(editingUser.email === 'phaisal.dis@mcu.ac.th' || editingUser.isSuperAdmin) && (
-                    <option value="SUPER_ADMIN">👑 ผู้ดูแลระบบสูงสุด (SUPER_ADMIN)</option>
-                  )}
-                </select>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t">
-                <button
-                  type="button"
-                  onClick={() => setEditingUser(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold cursor-pointer"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={editUserSaving}
-                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold cursor-pointer"
-                >
-                  {editUserSaving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <EditUserModal
+        editingUser={editingUser}
+        editUserForm={editUserForm}
+        setEditUserForm={setEditUserForm as any}
+        editUserSaving={editUserSaving}
+        onClose={() => setEditingUser(null)}
+        onSubmit={handleSaveEditUser}
+      />
 
       {/* ─────────────────────────────────────────────────────────────
           MODAL 2: PRINT & PREVIEW CERTIFICATE
@@ -6790,203 +5963,15 @@ ${coursesText}
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          MODAL: TEACHING ASSIGNMENT & CREDENTIAL SLIP (บัตรแจ้งภาระงานสอน & รหัสผ่าน)
-         ───────────────────────────────────────────────────────────── */}
-      {teachingSlipUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm print:p-0 print:bg-white print:static">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto space-y-6 print:max-h-none print:shadow-none print:border-none print:p-0">
-            {/* Top Toolbar (Hidden on Print) */}
-            <div className="flex items-center justify-between border-b pb-3 print:hidden">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-base">
-                    บัตรแจ้งภาระงานสอนและรหัสผ่านเข้าสู่ระบบ (Official Teaching Slip)
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    สำหรับส่งมอบให้อาจารย์ผู้สอนประจำรายวิชา ภาคการศึกษาที่ 1 ปีการศึกษา 2569
-                  </p>
-                </div>
-              </div>
+      <TeachingSlipModal
+        user={teachingSlipUser}
+        teachingSlipQr={teachingSlipQr}
+        getCoursesForInstructor={getCoursesForInstructor}
+        onCopyLineMessage={handleCopyLineTeachingMessage}
+        onClose={() => setTeachingSlipUser(null)}
+      />
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleCopyLineTeachingMessage(teachingSlipUser)}
-                  className="px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Copy className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>คัดลอกส่ง LINE</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>พิมพ์บัตร (Print/PDF)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTeachingSlipUser(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer ml-1"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {/* Printable Document Body */}
-            <div className="space-y-6 border border-slate-200 rounded-2xl p-6 sm:p-8 bg-slate-50/30 print:border-none print:p-0">
-              {/* Document Header */}
-              <div className="text-center space-y-1 border-b border-slate-200 pb-4">
-                <div className="w-14 h-14 mx-auto rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-700 font-bold text-xl shadow-inner mb-2">
-                  ☸️
-                </div>
-                <h4 className="font-extrabold text-slate-900 text-base sm:text-lg">
-                  คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
-                </h4>
-                <p className="text-xs text-slate-600 font-semibold">
-                  หนังสือแจ้งภาระงานสอนและข้อมูลบัญชีเข้าสู่ระบบตรวจเข้าเรียน ประจำปีการศึกษา 2569
-                </p>
-              </div>
-
-              {/* Instructor Information Card */}
-              <div className="p-4 bg-white rounded-xl border border-slate-200 text-xs space-y-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-slate-400 font-medium">อาจารย์ผู้สอน:</span>{' '}
-                    <strong className="text-slate-900 text-sm">{teachingSlipUser.name}</strong>
-                    {teachingSlipUser.nameEn && (
-                      <div className="text-[11px] text-slate-500">{teachingSlipUser.nameEn}</div>
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium">สังกัดภาควิชา:</span>{' '}
-                    <strong className="text-slate-800">{teachingSlipUser.department || 'คณะพุทธศาสตร์ มจร.'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium">อีเมลมหาวิทยาลัย (@mcu.ac.th):</span>{' '}
-                    <span className="font-mono font-bold text-indigo-700">{teachingSlipUser.email}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium">Gmail สำรอง:</span>{' '}
-                    <span className="font-mono text-slate-600">{teachingSlipUser.gmail || '-'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Teaching Assignments Table */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-800">
-                  <span className="flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4 text-emerald-600" />
-                    <span>รายวิชาที่รับผิดชอบบรรยายในภาคเรียนนี้:</span>
-                  </span>
-                  <span className="text-slate-500 font-normal">
-                    (ทั้งภาคภาษาไทยและหลักสูตรนานาชาติ)
-                  </span>
-                </div>
-
-                <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                  <table className="w-full text-left text-xs text-slate-600">
-                    <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 border-b border-slate-200">
-                      <tr>
-                        <th className="px-3 py-2 w-10 text-center">ลำดับ</th>
-                        <th className="px-3 py-2 w-24">รหัสวิชา</th>
-                        <th className="px-3 py-2">ชื่อรายวิชา</th>
-                        <th className="px-3 py-2 text-center w-16">ชั้นปี</th>
-                        <th className="px-3 py-2 text-center w-28">วัน-เวลาเรียน</th>
-                        <th className="px-3 py-2 text-center w-24">ห้องเรียน</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {(() => {
-                        const courses = getCoursesForInstructor(teachingSlipUser);
-                        if (courses.length === 0) {
-                          return (
-                            <tr>
-                              <td colSpan={6} className="text-center py-6 text-slate-400">
-                                ไม่พบรายวิชาที่ระบุชื่อผู้สอนในตารางสอนภาคเรียนนี้
-                              </td>
-                            </tr>
-                          );
-                        }
-                        return courses.map((c: any, i: number) => {
-                          const isEn = /inter|eng|english|นานาชาติ/i.test(c.timetableTitle || '') || /^[A-Za-z0-9\s:,-]+$/.test(c.courseName);
-                          return (
-                            <tr key={i} className="hover:bg-slate-50">
-                              <td className="px-3 py-2 text-center font-mono text-slate-400">{i + 1}</td>
-                              <td className="px-3 py-2 font-mono font-bold text-indigo-700">{c.courseCode}</td>
-                              <td className="px-3 py-2 font-medium text-slate-900">
-                                <div>{c.courseName}</div>
-                                <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${isEn ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                  {isEn ? '🌐 International (EN)' : '🇹🇭 ภาคไทย'}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 text-center font-semibold">ปี {c.yearLevel || 1}</td>
-                              <td className="px-3 py-2 text-center font-mono text-[11px]">{c.startTime || '-'}-{c.endTime || '-'} น.</td>
-                              <td className="px-3 py-2 text-center font-bold text-slate-700">{c.room || '-'}</td>
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Login Credentials & QR Access Box */}
-              <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-                <div className="space-y-1.5 flex-1">
-                  <div className="font-extrabold text-emerald-950 text-sm flex items-center gap-1.5">
-                    <Key className="w-4 h-4 text-emerald-600" />
-                    <span>ข้อมูลเข้าสู่ระบบตรวจเช็คชื่อนิสิต (Attendance System)</span>
-                  </div>
-                  <div className="space-y-1 text-slate-700">
-                    <div>
-                      • ลิงก์เข้าใช้งาน: <strong className="font-mono text-purple-700">http://localhost:3020/attendance</strong>
-                    </div>
-                    <div>
-                      • ชื่อผู้ใช้ (Username): <strong className="font-mono text-slate-900">{teachingSlipUser.email}</strong>
-                    </div>
-                    <div>
-                      • รหัสผ่านเริ่มต้น (Default Password): <strong className="font-mono text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300">{teachingSlipUser.defaultPassword || 'mcu123456'}</strong>
-                    </div>
-                    <div className="text-[11px] text-slate-500 pt-1">
-                      * อาจารย์สามารถกดปุ่ม <strong>"เข้าสู่ระบบด้วย Google / บัญชี มจร."</strong> ได้โดยตรงโดยไม่ต้องกรอกรหัสผ่าน
-                    </div>
-                  </div>
-                </div>
-
-                {teachingSlipQr && (
-                  <div className="text-center shrink-0 p-2 bg-white rounded-xl border border-emerald-200 shadow-sm">
-                    <img src={teachingSlipQr} alt="QR Code เข้าระบบ" className="w-24 h-24 mx-auto" />
-                    <div className="text-[10px] font-bold text-slate-600 mt-1">สแกนเข้าสู่ระบบ</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Sign-off box for print */}
-              <div className="grid grid-cols-2 gap-8 pt-6 mt-6 text-xs text-slate-800 text-center border-t border-slate-200">
-                <div className="space-y-8">
-                  <div>ลงชื่อ..................................................................</div>
-                  <div>( {teachingSlipUser.name} )<br /><span className="text-slate-500">อาจารย์ผู้รับทราบภาระงานสอน</span></div>
-                </div>
-                <div className="space-y-8">
-                  <div>ลงชื่อ..................................................................</div>
-                  <div>( พระครูสุธีกิตติบัณฑิต, รศ.ดร. )<br /><span className="text-slate-500">คณบดีคณะพุทธศาสตร์</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
+            {/* ─────────────────────────────────────────────────────────────
           MODAL 4: BULK ACADEMIC YEAR PROMOTION (เลื่อนชั้นปียกชุด)
          ───────────────────────────────────────────────────────────── */}
       {isPromotionModalOpen && (
@@ -7526,6 +6511,29 @@ ${coursesText}
           </div>
         </div>
       )}
+      {/* Modals from components */}
+      <StudentDeleteModal
+        isOpen={studentDeleteModal.isOpen}
+        isBulk={studentDeleteModal.isBulk}
+        targets={studentDeleteModal.targets}
+        isDeleting={isDeletingStudents}
+        onClose={() => setStudentDeleteModal({ isOpen: false, targets: [], isBulk: false })}
+        onConfirm={handleConfirmDeleteStudents}
+      />
+
+      <AutoProvisionModal
+        isOpen={provisionModal.isOpen}
+        totalTimetableInstructors={provisionModal.totalTimetableInstructors}
+        existingCount={provisionModal.existingCount}
+        newCount={provisionModal.newCount}
+        alreadyExisting={provisionModal.alreadyExisting}
+        candidates={provisionModal.candidates}
+        isSubmitting={isSubmittingProvision}
+        onToggleCandidateSelect={handleToggleCandidateSelect}
+        onUpdateCandidateField={handleUpdateCandidateField}
+        onClose={() => setProvisionModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirmBatchProvision}
+      />
     </div>
   );
 }
