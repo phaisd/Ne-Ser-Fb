@@ -2550,5 +2550,33 @@
       "inst-1793602720817"
     ],
     "isSuperAdmin": false
+  },
+  {
+    "id": "inst-1793778738201",
+    "name": "อาจารย์ (admin)",
+    "email": "admin@mcu.ac.th",
+    "gmail": "admin@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "คณะพุทธศาสตร์ มจร",
+    "role": "INSTRUCTOR",
+    "coursesCount": 0,
+    "isActive": true,
+    "isSuspended": false,
+    "createdAt": "2026-11-04T07:52:18.201Z"
+  },
+  {
+    "id": "inst-1793779268060",
+    "name": "อาจารย์ (yongyut)",
+    "email": "yongyut@mcu.ac.th",
+    "gmail": "yongyut@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "คณะพุทธศาสตร์ มจร",
+    "role": "INSTRUCTOR",
+    "coursesCount": 0,
+    "isActive": true,
+    "isSuspended": false,
+    "createdAt": "2026-11-04T08:01:08.060Z"
   }
 ]
