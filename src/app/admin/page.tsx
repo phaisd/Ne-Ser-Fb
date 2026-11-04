@@ -229,6 +229,7 @@ export default function AdminConsolePage() {
   const [photoBoxOffsetX, setPhotoBoxOffsetX] = useState<number>(0);
   const [dotsCount, setDotsCount] = useState<number>(22);
   const [docFontFamily, setDocFontFamily] = useState<string>('Sarabun, "TH Sarabun New", "TH Sarabun PSK", sans-serif');
+  const [studentSignAlign, setStudentSignAlign] = useState<'left' | 'center' | 'right'>('center');
   const [studentSignOffsetX, setStudentSignOffsetX] = useState<number>(0);
   const [showPhotoBox, setShowPhotoBox] = useState<boolean>(true);
   const [showStudentSign, setShowStudentSign] = useState<boolean>(true);
@@ -4181,21 +4182,33 @@ export default function AdminConsolePage() {
 
                 {/* Student Signature (Name) Shift */}
                 {showStudentSign && (
-                  <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
+                  <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm text-xs">
                     <span className="font-semibold text-slate-600">ตำแหน่ง (ชื่อ):</span>
                     <button
                       type="button"
-                      onClick={() => setStudentSignOffsetX((x) => x - 10)}
-                      className="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs cursor-pointer"
-                      title="ขยับ (ชื่อนิสิต) ไปทางซ้าย"
+                      onClick={() => {
+                        setStudentSignAlign('left');
+                        setStudentSignOffsetX(0);
+                      }}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
+                        studentSignAlign === 'left' && studentSignOffsetX === 0
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                      title="จัดชิดซ้ายของจุดไข่ปลา"
                     >
                       ◀ ซ้าย
                     </button>
                     <button
                       type="button"
-                      onClick={() => setStudentSignOffsetX(0)}
-                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
-                        studentSignOffsetX === 0 ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      onClick={() => {
+                        setStudentSignAlign('center');
+                        setStudentSignOffsetX(0);
+                      }}
+                      className={`px-2.5 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
+                        studentSignAlign === 'center' && studentSignOffsetX === 0
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                       }`}
                       title="จัดกึ่งกลางของจุดไข่ปลา"
                     >
@@ -4203,12 +4216,41 @@ export default function AdminConsolePage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setStudentSignOffsetX((x) => x + 10)}
-                      className="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs cursor-pointer"
-                      title="ขยับ (ชื่อนิสิต) ไปทางขวา"
+                      onClick={() => {
+                        setStudentSignAlign('right');
+                        setStudentSignOffsetX(0);
+                      }}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
+                        studentSignAlign === 'right' && studentSignOffsetX === 0
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                      title="จัดชิดขวาของจุดไข่ปลา"
                     >
                       ขวา ▶
                     </button>
+                    {/* Fine-tuning offset nudge */}
+                    <div className="flex items-center gap-0.5 ml-1 pl-1.5 border-l border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setStudentSignOffsetX((x) => x - 5)}
+                        className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs flex items-center justify-center cursor-pointer"
+                        title="ขยับละเอียดไปทางซ้าย (-5px)"
+                      >
+                        -
+                      </button>
+                      <span className="font-mono text-[10px] text-slate-500 w-8 text-center" title="ระยะขยับละเอียด (px)">
+                        {studentSignOffsetX > 0 ? `+${studentSignOffsetX}` : studentSignOffsetX}px
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setStudentSignOffsetX((x) => x + 5)}
+                        className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs flex items-center justify-center cursor-pointer"
+                        title="ขยับละเอียดไปทางขวา (+5px)"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -4458,7 +4500,7 @@ export default function AdminConsolePage() {
                           </div>
                         )}
                         {showStudentSign && (
-                          <div className="pt-1">
+                          <div className="pt-1 inline-flex flex-col">
                             <div className="flex items-baseline gap-1 text-slate-800" style={{ fontSize: `${Math.max(11, docFontSize - 2)}pt` }}>
                               <span className="shrink-0 font-medium">Signature</span>
                               <span
@@ -4471,17 +4513,29 @@ export default function AdminConsolePage() {
                               </span>
                             </div>
                             <div
+                              className="w-full flex"
                               style={{
-                                transform: `translateX(${studentSignOffsetX}px)`,
-                                fontSize: `${studentSignFontSize}pt`,
-                                whiteSpace: 'nowrap',
+                                justifyContent:
+                                  studentSignAlign === 'left'
+                                    ? 'flex-start'
+                                    : studentSignAlign === 'right'
+                                    ? 'flex-end'
+                                    : 'center',
                               }}
-                              className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50 whitespace-nowrap cursor-text"
-                              contentEditable
-                              suppressContentEditableWarning
-                              title="คลิกเพื่อแก้ไขชื่อ-นามสกุลได้โดยตรง"
                             >
-                              ({previewRequest.fullName})
+                              <div
+                                style={{
+                                  transform: `translateX(${studentSignOffsetX}px)`,
+                                  fontSize: `${studentSignFontSize}pt`,
+                                  whiteSpace: 'nowrap',
+                                }}
+                                className="mt-1 font-bold text-slate-900 transition-all outline-none focus:bg-purple-50 whitespace-nowrap cursor-text"
+                                contentEditable
+                                suppressContentEditableWarning
+                                title="คลิกเพื่อแก้ไขชื่อ-นามสกุลได้โดยตรง"
+                              >
+                                ({previewRequest.fullName})
+                              </div>
                             </div>
                           </div>
                         )}
@@ -4683,7 +4737,7 @@ export default function AdminConsolePage() {
                           </div>
                         )}
                         {showStudentSign && (
-                          <div className="pt-1">
+                          <div className="pt-1 inline-flex flex-col">
                             <div className="flex items-baseline gap-1 text-slate-800" style={{ fontSize: `${Math.max(11, docFontSize - 2)}pt` }}>
                               <span className="shrink-0 font-medium">ลงชื่อ</span>
                               <span
@@ -4695,19 +4749,31 @@ export default function AdminConsolePage() {
                                 {'.'.repeat(dotsCount)}
                               </span>
                             </div>
-                            {/* (ชื่อ-นามสกุล): อยู่ในบรรทัดเดียวเสมอ (whitespace-nowrap) ไม่ตัดบรรทัด ปรับขนาดได้ และขยับซ้าย/ขวาได้ */}
+                            {/* (ชื่อ-นามสกุล): จัดกึ่งกลาง ชิดซ้าย หรือชิดขวาได้อัตโนมัติ พร้อมปุ่มขยับละเอียด */}
                             <div
+                              className="w-full flex"
                               style={{
-                                transform: `translateX(${studentSignOffsetX}px)`,
-                                fontSize: `${studentSignFontSize}pt`,
-                                whiteSpace: 'nowrap',
+                                justifyContent:
+                                  studentSignAlign === 'left'
+                                    ? 'flex-start'
+                                    : studentSignAlign === 'right'
+                                    ? 'flex-end'
+                                    : 'center',
                               }}
-                              className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50 whitespace-nowrap cursor-text"
-                              contentEditable
-                              suppressContentEditableWarning
-                              title="คลิกเพื่อแก้ไขชื่อ-นามสกุลได้โดยตรง"
                             >
-                              ({previewRequest.fullName})
+                              <div
+                                style={{
+                                  transform: `translateX(${studentSignOffsetX}px)`,
+                                  fontSize: `${studentSignFontSize}pt`,
+                                  whiteSpace: 'nowrap',
+                                }}
+                                className="mt-1 font-bold text-slate-900 transition-all outline-none focus:bg-purple-50 whitespace-nowrap cursor-text"
+                                contentEditable
+                                suppressContentEditableWarning
+                                title="คลิกเพื่อแก้ไขชื่อ-นามสกุลได้โดยตรง"
+                              >
+                                ({previewRequest.fullName})
+                              </div>
                             </div>
                           </div>
                         )}
