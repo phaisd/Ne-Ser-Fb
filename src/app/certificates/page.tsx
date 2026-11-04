@@ -181,6 +181,8 @@ export default function CertificatesPage() {
   const [docSignerOffset, setDocSignerOffset] = useState<number>(20);
   const [photoBoxOffsetX, setPhotoBoxOffsetX] = useState<number>(0);
   const [dotsCount, setDotsCount] = useState<number>(22);
+  const [headerTitleSpacing, setHeaderTitleSpacing] = useState<number>(24);
+  const [headerTopSpacing, setHeaderTopSpacing] = useState<number>(0);
   const [docFontFamily, setDocFontFamily] = useState<string>('Sarabun, "TH Sarabun New", "TH Sarabun PSK", sans-serif');
   const [studentSignAlign, setStudentSignAlign] = useState<'left' | 'center' | 'right'>('center');
   const [studentSignOffsetX, setStudentSignOffsetX] = useState<number>(0);
@@ -1496,6 +1498,98 @@ export default function CertificatesPage() {
                   </button>
                 </div>
 
+                {/* Header & Title Spacing (เว้นช่องใส่ตรา 1-2 นิ้ว หรือแบบฟอร์มกระดาษราชการ) */}
+                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-sky-200 shadow-sm text-xs" title="ปรับระยะห่างความสูงระหว่าง ที่ อว กับ หนังสือรับรอง เพื่อเว้นช่องใส่ตรา 1-2 นิ้ว หรือแบบฟอร์มสำเร็จรูปของหน่วยงาน">
+                  <span className="font-semibold text-sky-800">เว้นช่องตรา (ที่ อว ↔ ชื่อเรื่อง):</span>
+                  <button
+                    type="button"
+                    onClick={() => setHeaderTitleSpacing((s) => Math.max(0, s - 10))}
+                    className="w-5 h-5 rounded bg-sky-50 hover:bg-sky-100 font-bold text-sky-800 flex items-center justify-center cursor-pointer"
+                    title="ลดระยะห่าง (-10px)"
+                  >
+                    -
+                  </button>
+                  <span className="font-mono text-xs font-bold text-sky-900 min-w-16 text-center">
+                    {headerTitleSpacing}px {headerTitleSpacing >= 180 ? '(~2 นิ้ว)' : headerTitleSpacing >= 135 ? '(~1.5 นิ้ว)' : headerTitleSpacing >= 90 ? '(~1 นิ้ว)' : headerTitleSpacing === 24 ? '(ปกติ)' : ''}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setHeaderTitleSpacing((s) => Math.min(260, s + 10))}
+                    className="w-5 h-5 rounded bg-sky-50 hover:bg-sky-100 font-bold text-sky-800 flex items-center justify-center cursor-pointer"
+                    title="เพิ่มระยะห่าง (+10px)"
+                  >
+                    +
+                  </button>
+                  
+                  {/* Preset shortcut chips */}
+                  <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setHeaderTitleSpacing(24)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
+                        headerTitleSpacing === 24 ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                      title="ระยะมาตรฐาน (24px)"
+                    >
+                      ปกติ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHeaderTitleSpacing(96)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
+                        headerTitleSpacing === 96 ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                      title="เว้นช่องตรา 1 นิ้ว (96px)"
+                    >
+                      1 นิ้ว
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHeaderTitleSpacing(144)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
+                        headerTitleSpacing === 144 ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                      title="เว้นช่องตรา 1.5 นิ้ว (144px)"
+                    >
+                      1.5 นิ้ว
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHeaderTitleSpacing(192)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
+                        headerTitleSpacing === 192 ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                      title="เว้นช่องตรา 2 นิ้ว (192px)"
+                    >
+                      2 นิ้ว
+                    </button>
+                  </div>
+                </div>
+
+                {/* Top Margin (เว้นหัวกระดาษแบบฟอร์มหน่วยงาน) */}
+                <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-sky-200 shadow-sm text-xs" title="ขยับ ที่ อว ลงเพื่อเว้นหัวกระดาษที่มีข้อความแบบฟอร์มพิมพ์ไว้แล้ว">
+                  <span className="font-semibold text-slate-600">ขยับ ที่ อว ลง:</span>
+                  <button
+                    type="button"
+                    onClick={() => setHeaderTopSpacing((t) => Math.max(0, t - 10))}
+                    className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs flex items-center justify-center cursor-pointer"
+                    title="ลดระยะหัวกระดาษ (-10px)"
+                  >
+                    -
+                  </button>
+                  <span className="font-mono text-xs font-bold text-slate-800 w-8 text-center">
+                    {headerTopSpacing}px
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setHeaderTopSpacing((t) => Math.min(150, t + 10))}
+                    className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs flex items-center justify-center cursor-pointer"
+                    title="เพิ่มระยะหัวกระดาษ (+10px)"
+                  >
+                    +
+                  </button>
+                </div>
+
                 {/* Photo Box Shift */}
                 {showPhotoBox && (
                   <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-sm" title="ขยับกรอบรูป">
@@ -1790,7 +1884,13 @@ export default function CertificatesPage() {
               {previewTemplate === 'ENG_CERT' && (
                 <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
+                    <div
+                      className="flex justify-between items-start pb-2 transition-all"
+                      style={{
+                        marginTop: `${headerTopSpacing}px`,
+                        fontSize: `${docFontSize}pt`,
+                      }}
+                    >
                       <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
                         <p className="font-bold">Office of Dean</p>
                         <p>Tel. {settings.contactPhone || '0-3524-8000 ext. 8323'}</p>
@@ -1804,7 +1904,10 @@ export default function CertificatesPage() {
                       <div></div>
                     </div>
 
-                    <div className="pt-6 pb-2 text-center">
+                    <div
+                      className="pb-2 text-center transition-all"
+                      style={{ paddingTop: `${headerTitleSpacing}px` }}
+                    >
                       <span
                         contentEditable
                         suppressContentEditableWarning
@@ -2001,14 +2104,23 @@ export default function CertificatesPage() {
               {previewTemplate === 'THAI_STANDARD' && (
                 <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
                   <div>
-                    <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
+                    <div
+                      className="flex justify-between items-start pb-2 transition-all"
+                      style={{
+                        marginTop: `${headerTopSpacing}px`,
+                        fontSize: `${docFontSize}pt`,
+                      }}
+                    >
                       <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
                         ที่ อว 8002 / {previewRequest.docNo || 'xxx'}
                       </div>
                       <div></div>
                     </div>
 
-                    <div className="pt-6 pb-2 text-center">
+                    <div
+                      className="pb-2 text-center transition-all"
+                      style={{ paddingTop: `${headerTitleSpacing}px` }}
+                    >
                       <span
                         contentEditable
                         suppressContentEditableWarning
