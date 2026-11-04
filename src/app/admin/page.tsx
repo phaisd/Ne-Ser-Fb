@@ -59,7 +59,11 @@ import {
   Type,
   MoveVertical,
   Layers,
-  Send
+  Send,
+  Paperclip,
+  AlertTriangle,
+  ZoomIn,
+  FileCheck2
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
 
@@ -96,6 +100,12 @@ interface CertificateRequest {
   issueDateTh?: string;
   issueDateEn?: string;
   docTemplate?: string;
+  rejectReason?: string;
+  note?: string;
+  enrollmentSlipUrl?: string;
+  passportCopyUrl?: string;
+  photoUrl?: string;
+  attachmentUrl?: string;
 }
 
 interface SignatoryItem {
@@ -198,6 +208,16 @@ const SIGNER_PRESETS = [
   },
 ];
 
+const REJECT_PRESET_REASONS = [
+  'ข้อมูลไม่ครบถ้วน',
+  'ไม่ใช่นิสิตในคณะ',
+  'ไม่ใช่บุคลากรในคณะ',
+  'ขาดสำเนาเอกสารการลงทะเบียน',
+  'รูปถ่ายไม่ถูกต้องตามระเบียบ (ต้องขนาด 1.5-2 นิ้ว หน้าตรงชุดสุภาพ)',
+  'หนังสือเดินทาง/วีซ่าไม่ตรงกับข้อมูลในระบบ',
+  'สำเนาเอกสารแนบไม่ชัดเจนหรือไม่สมบูรณ์',
+];
+
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<AdminTab>('DASHBOARD');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -218,6 +238,16 @@ export default function AdminConsolePage() {
   const [previewRequest, setPreviewRequest] = useState<CertificateRequest | null>(null);
   const [unmaskPassport, setUnmaskPassport] = useState<boolean>(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+
+  // Rejection Dialog states
+  const [rejectingRequest, setRejectingRequest] = useState<CertificateRequest | null>(null);
+  const [rejectReasonInput, setRejectReasonInput] = useState<string>('');
+  const [rejectSubmitting, setRejectSubmitting] = useState<boolean>(false);
+
+  // Preview & Attachment Inspection States
+  const [previewTab, setPreviewTab] = useState<'DOCUMENT' | 'ATTACHMENTS'>('DOCUMENT');
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState<boolean>(false);
 
   // Document Customizer & Archiving States
   const [previewTemplate, setPreviewTemplate] = useState<'THAI_STANDARD' | 'BANK_LETTER' | 'ENG_CERT' | 'INTERNAL_MEMO'>('THAI_STANDARD');
@@ -656,21 +686,78 @@ export default function AdminConsolePage() {
     }
   };
 
-  const handleReject = async (id: string) => {
-    if (!confirm('ยืนยันที่จะปฏิเสธคำร้องนี้ใช่หรือไม่?')) return;
+  const handleOpenRejectModal = (request: CertificateRequest) => {
+    setRejectingRequest(request);
+    setRejectReasonInput('');
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectingRequest) return;
+    setRejectSubmitting(true);
     try {
+      const finalReason = rejectReasonInput.trim() || 'ข้อมูลไม่ครบถ้วนหรือไม่เป็นไปตามระเบียบ';
       const res = await fetch('/api/certificates', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: 'REJECTED' }),
+        body: JSON.stringify({
+          id: rejectingRequest.id,
+          status: 'REJECTED',
+          rejectReason: finalReason,
+          note: finalReason,
+        }),
       });
       const data = await res.json();
       if (data.success) {
-        setActionSuccess('ปฏิเสธคำร้องเรียบร้อยแล้ว');
+        setActionSuccess(`ปฏิเสธคำร้องของ ${rejectingRequest.fullName} เรียบร้อยแล้ว (เหตุผล: ${finalReason})`);
+        setRejectingRequest(null);
+        setRejectReasonInput('');
+        if (previewRequest?.id === rejectingRequest.id) {
+          setPreviewRequest(null);
+        }
         loadData();
+      } else {
+        alert('เกิดข้อผิดพลาด: ' + data.error);
       }
     } catch (err: any) {
       alert('ข้อผิดพลาด: ' + err.message);
+    } finally {
+      setRejectSubmitting(false);
+    }
+  };
+
+  const handleUploadAdditionalAttachment = async (file: File, type: 'enrollment' | 'passport' | 'photo') => {
+    if (!previewRequest) return;
+    setUploadingAttachment(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        const updatePayload: any = { id: previewRequest.id };
+        if (type === 'enrollment') updatePayload.enrollmentSlipUrl = data.url;
+        else if (type === 'passport') updatePayload.passportCopyUrl = data.url;
+        else if (type === 'photo') updatePayload.photoUrl = data.url;
+
+        await fetch('/api/certificates', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatePayload),
+        });
+
+        setPreviewRequest((prev) => (prev ? { ...prev, ...updatePayload } : null));
+        loadData();
+        setActionSuccess('อัปโหลดและแนบเอกสารสำเร็จเรียบร้อย');
+      } else {
+        alert(data.error || 'อัปโหลดล้มเหลว');
+      }
+    } catch (e: any) {
+      alert('เกิดข้อผิดพลาด: ' + e.message);
+    } finally {
+      setUploadingAttachment(false);
     }
   };
 
@@ -1858,6 +1945,22 @@ export default function AdminConsolePage() {
                                     ? '🇹🇭 สัญชาติไทย'
                                     : `🌐 สัญชาติ ${r.nationality || 'ต่างชาติ'} (Pass: ${formatPassport(r.passportNo)})`}
                                 </div>
+                                <div className="flex flex-wrap items-center gap-1 mt-1">
+                                  {r.enrollmentSlipUrl ? (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200" title="มีสำเนาการลงทะเบียนเรียนแนบมาแล้ว">
+                                      <FileCheck2 className="w-3 h-3 text-emerald-600" /> สำเนาลงเรียน ✓
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title="ยังไม่มีสำเนาการลงทะเบียนเรียน">
+                                      ⚠️ ขาดสำเนาลงเรียน
+                                    </span>
+                                  )}
+                                  {r.passportCopyUrl && (
+                                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
+                                      <Paperclip className="w-2.5 h-2.5" /> สำเนาพาสปอร์ต
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-5 py-4 text-xs font-semibold text-slate-800">
                                 {r.certType}
@@ -1887,6 +1990,11 @@ export default function AdminConsolePage() {
                                     ? 'ปฏิเสธ'
                                     : 'รอพิจารณา'}
                                 </span>
+                                {r.status === 'REJECTED' && r.rejectReason && (
+                                  <div className="text-[10px] text-red-600 mt-1 max-w-[150px] truncate mx-auto font-medium" title={`เหตุผล: ${r.rejectReason}`}>
+                                    ⚠️ {r.rejectReason}
+                                  </div>
+                                )}
                               </td>
                               <td className="px-5 py-4 text-right">
                                 {isApprovingThis ? (
@@ -1916,22 +2024,41 @@ export default function AdminConsolePage() {
                                     {r.status === 'PENDING' && (
                                       <button
                                         onClick={() => setApprovingId(r.id)}
-                                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition"
+                                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition cursor-pointer"
                                       >
                                         อนุมัติ
                                       </button>
                                     )}
                                     {r.status === 'PENDING' && (
                                       <button
-                                        onClick={() => handleReject(r.id)}
-                                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 transition"
+                                        onClick={() => handleOpenRejectModal(r)}
+                                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                                        title="ปฏิเสธคำร้องพร้อมระบุเหตุผล"
                                       >
                                         ปฏิเสธ
                                       </button>
                                     )}
                                     <button
-                                      onClick={() => setPreviewRequest(r)}
-                                      className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-1"
+                                      onClick={() => {
+                                        setPreviewRequest(r);
+                                        setPreviewTab('ATTACHMENTS');
+                                      }}
+                                      className={`px-2 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer border ${
+                                        r.enrollmentSlipUrl
+                                          ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 font-bold'
+                                          : 'text-amber-800 bg-amber-50 hover:bg-amber-100 border-amber-200'
+                                      }`}
+                                      title="ตรวจเอกสารแนบ เช่น สำเนาลงเรียน, พาสปอร์ต"
+                                    >
+                                      <Paperclip className="w-3.5 h-3.5" />
+                                      <span>ตรวจเอกสาร</span>
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setPreviewRequest(r);
+                                        setPreviewTab('DOCUMENT');
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-1 cursor-pointer"
                                     >
                                       <Eye className="w-3.5 h-3.5" />
                                       <span>พิมพ์/ดู</span>
@@ -3862,32 +3989,473 @@ export default function AdminConsolePage() {
       {previewRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
               <div className="flex items-center gap-2">
                 <Printer className="w-5 h-5 text-purple-600" />
-                <h3 className="font-bold text-slate-900 text-sm">
-                  ตัวอย่างเอกสารทางการ (Official Document Preview)
-                </h3>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    {previewTab === 'DOCUMENT'
+                      ? 'ตัวอย่างเอกสารทางการ (Official Document Preview)'
+                      : 'ตรวจสอบเอกสารสำเนาที่แนบมา (Attached Copies Inspection)'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    คำร้อง: <span className="font-bold text-slate-800">{previewRequest.fullName}</span> ({previewRequest.studentCode})
+                  </p>
+                </div>
               </div>
-              <button
-                onClick={() => setPreviewRequest(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold"
-              >
-                ✕
-              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Tab Switcher: Document vs Attachments */}
+                <div className="flex p-0.5 bg-slate-100 rounded-xl text-xs font-bold border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab('DOCUMENT')}
+                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                      previewTab === 'DOCUMENT'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>ตัวอย่างหนังสือ</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab('ATTACHMENTS')}
+                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                      previewTab === 'ATTACHMENTS'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Paperclip className="w-3.5 h-3.5" />
+                    <span>ตรวจเอกสารแนบ</span>
+                    {previewRequest.enrollmentSlipUrl ? (
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" title="มีสำเนาลงเรียนแล้ว"></span>
+                    ) : (
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="ขาดสำเนาลงเรียน"></span>
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setPreviewRequest(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
-            {/* Signatory & Document Customization Toolbar (Hidden on Print) */}
-            <div className="p-4 bg-purple-50/70 rounded-2xl border border-purple-200/80 space-y-3 print:hidden text-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <label className="font-bold text-purple-900 flex items-center gap-1.5">
-                  <UserCog className="w-4 h-4 text-purple-600" />
-                  <span>เครื่องมือปรับแต่งเอกสาร &amp; เลือกแบบฟอร์ม (Document Customizer)</span>
-                </label>
-                <span className="text-[11px] text-purple-700 bg-purple-100/80 px-2.5 py-0.5 rounded-full font-semibold">
-                  ✍️ ปรับแต่งได้สดๆ และคลิกแก้ไขข้อความบนเอกสารได้ทันที
-                </span>
+            {previewTab === 'ATTACHMENTS' ? (
+              /* ── ATTACHMENT INSPECTION SCREEN ── */
+              <div className="space-y-4 animate-in fade-in py-1">
+                {/* Student Info Bar */}
+                <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="text-purple-600 block text-[11px] font-bold">ข้อมูลผู้ยื่นคำร้อง:</span>
+                    <span className="font-bold text-slate-900 text-sm">{previewRequest.fullName}</span>
+                    <span className="text-purple-700 font-mono font-bold ml-2">({previewRequest.studentCode})</span>
+                    <span className="text-slate-600 ml-2">| หลักสูตร: {previewRequest.degreeLevel || 'ปริญญาตรี'} สาขา: {previewRequest.major || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">สถานะคำร้อง:</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-bold text-xs ${
+                      previewRequest.status === 'APPROVED'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : previewRequest.status === 'REJECTED'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {previewRequest.status === 'APPROVED' ? 'อนุมัติแล้ว' : previewRequest.status === 'REJECTED' ? 'ปฏิเสธ' : 'รอพิจารณา'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 4 Cards Inspection Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Card 1: ใบสำเนาการลงทะเบียนเรียน / ใบเสร็จ */}
+                  <div className={`p-4 rounded-2xl border-2 transition-all space-y-3 ${
+                    previewRequest.enrollmentSlipUrl
+                      ? 'bg-emerald-50/30 border-emerald-300'
+                      : 'bg-amber-50/60 border-amber-300'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+                          previewRequest.enrollmentSlipUrl ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
+                        }`}>
+                          <FileCheck2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
+                            1. ใบสำเนาการลงทะเบียนเรียน / ใบเสร็จ
+                          </h4>
+                          <span className="text-[10px] text-slate-500">เอกสารสำคัญตรวจสอบการลงเรียน</span>
+                        </div>
+                      </div>
+                      {previewRequest.enrollmentSlipUrl ? (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                          ✓ แนบแล้ว
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-bold">
+                          ⚠️ ขาดเอกสารนี้
+                        </span>
+                      )}
+                    </div>
+
+                    {previewRequest.enrollmentSlipUrl ? (
+                      <div className="space-y-2">
+                        <div
+                          onClick={() => setZoomImage(previewRequest.enrollmentSlipUrl!)}
+                          className="relative h-44 bg-slate-900/5 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer group"
+                        >
+                          <img
+                            src={previewRequest.enrollmentSlipUrl}
+                            alt="ใบสำเนาการลงทะเบียนเรียน"
+                            className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition gap-1.5">
+                            <ZoomIn className="w-4 h-4" />
+                            <span>คลิกเพื่อดูภาพขยายใหญ่</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setZoomImage(previewRequest.enrollmentSlipUrl!)}
+                            className="text-purple-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <ZoomIn className="w-3.5 h-3.5" /> ดูภาพขนาดเต็ม
+                          </button>
+                          <a
+                            href={previewRequest.enrollmentSlipUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" /> เปิดหน้าต่างใหม่
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-white/80 rounded-xl border border-amber-200 text-xs space-y-2 text-center py-5">
+                        <AlertTriangle className="w-7 h-7 text-amber-500 mx-auto" />
+                        <p className="font-bold text-amber-900 text-xs">
+                          นิสิตยังไม่ได้แนบใบสำเนาการลงทะเบียนเรียน
+                        </p>
+                        <p className="text-[11px] text-amber-700 max-w-xs mx-auto">
+                          หากหลักสูตรกำหนดให้ต้องมีสำเนาการลงทะเบียน ท่านสามารถกดปฏิเสธคำร้องเพื่อให้ส่งเอกสารใหม่ได้
+                        </p>
+                        {previewRequest.status === 'PENDING' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleOpenRejectModal(previewRequest);
+                              setRejectReasonInput('ขาดสำเนาเอกสารการลงทะเบียน');
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-red-600 text-white font-bold text-xs hover:bg-red-700 transition cursor-pointer shadow-sm"
+                          >
+                            🔴 ปฏิเสธคำร้อง (ระบุว่าขาดสำเนาลงทะเบียน)
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">เจ้าหน้าที่แนบไฟล์แทน:</span>
+                      <label className="text-purple-700 font-bold hover:underline cursor-pointer flex items-center gap-1">
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>{uploadingAttachment ? 'กำลังอัปโหลด...' : 'เลือกไฟล์อัปโหลด'}</span>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadAdditionalAttachment(file, 'enrollment');
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Card 2: สำเนาหน้าหนังสือเดินทาง / บัตรประชาชน */}
+                  <div className={`p-4 rounded-2xl border-2 transition-all space-y-3 ${
+                    previewRequest.passportCopyUrl
+                      ? 'bg-sky-50/30 border-sky-300'
+                      : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+                          previewRequest.passportCopyUrl ? 'bg-sky-600 text-white' : 'bg-slate-400 text-white'
+                        }`}>
+                          <Globe className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
+                            2. สำเนาหนังสือเดินทาง (Passport)
+                          </h4>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            เลขที่: {previewRequest.passportNo || 'ไม่มี (นิสิตสัญชาติไทย)'}
+                          </span>
+                        </div>
+                      </div>
+                      {previewRequest.passportCopyUrl ? (
+                        <span className="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-bold">
+                          ✓ แนบแล้ว
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold">
+                          ยังไม่ได้แนบ
+                        </span>
+                      )}
+                    </div>
+
+                    {previewRequest.passportCopyUrl ? (
+                      <div className="space-y-2">
+                        <div
+                          onClick={() => setZoomImage(previewRequest.passportCopyUrl!)}
+                          className="relative h-44 bg-slate-900/5 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer group"
+                        >
+                          <img
+                            src={previewRequest.passportCopyUrl}
+                            alt="สำเนาหนังสือเดินทาง"
+                            className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition gap-1.5">
+                            <ZoomIn className="w-4 h-4" />
+                            <span>คลิกเพื่อดูภาพขยายใหญ่</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setZoomImage(previewRequest.passportCopyUrl!)}
+                            className="text-purple-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <ZoomIn className="w-3.5 h-3.5" /> ดูภาพขนาดเต็ม
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-white/80 rounded-xl border border-slate-200 text-xs space-y-1 text-center py-5">
+                        <p className="font-bold text-slate-700 text-xs">
+                          {previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai'
+                            ? 'นิสิตสัญชาติไทย (ใช้ข้อมูลบัตรประชาชนในทะเบียน)'
+                            : 'ยังไม่มีสำเนาพาสปอร์ตแนบมา'}
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          เลขพาสปอร์ตที่บันทึก: <strong className="font-mono text-purple-700">{previewRequest.passportNo || '-'}</strong>
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">เจ้าหน้าที่แนบไฟล์แทน:</span>
+                      <label className="text-purple-700 font-bold hover:underline cursor-pointer flex items-center gap-1">
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>เลือกไฟล์อัปโหลด</span>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadAdditionalAttachment(file, 'passport');
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Card 3: รูปถ่ายนิสิต 1.5 - 2 นิ้ว */}
+                  <div className={`p-4 rounded-2xl border-2 transition-all space-y-3 ${
+                    previewRequest.photoUrl
+                      ? 'bg-purple-50/30 border-purple-300'
+                      : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+                          previewRequest.photoUrl ? 'bg-purple-600 text-white' : 'bg-slate-400 text-white'
+                        }`}>
+                          <Camera className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
+                            3. รูปถ่ายนิสิต (ขนาด 1.5 - 2 นิ้ว)
+                          </h4>
+                          <span className="text-[10px] text-slate-500">หน้าตรง ชุดสุภาพ</span>
+                        </div>
+                      </div>
+                      {previewRequest.photoUrl ? (
+                        <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold">
+                          ✓ แนบแล้ว
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold">
+                          ใช้กรอบเปล่า
+                        </span>
+                      )}
+                    </div>
+
+                    {previewRequest.photoUrl ? (
+                      <div className="space-y-2">
+                        <div
+                          onClick={() => setZoomImage(previewRequest.photoUrl!)}
+                          className="relative h-44 bg-slate-900/5 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer group"
+                        >
+                          <img
+                            src={previewRequest.photoUrl}
+                            alt="รูปถ่ายนิสิต"
+                            className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition gap-1.5">
+                            <ZoomIn className="w-4 h-4" />
+                            <span>คลิกเพื่อดูภาพขยายใหญ่</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-white/80 rounded-xl border border-slate-200 text-xs space-y-1 text-center py-5">
+                        <p className="font-bold text-slate-700 text-xs">
+                          นิสิตยังไม่ได้แนบรูปถ่ายดิจิทัล
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          ระบบแสดงกรอบเส้นประ 1.5-2 นิ้ว เพื่อให้นำรูปถ่ายจริงมาติดบนเอกสาร
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">เจ้าหน้าที่แนบรูปแทน:</span>
+                      <label className="text-purple-700 font-bold hover:underline cursor-pointer flex items-center gap-1">
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>เลือกรูปถ่าย</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadAdditionalAttachment(file, 'photo');
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Card 4: การตัดสินใจ & ผลการตรวจสอบ */}
+                  <div className="p-4 rounded-2xl border-2 border-slate-200 bg-slate-50/70 space-y-3 flex flex-col justify-between">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-purple-600" />
+                        สรุปผลการตรวจสอบเอกสาร
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        ตรวจสอบความถูกต้องครบถ้วนของเอกสารก่อนลงนามอนุมัติหรือปฏิเสธ
+                      </p>
+
+                      <div className="mt-3 p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600">1. สำเนาการลงเรียน:</span>
+                          <span className={`font-bold ${previewRequest.enrollmentSlipUrl ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {previewRequest.enrollmentSlipUrl ? '✓ แนบแล้ว' : '⚠️ ยังไม่แนบ'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600">2. สำเนาพาสปอร์ต/บัตร:</span>
+                          <span className={`font-bold ${previewRequest.passportCopyUrl ? 'text-sky-700' : 'text-slate-500'}`}>
+                            {previewRequest.passportCopyUrl ? '✓ แนบแล้ว' : 'ไม่ได้แนบ'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600">3. รูปถ่าย 1.5 - 2 นิ้ว:</span>
+                          <span className={`font-bold ${previewRequest.photoUrl ? 'text-purple-700' : 'text-slate-500'}`}>
+                            {previewRequest.photoUrl ? '✓ แนบแล้ว' : 'ใช้กรอบเปล่า'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab('DOCUMENT')}
+                        className="flex-1 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 cursor-pointer text-center"
+                      >
+                        📄 ดูตัวอย่างหนังสือรับรอง
+                      </button>
+                      {previewRequest.status === 'PENDING' && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenRejectModal(previewRequest)}
+                          className="py-2 px-3.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 cursor-pointer shadow-sm"
+                        >
+                          ปฏิเสธคำร้อง
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
+            ) : (
+              /* ── DOCUMENT PREVIEW & CUSTOMIZER ── */
+              <>
+                {/* Quick Attachment Indicator Bar inside Document tab */}
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-slate-700">เอกสารแนบ:</span>
+                    {previewRequest.enrollmentSlipUrl ? (
+                      <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">
+                        <FileCheck2 className="w-3.5 h-3.5" /> มีใบสำเนาลงเรียนแล้ว
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md">
+                        ⚠️ ขาดสำเนาการลงทะเบียนเรียน
+                      </span>
+                    )}
+                    {previewRequest.passportCopyUrl && (
+                      <span className="inline-flex items-center gap-1 font-bold text-sky-700 bg-sky-100/70 px-2 py-0.5 rounded-md">
+                        <Paperclip className="w-3.5 h-3.5" /> สำเนาพาสปอร์ต
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab('ATTACHMENTS')}
+                      className="text-purple-700 hover:text-purple-900 font-bold flex items-center gap-1 underline cursor-pointer"
+                    >
+                      <Paperclip className="w-3.5 h-3.5" />
+                      <span>คลิกเพื่อตรวจสอบเอกสารสำเนาแนบ</span>
+                    </button>
+                    {previewRequest.status === 'PENDING' && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenRejectModal(previewRequest)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer transition"
+                      >
+                        ปฏิเสธคำร้อง
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Signatory & Document Customization Toolbar (Hidden on Print) */}
+                <div className="p-4 bg-purple-50/70 rounded-2xl border border-purple-200/80 space-y-3 print:hidden text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <label className="font-bold text-purple-900 flex items-center gap-1.5">
+                      <UserCog className="w-4 h-4 text-purple-600" />
+                      <span>เครื่องมือปรับแต่งเอกสาร &amp; เลือกแบบฟอร์ม (Document Customizer)</span>
+                    </label>
+                    <span className="text-[11px] text-purple-700 bg-purple-100/80 px-2.5 py-0.5 rounded-full font-semibold">
+                      ✍️ ปรับแต่งได้สดๆ และคลิกแก้ไขข้อความบนเอกสารได้ทันที
+                    </span>
+                  </div>
 
               {/* Template Selector & Signer Controls */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
@@ -4994,6 +5562,133 @@ export default function AdminConsolePage() {
                 }
               }
             `}</style>
+            </>
+          )}
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL: REJECTION WITH REASON PRESETS
+         ───────────────────────────────────────────────────────────── */}
+      {rejectingRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-rose-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-rose-100 pb-3">
+              <div className="flex items-center gap-2 text-rose-700">
+                <div className="p-2 rounded-xl bg-rose-100">
+                  <XCircle className="w-5 h-5 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">ปฏิเสธคำร้องหนังสือรับรอง</h3>
+                  <p className="text-[11px] text-slate-500">
+                    เลขที่คำร้อง: {rejectingRequest.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRejectingRequest(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-2xl text-xs space-y-1">
+              <div className="font-bold text-slate-800">
+                ผู้ยื่นคำร้อง: <span className="text-rose-900">{rejectingRequest.fullName}</span>
+                {rejectingRequest.studentCode && <span className="text-slate-500 font-normal ml-1">({rejectingRequest.studentCode})</span>}
+              </div>
+              <div className="text-[11px] text-slate-600">
+                ประเภท: {rejectingRequest.certType || 'หนังสือรับรอง'}
+              </div>
+            </div>
+
+            {/* Quick Reason Presets */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">
+                เลือกเหตุผลที่ปฏิเสธ (คลิกเพื่อเลือกทันที):
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {REJECT_PRESET_REASONS.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setRejectReasonInput(preset)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition cursor-pointer text-left ${
+                      rejectReasonInput === preset
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                        : 'bg-slate-50 hover:bg-rose-50 border-slate-200 text-slate-700 hover:border-rose-300'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Reason Textarea */}
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700">
+                ข้อความระบุเหตุผล / คำแนะนำถึงผู้ยื่นคำร้อง:
+              </label>
+              <textarea
+                rows={3}
+                value={rejectReasonInput}
+                onChange={(e) => setRejectReasonInput(e.target.value)}
+                placeholder="ระบุเหตุผลเพิ่มเติม เช่น ขาดสำเนาการลงทะเบียนเรียน หรือเอกสารไม่ชัดเจน..."
+                className="w-full p-3 rounded-2xl border border-slate-200 text-xs focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 focus:outline-none resize-none"
+              />
+              <p className="text-[10px] text-slate-500">
+                * ข้อความนี้จะแสดงในหน้าระบบติดตามสถานะของผู้ยื่นคำร้อง เพื่อให้นิสิตแก้ไขหรือแนบเอกสารใหม่
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setRejectingRequest(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold hover:bg-slate-50 text-slate-700 cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={rejectSubmitting}
+                onClick={handleConfirmReject}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-rose-200 cursor-pointer disabled:opacity-50"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>{rejectSubmitting ? 'กำลังบันทึก...' : 'ยืนยันปฏิเสธคำร้อง'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL: LIGHTBOX ZOOM
+         ───────────────────────────────────────────────────────────── */}
+      {zoomImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm cursor-zoom-out"
+          onClick={() => setZoomImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl p-2 overflow-hidden shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setZoomImage(null)}
+              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/80 hover:bg-white text-slate-900 flex items-center justify-center font-bold text-sm shadow-md cursor-pointer"
+            >
+              ✕
+            </button>
+            <img
+              src={zoomImage}
+              alt="ภาพขยายเอกสารแนบ"
+              className="max-h-[85vh] max-w-full object-contain mx-auto rounded-lg"
+            />
           </div>
         </div>
       )}

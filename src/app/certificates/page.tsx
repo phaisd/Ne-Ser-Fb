@@ -31,7 +31,11 @@ import {
   MoveVertical,
   Sparkles,
   AlertTriangle,
-  AlertCircle
+  AlertCircle,
+  Paperclip,
+  UploadCloud,
+  FileCheck2,
+  Camera
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
 
@@ -74,6 +78,12 @@ interface CertificateRequest {
   signerTitleEn?: string;
   coordinatorNameTh?: string;
   coordinatorPhoneTh?: string;
+  rejectReason?: string;
+  note?: string;
+  enrollmentSlipUrl?: string;
+  passportCopyUrl?: string;
+  photoUrl?: string;
+  attachmentUrl?: string;
 }
 
 interface CertTypeItem {
@@ -153,6 +163,36 @@ export default function CertificatesPage() {
   // Bank Specific Fields
   const [bankTargetTh, setBankTargetTh] = useState('ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร');
   const [bankActionTh, setBankActionTh] = useState('เปิดบัญชีธนาคารและเปิดใช้งานแอปพลิเคชั่น Mobile Banking');
+
+  // Supporting Documents Upload States
+  const [enrollmentSlipUrl, setEnrollmentSlipUrl] = useState<string>('');
+  const [passportCopyUrl, setPassportCopyUrl] = useState<string>('');
+  const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [uploadingDoc, setUploadingDoc] = useState<'enrollment' | 'passport' | 'photo' | null>(null);
+
+  const handleFileUpload = async (file: File, type: 'enrollment' | 'passport' | 'photo') => {
+    setUploadingDoc(type);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        if (type === 'enrollment') setEnrollmentSlipUrl(data.url);
+        else if (type === 'passport') setPassportCopyUrl(data.url);
+        else if (type === 'photo') setPhotoUrl(data.url);
+      } else {
+        alert('อัปโหลดไฟล์ล้มเหลว: ' + (data.error || 'ไม่สามารถอัปโหลดได้'));
+      }
+    } catch (err: any) {
+      alert('อัปโหลดไฟล์ล้มเหลว: ' + err.message);
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
 
   // PDPA Data Masking Helper (Best Practice)
   const maskPassport = (no?: string) => {
@@ -414,6 +454,9 @@ export default function CertificatesPage() {
         bankTargetTh,
         bankActionTh,
         docTemplate: selectedCert.templateType,
+        enrollmentSlipUrl: enrollmentSlipUrl || undefined,
+        passportCopyUrl: passportCopyUrl || undefined,
+        photoUrl: photoUrl || undefined,
         status: 'PENDING',
       };
 
@@ -433,6 +476,9 @@ export default function CertificatesPage() {
         setStudentCode('');
         setFullName('');
         setRequestPurpose('');
+        setEnrollmentSlipUrl('');
+        setPassportCopyUrl('');
+        setPhotoUrl('');
       } else {
         alert('เกิดข้อผิดพลาด: ' + data.error);
       }
@@ -1073,6 +1119,176 @@ export default function CertificatesPage() {
                 </div>
               </div>
 
+              {/* Supporting Documents Section (เอกสารประกอบคำร้อง) */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-purple-50/50 border border-purple-200/80 space-y-4">
+                <div className="flex items-center justify-between border-b border-purple-200/60 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="w-4 h-4 text-purple-700" />
+                    <span className="font-bold text-xs sm:text-sm text-slate-900">
+                      แนบเอกสารประกอบคำร้อง (Supporting Documents)
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-purple-700 font-semibold">
+                    รองรับไฟล์ JPG, PNG หรือ PDF
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Document 1: ใบสำเนาการลงทะเบียนเรียน */}
+                  <div className="p-3 bg-white rounded-xl border border-purple-100 shadow-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <FileCheck2 className="w-3.5 h-3.5 text-purple-600" />
+                        สำเนาลงเรียน / ใบเสร็จ
+                      </span>
+                      {enrollmentSlipUrl && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          แนบแล้ว ✓
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      ใบเสร็จลงทะเบียน หรือหลักฐานยืนยันการเป็นนิสิต
+                    </p>
+                    {enrollmentSlipUrl ? (
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50/60 border border-emerald-200 text-xs">
+                        <a
+                          href={enrollmentSlipUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-emerald-800 underline truncate max-w-[150px] font-medium"
+                        >
+                          ดูเอกสารแนบ
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setEnrollmentSlipUrl('')}
+                          className="text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
+                        >
+                          ลบ
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-dashed border-purple-300 text-purple-700 hover:bg-purple-50 text-xs font-bold cursor-pointer transition">
+                        <UploadCloud className="w-4 h-4" />
+                        <span>{uploadingDoc === 'enrollment' ? 'กำลังอัปโหลด...' : 'เลือกไฟล์สำเนา'}</span>
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleFileUpload(f, 'enrollment');
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Document 2: สำเนาหนังสือเดินทาง */}
+                  <div className="p-3 bg-white rounded-xl border border-purple-100 shadow-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Paperclip className="w-3.5 h-3.5 text-sky-600" />
+                        สำเนาพาสปอร์ต / บัตร ปชช.
+                      </span>
+                      {passportCopyUrl && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          แนบแล้ว ✓
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      หน้าที่มีรูปถ่ายและวันหมดอายุชัดเจน
+                    </p>
+                    {passportCopyUrl ? (
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-sky-50/60 border border-sky-200 text-xs">
+                        <a
+                          href={passportCopyUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sky-800 underline truncate max-w-[150px] font-medium"
+                        >
+                          ดูเอกสารแนบ
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setPassportCopyUrl('')}
+                          className="text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
+                        >
+                          ลบ
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 text-xs font-bold cursor-pointer transition">
+                        <UploadCloud className="w-4 h-4" />
+                        <span>{uploadingDoc === 'passport' ? 'กำลังอัปโหลด...' : 'เลือกไฟล์พาสปอร์ต'}</span>
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleFileUpload(f, 'passport');
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* Document 3: รูปถ่าย 1.5 - 2 นิ้ว */}
+                  <div className="p-3 bg-white rounded-xl border border-purple-100 shadow-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Camera className="w-3.5 h-3.5 text-amber-600" />
+                        รูปถ่าย 1.5 - 2 นิ้ว
+                      </span>
+                      {photoUrl && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          แนบแล้ว ✓
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      หน้าตรงชุดสุภาพ สำหรับติดหนังสือรับรอง
+                    </p>
+                    {photoUrl ? (
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50/60 border border-amber-200 text-xs">
+                        <a
+                          href={photoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-amber-800 underline truncate max-w-[150px] font-medium"
+                        >
+                          ดูรูปถ่าย
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setPhotoUrl('')}
+                          className="text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
+                        >
+                          ลบ
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-dashed border-amber-300 text-amber-700 hover:bg-amber-50 text-xs font-bold cursor-pointer transition">
+                        <UploadCloud className="w-4 h-4" />
+                        <span>{uploadingDoc === 'photo' ? 'กำลังอัปโหลด...' : 'เลือกรูปถ่าย'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleFileUpload(f, 'photo');
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Submit Button */}
               <button
                 type="submit"
@@ -1147,68 +1363,126 @@ export default function CertificatesPage() {
                 return (
                   <div
                     key={r.id}
-                    className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-300 transition"
+                    className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3 hover:border-slate-300 transition"
                   >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-md">
-                          {r.studentCode}
-                        </span>
-                        <span className="font-bold text-slate-900">{r.fullName}</span>
-                        {isThai ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                            🇹🇭 คนไทย
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-md">
+                            {r.studentCode}
+                          </span>
+                          <span className="font-bold text-slate-900">{r.fullName}</span>
+                          {isThai ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                              🇹🇭 คนไทย
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                              🌐 ต่างชาติ ({r.nationality || 'Intl'})
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-sm font-semibold text-slate-800">{r.certType}</div>
+
+                        <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-4 gap-y-1">
+                          <span>ยื่นเมื่อ: {new Date(r.createdAt).toLocaleDateString('th-TH')}</span>
+                          {r.docNo && (
+                            <span className="font-mono text-purple-700 font-bold">
+                              เลขที่: อว 8002/{r.docNo}
+                            </span>
+                          )}
+                          {r.passportNo && (
+                            <span className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]" title="เลขหนังสือเดินทางถูกปกปิดบางส่วนตามนโยบายคุ้มครองข้อมูลส่วนบุคคล (PDPA)">
+                              🔒 Pass: {maskPassport(r.passportNo)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Supporting document badges */}
+                        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                          {r.enrollmentSlipUrl ? (
+                            <a
+                              href={r.enrollmentSlipUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200 transition"
+                            >
+                              <FileCheck2 className="w-3 h-3 text-emerald-600" /> สำเนาลงเรียน ✓
+                            </a>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                              ไม่มีสำเนาลงเรียน
+                            </span>
+                          )}
+                          {r.passportCopyUrl && (
+                            <a
+                              href={r.passportCopyUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded border border-sky-200 transition"
+                            >
+                              <Paperclip className="w-3 h-3 text-sky-600" /> สำเนาพาสปอร์ต ✓
+                            </a>
+                          )}
+                          {r.photoUrl && (
+                            <a
+                              href={r.photoUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-200 transition"
+                            >
+                              <Camera className="w-3 h-3 text-amber-600" /> รูปถ่าย ✓
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+                        <button
+                          onClick={() => setPreviewRequest(r)}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          ดูตัวอย่าง / พิมพ์
+                        </button>
+
+                        {r.status === 'APPROVED' ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            อนุมัติแล้ว
+                          </span>
+                        ) : r.status === 'REJECTED' ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
+                            <XCircle className="w-3.5 h-3.5" />
+                            ปฏิเสธ
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
-                            🌐 ต่างชาติ ({r.nationality || 'Intl'})
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="text-sm font-semibold text-slate-800">{r.certType}</div>
-
-                      <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-4 gap-y-1">
-                        <span>ยื่นเมื่อ: {new Date(r.createdAt).toLocaleDateString('th-TH')}</span>
-                        {r.docNo && (
-                          <span className="font-mono text-purple-700 font-bold">
-                            เลขที่: อว 8002/{r.docNo}
-                          </span>
-                        )}
-                        {r.passportNo && (
-                          <span className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]" title="เลขหนังสือเดินทางถูกปกปิดบางส่วนตามนโยบายคุ้มครองข้อมูลส่วนบุคคล (PDPA)">
-                            🔒 Pass: {maskPassport(r.passportNo)}
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                            <Clock className="w-3.5 h-3.5" />
+                            รอตรวจสอบ
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5 self-start sm:self-auto">
-                      <button
-                        onClick={() => setPreviewRequest(r)}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        ดูตัวอย่าง / พิมพ์
-                      </button>
-
-                      {r.status === 'APPROVED' ? (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          อนุมัติแล้ว
-                        </span>
-                      ) : r.status === 'REJECTED' ? (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
-                          <XCircle className="w-3.5 h-3.5" />
-                          ปฏิเสธ
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
-                          <Clock className="w-3.5 h-3.5" />
-                          รอตรวจสอบ
-                        </span>
-                      )}
-                    </div>
+                    {/* Prominent Rejection Reason alert box */}
+                    {r.status === 'REJECTED' && (
+                      <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start gap-2.5 animate-in fade-in duration-200">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <div className="font-bold text-rose-950 flex flex-wrap items-center gap-1.5">
+                            <span>เหตุผลที่เจ้าหน้าที่ปฏิเสธ:</span>
+                            <span className="text-rose-700 bg-rose-100/90 px-2 py-0.5 rounded-md font-extrabold">
+                              {r.rejectReason || r.note || 'เอกสารไม่ครบถ้วนหรือไม่เป็นไปตามระเบียบ'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-rose-700">
+                            💡 คำแนะนำ: กรุณาตรวจสอบข้อมูลหรือเตรียมเอกสารแนบตามที่ระบุข้างต้น แล้วยื่นคำร้องใหม่อีกครั้งผ่านแท็บ &quot;แบบฟอร์มยื่นคำร้อง&quot;
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })

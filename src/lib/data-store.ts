@@ -98,6 +98,11 @@ export interface CertificateRequest {
   email?: string;
   phone?: string;
   note?: string;
+  rejectReason?: string;
+  enrollmentSlipUrl?: string;
+  passportCopyUrl?: string;
+  photoUrl?: string;
+  attachmentUrl?: string;
   targetAudience?: 'THAI' | 'INTERNATIONAL' | 'ALL';
   age?: number | string;
   gender?: string;
