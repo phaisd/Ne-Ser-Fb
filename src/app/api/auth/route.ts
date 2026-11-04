@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { authenticateInstructor, authenticateGoogleUser, getInstructorAccounts } from '@/lib/data-store';
+import {
+  authenticateInstructor,
+  authenticateGoogleUser,
+  authenticateStudent,
+  getInstructorAccounts,
+} from '@/lib/data-store';
 
 export async function POST(request: Request) {
   try {
@@ -11,15 +16,20 @@ export async function POST(request: Request) {
       const targetGmail = gmail || email;
       if (!targetGmail) {
         return NextResponse.json(
-          { success: false, error: 'กรุณาระบุบัญชี Gmail สำหรับเข้าสู่ระบบ' },
+          { success: false, error: 'กรุณาระบุบัญชี Gmail หรืออีเมล @mcu.ac.th สำหรับเข้าสู่ระบบ' },
           { status: 400 }
         );
       }
 
-      const user = await authenticateGoogleUser(targetGmail);
+      // Check instructor first, then student
+      let user = await authenticateGoogleUser(targetGmail);
+      if (!user) {
+        user = await authenticateStudent(targetGmail);
+      }
+
       if (!user) {
         return NextResponse.json(
-          { success: false, error: 'ไม่พบบัญชีผู้ใช้ที่เชื่อมโยงกับ Gmail นี้' },
+          { success: false, error: 'ไม่พบบัญชีอาจารย์หรือนิสิตที่เชื่อมโยงกับอีเมลนี้' },
           { status: 404 }
         );
       }
@@ -27,7 +37,7 @@ export async function POST(request: Request) {
       const response = NextResponse.json({
         success: true,
         user,
-        message: `เข้าสู่ระบบด้วย Google สำเร็จ: ยินดีต้อนรับ ${user.name}`,
+        message: `เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${user.name} (${user.role === 'STUDENT' ? 'นิสิต' : 'อาจารย์'})`,
       });
 
       response.cookies.set('mcu_auth_user', JSON.stringify(user), {
@@ -39,22 +49,26 @@ export async function POST(request: Request) {
       return response;
     }
 
-    // 2. Standard Email/Gmail + Password Authentication
+    // 2. Standard Email/Gmail/StudentID + Password Authentication
     if (!email || !password) {
       return NextResponse.json(
-        { success: false, error: 'กรุณากรอกอีเมล (Gmail หรือ @mcu.ac.th) และรหัสผ่าน' },
+        { success: false, error: 'กรุณากรอกรหัสนิสิต หรืออีเมล (@mcu.ac.th / Gmail) และรหัสผ่าน' },
         { status: 400 }
       );
     }
 
-    const user = await authenticateInstructor(email, password);
+    // Check instructor first, then student
+    let user = await authenticateInstructor(email, password);
+    if (!user) {
+      user = await authenticateStudent(email, password);
+    }
 
     if (!user) {
       return NextResponse.json(
         {
           success: false,
           error:
-            'อีเมลหรือรหัสผ่านไม่ถูกต้อง (สำหรับบัญชีอาจารย์เริ่มต้นใช้รหัสผ่าน: mcu123456)',
+            'รหัสนิสิต/อีเมล หรือรหัสผ่านไม่ถูกต้อง (รหัสผ่านเริ่มต้น: mcu123456 หรือรหัสนิสิต)',
         },
         { status: 401 }
       );

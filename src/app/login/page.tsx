@@ -61,12 +61,12 @@ function LoginForm() {
       role: 'INSTRUCTOR',
     },
     {
-      label: 'อาจารย์ผู้สอนทั่วไป',
-      email: 'teacher@mcu.ac.th',
-      gmail: 'teacher.mcu@gmail.com',
+      label: 'ตัวอย่างนิสิต (รหัสนิสิต)',
+      email: '6501501071@mcu.ac.th',
+      gmail: '6501501071@mcu.ac.th',
       password: 'mcu123456',
-      badge: '👨‍🏫 อาจารย์',
-      role: 'INSTRUCTOR',
+      badge: '🎓 นิสิต',
+      role: 'STUDENT',
     },
   ];
 
@@ -87,7 +87,13 @@ function LoginForm() {
         localStorage.setItem('mcu_current_user', JSON.stringify(data.user));
         setSuccess(`เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${data.user.name}`);
         setTimeout(() => {
-          router.push(data.user.role === 'SUPER_ADMIN' || data.user.role === 'ADMIN' ? '/admin' : redirectUrl);
+          if (data.user.role === 'SUPER_ADMIN' || data.user.role === 'ADMIN') {
+            router.push('/admin');
+          } else if (data.user.role === 'STUDENT') {
+            router.push('/certificates');
+          } else {
+            router.push(redirectUrl);
+          }
         }, 800);
       } else {
         setError(data.error || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
@@ -116,7 +122,13 @@ function LoginForm() {
         localStorage.setItem('mcu_current_user', JSON.stringify(data.user));
         setSuccess(`เข้าสู่ระบบด้วย Google สำเร็จ: ยินดีต้อนรับ ${data.user.name}`);
         setTimeout(() => {
-          router.push(data.user.role === 'SUPER_ADMIN' || data.user.role === 'ADMIN' ? '/admin' : redirectUrl);
+          if (data.user.role === 'SUPER_ADMIN' || data.user.role === 'ADMIN') {
+            router.push('/admin');
+          } else if (data.user.role === 'STUDENT') {
+            router.push('/certificates');
+          } else {
+            router.push(redirectUrl);
+          }
         }, 800);
       } else {
         setError(data.error || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
@@ -147,10 +159,10 @@ function LoginForm() {
           <span>MCU Faculty & Staff Portal</span>
         </div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-          เข้าสู่ระบบสำหรับอาจารย์และผู้ดูแล
+          เข้าสู่ระบบ (MCU Portal)
         </h1>
         <p className="text-xs text-slate-500 max-w-sm mx-auto">
-          ลงชื่อเข้าใช้งานด้วยบัญชี <b>Gmail</b> หรืออีเมลมหาวิทยาลัย (<b>@mcu.ac.th</b>) เพื่อตรวจเช็คเวลาเรียนและจัดการระบบ
+          ลงชื่อเข้าใช้งานสำหรับ<b>อาจารย์, เจ้าหน้าที่ และนิสิต</b> ด้วยบัญชี <b>Gmail</b> หรืออีเมลมหาวิทยาลัย (<b>@mcu.ac.th</b> / รหัสนิสิต)
         </p>
       </div>
 
@@ -199,14 +211,14 @@ function LoginForm() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              อีเมลอาจารย์ผู้สอน (Gmail หรือ @mcu.ac.th) <span className="text-rose-500">*</span>
+              อีเมลหรือรหัสนิสิต (Gmail, @mcu.ac.th หรือ รหัสนิสิต) <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 required
-                placeholder="เช่น phaisal.dis@mcu.ac.th หรือ user@gmail.com"
+                placeholder="เช่น 6501501071@mcu.ac.th หรือ phaisal.dis@mcu.ac.th"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-medium"
@@ -301,13 +313,16 @@ function LoginForm() {
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 space-y-1">
           <div className="font-semibold text-slate-700 flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            คำแนะนำสำหรับอาจารย์และผู้ดูแล:
+            คำแนะนำการเข้าสู่ระบบ:
           </div>
           <p>
-            • สามารถเข้าสู่ระบบด้วย <b>Gmail ส่วนตัว</b> หรือ <b>อีเมล @mcu.ac.th</b> ด้วยรหัสผ่านเริ่มต้น <code>mcu123456</code>
+            • <b>นิสิต:</b> สามารถเข้าสู่ระบบด้วย <b>รหัสนิสิต@mcu.ac.th</b> หรือใส่เฉพาะรหัสนิสิต (รหัสผ่านเริ่มต้น: <code>mcu123456</code>)
           </p>
           <p>
-            • แอดมินระดับสูงสุด: <b>phaisal.dis@mcu.ac.th</b> สามารถเข้าถึงหลังบ้าน <code>/admin</code> เพื่อจัดการสิทธิ์และระงับบัญชีผู้ใช้ได้
+            • <b>อาจารย์และเจ้าหน้าที่:</b> เข้าสู่ระบบด้วย <b>Gmail ส่วนตัว</b> หรือ <b>อีเมล @mcu.ac.th</b>
+          </p>
+          <p>
+            • แอดมินระดับสูงสุด: <b>phaisal.dis@mcu.ac.th</b> สามารถเข้าถึงหลังบ้าน <code>/admin</code> เพื่อจัดการสิทธิ์และระบบทั้งหมด
           </p>
         </div>
       </div>

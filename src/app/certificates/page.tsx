@@ -210,7 +210,43 @@ export default function CertificatesPage() {
           }
         }
         if (reqsRes.success) setRequests(reqsRes.data);
-        if (studentsRes.success) setStudents(studentsRes.data);
+        if (studentsRes.success) {
+          setStudents(studentsRes.data);
+          // Auto-fill logged-in student info
+          try {
+            const stored = localStorage.getItem('mcu_current_user');
+            if (stored) {
+              const u = JSON.parse(stored);
+              if (u.role === 'STUDENT' && u.studentCode) {
+                setStudentCode(u.studentCode);
+                setTrackCode(u.studentCode);
+                const found = studentsRes.data.find((s: any) => s.studentCode === u.studentCode);
+                if (found) {
+                  const studentFullName = found.fullName || `${found.title || ''} ${found.firstName} ${found.lastName}`.trim();
+                  setFullName(studentFullName);
+                  setMajor(found.major || '');
+                  setDegreeLevel(found.degree || 'ปริญญาตรี');
+                  if (found.phoneNumber) setPhone(found.phoneNumber);
+                  if (found.email) setEmail(found.email);
+                  if (found.age) setAge(String(found.age));
+                  if (found.gender) setGender(found.gender);
+                  if (found.nationality) setNationality(found.nationality);
+                  if (found.country) setCountry(found.country);
+                  if (found.passportNo) setPassportNo(found.passportNo);
+                  if (found.passportExpireDate) setPassportExpireDate(found.passportExpireDate);
+                  if (found.visaType) setVisaType(found.visaType);
+                  if (found.visaExpireDate) setVisaExpireDate(found.visaExpireDate);
+                  if (found.gpa) setGpa(String(found.gpa));
+                  if (found.address) setAddress(found.address);
+                  if (found.subdistrict) setSubdistrict(found.subdistrict);
+                  if (found.district) setDistrict(found.district);
+                  if (found.province) setProvince(found.province);
+                  if (found.postalCode) setPostalCode(found.postalCode);
+                }
+              }
+            }
+          } catch (e) {}
+        }
       })
       .finally(() => setLoading(false));
   }, []);

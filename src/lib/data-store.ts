@@ -194,9 +194,11 @@ export async function getStudents(): Promise<Student[]> {
 
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Students!A2:O');
+      const rows = await gClient.getValues('Students!A1:O');
       if (rows && rows.length > 0) {
-        students = rows.map((r) => {
+        const startIndex = rows[0][0]?.toLowerCase().includes('code') ? 1 : 0;
+        const dataRows = rows.slice(startIndex);
+        students = dataRows.map((r) => {
           const code = (r[0] || '').trim();
           const local = localMap.get(code) || {};
           const isThaiNat = (local.nationality === 'ไทย' || local.nationality === 'Thai');
@@ -1000,6 +1002,19 @@ export async function authenticateInstructor(
   });
 
   if (!found) {
+    // If input is a student (numeric code or in students list), do not auto-create as instructor
+    const codePart = cleanInput.replace(/@mcu\.ac\.th$/i, '').trim();
+    const students = readLocalJson<Student[]>('students.json', []);
+    const isStudent = students.some(
+      (s) =>
+        (s.studentCode || '').toLowerCase() === codePart ||
+        (s.email || '').toLowerCase() === cleanInput ||
+        (s.studentCode || '').toLowerCase() === cleanInput
+    );
+    if (isStudent || /^\d{5,12}$/.test(codePart)) {
+      return null;
+    }
+
     // If not found in pre-generated list but user provides an @mcu.ac.th or @gmail.com email
     if (cleanInput.endsWith('@mcu.ac.th') || cleanInput.endsWith('@gmail.com')) {
       if (passwordInput === 'mcu123456' || passwordInput.length >= 6) {
@@ -1053,6 +1068,19 @@ export async function authenticateGoogleUser(gmailInput: string): Promise<Omit<I
   let found = accounts.find((a) => a.gmail?.toLowerCase() === clean || a.email?.toLowerCase() === clean);
 
   if (!found) {
+    // If input is a student (numeric code or in students list), do not auto-create as instructor
+    const codePart = clean.replace(/@mcu\.ac\.th$/i, '').trim();
+    const students = readLocalJson<Student[]>('students.json', []);
+    const isStudent = students.some(
+      (s) =>
+        (s.studentCode || '').toLowerCase() === codePart ||
+        (s.email || '').toLowerCase() === clean ||
+        (s.studentCode || '').toLowerCase() === clean
+    );
+    if (isStudent || /^\d{5,12}$/.test(codePart)) {
+      return null;
+    }
+
     const username = clean.split('@')[0];
     const newAcc: InstructorAccount = {
       id: 'inst-' + Date.now(),
@@ -1079,6 +1107,55 @@ export async function authenticateGoogleUser(gmailInput: string): Promise<Omit<I
 
   const { password: _, ...safe } = found;
   return safe;
+}
+
+export async function authenticateStudent(
+  identifier: string,
+  passwordInput?: string
+): Promise<any | null> {
+  const students = await getStudents();
+  const clean = (identifier || '').trim().toLowerCase();
+  if (!clean) return null;
+
+  // Extract student code if email is provided (e.g. 6001501014@mcu.ac.th -> 6001501014)
+  const codeOnly = clean.replace(/@mcu\.ac\.th$/i, '').trim();
+
+  const found = students.find((s) => {
+    const sCode = (s.studentCode || '').toLowerCase();
+    const sEmail = (s.email || '').toLowerCase();
+    return sCode === codeOnly || sEmail === clean || sCode === clean;
+  });
+
+  if (!found) return null;
+
+  if (found.isActive === false) {
+    throw new Error('สถานภาพนิสิตไม่ปกติหรือถูกระงับการใช้งาน โปรดติดต่อสำนักงานคณะพุทธศาสตร์');
+  }
+
+  // Password check: Default password for students is 'mcu123456' or studentCode, or 'mcu' + last 4 digits
+  if (passwordInput) {
+    const last4 = (found.studentCode || '').slice(-4);
+    const valid =
+      passwordInput === 'mcu123456' ||
+      passwordInput === found.studentCode ||
+      passwordInput === `mcu${last4}` ||
+      passwordInput === (found.passportNo || '') ||
+      passwordInput === '123456';
+    if (!valid) return null;
+  }
+
+  return {
+    id: found.id || found.studentCode,
+    studentCode: found.studentCode,
+    name: found.fullName || `${found.title || ''}${found.firstName} ${found.lastName}`.trim(),
+    email: found.email || `${found.studentCode}@mcu.ac.th`,
+    department: found.major || 'คณะพุทธศาสตร์',
+    degree: found.degree || 'ปริญญาตรี',
+    role: 'STUDENT',
+    programType: found.programType || 'THAI',
+    yearLevel: found.yearLevel || 1,
+    studentData: found,
+  };
 }
 
 // ----------------- SYSTEM SETTINGS & BRANDING -----------------
