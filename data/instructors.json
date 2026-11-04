@@ -19,8 +19,7 @@
       "Thitanyano"
     ],
     "previousIds": [
-      "inst-duangden",
-      "inst-1"
+      "inst-duangden"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.082Z"
@@ -45,10 +44,7 @@
       "Dharmapriya"
     ],
     "previousIds": [
-      "inst-dharmapriya",
-      "inst-3",
-      "inst-115",
-      "inst-140"
+      "inst-dharmapriya"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.083Z"
@@ -73,11 +69,7 @@
       "Hardnualee"
     ],
     "previousIds": [
-      "inst-89",
-      "inst-136",
-      "inst-13",
-      "inst-118",
-      "inst-105"
+      "inst-dhanardhip"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.083Z"
@@ -102,9 +94,8 @@
       "Dhiradhammo"
     ],
     "previousIds": [
-      "inst-37",
-      "inst-69",
-      "inst-126"
+      "inst-yongyut",
+      "inst-1793779268060"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.083Z"
@@ -130,10 +121,7 @@
       "Kittiyanno"
     ],
     "previousIds": [
-      "inst-16",
-      "inst-91",
-      "inst-104",
-      "inst-130"
+      "inst-jaroon"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.083Z"
@@ -158,8 +146,7 @@
       "Charoennaeo"
     ],
     "previousIds": [
-      "inst-63",
-      "inst-103"
+      "inst-boonkerd"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.083Z"
@@ -184,8 +171,7 @@
       "Thitadhammo"
     ],
     "previousIds": [
-      "inst-20",
-      "inst-100"
+      "inst-mongkolkarn"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.083Z"
@@ -208,15 +194,14 @@
       "สุวินัย"
     ],
     "previousIds": [
-      "inst-12",
-      "inst-139"
+      "inst-suvinaya"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.083Z"
   },
   {
     "id": "inst-sukheesom",
-    "name": "Ven. Phra Sukheesom Silatechaputtiyo, Ph.D.",
+    "name": "พระครูปลัดสุขีศม สีลเตชปุตฺติโย, อ.ดร.",
     "nameEn": "Ven. Phra Sukheesom Silatechaputtiyo, Ph.D.",
     "email": "phrasukheesom@mcu.ac.th",
     "gmail": "phrasukheesom.mcu@gmail.com",
@@ -228,14 +213,16 @@
     "isSuspended": false,
     "isSuperAdmin": false,
     "aliases": [
+      "สุขีศม",
+      "สีลเตชปุตฺติโย",
       "Sukheesom",
       "Silatechaputtiyo",
-      "สุขีสม"
+      "ปลัดสุขีศม"
     ],
     "previousIds": [
-      "inst-116",
-      "inst-31",
-      "inst-137"
+      "inst-sukheesom",
+      "inst-33",
+      "inst-138"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.084Z"
@@ -259,15 +246,14 @@
       "ดวงกมล"
     ],
     "previousIds": [
-      "inst-45",
-      "inst-57"
+      "inst-doungkamon"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.084Z"
   },
   {
     "id": "inst-jutamas",
-    "name": "Assoc. Prof. Dr. Jutamas Vareesangthip",
+    "name": "รศ.พิเศษ ดร.จุฑามาศ วารีแสงทิพย์",
     "nameEn": "Assoc. Prof. Dr. Jutamas Vareesangthip",
     "email": "jutamas.var@mcu.ac.th",
     "gmail": "jutamas.mcu@gmail.com",
@@ -279,13 +265,14 @@
     "isSuspended": false,
     "isSuperAdmin": false,
     "aliases": [
+      "จุฑามาศ",
+      "วารีแสงทิพย์",
       "Jutamas",
-      "Vareesangthip",
-      "จุฑามาศ"
+      "Vareesangthip"
     ],
     "previousIds": [
-      "inst-49",
-      "inst-134"
+      "inst-jutamas",
+      "inst-67"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.084Z"
@@ -309,14 +296,14 @@
       "สุนทรภรณ์"
     ],
     "previousIds": [
-      "inst-55"
+      "inst-soontaraporn"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.084Z"
   },
   {
     "id": "inst-onjira",
-    "name": "Dr. Onjira Wongsapan",
+    "name": "อ.ดร.อรจิรา วงษาพาน",
     "nameEn": "Dr. Onjira Wongsapan",
     "email": "onjira.won@mcu.ac.th",
     "gmail": "onjira.mcu@gmail.com",
@@ -328,13 +315,15 @@
     "isSuspended": false,
     "isSuperAdmin": false,
     "aliases": [
+      "อรจิรา",
+      "วงษาพาน",
+      "วงศ์สะพาน",
       "Onjira",
-      "Wongsapan",
-      "อรจิรา"
+      "Wongsapan"
     ],
     "previousIds": [
-      "inst-111",
-      "inst-133"
+      "inst-onjira",
+      "inst-14"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.085Z"
@@ -357,8 +346,7 @@
       "Pisit"
     ],
     "previousIds": [
-      "inst-52",
-      "inst-123"
+      "inst-pisit"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.085Z"
@@ -381,8 +369,7 @@
       "Srisitti"
     ],
     "previousIds": [
-      "inst-61",
-      "inst-102"
+      "inst-srisitti"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.085Z"
@@ -403,11 +390,12 @@
     "aliases": [
       "ราชัน",
       "จิตฺตปาโล",
-      "Rachan"
+      "Rachan",
+      "Cittapalo"
     ],
     "previousIds": [
-      "inst-24",
-      "inst-109"
+      "inst-rachan",
+      "inst-132"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.085Z"
@@ -431,8 +419,7 @@
       "Atithep"
     ],
     "previousIds": [
-      "inst-56",
-      "inst-110"
+      "inst-atithep"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.085Z"
@@ -455,8 +442,7 @@
       "Kovit"
     ],
     "previousIds": [
-      "inst-93",
-      "inst-106"
+      "inst-kovit"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.085Z"
@@ -480,8 +466,7 @@
       "Chaiya"
     ],
     "previousIds": [
-      "inst-84",
-      "inst-127"
+      "inst-chaya"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.085Z"
@@ -504,9 +489,7 @@
       "ปิยรัตนะ"
     ],
     "previousIds": [
-      "inst-22",
-      "inst-54",
-      "inst-135"
+      "inst-wpiyaratana"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-04T03:18:09.086Z"
@@ -643,8 +626,8 @@
   {
     "id": "inst-9",
     "name": "พระมหายุทธนา นรเชฏฺโฐ, รศ.ดร.",
-    "email": "teacher8@mcu.ac.th",
-    "gmail": "teacher8.mcu@gmail.com",
+    "email": "yutthana.nar@mcu.ac.th",
+    "gmail": "yutthana.mcu@gmail.com",
     "password": "mcu1007",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
@@ -653,13 +636,18 @@
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระมหายุทธนา",
-      "นรเชฏฺโฐ"
+      "ยุทธนา",
+      "นรเชฏฺโฐ",
+      "นราเชฏฺโฐ",
+      "Yutthana",
+      "Narajettho"
     ],
     "previousIds": [
-      "inst-9"
+      "inst-9",
+      "inst-59"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Phramaha Yutthana Narajettho, Ph.D."
   },
   {
     "id": "inst-10",
@@ -725,8 +713,8 @@
   {
     "id": "inst-32",
     "name": "พระสิทธิวัชรบัณฑิต, ผศ.ดร.",
-    "email": "teacher17@mcu.ac.th",
-    "gmail": "teacher17.mcu@gmail.com",
+    "email": "sitthivajarabundit@mcu.ac.th",
+    "gmail": "sitthivajarabundit.mcu@gmail.com",
     "password": "mcu1016",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
@@ -735,12 +723,17 @@
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระสิทธิวัชรบัณฑิต"
+      "สิทธิวัชรบัณฑิต",
+      "Sitthivajarabundit",
+      "Sitthivajara",
+      "Phra Sitthivajarabundit"
     ],
     "previousIds": [
-      "inst-32"
+      "inst-32",
+      "inst-28"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Phra Sitthivajarabundit, Ph.D."
   },
   {
     "id": "inst-48",
@@ -871,27 +864,6 @@
     "isSuperAdmin": false
   },
   {
-    "id": "inst-14",
-    "name": "อ.ดร.อรจิรา วงษาพาน",
-    "email": "teacher27@mcu.ac.th",
-    "gmail": "teacher27.mcu@gmail.com",
-    "password": "mcu1026",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 10,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "อรจิรา",
-      "วงษาพาน"
-    ],
-    "previousIds": [
-      "inst-14"
-    ],
-    "isSuperAdmin": false
-  },
-  {
     "id": "inst-18",
     "name": "พระศรีวชิราภินันท์, อ.ดร.",
     "email": "teacher28@mcu.ac.th",
@@ -971,27 +943,6 @@
     ],
     "previousIds": [
       "inst-27"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-33",
-    "name": "พระครูปลัดสุขีศม สีลเตชปุตฺติโย, อ.ดร.",
-    "email": "teacher32@mcu.ac.th",
-    "gmail": "teacher32.mcu@gmail.com",
-    "password": "mcu1031",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 10,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "พระครูปลัดสุขีศม",
-      "สีลเตชปุตฺติโย"
-    ],
-    "previousIds": [
-      "inst-33"
     ],
     "isSuperAdmin": false
   },
@@ -1188,8 +1139,8 @@
   {
     "id": "inst-78",
     "name": "พระสมุห์เกรียงศักดิ์ สิริสกฺโก, อ.ดร.",
-    "email": "teacher45@mcu.ac.th",
-    "gmail": "teacher45.mcu@gmail.com",
+    "email": "kriengsak.sir@mcu.ac.th",
+    "gmail": "kriengsak.mcu@gmail.com",
     "password": "mcu1044",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
@@ -1198,35 +1149,20 @@
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระสมุห์เกรียงศักดิ์",
-      "สิริสกฺโก"
-    ],
-    "previousIds": [
-      "inst-78"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-79",
-    "name": "Phrasamu Kreingsak Sirisakko, Ph.D.",
-    "email": "phrasamukrei@mcu.ac.th",
-    "gmail": "phrasamukrei.mcu@gmail.com",
-    "password": "mcu1045",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 8,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Phrasamu",
+      "เกรียงศักดิ์",
+      "สิริสกฺโก",
+      "Kriengsak",
       "Kreingsak",
       "Sirisakko"
     ],
     "previousIds": [
-      "inst-79"
+      "inst-78",
+      "inst-79",
+      "inst-4",
+      "inst-131"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phrasamu Kriengsak Sirisakko, Ph.D."
   },
   {
     "id": "inst-81",
@@ -1295,28 +1231,6 @@
     "isSuperAdmin": false
   },
   {
-    "id": "inst-4",
-    "name": "Phrasamu Kriengsak Sirisakko, Ph.D.",
-    "email": "phrasamukrie@mcu.ac.th",
-    "gmail": "phrasamukrie.mcu@gmail.com",
-    "password": "mcu1051",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 6,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Phrasamu",
-      "Kriengsak",
-      "Sirisakko"
-    ],
-    "previousIds": [
-      "inst-4"
-    ],
-    "isSuperAdmin": false
-  },
-  {
     "id": "inst-15",
     "name": "A.Dr. Sudtida Padrit",
     "email": "adrsudtidapa@mcu.ac.th",
@@ -1375,29 +1289,6 @@
     ],
     "previousIds": [
       "inst-23"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-28",
-    "name": "Asst. Prof. Phra Sitthivajarabundit, Ph.D.",
-    "email": "asstprofphra@mcu.ac.th",
-    "gmail": "asstprofphra.mcu@gmail.com",
-    "password": "mcu1055",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 6,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Asst",
-      "Prof",
-      "Phra",
-      "Sitthivajarabundit"
-    ],
-    "previousIds": [
-      "inst-28"
     ],
     "isSuperAdmin": false
   },
@@ -1700,30 +1591,6 @@
     "isSuperAdmin": false
   },
   {
-    "id": "inst-59",
-    "name": "Assoc. Prof. Phramaha Yutthana Narajettho, Ph.D",
-    "email": "assocprofphr@mcu.ac.th",
-    "gmail": "assocprofphr.mcu@gmail.com",
-    "password": "mcu1078",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Assoc",
-      "Prof",
-      "Phramaha",
-      "Yutthana",
-      "Narajettho"
-    ],
-    "previousIds": [
-      "inst-59"
-    ],
-    "isSuperAdmin": false
-  },
-  {
     "id": "inst-60",
     "name": "อ.ดร.นภาพัทธ์ งามบุษบงโสภิน",
     "email": "teacher80@mcu.ac.th",
@@ -1741,28 +1608,6 @@
     ],
     "previousIds": [
       "inst-60"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-67",
-    "name": "รศ.พิเศษ ดร.จุฑามาศ วารีแสงทิพย์",
-    "email": "teacher81@mcu.ac.th",
-    "gmail": "teacher81.mcu@gmail.com",
-    "password": "mcu1080",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "พิเศษ",
-      "จุฑามาศ",
-      "วารีแสงทิพย์"
-    ],
-    "previousIds": [
-      "inst-67"
     ],
     "isSuperAdmin": false
   },
@@ -1913,9 +1758,9 @@
   },
   {
     "id": "inst-80",
-    "name": "Asst. Prof. Phramaha Somphong Khunakaro, Ph.D.",
-    "email": "asstprofphra@mcu.ac.th",
-    "gmail": "asstprofphra.mcu@gmail.com",
+    "name": "พระมหาสมพงษ์ คุณากโร, ผศ.ดร.",
+    "email": "somphong.khu@mcu.ac.th",
+    "gmail": "somphong.mcu@gmail.com",
     "password": "mcu1088",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
@@ -1924,16 +1769,16 @@
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "Asst",
-      "Prof",
-      "Phramaha",
+      "สมพงษ์",
+      "คุณากโร",
       "Somphong",
       "Khunakaro"
     ],
     "previousIds": [
       "inst-80"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Phramaha Somphong Khunakaro, Ph.D."
   },
   {
     "id": "inst-82",
@@ -2043,9 +1888,9 @@
   },
   {
     "id": "inst-95",
-    "name": "Asst. Prof. PM. Pornchai Sirivaro, Ph.D.",
-    "email": "asstprofpmpo@mcu.ac.th",
-    "gmail": "asstprofpmpo.mcu@gmail.com",
+    "name": "พระมหาพรชัย สิริวโร, ผศ.ดร.",
+    "email": "pornchai.sir@mcu.ac.th",
+    "gmail": "pornchai.mcu@gmail.com",
     "password": "mcu1096",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
@@ -2054,39 +1899,17 @@
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "Asst",
-      "Prof",
+      "พรชัย",
+      "สิริวโร",
       "Pornchai",
       "Sirivaro"
     ],
     "previousIds": [
-      "inst-95"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-96",
-    "name": "Asst. Prof. Phramaha Pornchai Sirivaro, Ph.D.",
-    "email": "asstprofphra@mcu.ac.th",
-    "gmail": "asstprofphra.mcu@gmail.com",
-    "password": "mcu1097",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Asst",
-      "Prof",
-      "Phramaha",
-      "Pornchai",
-      "Sirivaro"
-    ],
-    "previousIds": [
+      "inst-95",
       "inst-96"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Phramaha Pornchai Sirivaro, Ph.D."
   },
   {
     "id": "inst-97",
@@ -2155,9 +1978,9 @@
   },
   {
     "id": "inst-113",
-    "name": "Assoc. Prof. Phra Dhammavajirapanyacarya, Ph.D.",
-    "email": "assocprofphr@mcu.ac.th",
-    "gmail": "assocprofphr.mcu@gmail.com",
+    "name": "พระธรรมวัชรปัญญาจารย์, รศ.ดร.",
+    "email": "dhammavajirapanya@mcu.ac.th",
+    "gmail": "dhammavajirapanya.mcu@gmail.com",
     "password": "mcu1102",
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
@@ -2166,15 +1989,14 @@
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "Assoc",
-      "Prof",
-      "Phra",
+      "ธรรมวัชรปัญญาจารย์",
       "Dhammavajirapanyacarya"
     ],
     "previousIds": [
       "inst-113"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Phra Dhammavajirapanyacarya, Ph.D."
   },
   {
     "id": "inst-114",
@@ -2196,27 +2018,6 @@
     ],
     "previousIds": [
       "inst-114"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-138",
-    "name": "พระสุขีศม สีลเตชปุตฺติโย, อ.ดร.",
-    "email": "teacher106@mcu.ac.th",
-    "gmail": "teacher106.mcu@gmail.com",
-    "password": "mcu1105",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาบาลีสันสกฤต",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "พระสุขีศม",
-      "สีลเตชปุตฺติโย"
-    ],
-    "previousIds": [
-      "inst-138"
     ],
     "isSuperAdmin": false
   },
@@ -2368,46 +2169,6 @@
     "isSuperAdmin": false
   },
   {
-    "id": "inst-121",
-    "name": "Staff",
-    "email": "staff@mcu.ac.th",
-    "gmail": "staff.mcu@gmail.com",
-    "password": "mcu1122",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
-    "role": "INSTRUCTOR",
-    "coursesCount": 2,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Staff"
-    ],
-    "previousIds": [
-      "inst-121"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-122",
-    "name": "Advisor",
-    "email": "advisor@mcu.ac.th",
-    "gmail": "advisor.mcu@gmail.com",
-    "password": "mcu1123",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
-    "role": "INSTRUCTOR",
-    "coursesCount": 2,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Advisor"
-    ],
-    "previousIds": [
-      "inst-122"
-    ],
-    "isSuperAdmin": false
-  },
-  {
     "id": "inst-124",
     "name": "พระครูภาวนาพัฒนบัณฑิต วิ., ผศ. ดร.",
     "email": "teacher126@mcu.ac.th",
@@ -2486,97 +2247,5 @@
       "inst-129"
     ],
     "isSuperAdmin": false
-  },
-  {
-    "id": "inst-131",
-    "name": "Phra Kriengsak Sirisakko, Ph.D.",
-    "email": "phrakriengsa@mcu.ac.th",
-    "gmail": "phrakriengsa.mcu@gmail.com",
-    "password": "mcu1132",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 3 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
-    "role": "INSTRUCTOR",
-    "coursesCount": 2,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Phra",
-      "Kriengsak",
-      "Sirisakko"
-    ],
-    "previousIds": [
-      "inst-131"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-132",
-    "name": "Phramaha Rachan Cittapalo, Ph.D.",
-    "email": "phramaharach@mcu.ac.th",
-    "gmail": "phramaharach.mcu@gmail.com",
-    "password": "mcu1133",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 4 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
-    "role": "INSTRUCTOR",
-    "coursesCount": 2,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Phramaha",
-      "Rachan",
-      "Cittapalo"
-    ],
-    "previousIds": [
-      "inst-132"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-1793602720817",
-    "name": "อาจารย์ (newprof)",
-    "email": "newprof@mcu.ac.th",
-    "gmail": "newprof@gmail.com",
-    "password": "mcu123456",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์ มจร",
-    "role": "INSTRUCTOR",
-    "coursesCount": 0,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:58:40.817Z",
-    "aliases": [
-      "(newprof)"
-    ],
-    "previousIds": [
-      "inst-1793602720817"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-1793778738201",
-    "name": "อาจารย์ (admin)",
-    "email": "admin@mcu.ac.th",
-    "gmail": "admin@gmail.com",
-    "password": "mcu123456",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์ มจร",
-    "role": "INSTRUCTOR",
-    "coursesCount": 0,
-    "isActive": true,
-    "isSuspended": false,
-    "createdAt": "2026-11-04T07:52:18.201Z"
-  },
-  {
-    "id": "inst-1793779268060",
-    "name": "อาจารย์ (yongyut)",
-    "email": "yongyut@mcu.ac.th",
-    "gmail": "yongyut@gmail.com",
-    "password": "mcu123456",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์ มจร",
-    "role": "INSTRUCTOR",
-    "coursesCount": 0,
-    "isActive": true,
-    "isSuspended": false,
-    "createdAt": "2026-11-04T08:01:08.060Z"
   }
 ]

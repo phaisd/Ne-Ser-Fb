@@ -1410,6 +1410,14 @@ export async function updateUserProfile(
   const updated: InstructorAccount = {
     ...current,
     name: updates.name !== undefined ? updates.name.trim() : current.name,
+    nameEn: updates.nameEn !== undefined ? updates.nameEn.trim() : current.nameEn,
+    aliases: updates.aliases !== undefined
+      ? (Array.isArray(updates.aliases)
+          ? updates.aliases
+          : typeof updates.aliases === 'string'
+          ? (updates.aliases as string).split(',').map((s) => s.trim()).filter(Boolean)
+          : current.aliases)
+      : current.aliases,
     email: updates.email !== undefined ? updates.email.trim() : current.email,
     gmail: updates.gmail !== undefined ? updates.gmail.trim() : current.gmail,
     department: updates.department !== undefined ? updates.department.trim() : current.department,

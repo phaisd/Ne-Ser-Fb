@@ -154,6 +154,10 @@ interface SystemSettings {
 interface UserAccount {
   id: string;
   name: string;
+  nameEn?: string;
+  aliases?: string[];
+  defaultPassword?: string;
+  password?: string;
   email: string;
   gmail?: string;
   department?: string;
@@ -379,8 +383,10 @@ export default function AdminConsolePage() {
   const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
   const [editUserForm, setEditUserForm] = useState({
     name: '',
+    nameEn: '',
     email: '',
     gmail: '',
+    aliasesText: '',
     department: 'คณะพุทธศาสตร์ มจร',
     role: 'INSTRUCTOR' as 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR',
   });
@@ -957,8 +963,10 @@ export default function AdminConsolePage() {
     setEditingUser(user);
     setEditUserForm({
       name: user.name || '',
+      nameEn: user.nameEn || '',
       email: user.email || '',
       gmail: user.gmail || '',
+      aliasesText: Array.isArray(user.aliases) ? user.aliases.join(', ') : '',
       department: user.department || 'คณะพุทธศาสตร์ มจร',
       role: user.role || 'INSTRUCTOR',
     });
@@ -973,18 +981,26 @@ export default function AdminConsolePage() {
     }
     setEditUserSaving(true);
     try {
+      const aliases = editUserForm.aliasesText
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update-profile',
           userId: editingUser.id,
-          updates: editUserForm,
+          updates: {
+            ...editUserForm,
+            aliases,
+          },
         }),
       });
       const data = await res.json();
       if (data.success) {
-        setActionSuccess(`แก้ไขข้อมูลอีเมลและโปรไฟล์ของ ${editUserForm.name} สำเร็จ`);
+        setActionSuccess(`แก้ไขข้อมูลโปรไฟล์และอีเมลของ ${editUserForm.name} สำเร็จ`);
         setEditingUser(null);
         loadData();
       } else {
