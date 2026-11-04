@@ -24,13 +24,14 @@ export async function POST(request: Request) {
       const buffer = Buffer.from(bytes);
 
       // Extract extension safely
-      const originalName = file.name || 'logo.png';
+      const originalName = file.name || 'file.png';
       const ext = path.extname(originalName) || '.png';
-      const cleanExt = ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif'].includes(ext.toLowerCase())
+      const cleanExt = ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif', '.pdf'].includes(ext.toLowerCase())
         ? ext.toLowerCase()
         : '.png';
 
-      const fileName = `logo-${Date.now()}${cleanExt}`;
+      const prefix = cleanExt === '.pdf' ? 'doc' : 'file';
+      const fileName = `${prefix}-${Date.now()}${cleanExt}`;
       const filePath = path.join(uploadDir, fileName);
 
       fs.writeFileSync(filePath, buffer);
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
         success: true,
         url: publicUrl,
         filename: fileName,
-        message: 'อัปโหลดรูปภาพโลโก้สำเร็จเรียบร้อยแล้ว',
+        message: 'อัปโหลดไฟล์สำเร็จเรียบร้อยแล้ว',
       });
     }
 
@@ -66,8 +67,10 @@ export async function POST(request: Request) {
     if (mime.includes('jpeg') || mime.includes('jpg')) ext = '.jpg';
     else if (mime.includes('svg')) ext = '.svg';
     else if (mime.includes('webp')) ext = '.webp';
+    else if (mime.includes('pdf')) ext = '.pdf';
 
-    const fileName = `logo-${Date.now()}${ext}`;
+    const prefix = ext === '.pdf' ? 'doc' : 'file';
+    const fileName = `${prefix}-${Date.now()}${ext}`;
     const filePath = path.join(uploadDir, fileName);
 
     fs.writeFileSync(filePath, buffer);
