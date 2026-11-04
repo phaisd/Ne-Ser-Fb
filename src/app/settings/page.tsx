@@ -226,7 +226,7 @@ export default function SettingsPage() {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('mcu_settings_updated'));
         }
-        setLogoSaveSuccess('✅ บันทึกและอัปเดตโลโก้ใน Navbar ทั้งหมดเรียบร้อยแล้ว!');
+        setLogoSaveSuccess(`✅ บันทึกชื่อคณะ (${settings.facultyNameTh || 'คณะพุทธศาสตร์'}) และข้อมูลระบบเรียบร้อยแล้ว! Navbar และเอกสารได้รับการอัปเดตทันที`);
       } else {
         alert(data.error);
       }
@@ -279,8 +279,8 @@ export default function SettingsPage() {
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
         <div className="flex items-center justify-between border-b pb-3 flex-wrap gap-2">
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-pink-600" />
-            <span>โลโก้และตราสัญลักษณ์บน Navbar (Portal &amp; Admin)</span>
+            <Building2 className="w-5 h-5 text-pink-600" />
+            <span>ชื่อคณะ หน่วยงาน และตราสัญลักษณ์ (Faculty & Branding Settings)</span>
           </h2>
           <span className="text-[11px] text-pink-700 bg-pink-50 border border-pink-200 font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
             <Sparkles className="w-3 h-3" />
@@ -463,6 +463,73 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* Faculty & University Info (ชื่อคณะและมหาวิทยาลัย - สามารถแก้ไขเปลี่ยนข้อความใหม่ได้โดยตรง) */}
+            <div className="pt-4 border-t border-slate-100 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
+                  <Building2 className="w-4 h-4 text-pink-600" />
+                  <span>ข้อมูลชื่อคณะและมหาวิทยาลัย (แก้ไขเปลี่ยนข้อความได้ทันที):</span>
+                </div>
+                <span className="text-[11px] text-pink-700 bg-pink-50 border border-pink-200 px-2.5 py-0.5 rounded-full font-semibold">
+                  แสดงผลบน Navbar, หัวเอกสารคำร้อง, และหน้าล็อกอิน
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    ชื่อคณะ/หน่วยงาน (ภาษาไทย) <span className="text-pink-600 font-mono">[facultyNameTh]</span>:
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.facultyNameTh || ''}
+                    onChange={(e) => setSettings({ ...settings, facultyNameTh: e.target.value })}
+                    placeholder="เช่น คณะพุทธศาสตร์"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20 bg-white font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    ชื่อคณะ/หน่วยงาน (ภาษาอังกฤษ) <span className="text-slate-400 font-mono">[facultyNameEn]</span>:
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.facultyNameEn || ''}
+                    onChange={(e) => setSettings({ ...settings, facultyNameEn: e.target.value })}
+                    placeholder="เช่น Faculty of Buddhism"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20 bg-white font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    ชื่อมหาวิทยาลัย (ภาษาไทย) <span className="text-slate-400 font-mono">[universityNameTh]</span>:
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.universityNameTh || ''}
+                    onChange={(e) => setSettings({ ...settings, universityNameTh: e.target.value })}
+                    placeholder="เช่น มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20 bg-white font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    ชื่อมหาวิทยาลัย (ภาษาอังกฤษ) <span className="text-slate-400 font-mono">[universityNameEn]</span>:
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.universityNameEn || ''}
+                    onChange={(e) => setSettings({ ...settings, universityNameEn: e.target.value })}
+                    placeholder="เช่น Mahachulalongkornrajavidyalaya University"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20 bg-white font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Action Bar */}
             <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
               <div className="text-[11px] text-slate-500">
@@ -492,34 +559,39 @@ export default function SettingsPage() {
                   className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-xl text-xs font-bold shadow-md shadow-pink-600/20 transition cursor-pointer flex items-center gap-1.5"
                 >
                   <Check className="w-4 h-4" />
-                  <span>{savingLogo ? 'กำลังบันทึก...' : '💾 บันทึกและอัปเดต Navbar ทันที'}</span>
+                  <span>{savingLogo ? 'กำลังบันทึก...' : '💾 บันทึกการเปลี่ยนแปลง (ชื่อคณะ, โลโก้, มหาวิทยาลัย)'}</span>
                 </button>
               </div>
             </div>
 
             {/* Google Sheets Direct Logo Guide */}
             <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-              <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-                <Table2 className="w-4 h-4 text-emerald-600" />
-                <span>คำแนะนำ: วิธีใส่หรือเปลี่ยนโลโก้ใน Google Sheets โดยตรง</span>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                  <Table2 className="w-4 h-4 text-emerald-600" />
+                  <span>ตารางสรุปคีย์การตั้งค่า (Settings Reference) และการเชื่อมต่อ Google Sheets</span>
+                </div>
+                <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                  แก้ไขได้ทั้งจากฟอร์มด้านบน และจากแท็บ Settings ใน Google Sheets
+                </span>
               </div>
               <p className="text-[11px] text-slate-600 leading-relaxed">
-                สร้างหรือเปิดแท็บชื่อ <strong>Settings</strong> ใน Google Spreadsheet แล้วกรอกข้อมูลในแถวดังนี้:
+                ท่านสามารถแก้ไขค่าต่างๆ ได้โดยตรงจากฟอร์มด้านบนแล้วกดปุ่มบันทึก หรือกรอกไว้ในแท็บ <strong>Settings</strong> บน Google Spreadsheet ได้เช่นกัน:
               </p>
               <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto">
                 <table className="w-full text-left text-[11px]">
                   <thead className="bg-slate-100 text-slate-700 font-bold border-b">
                     <tr>
                       <th className="p-2 font-mono">คอลัมน์ A (Key)</th>
-                      <th className="p-2">คอลัมน์ B (Value)</th>
+                      <th className="p-2">คอลัมน์ B (Value ปัจจุบันในระบบ)</th>
                       <th className="p-2">คอลัมน์ C (คำอธิบาย)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     <tr>
                       <td className="p-2 font-mono font-bold text-pink-700">logoUrl</td>
-                      <td className="p-2 font-mono text-emerald-800">
-                        https://... หรือ ลิงก์แชร์จาก Google Drive
+                      <td className="p-2 font-mono text-emerald-800 truncate max-w-xs">
+                        {settings.logoUrl || 'https://... หรือ ลิงก์แชร์จาก Google Drive'}
                       </td>
                       <td className="p-2 text-slate-500">
                         URL รูปภาพโลโก้ (รองรับลิงก์ Google Drive โดยแปลงให้อัตโนมัติ)
@@ -527,13 +599,28 @@ export default function SettingsPage() {
                     </tr>
                     <tr>
                       <td className="p-2 font-mono font-bold text-slate-700">logoEmoji</td>
-                      <td className="p-2 text-base">☸️</td>
+                      <td className="p-2 text-base">{settings.logoEmoji || '☸️'}</td>
                       <td className="p-2 text-slate-500">Emoji สัญลักษณ์สำรอง</td>
                     </tr>
+                    <tr className="bg-pink-50/50">
+                      <td className="p-2 font-mono font-bold text-pink-700">facultyNameTh</td>
+                      <td className="p-2 font-bold text-slate-900">{settings.facultyNameTh || 'คณะพุทธศาสตร์'}</td>
+                      <td className="p-2 text-slate-600 font-medium">ชื่อคณะ (แสดงบน Navbar, หน้าล็อกอิน และเอกสาร)</td>
+                    </tr>
                     <tr>
-                      <td className="p-2 font-mono font-bold text-slate-700">facultyNameTh</td>
-                      <td className="p-2">คณะพุทธศาสตร์</td>
-                      <td className="p-2 text-slate-500">ชื่อคณะ (แสดงบน Navbar และเอกสาร)</td>
+                      <td className="p-2 font-mono font-bold text-slate-700">facultyNameEn</td>
+                      <td className="p-2 font-medium text-slate-800">{settings.facultyNameEn || 'Faculty of Buddhism'}</td>
+                      <td className="p-2 text-slate-500">ชื่อคณะ ภาษาอังกฤษ (สำหรับเอกสารภาคนานาชาติ)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 font-mono font-bold text-slate-700">universityNameTh</td>
+                      <td className="p-2 text-slate-700">{settings.universityNameTh || 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}</td>
+                      <td className="p-2 text-slate-500">ชื่อมหาวิทยาลัย ภาษาไทย</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 font-mono font-bold text-slate-700">universityNameEn</td>
+                      <td className="p-2 text-slate-700">{settings.universityNameEn || 'Mahachulalongkornrajavidyalaya University'}</td>
+                      <td className="p-2 text-slate-500">ชื่อมหาวิทยาลัย ภาษาอังกฤษ</td>
                     </tr>
                   </tbody>
                 </table>
