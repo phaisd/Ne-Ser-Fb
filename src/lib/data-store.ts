@@ -1233,6 +1233,8 @@ export interface SystemSettings {
   signerTitleEn: string;
   contactPhone: string;
   contactEmail: string;
+  websiteUrl?: string;
+  systemServiceUrl?: string;
   addressTh: string;
   addressEn: string;
   announcementText: string;
@@ -1253,6 +1255,8 @@ const DEFAULT_SETTINGS: SystemSettings = {
   signerTitleEn: 'Dean of the Faculty of Buddhism',
   contactPhone: '035-248-000 ต่อ 8323',
   contactEmail: 'buddhism@mcu.ac.th',
+  websiteUrl: 'https://fb.mcu.ac.th/',
+  systemServiceUrl: 'https://fb-service.mcu.ac.th/',
   addressTh: 'เลขที่ 79 หมู่ 1 ถนนพหลโยธิน ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170',
   addressEn: '79 Moo 1, Phahonyothin Road, Lamsai, Wangnoi, Phra Nakhon Si Ayutthaya 13170, Thailand',
   announcementText: 'ยินดีต้อนรับสู่งานบริการการศึกษาและทะเบียน คณะพุทธศาสตร์ มจร. วังน้อย',

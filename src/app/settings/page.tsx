@@ -48,7 +48,10 @@ interface SystemSettings {
   announcementText?: string;
   lineNotifyToken?: string;
   lineChannelAccessToken?: string;
+  contactPhone?: string;
   contactEmail?: string;
+  websiteUrl?: string;
+  systemServiceUrl?: string;
 }
 
 export default function SettingsPage() {
@@ -66,6 +69,9 @@ export default function SettingsPage() {
     facultyNameEn: 'Faculty of Buddhism',
     logoUrl: '/uploads/logo-1793607295012.png',
     logoEmoji: '☸️',
+    contactPhone: '035-248-000 ต่อ 8323',
+    websiteUrl: 'https://fb.mcu.ac.th/',
+    systemServiceUrl: 'https://fb-service.mcu.ac.th/',
     lineNotifyToken: '',
     lineChannelAccessToken: '',
     contactEmail: 'buddhism@mcu.ac.th',
@@ -527,6 +533,48 @@ export default function SettingsPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20 bg-white font-medium"
                   />
                 </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    เบอร์โทรศัพท์ติดต่อ (แสดงท้ายเอกสาร) <span className="text-slate-400 font-mono">[contactPhone]</span>:
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.contactPhone || ''}
+                    onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
+                    placeholder="เช่น 035-248-000 ต่อ 8323"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20 bg-white font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    เว็บไซต์หลักของคณะ <span className="text-purple-600 font-mono">[websiteUrl]</span>:
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.websiteUrl || ''}
+                    onChange={(e) => setSettings({ ...settings, websiteUrl: e.target.value })}
+                    placeholder="เช่น https://fb.mcu.ac.th/"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20 bg-white font-medium font-mono text-purple-700"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="font-bold text-slate-700 block mb-1">
+                    🌐 ลิงก์ระบบบริการการศึกษา / Web App URL (แสดงบรรทัดที่ 4 ท้ายเอกสาร) <span className="text-purple-600 font-mono">[systemServiceUrl]</span>:
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.systemServiceUrl || ''}
+                    onChange={(e) => setSettings({ ...settings, systemServiceUrl: e.target.value })}
+                    placeholder="เช่น https://fb-service.mcu.ac.th/ หรือ http://localhost:3020"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20 bg-white font-medium font-mono text-purple-700"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    * ลิงก์นี้จะนำไปแสดงเป็นบรรทัดต่อจาก fb.mcu.ac.th ในส่วนท้ายเอกสารรับรองทุกฉบับอัตโนมัติ
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -621,6 +669,21 @@ export default function SettingsPage() {
                       <td className="p-2 font-mono font-bold text-slate-700">universityNameEn</td>
                       <td className="p-2 text-slate-700">{settings.universityNameEn || 'Mahachulalongkornrajavidyalaya University'}</td>
                       <td className="p-2 text-slate-500">ชื่อมหาวิทยาลัย ภาษาอังกฤษ</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 font-mono font-bold text-slate-700">contactPhone</td>
+                      <td className="p-2 text-slate-700">{settings.contactPhone || '035-248-000 ต่อ 8323'}</td>
+                      <td className="p-2 text-slate-500">เบอร์โทรศัพท์ติดต่อ (แสดงในเอกสารราชการ)</td>
+                    </tr>
+                    <tr className="bg-purple-50/50">
+                      <td className="p-2 font-mono font-bold text-purple-700">websiteUrl</td>
+                      <td className="p-2 font-medium font-mono text-purple-800">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</td>
+                      <td className="p-2 text-slate-600 font-medium">เว็บไซต์หลักของคณะ (แสดงท้ายเอกสารบรรทัดที่ 3)</td>
+                    </tr>
+                    <tr className="bg-purple-50/50">
+                      <td className="p-2 font-mono font-bold text-purple-700">systemServiceUrl</td>
+                      <td className="p-2 font-medium font-mono text-purple-800">{settings.systemServiceUrl || 'https://fb-service.mcu.ac.th/'}</td>
+                      <td className="p-2 text-slate-600 font-medium">ลิงก์ระบบบริการการศึกษานี้ (แสดงท้ายเอกสารบรรทัดที่ 4 ต่อจาก fb.mcu.ac.th)</td>
                     </tr>
                   </tbody>
                 </table>

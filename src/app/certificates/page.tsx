@@ -219,6 +219,15 @@ export default function CertificatesPage() {
     }
   };
 
+  // System Settings (Contact, Faculty, Web URLs)
+  const [settings, setSettings] = useState<any>({
+    facultyNameTh: 'คณะพุทธศาสตร์',
+    facultyNameEn: 'Faculty of Buddhism',
+    contactPhone: '035-248-000 ต่อ 8323',
+    websiteUrl: 'https://fb.mcu.ac.th/',
+    systemServiceUrl: 'https://fb-service.mcu.ac.th/',
+  });
+
   // Available Buddhist Years in Certificate Requests
   const availableCertYears = useMemo(() => {
     const set = new Set<string>();
@@ -253,6 +262,13 @@ export default function CertificatesPage() {
   }, [requests, trackCode, filterCertYear]);
 
   useEffect(() => {
+    fetch('/api/system-settings')
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success && res.data) setSettings(res.data);
+      })
+      .catch(() => {});
+
     Promise.all([
       fetch('/api/certificates?action=types').then((res) => res.json()),
       fetch('/api/certificates').then((res) => res.json()),
@@ -1714,10 +1730,12 @@ export default function CertificatesPage() {
                   </div>
 
                   <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
                       <p className="font-bold text-slate-800">ติดต่อผู้ประสานงาน:</p>
-                      <p>สำนักงานคณะพุทธศาสตร์</p>
-                      <p>โทร. 089-516-7544 / 095-470-7849</p>
+                      <p>{settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh}` : 'สำนักงานคณะพุทธศาสตร์'}</p>
+                      <p>โทร. {settings.contactPhone || '035-247-8000 ต่อ 8323'}</p>
+                      <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
+                      <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
                     </div>
                   </div>
                 </div>
@@ -1730,9 +1748,10 @@ export default function CertificatesPage() {
                     <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
                       <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
                         <p className="font-bold">Office of Dean</p>
-                        <p>Tel. 0-3524-8000 ext. 8323</p>
+                        <p>Tel. {settings.contactPhone || '0-3524-8000 ext. 8323'}</p>
                         <p>Fax. 0-3524-8096</p>
-                        <p className="text-purple-700">https://fb.mcu.ac.th/</p>
+                        <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
+                        <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
                         <p className="font-mono font-bold pt-1">
                           MCU No. 8002 / {previewRequest.docNo || '166'}
                         </p>
@@ -1844,9 +1863,10 @@ export default function CertificatesPage() {
 
                   <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
                     <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
-                      <p className="font-bold text-slate-800">Faculty of Buddhism</p>
-                      <p>Tel. +66 35 248 000 ext. 8323</p>
-                      <p className="text-purple-700 font-mono">https://fb.mcu.ac.th/</p>
+                      <p className="font-bold text-slate-800">{settings.facultyNameEn ? `Faculty of ${settings.facultyNameEn.replace(/^Faculty of /i, '')}` : 'Faculty of Buddhism'}</p>
+                      <p>Tel. {settings.contactPhone ? `+66 ${settings.contactPhone.replace(/^0/, '')}` : '+66 35 248 000 ext. 8323'}</p>
+                      <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
+                      <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
                     </div>
                   </div>
                 </div>
@@ -1911,9 +1931,10 @@ export default function CertificatesPage() {
 
                   <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
                     <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
-                      <p className="font-bold text-slate-800">สำนักงานคณะพุทธศาสตร์</p>
-                      <p>โทรศัพท์ 035-247-8000 ต่อ 8323</p>
-                      <p className="text-purple-700 font-mono">https://fb.mcu.ac.th/</p>
+                      <p className="font-bold text-slate-800">{settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh}` : 'สำนักงานคณะพุทธศาสตร์'}</p>
+                      <p>โทรศัพท์ {settings.contactPhone || '035-247-8000 ต่อ 8323'}</p>
+                      <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
+                      <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
                     </div>
                   </div>
                 </div>
@@ -2036,9 +2057,10 @@ export default function CertificatesPage() {
 
                   <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
                     <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
-                      <p className="font-bold text-slate-800">สำนักงานคณะพุทธศาสตร์</p>
-                      <p>โทรศัพท์ 035-247-8000 ต่อ 8323</p>
-                      <p className="text-purple-700 font-mono">https://fb.mcu.ac.th/</p>
+                      <p className="font-bold text-slate-800">{settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh}` : 'สำนักงานคณะพุทธศาสตร์'}</p>
+                      <p>โทรศัพท์ {settings.contactPhone || '035-247-8000 ต่อ 8323'}</p>
+                      <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
+                      <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
                     </div>
                   </div>
                 </div>
