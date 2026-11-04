@@ -220,8 +220,11 @@ export default function AdminConsolePage() {
   // Document Customizer & Archiving States
   const [previewTemplate, setPreviewTemplate] = useState<'THAI_STANDARD' | 'BANK_LETTER' | 'ENG_CERT' | 'INTERNAL_MEMO'>('THAI_STANDARD');
   const [docFontSize, setDocFontSize] = useState<number>(15);
+  const [signerFontSize, setSignerFontSize] = useState<number>(14);
   const [docLineSpacing, setDocLineSpacing] = useState<number>(1.6);
   const [docSignerOffset, setDocSignerOffset] = useState<number>(20);
+  const [photoBoxOffsetX, setPhotoBoxOffsetX] = useState<number>(0);
+  const [dotsCount, setDotsCount] = useState<number>(22);
   const [docFontFamily, setDocFontFamily] = useState<string>('Sarabun, "TH Sarabun New", "TH Sarabun PSK", sans-serif');
   const [studentSignOffsetX, setStudentSignOffsetX] = useState<number>(0);
   const [showPhotoBox, setShowPhotoBox] = useState<boolean>(true);
@@ -4000,23 +4003,45 @@ export default function AdminConsolePage() {
                   </select>
                 </div>
 
-                {/* Font Size */}
-                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
-                  <span className="font-semibold text-slate-600">ขนาด:</span>
+                {/* Font Size (Content & ที่ อว) */}
+                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm" title="ขนาดตัวอักษรเนื้อหา และ ที่ อว (ปรับเท่ากัน)">
+                  <span className="font-semibold text-slate-600">ขนาดเนื้อหา & ที่ อว:</span>
                   <button
                     type="button"
-                    onClick={() => setDocFontSize((s) => Math.max(12, s - 1))}
+                    onClick={() => setDocFontSize((s) => Math.max(11, s - 1))}
                     className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer"
-                    title="ลดขนาดตัวอักษร"
+                    title="ลดขนาดตัวอักษรเนื้อหาและที่ อว"
                   >
                     -
                   </button>
                   <span className="w-7 text-center font-bold text-purple-800">{docFontSize}pt</span>
                   <button
                     type="button"
-                    onClick={() => setDocFontSize((s) => Math.min(22, s + 1))}
+                    onClick={() => setDocFontSize((s) => Math.min(24, s + 1))}
                     className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer"
-                    title="เพิ่มขนาดตัวอักษร"
+                    title="เพิ่มขนาดตัวอักษรเนื้อหาและที่ อว"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Signer Font Size (สีน้ำเงิน) */}
+                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-blue-200 shadow-sm" title="ขนาดตัวอักษรผู้ลงนามและตำแหน่ง (สีน้ำเงิน)">
+                  <span className="font-semibold text-blue-700">ขนาดผู้ลงนาม:</span>
+                  <button
+                    type="button"
+                    onClick={() => setSignerFontSize((s) => Math.max(9, s - 1))}
+                    className="w-5 h-5 rounded bg-blue-50 hover:bg-blue-100 font-bold text-blue-800 cursor-pointer"
+                    title="ลดขนาดตัวอักษรชื่อและตำแหน่งผู้ลงนาม"
+                  >
+                    -
+                  </button>
+                  <span className="w-7 text-center font-bold text-blue-900">{signerFontSize}pt</span>
+                  <button
+                    type="button"
+                    onClick={() => setSignerFontSize((s) => Math.min(22, s + 1))}
+                    className="w-5 h-5 rounded bg-blue-50 hover:bg-blue-100 font-bold text-blue-800 cursor-pointer"
+                    title="เพิ่มขนาดตัวอักษรชื่อและตำแหน่งผู้ลงนาม"
                   >
                     +
                   </button>
@@ -4038,7 +4063,7 @@ export default function AdminConsolePage() {
                   </select>
                 </div>
 
-                {/* Signature Offset */}
+                {/* Signature Vertical Offset */}
                 <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
                   <span className="font-semibold text-slate-600">ขยับลายเซ็น:</span>
                   <button
@@ -4058,6 +4083,74 @@ export default function AdminConsolePage() {
                     ⬇ ลง
                   </button>
                 </div>
+
+                {/* Photo Box Shift (กรอบรูป เลื่อนขวา/ซ้าย) */}
+                {showPhotoBox && (
+                  <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-sm" title="ขยับกรอบรูปไปทางขวาหรือซ้าย">
+                    <span className="font-semibold text-rose-700">กรอบรูป:</span>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBoxOffsetX((x) => Math.max(0, x - 20))}
+                      className="px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 font-bold text-xs text-rose-800 cursor-pointer"
+                      title="เลื่อนกรอบรูปไปทางซ้าย"
+                    >
+                      ◀ ซ้าย
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBoxOffsetX(0)}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
+                        photoBoxOffsetX === 0 ? 'bg-rose-100 text-rose-900' : 'bg-slate-100 text-slate-700'
+                      }`}
+                      title="ชิดซ้าย"
+                    >
+                      ชิดซ้าย
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBoxOffsetX(100)}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
+                        photoBoxOffsetX === 100 ? 'bg-rose-100 text-rose-900' : 'bg-slate-100 text-slate-700'
+                      }`}
+                      title="กึ่งกลาง"
+                    >
+                      กลาง
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBoxOffsetX((x) => Math.min(300, x + 20))}
+                      className="px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 font-bold text-xs text-rose-800 cursor-pointer"
+                      title="เลื่อนกรอบรูปไปทางขวา"
+                    >
+                      ขวา ▶
+                    </button>
+                    <span className="text-[10px] text-rose-600 font-mono">({photoBoxOffsetX}px)</span>
+                  </div>
+                )}
+
+                {/* Dots Length (ความยาวจุดไข่ปลา) */}
+                {showStudentSign && (
+                  <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-amber-200 shadow-sm" title="ปรับความยาวจุดไข่ปลาให้สั้นลงหรือยาวขึ้น">
+                    <span className="font-semibold text-amber-800">จุดไข่ปลา:</span>
+                    <button
+                      type="button"
+                      onClick={() => setDotsCount((d) => Math.max(8, d - 4))}
+                      className="px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 font-bold text-xs text-amber-900 cursor-pointer"
+                      title="ลดความยาวจุดไข่ปลา (ลบออก)"
+                    >
+                      - สั้นลง
+                    </button>
+                    <span className="w-8 text-center font-bold text-amber-900 font-mono text-xs">{dotsCount} จุด</span>
+                    <button
+                      type="button"
+                      onClick={() => setDotsCount((d) => Math.min(55, d + 4))}
+                      className="px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 font-bold text-xs text-amber-900 cursor-pointer"
+                      title="เพิ่มความยาวจุดไข่ปลา"
+                    >
+                      + ยาวขึ้น
+                    </button>
+                  </div>
+                )}
 
                 {/* Student Signature (Name) Shift */}
                 {showStudentSign && (
@@ -4126,30 +4219,33 @@ export default function AdminConsolePage() {
 
               <div className="text-[11px] text-amber-800 bg-amber-50/80 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span><b>คำแนะนำ:</b> ท่านสามารถใช้เมาส์คลิกที่ข้อความใดๆ ในเอกสารด้านล่างนี้ เพื่อพิมพ์แก้ไขคำ เปลี่ยนชื่อธนาคาร หรือปรับข้อความได้ทันทีก่อนสั่งพิมพ์หรือดาวน์โหลด PDF</span>
+                <span><b>คำแนะนำ:</b> ท่านสามารถใช้เมาส์คลิกที่ข้อความใดๆ ในเอกสารด้านล่างนี้ เพื่อพิมพ์แก้ไขคำ เปลี่ยนชื่อธนาคาร หรือพิมพ์/ลบจุดไข่ปลาได้ทันทีก่อนสั่งพิมพ์หรือดาวน์โหลด PDF</span>
               </div>
             </div>
 
-            {/* Official Paper Letter Canvas */}
-            <div
-              id="printable-certificate"
-              style={{
-                fontFamily: docFontFamily,
-                fontSize: `${docFontSize}pt`,
-                lineHeight: docLineSpacing,
-                minHeight: '275mm',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-              }}
-              className="p-8 sm:p-12 bg-white border border-slate-300 rounded-xl shadow-inner text-slate-900 space-y-4 print:m-0 print:p-0 print:border-none print:shadow-none"
-            >
+            {/* Official Paper Letter Canvas Desk Wrapper (Exact A4 210mm x 297mm Layout) */}
+            <div className="w-full overflow-x-auto bg-slate-200/60 p-4 sm:p-8 rounded-2xl flex justify-center border border-slate-200">
+              <div
+                id="printable-certificate"
+                style={{
+                  fontFamily: docFontFamily,
+                  width: '210mm',
+                  minHeight: '297mm',
+                  padding: '25mm 20mm 15mm 25mm',
+                  boxSizing: 'border-box',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  backgroundColor: '#ffffff',
+                }}
+                className="bg-white border border-slate-300 shadow-2xl text-slate-900 shrink-0 print:border-none print:shadow-none print:m-0"
+              >
               {/* TEMPLATE 1: BANK_LETTER (หนังสือขอความอนุเคราะห์ธนาคาร หน้า 1) */}
               {previewTemplate === 'BANK_LETTER' && (
                 <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
                   <div>
                     {/* Top Reference */}
-                    <div className="flex justify-between items-start text-xs border-b pb-2">
+                    <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
                       <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
                         ที่ อว 8002 / {previewRequest.docNo || '077'}
                       </div>
@@ -4158,7 +4254,7 @@ export default function AdminConsolePage() {
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 pt-2">
+                    <div className="space-y-1.5 pt-2" style={{ fontSize: `${docFontSize}pt` }}>
                       <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
                         <span className="font-bold">เรื่อง</span> ขอความอนุเคราะห์อัพเดตการใช้ Mobile Banking ให้แก่นิสิต / เปิดบัญชีธนาคาร
                       </div>
@@ -4170,7 +4266,12 @@ export default function AdminConsolePage() {
                       </div>
                     </div>
 
-                    <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50 pt-2">
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-8 outline-none focus:bg-purple-50 pt-2 text-justify"
+                      style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
+                    >
                       เนื่องด้วย <strong className="font-bold">{previewRequest.fullName}</strong> สัญชาติ{' '}
                       <strong className="font-bold">{previewRequest.nationality || 'Bangladeshi'}</strong> ประเทศ{' '}
                       <strong className="font-bold">{previewRequest.country || 'Bangladesh'}</strong>{' '}
@@ -4183,11 +4284,22 @@ export default function AdminConsolePage() {
                       คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย มีความประสงค์จะทำธุรกรรมกับธนาคาร เพื่ออำนวยความสะดวกในการทำธุรกรรมกับมหาวิทยาลัยในระหว่างที่กำลังศึกษาอยู่ในภาควิชาพระพุทธศาสนา คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา
                     </p>
 
-                    <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-8 outline-none focus:bg-purple-50"
+                      style={{ fontSize: `${docFontSize}pt` }}
+                    >
                       จึงเจริญพรมาเพื่อให้ความอนุเคราะห์ในเรื่องการเปิดบัญชีหรืออัพเดตการใช้งานแอปพลิเคชั่นของธนาคารแก่นิสิตดังกล่าว จักขอบคุณยิ่ง
                     </p>
 
-                    <div className="pt-4 text-center ml-auto w-72 space-y-1 text-xs" style={{ marginTop: `${docSignerOffset}px` }}>
+                    <div
+                      className="pt-6 text-center ml-auto w-72 space-y-1"
+                      style={{
+                        marginTop: `${docSignerOffset}px`,
+                        fontSize: `${signerFontSize}pt`,
+                      }}
+                    >
                       <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
                         ขอเจริญพร
                       </div>
@@ -4198,7 +4310,7 @@ export default function AdminConsolePage() {
                       <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
                         {customSigner.title || 'รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์'}
                       </div>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      <div contentEditable suppressContentEditableWarning className="text-slate-600 outline-none focus:bg-purple-50">
                         {settings.universityNameTh}
                       </div>
                     </div>
@@ -4229,7 +4341,7 @@ export default function AdminConsolePage() {
                 <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
                   <div>
                     {/* Top Left Office Header - Top Right is clean/empty */}
-                    <div className="flex justify-between items-start text-xs border-b pb-3">
+                    <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
                       <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
                         <p className="font-bold text-slate-900">Office of Dean</p>
                         <p>Tel. 0-3524-8000 ext. 8323</p>
@@ -4239,34 +4351,59 @@ export default function AdminConsolePage() {
                           MCU No. 8002 / {previewRequest.docNo || '166'}
                         </p>
                       </div>
-                      {/* Top right removed as requested */}
                       <div></div>
                     </div>
 
                     {/* Centered Title */}
                     <div className="pt-6 pb-2 text-center">
-                      <span contentEditable suppressContentEditableWarning className="font-bold text-2xl tracking-wider outline-none focus:bg-purple-50">
+                      <span
+                        contentEditable
+                        suppressContentEditableWarning
+                        className="font-bold tracking-wider outline-none focus:bg-purple-50"
+                        style={{ fontSize: `${Math.round(docFontSize * 1.5)}pt` }}
+                      >
                         TO WHOM IT MAY CONCERN
                       </span>
                     </div>
 
-                    <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50 pt-2 leading-relaxed">
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-8 outline-none focus:bg-purple-50 pt-2 leading-relaxed text-justify"
+                      style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
+                    >
                       This is to certify that <strong className="font-bold">{previewRequest.fullName}</strong>, whose age is{' '}
                       <strong className="font-bold">{previewRequest.age || '29'}</strong> years old,{' '}
                       <strong className="font-bold">{previewRequest.nationality || 'Myanmar'}</strong> Nationality, holding Passport No.{' '}
                       <strong className="font-mono font-bold">{previewRequest.passportNo || 'MF772427'}</strong>, is currently enrolled as a student of the Faculty of Buddhism, Mahachulalongkornrajavidyalaya University, Lamsai Sub-District, Wangnoi District, Phra Nakhon Si Ayutthaya Province, 13170, Thailand. He/She is studying in the {previewRequest.degreeLevel || 'Bachelor of Arts Program (4-Year Undergraduate Program)'}, Major in {previewRequest.major || 'Religion and Philosophy (English Program)'}, Year 4, in the second semester of an Academic Year 2026, His/Her student identification is <strong className="font-mono font-bold">{previewRequest.studentCode}</strong>.
                     </p>
 
-                    <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-8 outline-none focus:bg-purple-50"
+                      style={{ fontSize: `${docFontSize}pt` }}
+                    >
                       This letter of certification is therefore issued as evidence.
                     </p>
 
-                    <div contentEditable suppressContentEditableWarning className="text-center text-xs outline-none focus:bg-purple-50 pt-2">
+                    <div
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="text-center pt-2 outline-none focus:bg-purple-50"
+                      style={{ fontSize: `${docFontSize}pt` }}
+                    >
                       Issued on {new Date(previewRequest.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </div>
 
-                    {/* 1. Dean / Authorized Signer Block: ABOVE the photo box, on the right */}
-                    <div className="pt-4 ml-auto w-80 text-center space-y-1 text-xs" style={{ marginTop: `${docSignerOffset}px` }}>
+                    {/* 1. Dean / Authorized Signer Block: ABOVE the photo box, on the right (Adjustable font size) */}
+                    <div
+                      className="pt-6 ml-auto w-80 text-center space-y-1"
+                      style={{
+                        marginTop: `${docSignerOffset}px`,
+                        fontSize: `${signerFontSize}pt`,
+                      }}
+                    >
                       <div className="h-10" />
                       <div contentEditable suppressContentEditableWarning className="font-bold text-slate-900 outline-none focus:bg-purple-50">
                         ({customSigner.name ? customSigner.name : 'Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.'})
@@ -4279,25 +4416,36 @@ export default function AdminConsolePage() {
                       </div>
                     </div>
 
-                    {/* 2. Photo Box & Student Signature: BELOW Dean signature, on the left */}
+                    {/* 2. Photo Box & Student Signature: BELOW Dean signature, on the left (Adjustable offset & dots) */}
                     <div className="pt-2 flex items-end justify-between">
-                      <div className="space-y-2">
+                      <div
+                        className="space-y-3 transition-transform"
+                        style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
+                      >
                         {showPhotoBox && (
                           <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20">
                             <span>ติดรูปถ่าย<br />Photo 1.5 - 2&quot;</span>
                           </div>
                         )}
                         {showStudentSign && (
-                          <div className="text-xs text-slate-700 pt-1">
-                            <div className="flex items-center">
-                              <span>Signature</span>
-                              <span className="tracking-widest ml-1 font-mono">...................................................</span>
+                          <div className="pt-1">
+                            <div className="flex items-baseline gap-1 text-slate-800" style={{ fontSize: `${Math.max(11, docFontSize - 2)}pt` }}>
+                              <span className="shrink-0 font-medium">Signature</span>
+                              <span
+                                contentEditable
+                                suppressContentEditableWarning
+                                className="tracking-wider font-mono outline-none focus:bg-purple-50 select-text"
+                                title="คลิกเพื่อลบหรือพิมพ์จุดไข่ปลาได้อิสระ"
+                              >
+                                {'.'.repeat(dotsCount)}
+                              </span>
                             </div>
                             <div
                               style={{
-                                width: '240px',
+                                width: `${Math.max(140, dotsCount * 7.5)}px`,
                                 textAlign: 'center',
                                 transform: `translateX(${studentSignOffsetX}px)`,
+                                fontSize: `${Math.max(11, docFontSize - 2)}pt`,
                               }}
                               className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50"
                               contentEditable
@@ -4376,7 +4524,13 @@ export default function AdminConsolePage() {
                       จึงเรียนมาเพื่อโปรดทราบและดำเนินการต่อไป
                     </p>
 
-                    <div className="pt-6 text-center ml-auto w-72 space-y-1 text-xs" style={{ marginTop: `${docSignerOffset}px` }}>
+                    <div
+                      className="pt-6 text-center ml-auto w-72 space-y-1"
+                      style={{
+                        marginTop: `${docSignerOffset}px`,
+                        fontSize: `${signerFontSize}pt`,
+                      }}
+                    >
                       <div className="h-10" />
                       <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
                         ({customSigner.name || 'พระครูสิริรัตนบัณฑิต, ผศ.ดร.'})
@@ -4411,8 +4565,8 @@ export default function AdminConsolePage() {
               {previewTemplate === 'THAI_STANDARD' && (
                 <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
                   <div>
-                    {/* Header Reference: Top Right is clean/empty as in original PDF */}
-                    <div className="flex justify-between items-start text-xs border-b pb-2">
+                    {/* Header Reference: ที่ อว 8002 / docNo with same docFontSize */}
+                    <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
                       <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
                         ที่ อว 8002 / {previewRequest.docNo || 'xxx'}
                       </div>
@@ -4425,14 +4579,20 @@ export default function AdminConsolePage() {
                       <span
                         contentEditable
                         suppressContentEditableWarning
-                        className="font-bold text-2xl tracking-wide outline-none focus:bg-purple-50"
+                        className="font-bold tracking-wide outline-none focus:bg-purple-50"
+                        style={{ fontSize: `${Math.round(docFontSize * 1.5)}pt` }}
                       >
                         หนังสือรับรอง
                       </span>
                     </div>
 
-                    {/* Body Paragraph */}
-                    <p contentEditable suppressContentEditableWarning className="indent-10 leading-relaxed outline-none focus:bg-purple-50 pt-2">
+                    {/* Body Paragraph: Font size matches ที่ อว, text-justify */}
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-10 leading-relaxed outline-none focus:bg-purple-50 pt-2 text-justify"
+                      style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
+                    >
                       โดยหนังสือนี้ขอรับรองว่า <strong className="font-bold">{previewRequest.fullName}</strong>{' '}
                       {previewRequest.age && <>อายุ <strong className="font-bold">{previewRequest.age}</strong> ปี </>}
                       สัญชาติ <strong className="font-bold">{previewRequest.nationality || 'ไทย'}</strong>{' '}
@@ -4444,50 +4604,72 @@ export default function AdminConsolePage() {
                       )}
                       เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'}{' '}
                       (ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร 4 ปี) ชั้นปีที่{' '}
-                      {previewRequest.studentCode.substring(0, 2) ? '2' : '1'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'}{' '}
+                      {previewRequest.studentCode.substring(0, 2) ? '2' : '1'} สาขาวิชา {previewRequest.major || 'พระพุทธศาสนา'}{' '}
                       ({previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai' ? 'ภาคภาษาไทย' : 'ภาคภาษาอังกฤษ'}) มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย รหัสประจำตัวนิสิต{' '}
                       <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> เพื่อเป็นหลักฐาน สำหรับ
                       <strong className="font-bold underline ml-1">{previewRequest.requestPurpose || previewRequest.certType}</strong> จึงออกหนังสือนี้ไว้เป็นสำคัญ
                     </p>
 
-                    <div contentEditable suppressContentEditableWarning className="text-center text-xs pt-2 outline-none focus:bg-purple-50">
+                    <div
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="text-center pt-2 outline-none focus:bg-purple-50"
+                      style={{ fontSize: `${docFontSize}pt` }}
+                    >
                       ให้ไว้ ณ วันที่ {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </div>
 
-                    {/* 1. Dean / Authorized Signer Block: ABOVE THE PHOTO BOX, ALIGNED TO RIGHT/CENTER-RIGHT */}
-                    <div className="pt-4 ml-auto w-72 text-center space-y-1.5 text-xs" style={{ marginTop: `${docSignerOffset}px` }}>
+                    {/* 1. Dean / Authorized Signer Block: ABOVE THE PHOTO BOX (ขนาดปรับได้ สีน้ำเงิน) */}
+                    <div
+                      className="pt-6 ml-auto w-80 text-center space-y-1.5"
+                      style={{
+                        marginTop: `${docSignerOffset}px`,
+                        fontSize: `${signerFontSize}pt`,
+                      }}
+                    >
                       <div className="h-10" />
                       <div contentEditable suppressContentEditableWarning className="font-bold text-slate-900 outline-none focus:bg-purple-50">
                         ({customSigner.name || 'พระครูสิริรัตนบัณฑิต, ผศ.ดร.'})
                       </div>
-                      <div contentEditable suppressContentEditableWarning className="text-slate-700 font-medium outline-none focus:bg-purple-50">
+                      <div contentEditable suppressContentEditableWarning className="text-slate-800 font-medium outline-none focus:bg-purple-50">
                         {customSigner.title || 'รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์'}
                       </div>
-                      <div contentEditable suppressContentEditableWarning className="text-[11px] text-slate-500 outline-none focus:bg-purple-50">
+                      <div contentEditable suppressContentEditableWarning className="text-slate-600 outline-none focus:bg-purple-50">
                         {settings.facultyNameTh} {settings.universityNameTh}
                       </div>
                     </div>
 
-                    {/* 2. Student Photo Box & Student Signature Block: BELOW DEAN SIGNATURE */}
+                    {/* 2. Student Photo Box & Student Signature Block: BELOW DEAN SIGNATURE (ขยับขวาได้ สีแดง + จุดไข่ปลาสีส้ม) */}
                     <div className="pt-2 flex items-end justify-between">
-                      <div className="space-y-2">
+                      <div
+                        className="space-y-3 transition-transform"
+                        style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
+                      >
                         {showPhotoBox && (
-                          <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20">
+                          <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 shadow-sm">
                             <span>ติดรูปถ่าย<br />1.5 - 2 นิ้ว</span>
                           </div>
                         )}
                         {showStudentSign && (
-                          <div className="text-xs text-slate-700 pt-1">
-                            <div className="flex items-center">
-                              <span>ลงชื่อ</span>
-                              <span className="tracking-widest ml-1 font-mono">...................................................</span>
+                          <div className="pt-1">
+                            <div className="flex items-baseline gap-1 text-slate-800" style={{ fontSize: `${Math.max(11, docFontSize - 2)}pt` }}>
+                              <span className="shrink-0 font-medium">ลงชื่อ</span>
+                              <span
+                                contentEditable
+                                suppressContentEditableWarning
+                                className="tracking-wider font-mono outline-none focus:bg-purple-50 select-text"
+                                title="คลิกเพื่อลบหรือพิมพ์จุดไข่ปลาได้อิสระ"
+                              >
+                                {'.'.repeat(dotsCount)}
+                              </span>
                             </div>
                             {/* Centered / adjustable student name directly under dotted line */}
                             <div
                               style={{
-                                width: '240px',
+                                width: `${Math.max(140, dotsCount * 7.5)}px`,
                                 textAlign: 'center',
                                 transform: `translateX(${studentSignOffsetX}px)`,
+                                fontSize: `${Math.max(11, docFontSize - 2)}pt`,
                               }}
                               className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50"
                               contentEditable
@@ -4522,6 +4704,7 @@ export default function AdminConsolePage() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
 
             {/* Actions Bar */}
@@ -4562,7 +4745,16 @@ export default function AdminConsolePage() {
 
             {/* Print Stylesheet for exact A4 paper formatting */}
             <style jsx global>{`
+              @page {
+                size: A4 portrait;
+                margin: 0;
+              }
               @media print {
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #ffffff !important;
+                }
                 body * {
                   visibility: hidden !important;
                 }
@@ -4570,20 +4762,24 @@ export default function AdminConsolePage() {
                   visibility: visible !important;
                 }
                 #printable-certificate {
-                  position: fixed !important;
+                  position: absolute !important;
                   left: 0 !important;
                   top: 0 !important;
-                  width: 100% !important;
-                  height: 100% !important;
+                  width: 210mm !important;
+                  height: 297mm !important;
                   min-height: 297mm !important;
+                  max-height: 297mm !important;
+                  padding: 25mm 20mm 15mm 25mm !important;
                   margin: 0 !important;
-                  padding: 15mm 20mm !important;
-                  background: white !important;
+                  background: #ffffff !important;
                   border: none !important;
                   box-shadow: none !important;
                   display: flex !important;
                   flex-direction: column !important;
                   justify-content: space-between !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  overflow: hidden !important;
                 }
               }
             `}</style>

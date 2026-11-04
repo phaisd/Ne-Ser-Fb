@@ -175,8 +175,13 @@ export default function CertificatesPage() {
   // Document Customizer States for Preview
   const [previewTemplate, setPreviewTemplate] = useState<'THAI_STANDARD' | 'BANK_LETTER' | 'ENG_CERT' | 'INTERNAL_MEMO'>('THAI_STANDARD');
   const [docFontSize, setDocFontSize] = useState<number>(15);
+  const [signerFontSize, setSignerFontSize] = useState<number>(14);
   const [docLineSpacing, setDocLineSpacing] = useState<number>(1.6);
   const [docSignerOffset, setDocSignerOffset] = useState<number>(20);
+  const [photoBoxOffsetX, setPhotoBoxOffsetX] = useState<number>(0);
+  const [dotsCount, setDotsCount] = useState<number>(22);
+  const [docFontFamily, setDocFontFamily] = useState<string>('Sarabun, "TH Sarabun New", "TH Sarabun PSK", sans-serif');
+  const [studentSignOffsetX, setStudentSignOffsetX] = useState<number>(0);
   const [showPhotoBox, setShowPhotoBox] = useState<boolean>(true);
   const [showStudentSign, setShowStudentSign] = useState<boolean>(true);
   const [customSigner, setCustomSigner] = useState({
@@ -1368,15 +1373,42 @@ export default function CertificatesPage() {
                 </div>
               </div>
 
-              {/* Font Size, Line Spacing, Offset, Toggles */}
+              {/* Typography & Layout Spacing Toolbar */}
               <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-purple-200/60">
-                {/* Font Size */}
+                {/* Font Family Selector (Official Government Fonts) */}
                 <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
                   <Type className="w-3.5 h-3.5 text-purple-600" />
                   <span className="font-semibold text-slate-600">ฟอนต์:</span>
+                  <select
+                    value={docFontFamily}
+                    onChange={(e) => setDocFontFamily(e.target.value)}
+                    className="bg-transparent font-bold text-purple-900 focus:outline-none cursor-pointer text-xs"
+                    title="เลือกฟอนต์หนังสือราชการไทยหรืออังกฤษ"
+                  >
+                    <optgroup label="🇹🇭 ฟอนต์ราชการไทย">
+                      <option value="'Sarabun', 'TH Sarabun New', 'TH Sarabun PSK', sans-serif">
+                        TH Sarabun (มาตรฐานหนังสือราชการ)
+                      </option>
+                      <option value="'Krub', sans-serif">Krub (ราชการทางการ)</option>
+                      <option value="'Bai Jamjuree', sans-serif">Bai Jamjuree (ทางการ)</option>
+                    </optgroup>
+                    <optgroup label="🌐 ฟอนต์สากล / ภาษาอังกฤษ (Official EN)">
+                      <option value="'Times New Roman', Times, serif">
+                        Times New Roman (มาตรฐานสากล)
+                      </option>
+                      <option value="'Georgia', serif">Georgia (ทางการ)</option>
+                      <option value="'Garamond', serif">Garamond (ทางการคลาสสิก)</option>
+                      <option value="'Arial', sans-serif">Arial (สากล Clean)</option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* Font Size (Content & ที่ อว) */}
+                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm" title="ขนาดตัวอักษรเนื้อหา และ ที่ อว (ปรับเท่ากัน)">
+                  <span className="font-semibold text-slate-600">ขนาดเนื้อหา & ที่ อว:</span>
                   <button
                     type="button"
-                    onClick={() => setDocFontSize((s) => Math.max(12, s - 1))}
+                    onClick={() => setDocFontSize((s) => Math.max(11, s - 1))}
                     className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer"
                   >
                     -
@@ -1384,8 +1416,28 @@ export default function CertificatesPage() {
                   <span className="w-7 text-center font-bold text-purple-800">{docFontSize}pt</span>
                   <button
                     type="button"
-                    onClick={() => setDocFontSize((s) => Math.min(22, s + 1))}
+                    onClick={() => setDocFontSize((s) => Math.min(24, s + 1))}
                     className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Signer Font Size */}
+                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-blue-200 shadow-sm" title="ขนาดตัวอักษรผู้ลงนามและตำแหน่ง (สีน้ำเงิน)">
+                  <span className="font-semibold text-blue-700">ขนาดผู้ลงนาม:</span>
+                  <button
+                    type="button"
+                    onClick={() => setSignerFontSize((s) => Math.max(9, s - 1))}
+                    className="w-5 h-5 rounded bg-blue-50 hover:bg-blue-100 font-bold text-blue-800 cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="w-7 text-center font-bold text-blue-900">{signerFontSize}pt</span>
+                  <button
+                    type="button"
+                    onClick={() => setSignerFontSize((s) => Math.min(22, s + 1))}
+                    className="w-5 h-5 rounded bg-blue-50 hover:bg-blue-100 font-bold text-blue-800 cursor-pointer"
                   >
                     +
                   </button>
@@ -1426,6 +1478,97 @@ export default function CertificatesPage() {
                   </button>
                 </div>
 
+                {/* Photo Box Shift */}
+                {showPhotoBox && (
+                  <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-sm" title="ขยับกรอบรูป">
+                    <span className="font-semibold text-rose-700">กรอบรูป:</span>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBoxOffsetX((x) => Math.max(0, x - 20))}
+                      className="px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 font-bold text-xs text-rose-800 cursor-pointer"
+                    >
+                      ◀ ซ้าย
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBoxOffsetX(0)}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
+                        photoBoxOffsetX === 0 ? 'bg-rose-100 text-rose-900' : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      ชิดซ้าย
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBoxOffsetX(100)}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
+                        photoBoxOffsetX === 100 ? 'bg-rose-100 text-rose-900' : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      กลาง
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoBoxOffsetX((x) => Math.min(300, x + 20))}
+                      className="px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 font-bold text-xs text-rose-800 cursor-pointer"
+                    >
+                      ขวา ▶
+                    </button>
+                  </div>
+                )}
+
+                {/* Dots Length */}
+                {showStudentSign && (
+                  <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-amber-200 shadow-sm" title="ปรับความยาวจุดไข่ปลา">
+                    <span className="font-semibold text-amber-800">จุดไข่ปลา:</span>
+                    <button
+                      type="button"
+                      onClick={() => setDotsCount((d) => Math.max(8, d - 4))}
+                      className="px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 font-bold text-xs text-amber-900 cursor-pointer"
+                    >
+                      - สั้นลง
+                    </button>
+                    <span className="w-8 text-center font-bold text-amber-900 font-mono text-xs">{dotsCount} จุด</span>
+                    <button
+                      type="button"
+                      onClick={() => setDotsCount((d) => Math.min(55, d + 4))}
+                      className="px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 font-bold text-xs text-amber-900 cursor-pointer"
+                    >
+                      + ยาวขึ้น
+                    </button>
+                  </div>
+                )}
+
+                {/* Student Signature (Name) Shift */}
+                {showStudentSign && (
+                  <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
+                    <span className="font-semibold text-slate-600">ตำแหน่ง (ชื่อ):</span>
+                    <button
+                      type="button"
+                      onClick={() => setStudentSignOffsetX((x) => x - 10)}
+                      className="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs cursor-pointer"
+                    >
+                      ◀ ซ้าย
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStudentSignOffsetX(0)}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
+                        studentSignOffsetX === 0 ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      กึ่งกลาง
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStudentSignOffsetX((x) => x + 10)}
+                      className="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs cursor-pointer"
+                    >
+                      ขวา ▶
+                    </button>
+                  </div>
+                )}
+
                 {/* Toggles */}
                 <div className="flex items-center gap-3 bg-white px-3 py-1 rounded-xl border border-purple-200 shadow-sm">
                   <label className="flex items-center gap-1 font-semibold text-slate-700 cursor-pointer">
@@ -1455,73 +1598,99 @@ export default function CertificatesPage() {
               </div>
             </div>
 
-            {/* Modal Printable Sheet Area */}
-            <div
-              id="printable-student-cert"
-              style={{
-                fontSize: `${docFontSize}pt`,
-                lineHeight: docLineSpacing,
-              }}
-              className="p-8 sm:p-12 overflow-y-auto bg-white font-serif text-slate-900 space-y-4 print:p-0"
-            >
+            {/* Modal Printable Sheet Area (Exact A4 Desk Preview) */}
+            <div className="w-full overflow-x-auto bg-slate-200/60 p-4 sm:p-8 rounded-2xl flex justify-center border border-slate-200">
+              <div
+                id="printable-student-cert"
+                style={{
+                  fontFamily: docFontFamily,
+                  width: '210mm',
+                  minHeight: '297mm',
+                  padding: '25mm 20mm 15mm 25mm',
+                  boxSizing: 'border-box',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  backgroundColor: '#ffffff',
+                }}
+                className="bg-white border border-slate-300 shadow-2xl text-slate-900 shrink-0 print:border-none print:shadow-none print:m-0"
+              >
               {/* TEMPLATE 1: BANK_LETTER */}
               {previewTemplate === 'BANK_LETTER' && (
-                <div className="space-y-4 text-justify">
-                  <div className="flex justify-between items-start text-xs border-b pb-2">
-                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                      ที่ อว 8002 / {previewRequest.docNo || '077'}
+                <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
+                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                        ที่ อว 8002 / {previewRequest.docNo || '077'}
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="text-right outline-none focus:bg-purple-50">
+                        {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </div>
                     </div>
-                    <div contentEditable suppressContentEditableWarning className="text-right outline-none focus:bg-purple-50">
-                      {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+                    <div className="space-y-1.5 pt-2" style={{ fontSize: `${docFontSize}pt` }}>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        <span className="font-bold">เรื่อง</span> ขอความอนุเคราะห์อัพเดตการใช้ Mobile Banking ให้แก่นิสิต / เปิดบัญชีธนาคาร
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        <span className="font-bold">เจริญพร</span> ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        <span className="font-bold">สิ่งที่ส่งมาด้วย</span> หนังสือรับรองนิสิต จำนวน 1 ฉบับ
+                      </div>
+                    </div>
+
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-8 outline-none focus:bg-purple-50 pt-2 text-justify"
+                      style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
+                    >
+                      เนื่องด้วย <strong className="font-bold">{previewRequest.fullName}</strong> สัญชาติ{' '}
+                      <strong className="font-bold">{previewRequest.nationality || 'Bangladeshi'}</strong> ประเทศ{' '}
+                      <strong className="font-bold">{previewRequest.country || 'Bangladesh'}</strong>{' '}
+                      {previewRequest.passportNo && (
+                        <>ถือหนังสือเดินทางเลขที่ <strong className="font-mono font-bold">{previewRequest.passportNo}</strong> </>
+                      )}
+                      รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> เป็นนิสิตหลักสูตร
+                      {previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} (ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร 4 ปี) ชั้นปีที่{' '}
+                      {previewRequest.studentCode.substring(0, 2) ? '1' : '1'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} (ภาคภาษาอังกฤษ)
+                      คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย มีความประสงค์จะทำธุรกรรมกับธนาคาร เพื่ออำนวยความสะดวกในการทำธุรกรรมกับมหาวิทยาลัยในระหว่างที่กำลังศึกษาอยู่ในภาควิชาพระพุทธศาสนา คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา
+                    </p>
+
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-8 outline-none focus:bg-purple-50"
+                      style={{ fontSize: `${docFontSize}pt` }}
+                    >
+                      จึงเจริญพรมาเพื่อให้ความอนุเคราะห์ในเรื่องการเปิดบัญชีหรืออัพเดตการใช้งานแอปพลิเคชั่นของธนาคารแก่นิสิตดังกล่าว จักขอบคุณยิ่ง
+                    </p>
+
+                    <div
+                      className="pt-6 text-center ml-auto w-72 space-y-1"
+                      style={{
+                        marginTop: `${docSignerOffset}px`,
+                        fontSize: `${signerFontSize}pt`,
+                      }}
+                    >
+                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                        ขอเจริญพร
+                      </div>
+                      <div className="h-10" />
+                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                        ({customSigner.name})
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        {customSigner.title}
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="text-slate-600 outline-none focus:bg-purple-50">
+                        มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 pt-2">
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                      <span className="font-bold">เรื่อง</span> ขอความอนุเคราะห์อัพเดตการใช้ Mobile Banking ให้แก่นิสิต / เปิดบัญชีธนาคาร
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                      <span className="font-bold">เจริญพร</span> ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                      <span className="font-bold">สิ่งที่ส่งมาด้วย</span> หนังสือรับรองนิสิต จำนวน 1 ฉบับ
-                    </div>
-                  </div>
-
-                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50 pt-2">
-                    เนื่องด้วย <strong className="font-bold">{previewRequest.fullName}</strong> สัญชาติ{' '}
-                    <strong className="font-bold">{previewRequest.nationality || 'Bangladeshi'}</strong> ประเทศ{' '}
-                    <strong className="font-bold">{previewRequest.country || 'Bangladesh'}</strong>{' '}
-                    {previewRequest.passportNo && (
-                      <>ถือหนังสือเดินทางเลขที่ <strong className="font-mono font-bold">{previewRequest.passportNo}</strong> </>
-                    )}
-                    รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> เป็นนิสิตหลักสูตร
-                    {previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} (ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร 4 ปี) ชั้นปีที่{' '}
-                    {previewRequest.studentCode.substring(0, 2) ? '1' : '1'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} (ภาคภาษาอังกฤษ)
-                    คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย มีความประสงค์จะทำธุรกรรมกับธนาคาร เพื่ออำนวยความสะดวกในการทำธุรกรรมกับมหาวิทยาลัยในระหว่างที่กำลังศึกษาอยู่ในภาควิชาพระพุทธศาสนา คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา
-                  </p>
-
-                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
-                    จึงเจริญพรมาเพื่อให้ความอนุเคราะห์ในเรื่องการเปิดบัญชีหรืออัพเดตการใช้งานแอปพลิเคชั่นของธนาคารแก่นิสิตดังกล่าว จักขอบคุณยิ่ง
-                  </p>
-
-                  <div className="pt-4 text-center ml-auto w-72 space-y-1 text-xs" style={{ marginTop: `${docSignerOffset}px` }}>
-                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                      ขอเจริญพร
-                    </div>
-                    <div className="h-10" />
-                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                      ({customSigner.name})
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                      {customSigner.title}
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                      มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
-                    </div>
-                  </div>
-
-                  <div className="pt-8 border-t border-slate-100 flex justify-between items-end text-xs text-slate-600">
+                  <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
                     <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
                       <p className="font-bold text-slate-800">ติดต่อผู้ประสานงาน:</p>
                       <p>สำนักงานคณะพุทธศาสตร์</p>
@@ -1533,64 +1702,128 @@ export default function CertificatesPage() {
 
               {/* TEMPLATE 2: ENG_CERT */}
               {previewTemplate === 'ENG_CERT' && (
-                <div className="space-y-4 text-justify font-sans">
-                  <div className="flex justify-between items-start text-xs border-b pb-3">
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
-                      <p className="font-bold">Office of Dean</p>
-                      <p>Tel. 0-3524-8000 ext. 8323</p>
-                      <p>Fax. 0-3524-8096</p>
-                      <p className="text-purple-700">https://fb.mcu.ac.th/</p>
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="font-mono font-bold text-right outline-none focus:bg-purple-50">
-                      MCU No. 8002 / {previewRequest.docNo || '166'}
-                    </div>
-                  </div>
-
-                  <div contentEditable suppressContentEditableWarning className="text-center font-bold text-lg tracking-wider pt-2 pb-1 outline-none focus:bg-purple-50">
-                    TO WHOM IT MAY CONCERN
-                  </div>
-
-                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
-                    This is to certify that <strong className="font-bold">{previewRequest.fullName}</strong>, whose age is{' '}
-                    <strong className="font-bold">{previewRequest.age || '29'}</strong> years old,{' '}
-                    <strong className="font-bold">{previewRequest.nationality || 'Myanmar'}</strong> Nationality, holding Passport No.{' '}
-                    <strong className="font-mono font-bold">{previewRequest.passportNo || 'MF772427'}</strong>, is currently enrolled as a student of the Faculty of Buddhism, Mahachulalongkornrajavidyalaya University, Lamsai Sub-District, Wangnoi District, Phra Nakhon Si Ayutthaya Province, 13170, Thailand. He/She is studying in the {previewRequest.degreeLevel || 'Bachelor of Arts Program (4-Year Undergraduate Program)'}, Major in {previewRequest.major || 'Religion and Philosophy (English Program)'}, Year 4, in the second semester of an Academic Year 2026, His/Her student identification is <strong className="font-mono font-bold">{previewRequest.studentCode}</strong>.
-                  </p>
-
-                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
-                    This letter of certification is therefore issued as evidence.
-                  </p>
-
-                  <div contentEditable suppressContentEditableWarning className="text-center text-xs outline-none focus:bg-purple-50 pt-2">
-                    Issued on {new Date(previewRequest.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </div>
-
-                  <div className="pt-6 flex justify-between items-end" style={{ marginTop: `${docSignerOffset}px` }}>
-                    <div className="space-y-3">
-                      {showPhotoBox && (
-                        <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center">
-                          <span>ติดรูปถ่าย<br />Photo 1.5 - 2&quot;</span>
-                        </div>
-                      )}
-                      {showStudentSign && (
-                        <div className="text-xs text-slate-600 pt-1">
-                          <p>Signature ....................................................</p>
-                          <p className="mt-1 font-bold">({previewRequest.fullName})</p>
-                        </div>
-                      )}
+                <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
+                        <p className="font-bold">Office of Dean</p>
+                        <p>Tel. 0-3524-8000 ext. 8323</p>
+                        <p>Fax. 0-3524-8096</p>
+                        <p className="text-purple-700">https://fb.mcu.ac.th/</p>
+                        <p className="font-mono font-bold pt-1">
+                          MCU No. 8002 / {previewRequest.docNo || '166'}
+                        </p>
+                      </div>
+                      <div></div>
                     </div>
 
-                    <div className="text-center space-y-1 text-xs min-w-[240px]">
+                    <div className="pt-6 pb-2 text-center">
+                      <span
+                        contentEditable
+                        suppressContentEditableWarning
+                        className="font-bold tracking-wider outline-none focus:bg-purple-50"
+                        style={{ fontSize: `${Math.round(docFontSize * 1.5)}pt` }}
+                      >
+                        TO WHOM IT MAY CONCERN
+                      </span>
+                    </div>
+
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-8 outline-none focus:bg-purple-50 pt-2 leading-relaxed text-justify"
+                      style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
+                    >
+                      This is to certify that <strong className="font-bold">{previewRequest.fullName}</strong>, whose age is{' '}
+                      <strong className="font-bold">{previewRequest.age || '29'}</strong> years old,{' '}
+                      <strong className="font-bold">{previewRequest.nationality || 'Myanmar'}</strong> Nationality, holding Passport No.{' '}
+                      <strong className="font-mono font-bold">{previewRequest.passportNo || 'MF772427'}</strong>, is currently enrolled as a student of the Faculty of Buddhism, Mahachulalongkornrajavidyalaya University, Lamsai Sub-District, Wangnoi District, Phra Nakhon Si Ayutthaya Province, 13170, Thailand. He/She is studying in the {previewRequest.degreeLevel || 'Bachelor of Arts Program (4-Year Undergraduate Program)'}, Major in {previewRequest.major || 'Religion and Philosophy (English Program)'}, Year 4, in the second semester of an Academic Year 2026, His/Her student identification is <strong className="font-mono font-bold">{previewRequest.studentCode}</strong>.
+                    </p>
+
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-8 outline-none focus:bg-purple-50"
+                      style={{ fontSize: `${docFontSize}pt` }}
+                    >
+                      This letter of certification is therefore issued as evidence.
+                    </p>
+
+                    <div
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="text-center pt-2 outline-none focus:bg-purple-50"
+                      style={{ fontSize: `${docFontSize}pt` }}
+                    >
+                      Issued on {new Date(previewRequest.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+
+                    <div
+                      className="pt-6 ml-auto w-80 text-center space-y-1"
+                      style={{
+                        marginTop: `${docSignerOffset}px`,
+                        fontSize: `${signerFontSize}pt`,
+                      }}
+                    >
                       <div className="h-10" />
-                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                      <div contentEditable suppressContentEditableWarning className="font-bold text-slate-900 outline-none focus:bg-purple-50">
                         ({customSigner.name})
                       </div>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      <div contentEditable suppressContentEditableWarning className="text-slate-800 font-medium outline-none focus:bg-purple-50">
                         {customSigner.title}
                       </div>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      <div contentEditable suppressContentEditableWarning className="text-slate-600 outline-none focus:bg-purple-50">
                         Mahachulalongkornrajavidyalaya University
                       </div>
+                    </div>
+
+                    <div className="pt-2 flex items-end justify-between">
+                      <div
+                        className="space-y-3 transition-transform"
+                        style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
+                      >
+                        {showPhotoBox && (
+                          <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20">
+                            <span>ติดรูปถ่าย<br />Photo 1.5 - 2&quot;</span>
+                          </div>
+                        )}
+                        {showStudentSign && (
+                          <div className="pt-1">
+                            <div className="flex items-baseline gap-1 text-slate-800" style={{ fontSize: `${Math.max(11, docFontSize - 2)}pt` }}>
+                              <span className="shrink-0 font-medium">Signature</span>
+                              <span
+                                contentEditable
+                                suppressContentEditableWarning
+                                className="tracking-wider font-mono outline-none focus:bg-purple-50 select-text"
+                                title="คลิกเพื่อลบหรือพิมพ์จุดไข่ปลาได้อิสระ"
+                              >
+                                {'.'.repeat(dotsCount)}
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                width: `${Math.max(140, dotsCount * 7.5)}px`,
+                                textAlign: 'center',
+                                transform: `translateX(${studentSignOffsetX}px)`,
+                                fontSize: `${Math.max(11, docFontSize - 2)}pt`,
+                              }}
+                              className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50"
+                              contentEditable
+                              suppressContentEditableWarning
+                            >
+                              ({previewRequest.fullName})
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
+                      <p className="font-bold text-slate-800">Faculty of Buddhism</p>
+                      <p>Tel. +66 35 248 000 ext. 8323</p>
+                      <p className="text-purple-700 font-mono">https://fb.mcu.ac.th/</p>
                     </div>
                   </div>
                 </div>
@@ -1598,50 +1831,66 @@ export default function CertificatesPage() {
 
               {/* TEMPLATE 3: INTERNAL_MEMO */}
               {previewTemplate === 'INTERNAL_MEMO' && (
-                <div className="space-y-4 text-justify">
-                  <div className="flex items-center gap-4 border-b pb-3">
-                    <div className="w-14 h-14 rounded-full bg-slate-50 border flex items-center justify-center p-1 overflow-hidden shrink-0">
-                      <span className="text-3xl">🦅</span>
+                <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-4 border-b pb-3">
+                      <div className="w-14 h-14 rounded-full bg-slate-50 border flex items-center justify-center p-1 overflow-hidden shrink-0">
+                        <span className="text-3xl">🦅</span>
+                      </div>
+                      <div className="text-center flex-1">
+                        <h2 className="text-2xl font-black tracking-wide">บันทึกข้อความ</h2>
+                      </div>
                     </div>
-                    <div className="text-center flex-1">
-                      <h2 className="text-2xl font-black tracking-wide">บันทึกข้อความ</h2>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs border-b pb-3">
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        <span className="font-bold">ส่วนงาน:</span> คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="text-right outline-none focus:bg-purple-50">
+                        <span className="font-bold">วันที่:</span> {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        <span className="font-bold">ที่:</span> อว 8002 / {previewRequest.docNo || 'xxx'}
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        <span className="font-bold">เรื่อง:</span> ขอความอนุเคราะห์ออกหนังสือรับรองให้แก่นิสิต
+                      </div>
+                    </div>
+
+                    <div contentEditable suppressContentEditableWarning className="font-bold text-xs pt-1 outline-none focus:bg-purple-50">
+                      เรียน ผู้อำนวยการกองกิจการนิสิต / คณบดีคณะพุทธศาสตร์
+                    </div>
+
+                    <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50 pt-2 leading-relaxed">
+                      ด้วย <strong className="font-bold">{previewRequest.fullName}</strong> รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> อายุ {previewRequest.age || '-'} ปี สัญชาติ {previewRequest.nationality || '-'} {previewRequest.passportNo && <>ถือหนังสือเดินทางเลขที่ {previewRequest.passportNo}</>} เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} ได้ยื่นคำร้องเพื่อขอรับรอง{previewRequest.requestPurpose || previewRequest.certType}
+                    </p>
+
+                    <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
+                      ในการนี้ คณะพุทธศาสตร์ จึงขอความอนุเคราะห์ในการออกหนังสือรับรองให้แก่นิสิตดังกล่าว เพื่อเป็นเอกสารประกอบการดำเนินการต่อไป
+                    </p>
+
+                    <div
+                      className="pt-6 text-center ml-auto w-72 space-y-1"
+                      style={{
+                        marginTop: `${docSignerOffset}px`,
+                        fontSize: `${signerFontSize}pt`,
+                      }}
+                    >
+                      <div className="h-10" />
+                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                        ({customSigner.name})
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        {customSigner.title}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs border-b pb-3">
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                      <span className="font-bold">ส่วนงาน:</span> คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="text-right outline-none focus:bg-purple-50">
-                      <span className="font-bold">วันที่:</span> {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                      <span className="font-bold">ที่:</span> อว 8002 / {previewRequest.docNo || 'xxx'}
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                      <span className="font-bold">เรื่อง:</span> ขอความอนุเคราะห์ออกหนังสือรับรองให้แก่นิสิต
-                    </div>
-                  </div>
-
-                  <div contentEditable suppressContentEditableWarning className="font-bold text-xs pt-1 outline-none focus:bg-purple-50">
-                    เรียน ผู้อำนวยการกองกิจการนิสิต / คณบดีคณะพุทธศาสตร์
-                  </div>
-
-                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
-                    ด้วย <strong className="font-bold">{previewRequest.fullName}</strong> รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> อายุ {previewRequest.age || '-'} ปี สัญชาติ {previewRequest.nationality || '-'} {previewRequest.passportNo && <>ถือหนังสือเดินทางเลขที่ {previewRequest.passportNo}</>} เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} ได้ยื่นคำร้องเพื่อขอรับรอง{previewRequest.requestPurpose || previewRequest.certType}
-                  </p>
-
-                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
-                    ในการนี้ คณะพุทธศาสตร์ จึงขอความอนุเคราะห์ในการออกหนังสือรับรองให้แก่นิสิตดังกล่าว เพื่อเป็นเอกสารประกอบการดำเนินการต่อไป
-                  </p>
-
-                  <div className="pt-6 text-center ml-auto w-72 space-y-1 text-xs" style={{ marginTop: `${docSignerOffset}px` }}>
-                    <div className="h-10" />
-                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                      ({customSigner.name})
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                      {customSigner.title}
+                  <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
+                      <p className="font-bold text-slate-800">สำนักงานคณะพุทธศาสตร์</p>
+                      <p>โทรศัพท์ 035-247-8000 ต่อ 8323</p>
+                      <p className="text-purple-700 font-mono">https://fb.mcu.ac.th/</p>
                     </div>
                   </div>
                 </div>
@@ -1649,87 +1898,128 @@ export default function CertificatesPage() {
 
               {/* TEMPLATE 4: THAI_STANDARD */}
               {previewTemplate === 'THAI_STANDARD' && (
-                <div className="space-y-4 text-justify">
-                  <div className="flex justify-between items-start text-xs border-b pb-3">
-                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                      ที่ อว 8002 / {previewRequest.docNo || 'xxx'}
-                    </div>
-                    <div contentEditable suppressContentEditableWarning className="text-right text-slate-500 outline-none focus:bg-purple-50">
-                      สำนักงานคณะพุทธศาสตร์ มจร.
-                    </div>
-                  </div>
-
-                  <div contentEditable suppressContentEditableWarning className="text-center font-bold text-xl pt-2 pb-1 outline-none focus:bg-purple-50">
-                    หนังสือรับรอง
-                  </div>
-
-                  <p contentEditable suppressContentEditableWarning className="indent-8 leading-relaxed outline-none focus:bg-purple-50">
-                    โดยหนังสือนี้ขอรับรองว่า <strong className="font-bold">{previewRequest.fullName}</strong>{' '}
-                    {previewRequest.age && <>อายุ <strong className="font-bold">{previewRequest.age}</strong> ปี </>}
-                    สัญชาติ <strong className="font-bold">{previewRequest.nationality || 'ไทย'}</strong>{' '}
-                    {previewRequest.country && previewRequest.country !== 'Thailand' && (
-                      <>ประเทศ <strong className="font-bold">{previewRequest.country}</strong> </>
-                    )}
-                    {previewRequest.passportNo && (
-                      <>ถือหนังสือเดินทางเลขที่ <strong className="font-mono font-bold">{previewRequest.passportNo}</strong> และวีซ่าประเภท {previewRequest.visaType || 'คนอยู่ชั่วคราว (Non-Immigrant Visa)'} </>
-                    )}
-                    เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'}{' '}
-                    (ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร 4 ปี) ชั้นปีที่{' '}
-                    {previewRequest.studentCode.substring(0, 2) ? '2' : '1'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'}{' '}
-                    ({previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai' ? 'ภาคภาษาไทย' : 'ภาคภาษาอังกฤษ'}) มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย รหัสประจำตัวนิสิต{' '}
-                    <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> เพื่อเป็นหลักฐาน สำหรับ
-                    <strong className="font-bold underline ml-1">{previewRequest.requestPurpose || previewRequest.certType}</strong> จึงออกหนังสือนี้ไว้เป็นสำคัญ
-                  </p>
-
-                  <div contentEditable suppressContentEditableWarning className="text-center text-xs pt-2 outline-none focus:bg-purple-50">
-                    ให้ไว้ ณ วันที่ {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </div>
-
-                  <div className="pt-6 flex justify-between items-end" style={{ marginTop: `${docSignerOffset}px` }}>
-                    <div className="space-y-3">
-                      {showPhotoBox && (
-                        <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center">
-                          <span>ติดรูปถ่าย<br />1.5 - 2 นิ้ว</span>
-                        </div>
-                      )}
-                      {showStudentSign && (
-                        <div className="text-xs text-slate-600 pt-1">
-                          <p>ลงชื่อ ..............................................................</p>
-                          <p className="mt-1 font-bold">({previewRequest.fullName})</p>
-                        </div>
-                      )}
-                      <div contentEditable suppressContentEditableWarning className="text-[11px] text-slate-500 pt-1 outline-none focus:bg-purple-50">
-                        <p className="font-bold text-slate-700">สำนักงานคณะพุทธศาสตร์</p>
-                        <p>โทรศัพท์ 035-247-8000 ต่อ 8323</p>
-                        <p className="text-purple-700 font-mono">https://fb.mcu.ac.th/</p>
+                <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
+                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                        ที่ อว 8002 / {previewRequest.docNo || 'xxx'}
                       </div>
+                      <div></div>
                     </div>
 
-                    <div className="text-center space-y-1.5 text-xs min-w-[240px]">
+                    <div className="pt-6 pb-2 text-center">
+                      <span
+                        contentEditable
+                        suppressContentEditableWarning
+                        className="font-bold tracking-wide outline-none focus:bg-purple-50"
+                        style={{ fontSize: `${Math.round(docFontSize * 1.5)}pt` }}
+                      >
+                        หนังสือรับรอง
+                      </span>
+                    </div>
+
+                    <p
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="indent-10 leading-relaxed outline-none focus:bg-purple-50 pt-2 text-justify"
+                      style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
+                    >
+                      โดยหนังสือนี้ขอรับรองว่า <strong className="font-bold">{previewRequest.fullName}</strong>{' '}
+                      {previewRequest.age && <>อายุ <strong className="font-bold">{previewRequest.age}</strong> ปี </>}
+                      สัญชาติ <strong className="font-bold">{previewRequest.nationality || 'ไทย'}</strong>{' '}
+                      {previewRequest.country && previewRequest.country !== 'Thailand' && (
+                        <>ประเทศ <strong className="font-bold">{previewRequest.country}</strong> </>
+                      )}
+                      {previewRequest.passportNo && (
+                        <>ถือหนังสือเดินทางเลขที่ <strong className="font-mono font-bold">{previewRequest.passportNo}</strong> และวีซ่าประเภท {previewRequest.visaType || 'คนอยู่ชั่วคราว (Non-Immigrant Visa)'} </>
+                      )}
+                      เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'}{' '}
+                      (ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร 4 ปี) ชั้นปีที่{' '}
+                      {previewRequest.studentCode.substring(0, 2) ? '2' : '1'} สาขาวิชา {previewRequest.major || 'พระพุทธศาสนา'}{' '}
+                      ({previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai' ? 'ภาคภาษาไทย' : 'ภาคภาษาอังกฤษ'}) มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย รหัสประจำตัวนิสิต{' '}
+                      <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> เพื่อเป็นหลักฐาน สำหรับ
+                      <strong className="font-bold underline ml-1">{previewRequest.requestPurpose || previewRequest.certType}</strong> จึงออกหนังสือนี้ไว้เป็นสำคัญ
+                    </p>
+
+                    <div
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="text-center pt-2 outline-none focus:bg-purple-50"
+                      style={{ fontSize: `${docFontSize}pt` }}
+                    >
+                      ให้ไว้ ณ วันที่ {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+
+                    <div
+                      className="pt-6 ml-auto w-80 text-center space-y-1.5"
+                      style={{
+                        marginTop: `${docSignerOffset}px`,
+                        fontSize: `${signerFontSize}pt`,
+                      }}
+                    >
                       <div className="h-10" />
                       <div contentEditable suppressContentEditableWarning className="font-bold text-slate-900 outline-none focus:bg-purple-50">
                         ({customSigner.name})
                       </div>
-                      <div contentEditable suppressContentEditableWarning className="text-slate-700 font-medium outline-none focus:bg-purple-50">
+                      <div contentEditable suppressContentEditableWarning className="text-slate-800 font-medium outline-none focus:bg-purple-50">
                         {customSigner.title}
                       </div>
-                      <div contentEditable suppressContentEditableWarning className="text-[11px] text-slate-500 outline-none focus:bg-purple-50">
+                      <div contentEditable suppressContentEditableWarning className="text-slate-600 outline-none focus:bg-purple-50">
                         คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
                       </div>
+                    </div>
+
+                    <div className="pt-2 flex items-end justify-between">
+                      <div
+                        className="space-y-3 transition-transform"
+                        style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
+                      >
+                        {showPhotoBox && (
+                          <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 shadow-sm">
+                            <span>ติดรูปถ่าย<br />1.5 - 2 นิ้ว</span>
+                          </div>
+                        )}
+                        {showStudentSign && (
+                          <div className="pt-1">
+                            <div className="flex items-baseline gap-1 text-slate-800" style={{ fontSize: `${Math.max(11, docFontSize - 2)}pt` }}>
+                              <span className="shrink-0 font-medium">ลงชื่อ</span>
+                              <span
+                                contentEditable
+                                suppressContentEditableWarning
+                                className="tracking-wider font-mono outline-none focus:bg-purple-50 select-text"
+                                title="คลิกเพื่อลบหรือพิมพ์จุดไข่ปลาได้อิสระ"
+                              >
+                                {'.'.repeat(dotsCount)}
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                width: `${Math.max(140, dotsCount * 7.5)}px`,
+                                textAlign: 'center',
+                                transform: `translateX(${studentSignOffsetX}px)`,
+                                fontSize: `${Math.max(11, docFontSize - 2)}pt`,
+                              }}
+                              className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50"
+                              contentEditable
+                              suppressContentEditableWarning
+                            >
+                              ({previewRequest.fullName})
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
+                      <p className="font-bold text-slate-800">สำนักงานคณะพุทธศาสตร์</p>
+                      <p>โทรศัพท์ 035-247-8000 ต่อ 8323</p>
+                      <p className="text-purple-700 font-mono">https://fb.mcu.ac.th/</p>
                     </div>
                   </div>
                 </div>
               )}
-
-              {/* Student Signature */}
-              <div className="pt-4 border-t border-slate-100 flex justify-between text-xs text-slate-500">
-                <div>
-                  <p>ลงชื่อ ..............................................................</p>
-                  <p className="mt-1">({previewRequest.fullName}) นิสิตผู้ยื่นคำร้อง</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-mono">รหัสคำร้อง: {previewRequest.id}</p>
-                </div>
               </div>
             </div>
 
@@ -1766,6 +2056,47 @@ export default function CertificatesPage() {
                 </button>
               </div>
             </div>
+
+            {/* Print Stylesheet for exact A4 paper formatting */}
+            <style jsx global>{`
+              @page {
+                size: A4 portrait;
+                margin: 0;
+              }
+              @media print {
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #ffffff !important;
+                }
+                body * {
+                  visibility: hidden !important;
+                }
+                #printable-student-cert, #printable-student-cert * {
+                  visibility: visible !important;
+                }
+                #printable-student-cert {
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  width: 210mm !important;
+                  height: 297mm !important;
+                  min-height: 297mm !important;
+                  max-height: 297mm !important;
+                  padding: 25mm 20mm 15mm 25mm !important;
+                  margin: 0 !important;
+                  background: #ffffff !important;
+                  border: none !important;
+                  box-shadow: none !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  justify-content: space-between !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  overflow: hidden !important;
+                }
+              }
+            `}</style>
           </div>
         </div>
       )}
