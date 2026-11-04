@@ -1245,6 +1245,16 @@ export interface SystemSettings {
   announcementText: string;
   signatories?: SignatoryItem[];
   updatedAt?: string;
+  // Certificate Notice Banners (กล่องแจ้งเตือน 3 กล่องหน้าระบบคำร้อง)
+  visaAlertTitle?: string;
+  visaAlertDesc?: string;
+  visaAlertEnabled?: boolean;
+  timelineAlertTitle?: string;
+  timelineAlertDesc?: string;
+  timelineAlertEnabled?: boolean;
+  accuracyAlertTitle?: string;
+  accuracyAlertDesc?: string;
+  accuracyAlertEnabled?: boolean;
 }
 
 const DEFAULT_SETTINGS: SystemSettings = {
@@ -1266,6 +1276,15 @@ const DEFAULT_SETTINGS: SystemSettings = {
   addressEn: '79 Moo 1, Phahonyothin Road, Lamsai, Wangnoi, Phra Nakhon Si Ayutthaya 13170, Thailand',
   announcementText: 'ยินดีต้อนรับสู่งานบริการการศึกษาและทะเบียน คณะพุทธศาสตร์ มจร. วังน้อย',
   signatories: DEFAULT_SIGNATORIES,
+  visaAlertTitle: 'สำหรับการต่อวีซ่า ให้ดำเนินการก่อนหนังสือเดินทางหมดอายุ 30 วัน',
+  visaAlertDesc: '* เพื่อให้มีระยะเวลาเพียงพอต่อการพิจารณาของ ตม. และป้องกันการเสียค่าปรับ',
+  visaAlertEnabled: true,
+  timelineAlertTitle: 'การดำเนินการ จะเสร็จสิ้น ประมาณ 1-2 วัน ไม่นับวันหยุด หรือ กรุณาตรวจดูเส้นทางการดำเนินการหนังสือว่า "อนุมัติ"',
+  timelineAlertDesc: '* สามารถตรวจสอบความคืบหน้าได้ตลอดเวลาที่แท็บ "เช็คสถานะคำร้อง"',
+  timelineAlertEnabled: true,
+  accuracyAlertTitle: 'กรุณากรอกข้อมูลให้ครบถ้วน มิฉะนั้นเอกสารจะไม่สมบูรณ์และจะยกเลิกการขอหนังสือ',
+  accuracyAlertDesc: '* ตรวจสอบตัวสะกดชื่อ-นามสกุลภาษาอังกฤษและเลขพาสปอร์ตให้ตรงกับเล่มจริง',
+  accuracyAlertEnabled: true,
 };
 
 export function convertGoogleDriveUrl(url?: string): string {

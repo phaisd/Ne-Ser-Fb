@@ -593,61 +593,75 @@ export default function CertificatesPage() {
       {activeTab === 'REQUEST' && (
         <div className="space-y-6">
           {/* Important Notices for Students (กล่องแจ้งเตือนสำคัญก่อนเลือกประเภทหนังสือ) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* กล่องที่ 1: แจ้งเตือนสีแดง (สำหรับการต่อวีซ่า 30 วัน) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-red-50/90 border-2 border-red-400 text-red-950 shadow-sm flex items-start gap-3.5 transition-all hover:shadow-md">
-              <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-red-600/30 mt-0.5">
-                <AlertTriangle className="w-5 h-5 text-white" />
-              </div>
-              <div className="space-y-1">
-                <span className="inline-block px-2.5 py-0.5 rounded-full bg-red-200/90 text-red-900 font-extrabold text-[10px] uppercase tracking-wider">
-                  ⚠️ แจ้งเตือนสำคัญ (Visa Alert)
-                </span>
-                <p className="font-bold text-sm text-red-950 leading-snug">
-                  สำหรับการต่อวีซ่า ให้ดำเนินการก่อนหนังสือเดินทางหมดอายุ 30 วัน
-                </p>
-                <p className="text-xs text-red-800 leading-relaxed">
-                  * เพื่อให้มีระยะเวลาเพียงพอต่อการพิจารณาของ ตม. และป้องกันการเสียค่าปรับ
-                </p>
-              </div>
-            </div>
+          {(settings.visaAlertEnabled !== false || settings.timelineAlertEnabled !== false || settings.accuracyAlertEnabled !== false) && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* กล่องที่ 1: แจ้งเตือนสีแดง (สำหรับการต่อวีซ่า 30 วัน) */}
+              {settings.visaAlertEnabled !== false && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-red-50/90 border-2 border-red-400 text-red-950 shadow-sm flex items-start gap-3.5 transition-all hover:shadow-md">
+                  <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-red-600/30 mt-0.5">
+                    <AlertTriangle className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-red-200/90 text-red-900 font-extrabold text-[10px] uppercase tracking-wider">
+                      ⚠️ แจ้งเตือนสำคัญ (Visa Alert)
+                    </span>
+                    <p className="font-bold text-sm text-red-950 leading-snug">
+                      {settings.visaAlertTitle || 'สำหรับการต่อวีซ่า ให้ดำเนินการก่อนหนังสือเดินทางหมดอายุ 30 วัน'}
+                    </p>
+                    {settings.visaAlertDesc && (
+                      <p className="text-xs text-red-800 leading-relaxed">
+                        {settings.visaAlertDesc}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
-            {/* กล่องที่ 2: ระยะเวลาดำเนินการ (1-2 วัน ไม่นับวันหยุด / ตรวจดูสถานะ "อนุมัติ") */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-sky-50/90 border-2 border-sky-400 text-sky-950 shadow-sm flex items-start gap-3.5 transition-all hover:shadow-md">
-              <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-sky-600/30 mt-0.5">
-                <Clock className="w-5 h-5 text-white" />
-              </div>
-              <div className="space-y-1">
-                <span className="inline-block px-2.5 py-0.5 rounded-full bg-sky-200/90 text-sky-900 font-extrabold text-[10px] uppercase tracking-wider">
-                  ⏱️ ระยะเวลาดำเนินการ (Timeline)
-                </span>
-                <p className="font-bold text-sm text-sky-950 leading-snug">
-                  การดำเนินการ จะเสร็จสิ้น ประมาณ 1-2 วัน ไม่นับวันหยุด หรือ กรุณาตรวจดูเส้นทางการดำเนินการหนังสือว่า &quot;อนุมัติ&quot;
-                </p>
-                <p className="text-xs text-sky-800 leading-relaxed">
-                  * สามารถตรวจสอบความคืบหน้าได้ตลอดเวลาที่แท็บ &quot;เช็คสถานะคำร้อง&quot;
-                </p>
-              </div>
-            </div>
+              {/* กล่องที่ 2: ระยะเวลาดำเนินการ (1-2 วัน ไม่นับวันหยุด / ตรวจดูสถานะ "อนุมัติ") */}
+              {settings.timelineAlertEnabled !== false && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-sky-50/90 border-2 border-sky-400 text-sky-950 shadow-sm flex items-start gap-3.5 transition-all hover:shadow-md">
+                  <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-sky-600/30 mt-0.5">
+                    <Clock className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-sky-200/90 text-sky-900 font-extrabold text-[10px] uppercase tracking-wider">
+                      ⏱️ ระยะเวลาดำเนินการ (Timeline)
+                    </span>
+                    <p className="font-bold text-sm text-sky-950 leading-snug">
+                      {settings.timelineAlertTitle || 'การดำเนินการ จะเสร็จสิ้น ประมาณ 1-2 วัน ไม่นับวันหยุด หรือ กรุณาตรวจดูเส้นทางการดำเนินการหนังสือว่า "อนุมัติ"'}
+                    </p>
+                    {settings.timelineAlertDesc && (
+                      <p className="text-xs text-sky-800 leading-relaxed">
+                        {settings.timelineAlertDesc}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
-            {/* กล่องที่ 3: ความถูกต้องครบถ้วนของข้อมูล (มิฉะนั้นจะยกเลิกการขอ) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border-2 border-amber-400 text-amber-950 shadow-sm flex items-start gap-3.5 transition-all hover:shadow-md">
-              <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/30 mt-0.5">
-                <AlertCircle className="w-5 h-5 text-white" />
-              </div>
-              <div className="space-y-1">
-                <span className="inline-block px-2.5 py-0.5 rounded-full bg-amber-200/90 text-amber-900 font-extrabold text-[10px] uppercase tracking-wider">
-                  📋 ความถูกต้องของข้อมูล (Accuracy)
-                </span>
-                <p className="font-bold text-sm text-amber-950 leading-snug">
-                  กรุณากรอกข้อมูลให้ครบถ้วน มิฉะนั้นเอกสารจะไม่สมบูรณ์และจะยกเลิกการขอหนังสือ
-                </p>
-                <p className="text-xs text-amber-800 leading-relaxed">
-                  * ตรวจสอบตัวสะกดชื่อ-นามสกุลภาษาอังกฤษและเลขพาสปอร์ตให้ตรงกับเล่มจริง
-                </p>
-              </div>
+              {/* กล่องที่ 3: ความถูกต้องครบถ้วนของข้อมูล (มิฉะนั้นจะยกเลิกการขอ) */}
+              {settings.accuracyAlertEnabled !== false && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border-2 border-amber-400 text-amber-950 shadow-sm flex items-start gap-3.5 transition-all hover:shadow-md">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/30 mt-0.5">
+                    <AlertCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-amber-200/90 text-amber-900 font-extrabold text-[10px] uppercase tracking-wider">
+                      📋 ความถูกต้องของข้อมูล (Accuracy)
+                    </span>
+                    <p className="font-bold text-sm text-amber-950 leading-snug">
+                      {settings.accuracyAlertTitle || 'กรุณากรอกข้อมูลให้ครบถ้วน มิฉะนั้นเอกสารจะไม่สมบูรณ์และจะยกเลิกการขอหนังสือ'}
+                    </p>
+                    {settings.accuracyAlertDesc && (
+                      <p className="text-xs text-amber-800 leading-relaxed">
+                        {settings.accuracyAlertDesc}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
           {/* Section A: Card Selector */}
           <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
