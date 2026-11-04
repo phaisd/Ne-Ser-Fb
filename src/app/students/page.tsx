@@ -36,7 +36,8 @@ import {
   RefreshCw,
   HelpCircle,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  GraduationCap
 } from 'lucide-react';
 
 interface Student {
@@ -705,6 +706,15 @@ export default function StudentsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {/* Bulk Promotion Button linking to Admin Promotion Tool */}
+          <Link
+            href="/admin?tab=STUDENTS&promote=true"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-sm hover:shadow transition cursor-pointer"
+          >
+            <GraduationCap className="w-3.5 h-3.5" />
+            <span>🎓 เลื่อนชั้นปีการศึกษา (Bulk Promotion)</span>
+          </Link>
+
           {/* Import Batch Button */}
           <button
             onClick={() => {
