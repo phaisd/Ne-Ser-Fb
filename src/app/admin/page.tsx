@@ -380,6 +380,26 @@ export default function AdminConsolePage() {
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  // Auto-Provision Instructors from Timetables States
+  const [isScanningInstructors, setIsScanningInstructors] = useState<boolean>(false);
+  const [provisionModal, setProvisionModal] = useState<{
+    isOpen: boolean;
+    totalTimetableInstructors: number;
+    existingCount: number;
+    newCount: number;
+    alreadyExisting: any[];
+    candidates: any[];
+  }>({
+    isOpen: false,
+    totalTimetableInstructors: 0,
+    existingCount: 0,
+    newCount: 0,
+    alreadyExisting: [],
+    candidates: [],
+  });
+  const [isSubmittingProvision, setIsSubmittingProvision] = useState<boolean>(false);
+  const [showExistingList, setShowExistingList] = useState<boolean>(false);
+
   const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
   const [editUserForm, setEditUserForm] = useState({
     name: '',
@@ -956,6 +976,84 @@ export default function AdminConsolePage() {
       }
     } catch (e: any) {
       alert(e.message);
+    }
+  };
+
+  // Auto-Provision Handlers
+  const handleScanTimetables = async () => {
+    setIsScanningInstructors(true);
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'scan-timetables' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProvisionModal({
+          isOpen: true,
+          totalTimetableInstructors: data.totalTimetableInstructors || 0,
+          existingCount: data.existingCount || 0,
+          newCount: data.newCount || 0,
+          alreadyExisting: data.alreadyExisting || [],
+          candidates: (data.candidates || []).map((c: any) => ({ ...c, selected: true })),
+        });
+        setShowExistingList(false);
+      } else {
+        alert('เกิดข้อผิดพลาดในการสแกน: ' + (data.error || 'ไม่สามารถสแกนได้'));
+      }
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } finally {
+      setIsScanningInstructors(false);
+    }
+  };
+
+  const handleToggleCandidateSelect = (idx: number) => {
+    setProvisionModal((prev) => {
+      const nextCand = [...prev.candidates];
+      nextCand[idx] = { ...nextCand[idx], selected: !nextCand[idx].selected };
+      return { ...prev, candidates: nextCand };
+    });
+  };
+
+  const handleUpdateCandidateField = (idx: number, field: string, val: any) => {
+    setProvisionModal((prev) => {
+      const nextCand = [...prev.candidates];
+      nextCand[idx] = { ...nextCand[idx], [field]: val };
+      return { ...prev, candidates: nextCand };
+    });
+  };
+
+  const handleConfirmBatchProvision = async () => {
+    const selected = provisionModal.candidates.filter((c) => c.selected);
+    if (selected.length === 0) {
+      alert('กรุณาเลือกอาจารย์ใหม่อย่างน้อย 1 ท่านเพื่อสร้างบัญชี');
+      return;
+    }
+
+    setIsSubmittingProvision(true);
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'batch-provision-instructors',
+          candidates: selected,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || `สร้างบัญชีอาจารย์ใหม่สำเร็จ ${data.createdCount} ท่าน`);
+        setProvisionModal((prev) => ({ ...prev, isOpen: false }));
+        loadData();
+      } else {
+        alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถสร้างบัญชีได้'));
+      }
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } finally {
+      setIsSubmittingProvision(false);
     }
   };
 
@@ -2715,7 +2813,18 @@ ${coursesText}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleScanTimetables}
+                    disabled={isScanningInstructors}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+                    title="สแกนตารางสอนและเตรียมสร้างไอดีสำหรับอาจารย์ใหม่ที่ยังไม่มีบัญชี"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isScanningInstructors ? 'animate-spin' : ''}`} />
+                    <span>🔄 ซิงค์และสร้างไอดีอาจารย์จากตารางสอน</span>
+                  </button>
+
                   <button
                     onClick={() => setIsAddUserOpen(true)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-600/20 transition cursor-pointer"
@@ -4399,7 +4508,18 @@ ${coursesText}
                     รายการคาบสอนทั้งหมด {timetablesList.length} คาบ พร้อมข้อมูลห้องเรียนและอาจารย์ผู้สอน
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleScanTimetables}
+                    disabled={isScanningInstructors}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+                    title="สแกนตารางสอนและตรวจสอบไอดีอาจารย์ผู้สอน"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isScanningInstructors ? 'animate-spin' : ''}`} />
+                    <span>🔄 ซิงค์และสร้างไอดีอาจารย์จากตารางสอน</span>
+                  </button>
+
                   <Link
                     href="/courses"
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"

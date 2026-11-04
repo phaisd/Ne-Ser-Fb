@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import {
   getInstructorAccounts,
+  scanTimetableInstructors,
+  batchProvisionInstructors,
   updateUserRole,
   resetUserPassword,
   createUserAccount,
@@ -98,6 +100,23 @@ export async function POST(request: Request) {
       const created = await createUserAccount(dataToCreate);
       const { password, ...safe } = created;
       return NextResponse.json({ success: true, data: safe, message: 'สร้างบัญชีผู้ใช้ใหม่เรียบร้อยแล้ว' });
+    }
+
+    // 6. Scan Timetable Instructors for Auto-Provisioning
+    if (action === 'scan-timetables') {
+      const scanResult = await scanTimetableInstructors();
+      return NextResponse.json({ success: true, ...scanResult });
+    }
+
+    // 7. Batch Provision Instructors
+    if (action === 'batch-provision-instructors') {
+      const { candidates, links } = body;
+      const result = await batchProvisionInstructors(candidates || [], links || []);
+      return NextResponse.json({
+        success: true,
+        message: `สร้างบัญชีอาจารย์ใหม่สำเร็จ ${result.createdCount} ท่าน และผูกชื่อเข้ากับบัญชีเดิม ${result.linkedCount} รายการ`,
+        ...result,
+      });
     }
 
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });

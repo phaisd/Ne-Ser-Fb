@@ -1746,3 +1746,185 @@ export async function archiveAcademicYear(year: string): Promise<AcademicYearArc
   return archiveRecord;
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// AUTO-PROVISION INSTRUCTORS FROM TIMETABLES (SMART 1-CLICK)
+// ─────────────────────────────────────────────────────────────
+export async function scanTimetableInstructors() {
+  const [timetables, existingInstructors] = await Promise.all([
+    getTimetables(),
+    getInstructorAccounts(),
+  ]);
+
+  const IGNORE_TERMS = new Set(['staff', 'advisor', 'tba', 'ผู้สอน', 'อาจารย์', 'บรรยาย', 'อาจารย์พิเศษ', 'none', '-']);
+
+  const nameToCourses = new Map<string, Array<{ courseCode: string; courseName: string; timetableTitle?: string }>>();
+
+  timetables.forEach((t) => {
+    if (t.instructor) {
+      t.instructor.split('/').forEach((part) => {
+        const clean = part.replace(/\*/g, '').trim();
+        if (clean && clean.length > 2 && !IGNORE_TERMS.has(clean.toLowerCase())) {
+          if (!nameToCourses.has(clean)) {
+            nameToCourses.set(clean, []);
+          }
+          const list = nameToCourses.get(clean)!;
+          if (!list.some((c) => c.courseCode === t.courseCode)) {
+            list.push({
+              courseCode: t.courseCode,
+              courseName: t.courseName,
+              timetableTitle: t.timetableTitle,
+            });
+          }
+        }
+      });
+    }
+  });
+
+  const existingEmails = new Set(existingInstructors.map((i) => i.email.toLowerCase()));
+
+  const alreadyExisting: any[] = [];
+  const candidates: any[] = [];
+
+  for (const [rawName, courses] of nameToCourses.entries()) {
+    const rawLower = rawName.toLowerCase();
+
+    const matchedAccount = existingInstructors.find((u) => {
+      if (u.name.toLowerCase() === rawLower) return true;
+      if (u.nameEn && u.nameEn.toLowerCase() === rawLower) return true;
+      if (u.aliases && u.aliases.some((a) => rawLower.includes(a.toLowerCase()) || a.toLowerCase().includes(rawLower))) return true;
+
+      const tokens = u.name.replace(/(ดร|ผศ|รศ|ศ|พระมหา|พระครู|พระ|อ.ดร|อ|\.|\,)/g, '').trim().split(/\s+/).filter((x) => x.length > 2);
+      if (tokens.some((tok) => rawLower.includes(tok.toLowerCase()))) return true;
+
+      if (u.nameEn) {
+        const enTokens = u.nameEn.replace(/(asst|assoc|prof|phramaha|dr|phd|ven|phra|\.|\,)/gi, '').trim().split(/\s+/).filter((x) => x.length > 3);
+        if (enTokens.some((tok) => rawLower.includes(tok.toLowerCase()))) return true;
+      }
+
+      return false;
+    });
+
+    if (matchedAccount) {
+      alreadyExisting.push({
+        rawName,
+        accountId: matchedAccount.id,
+        accountName: matchedAccount.name,
+        accountNameEn: matchedAccount.nameEn,
+        accountEmail: matchedAccount.email,
+        courseCount: courses.length,
+      });
+    } else {
+      const isEnglishName = /^[a-zA-Z\s\.,\-]+$/.test(rawName);
+      let nameTh = isEnglishName ? rawName : rawName;
+      let nameEn = isEnglishName ? rawName : '';
+
+      let emailPrefix = '';
+      if (isEnglishName) {
+        const words = rawName.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => !['asst', 'assoc', 'prof', 'dr', 'phd', 'ven', 'phra', 'phramaha'].includes(w));
+        emailPrefix = words.length >= 2 ? `${words[0]}.${words[1][0]}` : words[0] || 'instructor';
+      } else {
+        const words = rawName.replace(/^(พระมหา|พระครูปลัด|พระครู|พระใบฎีกา|พระสมุห์|พระ|ผศ\.|รศ\.|ศ\.|ดร\.|อ\.ดร\.|อ\.|นาย|นาง|นางสาว|\*)/g, '').trim().split(/\s+/);
+        emailPrefix = words.length > 0 ? `teacher.${words[0].substring(0, 5)}` : 'teacher';
+      }
+
+      let email = `${emailPrefix}@mcu.ac.th`;
+      let counter = 1;
+      while (existingEmails.has(email.toLowerCase())) {
+        counter++;
+        email = `${emailPrefix}${counter}@mcu.ac.th`;
+      }
+      existingEmails.add(email.toLowerCase());
+
+      let similarTo: any = null;
+      for (const ex of existingInstructors) {
+        const exName = ex.name.toLowerCase();
+        const exEn = (ex.nameEn || '').toLowerCase();
+        const rawTokens = rawName.toLowerCase().split(/\s+/).filter((t) => t.length > 3);
+        if (rawTokens.some((tok) => exName.includes(tok) || exEn.includes(tok))) {
+          similarTo = {
+            id: ex.id,
+            name: ex.name,
+            nameEn: ex.nameEn,
+          };
+          break;
+        }
+      }
+
+      candidates.push({
+        rawName,
+        name: nameTh,
+        nameEn,
+        email,
+        password: 'mcu123456',
+        defaultPassword: 'mcu123456',
+        department: courses[0]?.timetableTitle?.includes('อังกฤษ') || courses[0]?.timetableTitle?.includes('Inter')
+          ? 'หลักสูตรภาษาอังกฤษ คณะพุทธศาสตร์'
+          : 'คณะพุทธศาสตร์ มจร',
+        role: 'INSTRUCTOR',
+        coursesCount: courses.length,
+        courses,
+        aliases: [rawName.replace(/(ดร|ผศ|รศ|ศ|พระมหา|พระครู|พระ|\.|\,)/g, '').trim()].filter(Boolean),
+        similarTo,
+        selected: true,
+      });
+    }
+  }
+
+  return {
+    totalTimetableInstructors: nameToCourses.size,
+    existingCount: alreadyExisting.length,
+    newCount: candidates.length,
+    alreadyExisting,
+    candidates,
+  };
+}
+
+export async function batchProvisionInstructors(
+  candidatesToCreate: Array<Partial<InstructorAccount>>,
+  linksToExisting: Array<{ existingUserId: string; aliasToAdd: string; nameEnToAdd?: string }>
+): Promise<{ createdCount: number; linkedCount: number }> {
+  const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
+  let createdCount = 0;
+  let linkedCount = 0;
+
+  for (const c of candidatesToCreate) {
+    if (!c.name || !c.email) continue;
+    const newId = 'inst-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    const newAcc: InstructorAccount = {
+      id: newId,
+      name: c.name.trim(),
+      nameEn: c.nameEn ? c.nameEn.trim() : undefined,
+      email: c.email.trim().toLowerCase(),
+      gmail: c.gmail ? c.gmail.trim() : `${c.email.split('@')[0]}@gmail.com`,
+      password: c.password || 'mcu123456',
+      defaultPassword: 'mcu123456',
+      department: c.department || 'คณะพุทธศาสตร์ มจร',
+      role: 'INSTRUCTOR',
+      coursesCount: c.coursesCount || 0,
+      isActive: true,
+      aliases: Array.isArray(c.aliases) ? c.aliases : [c.name],
+      createdAt: new Date().toISOString(),
+    };
+    list.unshift(newAcc);
+    createdCount++;
+  }
+
+  for (const l of linksToExisting) {
+    const found = list.find((u) => u.id === l.existingUserId);
+    if (found) {
+      if (!found.aliases) found.aliases = [];
+      if (l.aliasToAdd && !found.aliases.includes(l.aliasToAdd)) {
+        found.aliases.push(l.aliasToAdd);
+      }
+      if (l.nameEnToAdd && !found.nameEn) {
+        found.nameEn = l.nameEnToAdd;
+      }
+      linkedCount++;
+    }
+  }
+
+  writeLocalJson('instructors.json', list);
+
+  return { createdCount, linkedCount };
+}
