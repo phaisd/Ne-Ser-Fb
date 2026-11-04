@@ -2,10 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ShieldAlert, Clock, LogOut, CheckCircle, RefreshCw } from 'lucide-react';
+import { ShieldAlert, Clock, LogOut, CheckCircle, Laptop, ShieldCheck } from 'lucide-react';
 
-// Default: 15 minutes = 900 seconds
-const DEFAULT_TIMEOUT_SECONDS = 15 * 60;
 // Countdown duration before auto-logout: 60 seconds
 const WARNING_COUNTDOWN_SECONDS = 60;
 
@@ -16,23 +14,30 @@ export default function AutoLogoutManager() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(WARNING_COUNTDOWN_SECONDS);
+  // timeoutMinutes: 15, 30, 60, or 0 (0 = OFF / Personal computer mode)
   const [timeoutMinutes, setTimeoutMinutes] = useState(15);
 
   const lastActivityRef = useRef<number>(Date.now());
   const isLoggingOutRef = useRef<boolean>(false);
 
   // Load configured timeout preference if stored
-  useEffect(() => {
+  const loadTimeoutPreference = useCallback(() => {
     try {
       const savedTimeout = localStorage.getItem('mcu_auto_logout_minutes');
-      if (savedTimeout) {
+      if (savedTimeout !== null) {
         const val = parseInt(savedTimeout, 10);
-        if ([10, 15, 20, 30].includes(val)) {
+        if ([0, 10, 15, 20, 30, 60].includes(val)) {
           setTimeoutMinutes(val);
+          return val;
         }
       }
     } catch (e) {}
+    return 15;
   }, []);
+
+  useEffect(() => {
+    loadTimeoutPreference();
+  }, [loadTimeoutPreference]);
 
   // Check login state
   const checkLoginState = useCallback(() => {
@@ -77,6 +82,16 @@ export default function AutoLogoutManager() {
     }
   }, [showWarning]);
 
+  // Update timeout preference
+  const handleUpdateTimeout = (mins: number) => {
+    setTimeoutMinutes(mins);
+    try {
+      localStorage.setItem('mcu_auto_logout_minutes', mins.toString());
+      window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: mins }));
+    } catch (e) {}
+    resetActivity();
+  };
+
   // Track user activity events
   useEffect(() => {
     const handleUserActivity = () => {
@@ -101,11 +116,20 @@ export default function AutoLogoutManager() {
 
     events.forEach((ev) => window.addEventListener(ev, throttledHandler, { passive: true }));
 
-    // Listen to login/logout custom events
+    // Listen to login/logout/setting change events
     const checkUser = () => checkLoginState();
+    const handleSettingChange = (e: any) => {
+      if (e?.detail !== undefined) {
+        setTimeoutMinutes(e.detail);
+      } else {
+        loadTimeoutPreference();
+      }
+    };
+
     window.addEventListener('storage', checkUser);
     window.addEventListener('mcu_user_logged_in', checkUser);
     window.addEventListener('mcu_user_logged_out', checkUser);
+    window.addEventListener('mcu_auto_logout_changed', handleSettingChange);
 
     checkUser();
 
@@ -114,9 +138,10 @@ export default function AutoLogoutManager() {
       window.removeEventListener('storage', checkUser);
       window.removeEventListener('mcu_user_logged_in', checkUser);
       window.removeEventListener('mcu_user_logged_out', checkUser);
+      window.removeEventListener('mcu_auto_logout_changed', handleSettingChange);
       if (throttleTimeout) clearTimeout(throttleTimeout);
     };
-  }, [checkLoginState, showWarning]);
+  }, [checkLoginState, loadTimeoutPreference, showWarning]);
 
   // Heartbeat interval checking inactivity
   useEffect(() => {
@@ -124,6 +149,12 @@ export default function AutoLogoutManager() {
       // Don't monitor on login page or if not logged in
       if (pathname === '/login') {
         setShowWarning(false);
+        return;
+      }
+
+      // If user disabled auto-logout (timeoutMinutes === 0 for personal devices), skip!
+      if (timeoutMinutes === 0) {
+        if (showWarning) setShowWarning(false);
         return;
       }
 
@@ -157,8 +188,8 @@ export default function AutoLogoutManager() {
     return () => clearInterval(interval);
   }, [pathname, timeoutMinutes, checkLoginState, performLogout, showWarning]);
 
-  // If not logged in or on login page, do not render modal
-  if (!isLoggedIn || pathname === '/login' || !showWarning) {
+  // If not logged in, or on login page, or auto-logout disabled, or warning not triggered
+  if (!isLoggedIn || pathname === '/login' || timeoutMinutes === 0 || !showWarning) {
     return null;
   }
 
@@ -191,29 +222,37 @@ export default function AutoLogoutManager() {
           <span className="text-xs font-bold text-amber-700">วินาที</span>
         </div>
 
-        {/* Timeout Duration Selector */}
-        <div className="pt-1 flex items-center justify-center gap-1.5 text-xs text-slate-500">
-          <span className="text-[11px]">เวลาตัดระบบ:</span>
-          {[10, 15, 20, 30].map((mins) => (
+        {/* Timeout Duration Selector & Personal Computer Toggle */}
+        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+          <div className="text-slate-600 font-bold text-[11px] flex items-center justify-center gap-1">
+            <span>ปรับตั้งเวลา หรือเลือกโหมดเครื่องส่วนตัว:</span>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
+            {[15, 30, 60].map((mins) => (
+              <button
+                key={mins}
+                type="button"
+                onClick={() => handleUpdateTimeout(mins)}
+                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer ${
+                  timeoutMinutes === mins
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200'
+                }`}
+              >
+                {mins} นาที
+              </button>
+            ))}
+
             <button
-              key={mins}
               type="button"
-              onClick={() => {
-                setTimeoutMinutes(mins);
-                try {
-                  localStorage.setItem('mcu_auto_logout_minutes', mins.toString());
-                } catch (e) {}
-                resetActivity();
-              }}
-              className={`px-2 py-0.5 rounded-md font-bold text-[11px] transition cursor-pointer ${
-                timeoutMinutes === mins
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-              }`}
+              onClick={() => handleUpdateTimeout(0)}
+              className="px-2.5 py-1 rounded-lg font-bold text-[11px] bg-slate-800 hover:bg-slate-900 text-white transition cursor-pointer flex items-center gap-1 shadow-xs"
+              title="ปิด Auto-Logout สำหรับการใช้งานบนเครื่องโน้ตบุ๊กส่วนตัว"
             >
-              {mins} นาที
+              <Laptop className="w-3 h-3 text-amber-300" />
+              <span>เครื่องส่วนตัว (ปิดระบบนี้)</span>
             </button>
-          ))}
+          </div>
         </div>
 
         {/* Action Buttons */}

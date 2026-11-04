@@ -27,6 +27,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPersonalDevice, setIsPersonalDevice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -56,12 +57,19 @@ function LoginForm() {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe: isPersonalDevice }),
       });
 
       const data = await res.json();
       if (data.success) {
         localStorage.setItem('mcu_current_user', JSON.stringify(data.user));
+        if (isPersonalDevice) {
+          localStorage.setItem('mcu_auto_logout_minutes', '0');
+          window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: 0 }));
+        } else {
+          localStorage.setItem('mcu_auto_logout_minutes', '15');
+          window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: 15 }));
+        }
         window.dispatchEvent(new Event('mcu_user_logged_in'));
         setSuccess(`เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${data.user.name}`);
         setTimeout(() => {
@@ -92,12 +100,19 @@ function LoginForm() {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'google', gmail: gmailToLogin.trim() }),
+        body: JSON.stringify({ provider: 'google', gmail: gmailToLogin.trim(), rememberMe: isPersonalDevice }),
       });
 
       const data = await res.json();
       if (data.success) {
         localStorage.setItem('mcu_current_user', JSON.stringify(data.user));
+        if (isPersonalDevice) {
+          localStorage.setItem('mcu_auto_logout_minutes', '0');
+          window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: 0 }));
+        } else {
+          localStorage.setItem('mcu_auto_logout_minutes', '15');
+          window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: 15 }));
+        }
         window.dispatchEvent(new Event('mcu_user_logged_in'));
         setSuccess(`เข้าสู่ระบบด้วย Google สำเร็จ: ยินดีต้อนรับ ${data.user.name}`);
         setTimeout(() => {
@@ -247,6 +262,31 @@ function LoginForm() {
             </div>
           </div>
 
+          {/* Personal Device Checkbox */}
+          <div className="p-3 bg-slate-50 hover:bg-slate-100/80 transition rounded-xl border border-slate-200">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isPersonalDevice}
+                onChange={(e) => setIsPersonalDevice(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300 cursor-pointer"
+              />
+              <div className="space-y-0.5">
+                <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <span>💻 เครื่องส่วนตัว / โน้ตบุ๊กส่วนตัว</span>
+                  <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">
+                    แนะนำสำหรับอาจารย์
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 leading-relaxed">
+                  {isPersonalDevice
+                    ? '✓ จำการเข้าใช้งาน 7 วัน และ ปิดระบบตัดการเชื่อมต่ออัตโนมัติ (ปิด Auto-Logout ไม่เตือน)'
+                    : '🛡️ เครื่องสาธารณะ/ส่วนกลาง: จะตัดการเชื่อมต่ออัตโนมัติเมื่อไม่ใช้งาน 15 นาที และล้าง Session ทันทีเมื่อปิดเบราว์เซอร์'}
+                </div>
+              </div>
+            </label>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -321,6 +361,16 @@ function LoginForm() {
                   เข้าสู่ระบบ
                 </button>
               </div>
+
+              <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isPersonalDevice}
+                  onChange={(e) => setIsPersonalDevice(e.target.checked)}
+                  className="w-3.5 h-3.5 rounded text-orange-600 focus:ring-orange-500 border-slate-300 cursor-pointer"
+                />
+                <span>💻 ใช้งานบนเครื่องส่วนตัว (จำการเข้าสู่ระบบ 7 วัน และปิด Auto-Logout)</span>
+              </label>
             </div>
           </div>
         </div>

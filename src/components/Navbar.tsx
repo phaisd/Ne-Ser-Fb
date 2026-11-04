@@ -19,7 +19,8 @@ import {
   UserCheck,
   LogOut,
   KeyRound,
-  Globe
+  Globe,
+  Laptop
 } from 'lucide-react';
 import { translations, Language } from '@/lib/translations';
 
@@ -30,13 +31,47 @@ export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
   const [lang, setLang] = useState<Language>('th');
+  const [autoLogoutMins, setAutoLogoutMins] = useState<number>(15);
 
   useEffect(() => {
     try {
       const savedLang = (localStorage.getItem('mcu_lang') as Language) || 'th';
       setLang(savedLang);
     } catch (e) {}
+
+    const loadAutoLogout = () => {
+      try {
+        const val = localStorage.getItem('mcu_auto_logout_minutes');
+        if (val !== null) {
+          setAutoLogoutMins(parseInt(val, 10));
+        } else {
+          setAutoLogoutMins(15);
+        }
+      } catch (e) {}
+    };
+    loadAutoLogout();
+
+    const handleSettingChange = (e: any) => {
+      if (e?.detail !== undefined) {
+        setAutoLogoutMins(e.detail);
+      } else {
+        loadAutoLogout();
+      }
+    };
+    window.addEventListener('mcu_auto_logout_changed', handleSettingChange);
+    return () => {
+      window.removeEventListener('mcu_auto_logout_changed', handleSettingChange);
+    };
   }, []);
+
+  const toggleAutoLogout = () => {
+    const nextVal = autoLogoutMins === 0 ? 15 : 0;
+    setAutoLogoutMins(nextVal);
+    try {
+      localStorage.setItem('mcu_auto_logout_minutes', nextVal.toString());
+      window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: nextVal }));
+    } catch (e) {}
+  };
 
   const toggleLanguage = () => {
     const nextLang: Language = lang === 'th' ? 'en' : 'th';
@@ -208,6 +243,27 @@ export default function Navbar() {
 
             {currentUser ? (
               <div className="flex items-center gap-2">
+                {/* Auto-Logout / Personal Mode Toggle Pill */}
+                {autoLogoutMins === 0 ? (
+                  <button
+                    onClick={toggleAutoLogout}
+                    title="โหมดเครื่องส่วนตัว (ปิด Auto-Logout ไม่เตือน) — คลิกเพื่อเปิดระบบป้องกัน 15 นาที"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/30 hover:bg-amber-500/20 transition cursor-pointer"
+                  >
+                    <Laptop className="w-3.5 h-3.5 text-amber-500" />
+                    <span>เครื่องส่วนตัว</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={toggleAutoLogout}
+                    title={`ระบบป้องกัน Auto-Logout ${autoLogoutMins} นาที — คลิกเพื่อสลับเป็นโหมดเครื่องส่วนตัว`}
+                    className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/20 transition cursor-pointer"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Auto-Logout {autoLogoutMins}น.</span>
+                  </button>
+                )}
+
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold ${
                   isAdminRoute ? 'bg-slate-800 text-emerald-300 border border-slate-700' : 'bg-orange-50 text-orange-900 border border-orange-200'
                 }`}>

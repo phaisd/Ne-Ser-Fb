@@ -9,7 +9,20 @@ import {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, provider, gmail } = body;
+    const { email, password, provider, gmail, rememberMe } = body;
+
+    // Helper to build cookie options based on rememberMe (Personal device vs Public shared PC)
+    const getAuthCookieOptions = () => {
+      const opts: any = {
+        httpOnly: false,
+        path: '/',
+        sameSite: 'lax',
+      };
+      if (rememberMe) {
+        opts.maxAge = 60 * 60 * 24 * 7; // 7 days for private devices
+      }
+      return opts;
+    };
 
     // 1. One-click / Direct Google & Gmail Authentication
     if (provider === 'google' || provider === 'gmail' || (gmail && !password)) {
@@ -40,11 +53,7 @@ export async function POST(request: Request) {
         message: `เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${user.name} (${(user as any).role === 'STUDENT' ? 'นิสิต' : 'อาจารย์'})`,
       });
 
-      response.cookies.set('mcu_auth_user', JSON.stringify(user), {
-        httpOnly: false,
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
+      response.cookies.set('mcu_auth_user', JSON.stringify(user), getAuthCookieOptions());
 
       return response;
     }
@@ -81,11 +90,7 @@ export async function POST(request: Request) {
     });
 
     // Set cookie for session
-    response.cookies.set('mcu_auth_user', JSON.stringify(user), {
-      httpOnly: false,
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+    response.cookies.set('mcu_auth_user', JSON.stringify(user), getAuthCookieOptions());
 
     return response;
   } catch (err: any) {
