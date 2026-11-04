@@ -16,16 +16,17 @@ import {
   CheckCircle2,
   Lock
 } from 'lucide-react';
-import { getStudents, getCourses, getCertificateRequests, getAttendanceRecords } from '@/lib/data-store';
+import { getStudents, getCourses, getCertificateRequests, getAttendanceRecords, getSystemSettings } from '@/lib/data-store';
 
 export const revalidate = 0;
 
 export default async function HomePage() {
-  const [students, courses, certRequests, attendance] = await Promise.all([
+  const [students, courses, certRequests, attendance, settings] = await Promise.all([
     getStudents(),
     getCourses(),
     getCertificateRequests(),
     getAttendanceRecords(),
+    getSystemSettings(),
   ]);
 
   const hasSheets = !!process.env.GOOGLE_SHEET_ID && !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -230,21 +231,23 @@ export default async function HomePage() {
       {/* 4. Faculty Contact Information Footer */}
       <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs text-slate-600">
         <div>
-          <span className="font-bold text-slate-800 block text-sm">สำนักงานคณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</span>
-          <p className="mt-0.5">อาคารเรียนรวม ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170</p>
+          <span className="font-bold text-slate-800 block text-sm">
+            {settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh} ${settings.universityNameTh || ''}`.trim() : 'สำนักงานคณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}
+          </span>
+          <p className="mt-0.5">{settings.addressTh || 'อาคารเรียนรวม ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170'}</p>
         </div>
-        <div className="flex items-center gap-4 text-slate-700">
+        <div className="flex flex-wrap items-center gap-4 text-slate-700">
           <div className="flex items-center gap-1.5">
             <Phone className="w-4 h-4 text-slate-400" />
-            <span>035-247-8000 ต่อ 8323</span>
+            <span>{settings.contactPhone || '035-247-8000 ต่อ 8323'}</span>
           </div>
           <a
-            href="https://fb.mcu.ac.th/"
+            href={settings.websiteUrl || "https://fb.mcu.ac.th/"}
             target="_blank"
             rel="noopener noreferrer"
             className="text-purple-700 font-bold hover:underline"
           >
-            https://fb.mcu.ac.th/
+            {settings.websiteUrl || "https://fb.mcu.ac.th/"}
           </a>
         </div>
       </div>
