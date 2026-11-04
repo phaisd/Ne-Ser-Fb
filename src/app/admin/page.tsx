@@ -662,6 +662,15 @@ export default function AdminConsolePage() {
   const [studentStatusFilter, setStudentStatusFilter] = useState<string>('ALL');
   const [studentYearFilter, setStudentYearFilter] = useState<string>('ALL');
 
+  // Student Deletion states in Admin
+  const [adminSelectedStudentCodes, setAdminSelectedStudentCodes] = useState<Set<string>>(new Set());
+  const [studentDeleteModal, setStudentDeleteModal] = useState<{
+    isOpen: boolean;
+    targets: { studentCode: string; fullName: string; major?: string; yearLevel?: number }[];
+    isBulk: boolean;
+  }>({ isOpen: false, targets: [], isBulk: false });
+  const [isDeletingStudents, setIsDeletingStudents] = useState(false);
+
   // Bulk Student Promotion states
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
   const [promotionTargetYear, setPromotionTargetYear] = useState<string>('ALL');
@@ -1303,6 +1312,107 @@ ${coursesText}
       return true;
     });
   }, [studentsList, studentProgramFilter, studentStatusFilter, studentYearFilter, studentSearch]);
+
+  // Admin Student Selection & Deletion Helpers
+  const isAllAdminStudentsSelected = useMemo(() => {
+    if (filteredStudents.length === 0) return false;
+    const visibleStudents = filteredStudents.slice(0, 100);
+    return visibleStudents.length > 0 && visibleStudents.every((s) => adminSelectedStudentCodes.has(s.studentCode));
+  }, [filteredStudents, adminSelectedStudentCodes]);
+
+  const toggleSelectAllAdminStudents = () => {
+    const visibleStudents = filteredStudents.slice(0, 100);
+    const allSelected = visibleStudents.every((s) => adminSelectedStudentCodes.has(s.studentCode));
+    const next = new Set(adminSelectedStudentCodes);
+    if (allSelected) {
+      visibleStudents.forEach((s) => next.delete(s.studentCode));
+    } else {
+      visibleStudents.forEach((s) => next.add(s.studentCode));
+    }
+    setAdminSelectedStudentCodes(next);
+  };
+
+  const toggleSelectAdminStudent = (studentCode: string) => {
+    const next = new Set(adminSelectedStudentCodes);
+    if (next.has(studentCode)) {
+      next.delete(studentCode);
+    } else {
+      next.add(studentCode);
+    }
+    setAdminSelectedStudentCodes(next);
+  };
+
+  const openDeleteSingleStudentModal = (student: any) => {
+    setStudentDeleteModal({
+      isOpen: true,
+      targets: [
+        {
+          studentCode: student.studentCode,
+          fullName: student.fullName || `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.studentCode,
+          major: student.major,
+          yearLevel: student.yearLevel,
+        },
+      ],
+      isBulk: false,
+    });
+  };
+
+  const openDeleteBulkStudentsModal = () => {
+    if (adminSelectedStudentCodes.size === 0) return;
+    const targets = studentsList
+      .filter((s) => adminSelectedStudentCodes.has(s.studentCode))
+      .map((s) => ({
+        studentCode: s.studentCode,
+        fullName: s.fullName || `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.studentCode,
+        major: s.major,
+        yearLevel: s.yearLevel,
+      }));
+    setStudentDeleteModal({
+      isOpen: true,
+      targets,
+      isBulk: true,
+    });
+  };
+
+  const handleConfirmDeleteStudents = async () => {
+    if (studentDeleteModal.targets.length === 0) return;
+    setIsDeletingStudents(true);
+    try {
+      const codes = studentDeleteModal.targets.map((t) => t.studentCode);
+      const res = await fetch('/api/students', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentCodes: codes }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const deletedSet = new Set(codes.map((c) => c.toLowerCase()));
+        setStudentsList((prev) => {
+          const next = prev.filter((s) => !deletedSet.has(String(s.studentCode).toLowerCase()));
+          const total = next.length;
+          const thai = next.filter((s) => s.programType === 'THAI' || s.nationality === 'ไทย' || s.nationality === 'Thai').length;
+          setStudentsCount({ total, thai, intl: total - thai });
+          return next;
+        });
+
+        setAdminSelectedStudentCodes((prev) => {
+          const next = new Set(prev);
+          codes.forEach((c) => next.delete(c));
+          return next;
+        });
+
+        alert(`ลบข้อมูลนิสิตเรียบร้อยแล้ว จำนวน ${data.deletedCount || codes.length} รูป/คน`);
+        setStudentDeleteModal({ isOpen: false, targets: [], isBulk: false });
+      } else {
+        alert('เกิดข้อผิดพลาดในการลบ: ' + (data.error || 'ไม่สามารถลบได้'));
+      }
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } finally {
+      setIsDeletingStudents(false);
+    }
+  };
+
 
   // Open Bulk Promotion Modal with auto-calculated defaults
   const openPromotionModal = () => {
@@ -3938,42 +4048,99 @@ ${coursesText}
                 </div>
               </div>
 
+              {/* Bulk Deletion Action Banner */}
+              {adminSelectedStudentCodes.size > 0 && (
+                <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm animate-in fade-in">
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-xl bg-rose-600 text-white font-bold text-sm flex items-center justify-center shadow-sm">
+                      {adminSelectedStudentCodes.size}
+                    </span>
+                    <div>
+                      <div className="text-xs font-bold text-rose-900">
+                        เลือกนิสิต {adminSelectedStudentCodes.size} รูป/คน
+                      </div>
+                      <div className="text-[11px] text-rose-600">
+                        สามารถเลือกดำเนินการลบข้อมูลนิสิตตัวอย่างหรือข้อมูลที่ไม่ต้องการออกยกชุดได้ทันที
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAdminSelectedStudentCodes(new Set())}
+                      className="text-xs text-rose-700 hover:text-rose-900 underline font-semibold ml-2 cursor-pointer"
+                    >
+                      ยกเลิกการเลือก
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openDeleteBulkStudentsModal}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-600/20 flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>🗑️ ลบนิสิตที่เลือกยกชุด ({adminSelectedStudentCodes.size} คน)</span>
+                  </button>
+                </div>
+              )}
+
               {/* Students Data Table */}
               <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-slate-600">
                     <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b">
                       <tr>
-                        <th className="px-5 py-3.5">รหัสนิสิต</th>
-                        <th className="px-5 py-3.5">ชื่อ - นามสกุล</th>
-                        <th className="px-5 py-3.5">สัญชาติ / Passport</th>
-                        <th className="px-5 py-3.5">หลักสูตร / ชั้นปี</th>
-                        <th className="px-5 py-3.5 text-center">สถานภาพ</th>
-                        <th className="px-5 py-3.5 text-center">เกรด (GPA)</th>
-                        <th className="px-5 py-3.5 text-right">การจัดการ</th>
+                        <th className="px-3.5 py-3.5 w-10 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isAllAdminStudentsSelected}
+                            onChange={toggleSelectAllAdminStudents}
+                            className="rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                            title={isAllAdminStudentsSelected ? 'ยกเลิกการเลือกทั้งหมด' : 'เลือกทั้งหมดที่แสดง'}
+                          />
+                        </th>
+                        <th className="px-4 py-3.5">รหัสนิสิต</th>
+                        <th className="px-4 py-3.5">ชื่อ - นามสกุล</th>
+                        <th className="px-4 py-3.5">สัญชาติ / Passport</th>
+                        <th className="px-4 py-3.5">หลักสูตร / ชั้นปี</th>
+                        <th className="px-4 py-3.5 text-center">สถานภาพ</th>
+                        <th className="px-4 py-3.5 text-center">เกรด (GPA)</th>
+                        <th className="px-4 py-3.5 text-right">การจัดการ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
                       {filteredStudents.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="text-center py-10 text-slate-400">
+                          <td colSpan={8} className="text-center py-10 text-slate-400">
                             ไม่พบข้อมูลนิสิตตามเงื่อนไขที่เลือก
                           </td>
                         </tr>
                       ) : (
-                        filteredStudents.slice(0, 50).map((s) => {
+                        filteredStudents.slice(0, 100).map((s) => {
                           const isEnglish = s.programType === 'ENGLISH' || (s.nationality !== 'ไทย' && s.nationality !== 'Thai' && Boolean(s.passportNo));
+                          const isSelected = adminSelectedStudentCodes.has(s.studentCode);
 
                           return (
-                            <tr key={s.studentCode || s.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="px-5 py-3.5 font-mono font-bold text-orange-700">
+                            <tr
+                              key={s.studentCode || s.id}
+                              className={`hover:bg-slate-50/80 transition-colors ${
+                                isSelected ? 'bg-rose-50/40' : ''
+                              }`}
+                            >
+                              <td className="px-3.5 py-3.5 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleSelectAdminStudent(s.studentCode)}
+                                  className="rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                                />
+                              </td>
+                              <td className="px-4 py-3.5 font-mono font-bold text-orange-700">
                                 {s.studentCode}
                               </td>
-                              <td className="px-5 py-3.5 font-medium text-slate-900">
+                              <td className="px-4 py-3.5 font-medium text-slate-900">
                                 <div>{s.fullName || `${s.firstName || ''} ${s.lastName || ''}`}</div>
                                 <div className="text-[11px] text-slate-400">{s.email || '-'}</div>
                               </td>
-                              <td className="px-5 py-3.5">
+                              <td className="px-4 py-3.5">
                                 <div className="text-slate-700 font-medium">
                                   {s.nationality === 'ไทย' || s.nationality === 'Thai' ? '🇹🇭 ไทย' : `🌐 ${s.nationality || 'ต่างชาติ'}`}
                                 </div>
@@ -3983,7 +4150,7 @@ ${coursesText}
                                   </div>
                                 )}
                               </td>
-                              <td className="px-5 py-3.5">
+                              <td className="px-4 py-3.5">
                                 <span
                                   className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
                                     isEnglish
@@ -3997,7 +4164,7 @@ ${coursesText}
                                   ปี {s.yearLevel || 1}
                                 </span>
                               </td>
-                              <td className="px-5 py-3.5 text-center">
+                              <td className="px-4 py-3.5 text-center">
                                 <span
                                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                                     s.studyStatus === 'สำเร็จการศึกษา'
@@ -4014,17 +4181,28 @@ ${coursesText}
                                   {s.studyStatus || 'ปกติ'}
                                 </span>
                               </td>
-                              <td className="px-5 py-3.5 text-center font-mono font-bold text-slate-700">
+                              <td className="px-4 py-3.5 text-center font-mono font-bold text-slate-700">
                                 {s.gpa ? Number(s.gpa).toFixed(2) : '-'}
                               </td>
-                              <td className="px-5 py-3.5 text-right">
-                                <Link
-                                  href={`/students?search=${s.studentCode}`}
-                                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 transition inline-flex items-center gap-1"
-                                >
-                                  <span>แก้ไขข้อมูล</span>
-                                  <ExternalLink className="w-3 h-3" />
-                                </Link>
+                              <td className="px-4 py-3.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                                  <Link
+                                    href={`/students?search=${s.studentCode}`}
+                                    className="px-2.5 py-1 rounded-lg text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 transition inline-flex items-center gap-1"
+                                  >
+                                    <span>แก้ไข</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    onClick={() => openDeleteSingleStudentModal(s)}
+                                    className="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition inline-flex items-center gap-1 cursor-pointer"
+                                    title="ลบนิสิตท่านนี้ออกจากระบบ"
+                                  >
+                                    <Trash2 className="w-3 h-3 text-rose-600" />
+                                    <span>ลบ</span>
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -4033,6 +4211,11 @@ ${coursesText}
                     </tbody>
                   </table>
                 </div>
+                {filteredStudents.length > 100 && (
+                  <div className="p-3.5 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500">
+                    แสดง 100 รายการแรกจากทั้งหมด {filteredStudents.length} รายการ (ใช้ช่องค้นหาเพื่อค้นหานิสิตที่ต้องการ)
+                  </div>
+                )}
               </div>
             </div>
           )}

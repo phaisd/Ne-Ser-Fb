@@ -423,6 +423,58 @@ export async function batchUpdateStudents(
   };
 }
 
+export async function deleteStudents(
+  studentCodes: string[]
+): Promise<{ deletedCount: number; deletedCodes: string[]; remainingCount: number }> {
+  const codesSet = new Set(studentCodes.map((c) => String(c).trim().toLowerCase()));
+  const localList = readLocalJson<Student[]>('students.json', []);
+
+  const originalCount = localList.length;
+  const deletedCodes: string[] = [];
+
+  const remainingList = localList.filter((s) => {
+    const code = String(s.studentCode || '').trim().toLowerCase();
+    if (codesSet.has(code)) {
+      deletedCodes.push(s.studentCode);
+      return false;
+    }
+    return true;
+  });
+
+  const deletedCount = originalCount - remainingList.length;
+  writeLocalJson('students.json', remainingList);
+
+  // If Google Sheets client is available, clear matching rows in Students sheet
+  const gClient = getSheetsClient();
+  if (gClient && deletedCodes.length > 0) {
+    try {
+      const rows = await gClient.getValues('Students!A2:A');
+      if (rows && rows.length > 0) {
+        for (let i = 0; i < rows.length; i++) {
+          const rowCode = (rows[i][0] || '').trim().toLowerCase();
+          if (codesSet.has(rowCode)) {
+            const sheetRowNum = i + 2;
+            const emptyRow = Array(15).fill('');
+            await gClient.updateValues(`Students!A${sheetRowNum}:O${sheetRowNum}`, [emptyRow]);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets delete student sync warning:', err);
+    }
+  }
+
+  return {
+    deletedCount,
+    deletedCodes,
+    remainingCount: remainingList.length,
+  };
+}
+
+export async function deleteStudent(studentCode: string) {
+  return deleteStudents([studentCode]);
+}
+
 // ----------------- COURSES -----------------
 export async function getCourses(): Promise<Course[]> {
   const localList = readLocalJson<Course[]>('courses.json', []);

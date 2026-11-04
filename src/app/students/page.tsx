@@ -37,7 +37,9 @@ import {
   HelpCircle,
   ArrowRight,
   ChevronDown,
-  GraduationCap
+  GraduationCap,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Student {
@@ -272,6 +274,12 @@ export default function StudentsPage() {
 
   // Multi-selection (Checkboxes)
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    targets: { studentCode: string; fullName: string; major?: string; yearLevel?: number }[];
+    isBulk: boolean;
+  }>({ isOpen: false, targets: [], isBulk: false });
+  const [isDeleting, setIsDeleting] = useState(false);
   const [bulkStatus, setBulkStatus] = useState<string>('ย้ายเข้า');
   const [bulkProgram, setBulkProgram] = useState<'THAI' | 'ENGLISH'>('THAI');
   const [bulkRemarks, setBulkRemarks] = useState<string>('');
@@ -428,6 +436,38 @@ export default function StudentsPage() {
       next.add(code);
     }
     setSelectedCodes(next);
+  };
+
+  // Delete Student handler (Single & Bulk)
+  const handleConfirmDelete = async () => {
+    if (deleteModal.targets.length === 0) return;
+    setIsDeleting(true);
+    try {
+      const codes = deleteModal.targets.map((t) => t.studentCode);
+      const res = await fetch('/api/students', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentCodes: codes }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setToastMessage(`ลบข้อมูลนิสิตเรียบร้อยแล้ว จำนวน ${data.deletedCount || codes.length} รูป/คน`);
+        const deletedSet = new Set(codes);
+        setSelectedCodes((prev) => {
+          const next = new Set(prev);
+          codes.forEach((c) => next.delete(c));
+          return next;
+        });
+        setDeleteModal({ isOpen: false, targets: [], isBulk: false });
+        loadStudents();
+      } else {
+        alert('เกิดข้อผิดพลาดในการลบ: ' + (data.error || 'ไม่สามารถลบได้'));
+      }
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Bulk Update Selected Students (from Floating Action Bar)
@@ -1065,6 +1105,24 @@ export default function StudentsPage() {
                           >
                             ดูข้อมูล
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteModal({
+                              isOpen: true,
+                              targets: [{
+                                studentCode: s.studentCode,
+                                fullName: s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`.trim() || s.studentCode,
+                                major: s.major,
+                                yearLevel: s.yearLevel,
+                              }],
+                              isBulk: false,
+                            })}
+                            className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition inline-flex items-center gap-1 cursor-pointer"
+                            title="ลบนิสิตท่านนี้ออกจากระบบ"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            ลบ
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1137,6 +1195,27 @@ export default function StudentsPage() {
                 {bulkSaving ? 'กำลังบันทึก...' : 'ปรับใช้'}
               </button>
             </div>
+
+            {/* Bulk Delete Selected */}
+            <button
+              type="button"
+              onClick={() => {
+                const targets = students
+                  .filter((s) => selectedCodes.has(s.studentCode))
+                  .map((s) => ({
+                    studentCode: s.studentCode,
+                    fullName: s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`.trim() || s.studentCode,
+                    major: s.major,
+                    yearLevel: s.yearLevel,
+                  }));
+                setDeleteModal({ isOpen: true, targets, isBulk: true });
+              }}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="ลบนิสิตที่เลือกยกชุด"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>ลบที่เลือก ({selectedCodes.size})</span>
+            </button>
 
             {/* Export Selected */}
             <button

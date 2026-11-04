@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getStudents, updateStudent, batchUpdateStudents } from '@/lib/data-store';
+import { getStudents, updateStudent, batchUpdateStudents, deleteStudents } from '@/lib/data-store';
 
 export async function GET(request: Request) {
   try {
@@ -98,6 +98,37 @@ export async function POST(request: Request) {
       success: true,
       message: `อัปเดตข้อมูลสำเร็จ ${result.updated} คน, เพิ่มใหม่ ${result.added} คน`,
       ...result,
+    });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    const { studentCode, studentCodes } = body;
+
+    const codesToDelete: string[] = Array.isArray(studentCodes)
+      ? studentCodes.map((c) => String(c).trim()).filter(Boolean)
+      : studentCode
+      ? [String(studentCode).trim()]
+      : [];
+
+    if (codesToDelete.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'กรุณาระบุรหัสนิสิตที่ต้องการลบ (studentCode หรือ studentCodes)' },
+        { status: 400 }
+      );
+    }
+
+    const result = await deleteStudents(codesToDelete);
+    return NextResponse.json({
+      success: true,
+      message: `ลบข้อมูลนิสิตเรียบร้อยแล้ว จำนวน ${result.deletedCount} รูป/คน`,
+      deletedCount: result.deletedCount,
+      deletedCodes: result.deletedCodes,
+      remainingCount: result.remainingCount,
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
