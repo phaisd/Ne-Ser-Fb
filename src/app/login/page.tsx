@@ -29,46 +29,22 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/system-settings')
+      .then((res) => res.json())
+      .then((d) => {
+        if (d.success && d.data) {
+          setSettings(d.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Google Login Modal State
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [customGmail, setCustomGmail] = useState('');
-
-  // Quick Demo Accounts
-  const demoAccounts = [
-    {
-      label: 'อาจารย์ไพศาล (ผู้ดูแลระบบสูงสุด)',
-      email: 'phaisal.dis@mcu.ac.th',
-      gmail: 'phaisal.dis@gmail.com',
-      password: 'mcu123456',
-      badge: '👑 Super Admin',
-      role: 'SUPER_ADMIN',
-    },
-    {
-      label: 'พระมหาดวงเด่น (หลักสูตรไทย)',
-      email: 'duangden@mcu.ac.th',
-      gmail: 'duangden.mcu@gmail.com',
-      password: 'mcu123456',
-      badge: '🇹🇭 ภาคไทย',
-      role: 'INSTRUCTOR',
-    },
-    {
-      label: 'Ven. Dr. Dharma Priya (EN)',
-      email: 'dharmapriya@mcu.ac.th',
-      gmail: 'dharmapriya.mcu@gmail.com',
-      password: 'mcu123456',
-      badge: '🌐 นานาชาติ',
-      role: 'INSTRUCTOR',
-    },
-    {
-      label: 'ตัวอย่างนิสิต (รหัสนิสิต)',
-      email: '6501501071@mcu.ac.th',
-      gmail: '6501501071@mcu.ac.th',
-      password: 'mcu123456',
-      badge: '🎓 นิสิต',
-      role: 'STUDENT',
-    },
-  ];
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,28 +117,36 @@ function LoginForm() {
     }
   };
 
-  const selectDemo = (acc: (typeof demoAccounts)[0], useGmail = false) => {
-    setEmail(useGmail ? acc.gmail : acc.email);
-    setPassword(acc.password);
-    setError(null);
-  };
-
   return (
     <div className="max-w-md w-full mx-auto space-y-6">
       {/* Brand Header */}
       <div className="text-center space-y-2">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-orange-500/25">
-          <GraduationCap className="w-9 h-9" />
-        </div>
-        <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-orange-600 uppercase tracking-wider">
+        {settings?.logoUrl ? (
+          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200/90 shadow-md flex items-center justify-center p-1.5 mx-auto overflow-hidden">
+            <img
+              src={settings.logoUrl}
+              alt={settings.facultyNameTh || 'MCU Logo'}
+              className="max-h-full max-w-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+          </div>
+        ) : (
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-orange-500/25 text-2xl">
+            {settings?.logoEmoji || <GraduationCap className="w-9 h-9" />}
+          </div>
+        )}
+
+        <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-orange-600 uppercase tracking-wider">
           <School className="w-4 h-4" />
-          <span>MCU Faculty & Staff Portal</span>
+          <span>{settings?.universityNameTh || 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}</span>
         </div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-          เข้าสู่ระบบ (MCU Portal)
+          {settings?.facultyNameTh || 'คณะพุทธศาสตร์'}
         </h1>
         <p className="text-xs text-slate-500 max-w-sm mx-auto">
-          ลงชื่อเข้าใช้งานสำหรับ<b>อาจารย์, เจ้าหน้าที่ และนิสิต</b> ด้วยบัญชี <b>Gmail</b> หรืออีเมลมหาวิทยาลัย (<b>@mcu.ac.th</b> / รหัสนิสิต)
+          ระบบบริการนิสิตและวิชาการ (MCU Academic & Student Portal)
         </p>
       </div>
 
@@ -211,14 +195,14 @@ function LoginForm() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              อีเมลหรือรหัสนิสิต (Gmail, @mcu.ac.th หรือ รหัสนิสิต) <span className="text-rose-500">*</span>
+              อีเมลมหาวิทยาลัย (@mcu.ac.th) หรือรหัสนิสิต <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 required
-                placeholder="เช่น 6501501071@mcu.ac.th หรือ phaisal.dis@mcu.ac.th"
+                placeholder="เช่น รหัสนิสิต@mcu.ac.th, รหัสนิสิต หรืออีเมลอาจารย์"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-medium"
@@ -231,7 +215,7 @@ function LoginForm() {
               <label className="text-xs font-bold text-slate-700">
                 รหัสผ่าน (Password) <span className="text-rose-500">*</span>
               </label>
-              <span className="text-[11px] text-slate-400">เริ่มต้น: mcu123456</span>
+              <span className="text-[11px] text-slate-400">เริ่มต้น: mcu123456 หรือรหัสนิสิต</span>
             </div>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -261,70 +245,6 @@ function LoginForm() {
             )}
           </button>
         </form>
-
-        {/* Quick Click Demo Accounts */}
-        <div className="pt-4 border-t border-slate-100 space-y-2.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-slate-700 flex items-center gap-1">
-              <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-              บัญชีทดสอบด่วน (คลิกเพื่อเข้าสู่ระบบ):
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2">
-            {demoAccounts.map((acc, idx) => (
-              <div
-                key={idx}
-                className="p-2.5 bg-slate-50 hover:bg-orange-50/60 rounded-xl border border-slate-200/80 transition flex items-center justify-between gap-2 text-xs"
-              >
-                <div className="min-w-0">
-                  <div className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
-                    <span>{acc.label}</span>
-                    <span className="text-[10px] px-1.5 py-0.2 bg-white rounded border border-slate-200 text-purple-700 font-bold">
-                      {acc.badge}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">
-                    {acc.email}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => selectDemo(acc, false)}
-                    className="px-2 py-1 bg-white hover:bg-orange-600 hover:text-white border border-slate-200 rounded-lg font-semibold text-[11px] text-slate-700 transition cursor-pointer"
-                  >
-                    @mcu
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectDemo(acc, true)}
-                    className="px-2 py-1 bg-white hover:bg-amber-600 hover:text-white border border-slate-200 rounded-lg font-semibold text-[11px] text-slate-700 transition cursor-pointer"
-                  >
-                    @gmail
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Security / Help Note */}
-        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 space-y-1">
-          <div className="font-semibold text-slate-700 flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            คำแนะนำการเข้าสู่ระบบ:
-          </div>
-          <p>
-            • <b>นิสิต:</b> สามารถเข้าสู่ระบบด้วย <b>รหัสนิสิต@mcu.ac.th</b> หรือใส่เฉพาะรหัสนิสิต (รหัสผ่านเริ่มต้น: <code>mcu123456</code>)
-          </p>
-          <p>
-            • <b>อาจารย์และเจ้าหน้าที่:</b> เข้าสู่ระบบด้วย <b>Gmail ส่วนตัว</b> หรือ <b>อีเมล @mcu.ac.th</b>
-          </p>
-          <p>
-            • แอดมินระดับสูงสุด: <b>phaisal.dis@mcu.ac.th</b> สามารถเข้าถึงหลังบ้าน <code>/admin</code> เพื่อจัดการสิทธิ์และระบบทั้งหมด
-          </p>
-        </div>
       </div>
 
       <div className="text-center">
@@ -336,7 +256,7 @@ function LoginForm() {
         </Link>
       </div>
 
-      {/* Google Account Selection Modal */}
+      {/* Google Account Modal */}
       {isGoogleModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
@@ -362,58 +282,24 @@ function LoginForm() {
             </div>
 
             <p className="text-xs text-slate-600">
-              เลือกบัญชี Gmail หรือพิมพ์บัญชี Gmail จริงของท่านเพื่อเข้าสู่ระบบทันที:
+              กรอกบัญชี Google หรือ Gmail ของท่าน (@mcu.ac.th หรือ Gmail) เพื่อเข้าสู่ระบบ:
             </p>
 
-            {/* Quick Gmail Accounts */}
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => handleGoogleLogin('phaisal.dis@gmail.com')}
-                className="w-full p-3 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-purple-50/50 flex items-center justify-between text-left transition cursor-pointer"
-              >
-                <div>
-                  <div className="font-bold text-xs text-slate-900">อาจารย์ไพศาล (Super Admin)</div>
-                  <div className="text-[11px] text-slate-500 font-mono">phaisal.dis@gmail.com</div>
-                </div>
-                <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
-                  ผู้ดูแลสูงสุด
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleGoogleLogin('duangden.mcu@gmail.com')}
-                className="w-full p-3 rounded-xl border border-slate-200 hover:border-orange-300 hover:bg-orange-50/50 flex items-center justify-between text-left transition cursor-pointer"
-              >
-                <div>
-                  <div className="font-bold text-xs text-slate-900">พระมหาดวงเด่น ฐิตญาโณ</div>
-                  <div className="text-[11px] text-slate-500 font-mono">duangden.mcu@gmail.com</div>
-                </div>
-                <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
-                  อาจารย์ผู้สอน
-                </span>
-              </button>
-            </div>
-
             {/* Enter Custom Gmail */}
-            <div className="pt-2 border-t border-slate-100 space-y-2">
-              <label className="text-xs font-bold text-slate-700 block">
-                หรือกรอกบัญชี Gmail ของท่าน:
-              </label>
+            <div className="space-y-3">
               <div className="flex gap-2">
                 <input
                   type="email"
-                  placeholder="yourname@gmail.com"
+                  placeholder="yourname@mcu.ac.th หรือ yourname@gmail.com"
                   value={customGmail}
                   onChange={(e) => setCustomGmail(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
+                  className="flex-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
                 />
                 <button
                   type="button"
                   onClick={() => handleGoogleLogin(customGmail)}
                   disabled={!customGmail.trim()}
-                  className="px-4 py-2 bg-purple-700 hover:bg-purple-800 disabled:bg-slate-300 text-white font-bold text-xs rounded-xl transition cursor-pointer shrink-0"
+                  className="px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition cursor-pointer shrink-0 shadow-sm"
                 >
                   เข้าสู่ระบบ
                 </button>
