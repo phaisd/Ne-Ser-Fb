@@ -43,6 +43,7 @@ import {
 import { Student, TimetableItem, AttendanceHistoryItem } from '@/types';
 import { getSubstantiveTokens, matchInstructorStrict } from '@/lib/utils';
 import { EligibilityTab, SemesterRoadmapTab } from '@/components/attendance';
+import { getAuthUser, clearAuthSession, saveAuthSession } from '@/lib/auth-client';
 
 
 const DEMO_INSTRUCTORS = [
@@ -128,9 +129,8 @@ export default function AttendancePage() {
   // Load User from LocalStorage or API on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('mcu_current_user');
-      if (stored) {
-        const u = JSON.parse(stored);
+      const u = getAuthUser();
+      if (u) {
         setCurrentUser(u);
         setRecordedBy(u.name);
       } else {
@@ -153,7 +153,7 @@ export default function AttendancePage() {
     try {
       await fetch('/api/auth', { method: 'DELETE' });
     } catch (e) {}
-    localStorage.removeItem('mcu_current_user');
+    clearAuthSession();
     setCurrentUser(null);
     setSelectedInstructor('ALL');
     setSelectedCourseCode('');

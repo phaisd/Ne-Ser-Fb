@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ShieldAlert, Clock, LogOut, CheckCircle, Laptop, ShieldCheck } from 'lucide-react';
+import { getAuthUser, clearAuthSession } from '@/lib/auth-client';
 
 // Countdown duration before auto-logout: 60 seconds
 const WARNING_COUNTDOWN_SECONDS = 60;
@@ -42,8 +43,8 @@ export default function AutoLogoutManager() {
   // Check login state
   const checkLoginState = useCallback(() => {
     try {
-      const stored = localStorage.getItem('mcu_current_user');
-      const hasUser = !!stored;
+      const user = getAuthUser();
+      const hasUser = !!user;
       setIsLoggedIn(hasUser);
       return hasUser;
     } catch (e) {
@@ -60,8 +61,8 @@ export default function AutoLogoutManager() {
       await fetch('/api/auth', { method: 'DELETE' });
     } catch (e) {}
 
+    clearAuthSession();
     try {
-      localStorage.removeItem('mcu_current_user');
       sessionStorage.setItem('mcu_logout_reason', 'inactivity');
     } catch (e) {}
 

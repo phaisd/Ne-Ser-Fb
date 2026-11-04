@@ -23,6 +23,7 @@ import {
   Laptop
 } from 'lucide-react';
 import { translations, Language } from '@/lib/translations';
+import { getAuthUser, clearAuthSession } from '@/lib/auth-client';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -109,9 +110,9 @@ export default function Navbar() {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('mcu_current_user');
-      if (stored) {
-        setCurrentUser(JSON.parse(stored));
+      const user = getAuthUser();
+      if (user) {
+        setCurrentUser(user);
       } else {
         // Also check server session
         fetch('/api/auth')
@@ -120,9 +121,13 @@ export default function Navbar() {
             if (d.authenticated && d.user) {
               setCurrentUser(d.user);
               localStorage.setItem('mcu_current_user', JSON.stringify(d.user));
+            } else {
+              setCurrentUser(null);
             }
           })
-          .catch(() => {});
+          .catch(() => {
+            setCurrentUser(null);
+          });
       }
     } catch (e) {}
   }, [pathname]);
@@ -131,8 +136,7 @@ export default function Navbar() {
     try {
       await fetch('/api/auth', { method: 'DELETE' });
     } catch (e) {}
-    localStorage.removeItem('mcu_current_user');
-    window.dispatchEvent(new Event('mcu_user_logged_out'));
+    clearAuthSession();
     setCurrentUser(null);
     window.location.href = '/';
   };

@@ -71,6 +71,7 @@ import {
   Copy
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
+import { getAuthUser, clearAuthSession } from '@/lib/auth-client';
 import {
   AdminSheetsTab,
   AdminTimetablesTab,
@@ -662,8 +663,17 @@ export default function AdminConsolePage() {
   useEffect(() => {
     loadData();
     try {
-      const stored = localStorage.getItem('mcu_current_user');
-      if (stored) setCurrentUser(JSON.parse(stored));
+      const user = getAuthUser();
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        fetch('/api/auth')
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.authenticated && d.user) setCurrentUser(d.user);
+          })
+          .catch(() => {});
+      }
 
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
@@ -1196,7 +1206,7 @@ ${coursesText}
     try {
       await fetch('/api/auth', { method: 'DELETE' });
     } catch (e) {}
-    localStorage.removeItem('mcu_current_user');
+    clearAuthSession();
     window.location.href = '/login';
   };
 

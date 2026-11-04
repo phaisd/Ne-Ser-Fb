@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { getAuthUser } from '@/lib/auth-client';
 import {
   FileText,
   Send,

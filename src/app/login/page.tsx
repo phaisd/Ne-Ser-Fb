@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { saveAuthSession } from '@/lib/auth-client';
 import {
   GraduationCap,
   Mail,
@@ -62,15 +63,7 @@ function LoginForm() {
 
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem('mcu_current_user', JSON.stringify(data.user));
-        if (isPersonalDevice) {
-          localStorage.setItem('mcu_auto_logout_minutes', '0');
-          window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: 0 }));
-        } else {
-          localStorage.setItem('mcu_auto_logout_minutes', '15');
-          window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: 15 }));
-        }
-        window.dispatchEvent(new Event('mcu_user_logged_in'));
+        saveAuthSession(data.user, isPersonalDevice);
         setSuccess(`เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${data.user.name}`);
         setTimeout(() => {
           if (data.user.role === 'SUPER_ADMIN' || data.user.role === 'ADMIN') {
@@ -105,15 +98,7 @@ function LoginForm() {
 
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem('mcu_current_user', JSON.stringify(data.user));
-        if (isPersonalDevice) {
-          localStorage.setItem('mcu_auto_logout_minutes', '0');
-          window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: 0 }));
-        } else {
-          localStorage.setItem('mcu_auto_logout_minutes', '15');
-          window.dispatchEvent(new CustomEvent('mcu_auto_logout_changed', { detail: 15 }));
-        }
-        window.dispatchEvent(new Event('mcu_user_logged_in'));
+        saveAuthSession(data.user, isPersonalDevice);
         setSuccess(`เข้าสู่ระบบด้วย Google สำเร็จ: ยินดีต้อนรับ ${data.user.name}`);
         setTimeout(() => {
           if (data.user.role === 'SUPER_ADMIN' || data.user.role === 'ADMIN') {
@@ -262,7 +247,7 @@ function LoginForm() {
             </div>
           </div>
 
-          {/* Personal Device Checkbox */}
+          {/* Remember Me / Personal Device Checkbox */}
           <div className="p-3 bg-slate-50 hover:bg-slate-100/80 transition rounded-xl border border-slate-200">
             <label className="flex items-start gap-2.5 cursor-pointer select-none">
               <input
@@ -273,15 +258,15 @@ function LoginForm() {
               />
               <div className="space-y-0.5">
                 <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <span>💻 เครื่องส่วนตัว / โน้ตบุ๊กส่วนตัว</span>
+                  <span>จำฉันไว้ในระบบ (Remember Me) / เครื่องส่วนตัว 7 วัน</span>
                   <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">
-                    แนะนำสำหรับอาจารย์
+                    แนะนำสำหรับโน้ตบุ๊กส่วนตัว
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-500 leading-relaxed">
                   {isPersonalDevice
-                    ? '✓ จำการเข้าใช้งาน 7 วัน และ ปิดระบบตัดการเชื่อมต่ออัตโนมัติ (ปิด Auto-Logout ไม่เตือน)'
-                    : '🛡️ เครื่องสาธารณะ/ส่วนกลาง: จะตัดการเชื่อมต่ออัตโนมัติเมื่อไม่ใช้งาน 15 นาที และล้าง Session ทันทีเมื่อปิดเบราว์เซอร์'}
+                    ? '✓ บันทึกการเข้าสู่ระบบ 7 วัน และ ปิดระบบตัดการเชื่อมต่ออัตโนมัติ (ปิด Auto-Logout ไม่เตือน)'
+                    : '🛡️ เครื่องส่วนกลาง / สาธารณะ: ปิดเบราว์เซอร์จะหลุดออกจากระบบทันที (Session Cookie) และตัดการเชื่อมต่ออัตโนมัติเมื่อไม่ใช้งาน 15 นาที'}
                 </div>
               </div>
             </label>
@@ -369,7 +354,7 @@ function LoginForm() {
                   onChange={(e) => setIsPersonalDevice(e.target.checked)}
                   className="w-3.5 h-3.5 rounded text-orange-600 focus:ring-orange-500 border-slate-300 cursor-pointer"
                 />
-                <span>💻 ใช้งานบนเครื่องส่วนตัว (จำการเข้าสู่ระบบ 7 วัน และปิด Auto-Logout)</span>
+                <span>จำฉันไว้ในระบบ (Remember Me) / เครื่องส่วนตัว 7 วัน</span>
               </label>
             </div>
           </div>
