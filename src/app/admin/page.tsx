@@ -4286,33 +4286,58 @@ export default function AdminConsolePage() {
 
                     {previewRequest.enrollmentSlipUrl ? (
                       <div className="space-y-2">
-                        <div
-                          onClick={() => setZoomImage(previewRequest.enrollmentSlipUrl!)}
-                          className="relative h-44 bg-slate-900/5 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer group"
-                        >
-                          <img
-                            src={previewRequest.enrollmentSlipUrl}
-                            alt="ใบสำเนาการลงทะเบียนเรียน"
-                            className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition gap-1.5">
-                            <ZoomIn className="w-4 h-4" />
-                            <span>คลิกเพื่อดูภาพขยายใหญ่</span>
+                        {previewRequest.enrollmentSlipUrl.toLowerCase().endsWith('.pdf') ? (
+                          <div className="p-4 bg-white rounded-xl border border-emerald-200 text-center space-y-2">
+                            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto shadow-sm">
+                              <FileText className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-800 text-xs">เอกสารสำเนาลงทะเบียนเรียน (ไฟล์ PDF)</p>
+                              <p className="text-[11px] text-slate-500">สามารถคลิกเปิดดูเอกสาร PDF เต็มฉบับในแท็บใหม่</p>
+                            </div>
+                            <div className="pt-1">
+                              <a
+                                href={previewRequest.enrollmentSlipUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm transition"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>เปิดดูเอกสาร PDF (เต็มฉบับ)</span>
+                              </a>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <button
-                            type="button"
+                        ) : (
+                          <div
                             onClick={() => setZoomImage(previewRequest.enrollmentSlipUrl!)}
-                            className="text-purple-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                            className="relative h-44 bg-slate-900/5 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer group"
                           >
-                            <ZoomIn className="w-3.5 h-3.5" /> ดูภาพขนาดเต็ม
-                          </button>
+                            <img
+                              src={previewRequest.enrollmentSlipUrl}
+                              alt="ใบสำเนาการลงทะเบียนเรียน"
+                              className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition gap-1.5">
+                              <ZoomIn className="w-4 h-4" />
+                              <span>คลิกเพื่อดูภาพขยายใหญ่</span>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between text-xs">
+                          {!previewRequest.enrollmentSlipUrl.toLowerCase().endsWith('.pdf') && (
+                            <button
+                              type="button"
+                              onClick={() => setZoomImage(previewRequest.enrollmentSlipUrl!)}
+                              className="text-purple-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              <ZoomIn className="w-3.5 h-3.5" /> ดูภาพขนาดเต็ม
+                            </button>
+                          )}
                           <a
                             href={previewRequest.enrollmentSlipUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1"
+                            className="text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1 ml-auto"
                           >
                             <ExternalLink className="w-3.5 h-3.5" /> เปิดหน้าต่างใหม่
                           </a>
@@ -4395,28 +4420,61 @@ export default function AdminConsolePage() {
 
                     {previewRequest.passportCopyUrl ? (
                       <div className="space-y-2">
-                        <div
-                          onClick={() => setZoomImage(previewRequest.passportCopyUrl!)}
-                          className="relative h-44 bg-slate-900/5 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer group"
-                        >
-                          <img
-                            src={previewRequest.passportCopyUrl}
-                            alt="สำเนาหนังสือเดินทาง"
-                            className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition gap-1.5">
-                            <ZoomIn className="w-4 h-4" />
-                            <span>คลิกเพื่อดูภาพขยายใหญ่</span>
+                        {previewRequest.passportCopyUrl.toLowerCase().endsWith('.pdf') ? (
+                          <div className="p-4 bg-white rounded-xl border border-sky-200 text-center space-y-2">
+                            <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center mx-auto shadow-sm">
+                              <FileText className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-800 text-xs">เอกสารสำเนาพาสปอร์ต (ไฟล์ PDF)</p>
+                              <p className="text-[11px] text-slate-500">สามารถคลิกเปิดดูเอกสาร PDF เต็มฉบับในแท็บใหม่</p>
+                            </div>
+                            <div className="pt-1">
+                              <a
+                                href={previewRequest.passportCopyUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>เปิดดูเอกสาร PDF (เต็มฉบับ)</span>
+                              </a>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <button
-                            type="button"
+                        ) : (
+                          <div
                             onClick={() => setZoomImage(previewRequest.passportCopyUrl!)}
-                            className="text-purple-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                            className="relative h-44 bg-slate-900/5 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer group"
                           >
-                            <ZoomIn className="w-3.5 h-3.5" /> ดูภาพขนาดเต็ม
-                          </button>
+                            <img
+                              src={previewRequest.passportCopyUrl}
+                              alt="สำเนาหนังสือเดินทาง"
+                              className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition gap-1.5">
+                              <ZoomIn className="w-4 h-4" />
+                              <span>คลิกเพื่อดูภาพขยายใหญ่</span>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between text-xs">
+                          {!previewRequest.passportCopyUrl.toLowerCase().endsWith('.pdf') && (
+                            <button
+                              type="button"
+                              onClick={() => setZoomImage(previewRequest.passportCopyUrl!)}
+                              className="text-purple-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              <ZoomIn className="w-3.5 h-3.5" /> ดูภาพขนาดเต็ม
+                            </button>
+                          )}
+                          <a
+                            href={previewRequest.passportCopyUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1 ml-auto"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" /> เปิดหน้าต่างใหม่
+                          </a>
                         </div>
                       </div>
                     ) : (
