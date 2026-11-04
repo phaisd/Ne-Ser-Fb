@@ -5,3 +5,6 @@ export * from './AdminCoursesTab';
 export * from './AdminStudentsTab';
 export * from './AdminDashboardTab';
 export * from './AdminUsersTab';
+export * from './AdminBrandingTab';
+export * from './AdminCertificatesTab';
+
