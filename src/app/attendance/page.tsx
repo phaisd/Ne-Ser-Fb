@@ -141,7 +141,7 @@ const DEMO_INSTRUCTORS = [
 ];
 
 export default function AttendancePage() {
-  const [activeMode, setActiveMode] = useState<'ROLL_CALL' | 'QR_CODE' | 'ELIGIBILITY' | 'HISTORY'>('ROLL_CALL');
+  const [activeMode, setActiveMode] = useState<'ROLL_CALL' | 'ROADMAP' | 'QR_CODE' | 'ELIGIBILITY' | 'HISTORY'>('ROLL_CALL');
   
   // Data states
   const [timetables, setTimetables] = useState<TimetableItem[]>([]);
@@ -318,6 +318,157 @@ export default function AttendancePage() {
       setSelectedCourseCode('');
     }
   }, [availableCourses, selectedCourseCode, currentUser]);
+
+  // ─────────────────────────────────────────────────────────────
+  // 16-WEEK SEMESTER ROADMAP & FAST NEXT-SESSION PROVISIONING
+  // ─────────────────────────────────────────────────────────────
+  interface SemesterSessionItem {
+    sessionNumber: number;
+    date: string;
+    dateFormattedTh: string;
+    dayNameTh: string;
+    startTime: string;
+    endTime: string;
+    room: string;
+    status: 'COMPLETED' | 'NEXT_UP' | 'UPCOMING';
+    sessionType: 'NORMAL' | 'MAKEUP' | 'SPECIAL' | 'EXAM';
+    stats?: {
+      totalStudents: number;
+      present: number;
+      late: number;
+      absent: number;
+      leave: number;
+      attendancePercent: number;
+      recordedBy?: string;
+    };
+  }
+
+  const semesterRoadmapSessions = useMemo<SemesterSessionItem[]>(() => {
+    if (!currentCourse) return [];
+
+    const recordsByDate = new Map<string, AttendanceHistoryItem[]>();
+    historyRecords.forEach((r) => {
+      if (r.courseCode === currentCourse.courseCode) {
+        if (!recordsByDate.has(r.date)) {
+          recordsByDate.set(r.date, []);
+        }
+        recordsByDate.get(r.date)!.push(r);
+      }
+    });
+
+    const sortedRecordedDates = Array.from(recordsByDate.keys()).sort();
+
+    let startDate = new Date('2026-06-15T00:00:00');
+    if (sortedRecordedDates.length > 0) {
+      const firstRec = new Date(sortedRecordedDates[0] + 'T00:00:00');
+      if (!isNaN(firstRec.getTime())) {
+        startDate = firstRec;
+      }
+    }
+
+    const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const thaiDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+
+    const sessions: SemesterSessionItem[] = [];
+    let foundNextUp = false;
+
+    for (let i = 0; i < semesterTotalSessions; i++) {
+      const sessionNum = i + 1;
+      let sDate = new Date(startDate);
+      sDate.setDate(startDate.getDate() + (i * 7));
+
+      let sessionDateStr = sDate.toISOString().substring(0, 10);
+      if (i < sortedRecordedDates.length) {
+        sessionDateStr = sortedRecordedDates[i];
+        sDate = new Date(sessionDateStr + 'T00:00:00');
+      }
+
+      const dateFormattedTh = `${sDate.getDate()} ${thaiMonthsShort[sDate.getMonth()]} ${(sDate.getFullYear() + 543).toString().substring(2)}`;
+      const dayNameTh = thaiDays[sDate.getDay()];
+
+      const recordsForThis = recordsByDate.get(sessionDateStr);
+
+      if (recordsForThis && recordsForThis.length > 0) {
+        const present = recordsForThis.filter((r) => r.status === 'PRESENT').length;
+        const late = recordsForThis.filter((r) => r.status === 'LATE').length;
+        const absent = recordsForThis.filter((r) => r.status === 'ABSENT').length;
+        const leave = recordsForThis.filter((r) => r.status === 'LEAVE').length;
+        const totalStudents = recordsForThis.length;
+        const attendancePercent = totalStudents > 0 ? Math.round(((present + late) / totalStudents) * 100) : 0;
+
+        sessions.push({
+          sessionNumber: sessionNum,
+          date: sessionDateStr,
+          dateFormattedTh,
+          dayNameTh,
+          startTime: currentCourse.startTime || '09:00',
+          endTime: currentCourse.endTime || '12:00',
+          room: currentCourse.room || 'C301',
+          status: 'COMPLETED',
+          sessionType: 'NORMAL',
+          stats: {
+            totalStudents,
+            present,
+            late,
+            absent,
+            leave,
+            attendancePercent,
+            recordedBy: recordsForThis[0].recordedBy,
+          },
+        });
+      } else {
+        let status: 'NEXT_UP' | 'UPCOMING' = 'UPCOMING';
+        if (!foundNextUp) {
+          status = 'NEXT_UP';
+          foundNextUp = true;
+        }
+
+        sessions.push({
+          sessionNumber: sessionNum,
+          date: sessionDateStr,
+          dateFormattedTh,
+          dayNameTh,
+          startTime: currentCourse.startTime || '09:00',
+          endTime: currentCourse.endTime || '12:00',
+          room: currentCourse.room || 'C301',
+          status,
+          sessionType: 'NORMAL',
+        });
+      }
+    }
+
+    return sessions;
+  }, [currentCourse, historyRecords, semesterTotalSessions]);
+
+  const nextUpcomingSession = useMemo(() => {
+    return semesterRoadmapSessions.find((s) => s.status === 'NEXT_UP') || null;
+  }, [semesterRoadmapSessions]);
+
+  const completedSessionsCount = useMemo(() => {
+    return semesterRoadmapSessions.filter((s) => s.status === 'COMPLETED').length;
+  }, [semesterRoadmapSessions]);
+
+  const handleFastOpenSession = (sess: SemesterSessionItem) => {
+    setDate(sess.date);
+    setSessionCustom((prev) => ({
+      ...prev,
+      sessionNumber: sess.sessionNumber,
+      date: sess.date,
+      startTime: sess.startTime,
+      endTime: sess.endTime,
+      room: sess.room,
+      sessionType: sess.sessionType || 'NORMAL',
+      leadInstructor: currentUser ? currentUser.name : (currentCourse ? currentCourse.instructor || '' : ''),
+      isCustomized: true,
+    }));
+    setActiveMode('ROLL_CALL');
+    setSavedSuccess(`🚀 เปิดระบบเช็คชื่อคาบที่ ${sess.sessionNumber} (${sess.dayNameTh}ที่ ${sess.dateFormattedTh}) เรียบร้อยแล้ว!`);
+
+    setTimeout(() => {
+      const el = document.getElementById('roll-call-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
+  };
 
   // Sync session details when currentCourse changes (unless customized)
   useEffect(() => {
@@ -740,6 +891,20 @@ export default function AttendancePage() {
             }`}
           >
             อาจารย์เช็คชื่อ (Roll-Call)
+          </button>
+          <button
+            onClick={() => setActiveMode('ROADMAP')}
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+              activeMode === 'ROADMAP'
+                ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                : 'text-slate-700 hover:text-emerald-700 font-bold bg-white/70'
+            }`}
+          >
+            <Calendar className="w-4 h-4 text-emerald-500" />
+            <span>แผนผัง 16 คาบ (Roadmap)</span>
+            {nextUpcomingSession && (
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping ml-0.5" />
+            )}
           </button>
           <button
             onClick={() => setActiveMode('ELIGIBILITY')}
@@ -1362,8 +1527,65 @@ export default function AttendancePage() {
             </div>
           ) : (
             <>
+              {/* ─────────────────────────────────────────────────────────────
+                  FAST ACTION BAR: 16-WEEK PROGRESS & 1-CLICK NEXT SESSION
+                 ───────────────────────────────────────────────────────────── */}
+              {currentCourse && (
+                <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-emerald-700/40 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-emerald-200 text-xs font-semibold">
+                      <Calendar className="w-4 h-4 text-emerald-300" />
+                      <span>แผนผังการเรียนการสอนภาคเรียนที่ 1/2569 (เป้าหมาย {semesterTotalSessions} คาบ)</span>
+                    </div>
+                    <div className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                      <span className="font-mono text-emerald-300">{currentCourse.courseCode}</span>
+                      <span>{currentCourse.courseName}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-300 pt-1">
+                      <span>
+                        สอนแล้ว <strong className="text-white font-bold">{completedSessionsCount}</strong> / {semesterTotalSessions} คาบ ({Math.round((completedSessionsCount / semesterTotalSessions) * 100)}%)
+                      </span>
+                      <div className="w-28 sm:w-36 bg-slate-700 rounded-full h-2 overflow-hidden border border-slate-600">
+                        <div
+                          className="bg-emerald-400 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(100, (completedSessionsCount / semesterTotalSessions) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                    {nextUpcomingSession ? (
+                      <button
+                        type="button"
+                        onClick={() => handleFastOpenSession(nextUpcomingSession)}
+                        className="px-4 py-2.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 rounded-xl text-xs font-extrabold shadow-lg shadow-emerald-900/40 flex items-center gap-2 transition transform hover:scale-[1.02] cursor-pointer"
+                        title="คลิกเพื่อเปิดเช็คชื่อคาบถัดไปทันทีโดยไม่ต้องเลือกวันเอง"
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-950 animate-ping" />
+                        <span>🚀 เปิดเช็คชื่อคาบถัดไป (คาบที่ {nextUpcomingSession.sessionNumber} — {nextUpcomingSession.dateFormattedTh})</span>
+                      </button>
+                    ) : (
+                      <div className="px-3.5 py-2 bg-emerald-900/60 text-emerald-200 rounded-xl text-xs font-bold border border-emerald-700/50 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>สอนครบตามเกณฑ์ 16 คาบแล้ว</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveMode('ROADMAP')}
+                      className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/20 flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Calendar className="w-4 h-4 text-emerald-300" />
+                      <span>ดูแผนผัง 16 คาบ</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Filter Panel: Lecturer & Course Selector */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+              <div id="roll-call-section" className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* 1. อาจารย์ผู้สอน */}
                   <div>
