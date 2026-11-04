@@ -23,6 +23,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/attendance';
+  const reason = searchParams.get('reason');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,6 +62,7 @@ function LoginForm() {
       const data = await res.json();
       if (data.success) {
         localStorage.setItem('mcu_current_user', JSON.stringify(data.user));
+        window.dispatchEvent(new Event('mcu_user_logged_in'));
         setSuccess(`เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${data.user.name}`);
         setTimeout(() => {
           if (data.user.role === 'SUPER_ADMIN' || data.user.role === 'ADMIN') {
@@ -96,6 +98,7 @@ function LoginForm() {
       const data = await res.json();
       if (data.success) {
         localStorage.setItem('mcu_current_user', JSON.stringify(data.user));
+        window.dispatchEvent(new Event('mcu_user_logged_in'));
         setSuccess(`เข้าสู่ระบบด้วย Google สำเร็จ: ยินดีต้อนรับ ${data.user.name}`);
         setTimeout(() => {
           if (data.user.role === 'SUPER_ADMIN' || data.user.role === 'ADMIN') {
@@ -152,6 +155,20 @@ function LoginForm() {
 
       {/* Main Login Card */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-xl space-y-5">
+        {reason === 'inactivity' && !error && !success && (
+          <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl text-amber-900 text-xs flex items-start gap-3 animate-in fade-in">
+            <Lock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-extrabold text-amber-950 text-xs">
+                🔒 ออกจากระบบอัตโนมัติเพื่อความปลอดภัย (Inactivity Timeout)
+              </div>
+              <div className="text-[11px] text-amber-850 mt-0.5 leading-relaxed">
+                เนื่องจากไม่มีการเคลื่อนไหวหรือใช้งานเกินกำหนด ระบบจึงได้ตัดการเชื่อมต่อเพื่อป้องกันไม่ให้ผู้อื่นเข้าถึงข้อมูลของท่าน (กรณีเปิดคอมพิวเตอร์ทิ้งไว้)
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-start gap-2 animate-in fade-in">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />

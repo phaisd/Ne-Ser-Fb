@@ -97,6 +97,7 @@ export default function Navbar() {
       await fetch('/api/auth', { method: 'DELETE' });
     } catch (e) {}
     localStorage.removeItem('mcu_current_user');
+    window.dispatchEvent(new Event('mcu_user_logged_out'));
     setCurrentUser(null);
     window.location.href = '/';
   };
