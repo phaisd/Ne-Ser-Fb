@@ -4,168 +4,18 @@ import { getSheetsClient } from './google-sheets';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
-export interface Student {
-  id?: string;
-  studentCode: string;
-  title?: string;
-  firstName: string;
-  lastName: string;
-  fullName?: string;
-  yearLevel?: number;
-  degree?: string;
-  curriculumName?: string;
-  department?: string;
-  major?: string;
-  studyStatus?: string;
-  faculty?: string;
-  email?: string;
-  phoneNumber?: string;
-  nationality?: string;
-  country?: string;
-  gender?: string;
-  age?: number | string;
-  passportNo?: string;
-  passportExpireDate?: string;
-  visaType?: string;
-  visaExpireDate?: string;
-  gpa?: number | string;
-  address?: string;
-  subdistrict?: string;
-  district?: string;
-  province?: string;
-  postalCode?: string;
-  programType?: 'THAI' | 'ENGLISH';
-  remarks?: string;
-  isActive?: boolean;
-}
-
-export interface Course {
-  id?: string;
-  courseCode: string;
-  courseName: string;
-  courseNameEn?: string;
-  credits: number;
-  programType?: 'THAI' | 'ENGLISH' | 'BILINGUAL';
-  degreeLevel?: string; // ปริญญาตรี, ปริญญาโท, ปริญญาเอก, ประกาศนียบัตร
-  faculty?: string;
-  department?: string;
-  major?: string;
-  yearLevel?: number;
-  section?: string;
-  term?: string;
-  academicYear?: string;
-  semester?: number;
-  room?: string;
-  dayOfWeek?: number;
-  startTime?: string;
-  endTime?: string;
-  instructor?: string;
-  primaryTeacherName?: string;
-  primaryTeacherId?: string;
-  description?: string;
-  status?: string;
-  isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface TimetableItem {
-  academicYear: string;
-  semester: number;
-  yearLevel: number;
-  timetableTitle: string;
-  courseCode: string;
-  courseName: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  room: string;
-  instructor?: string;
-  periodLabel?: string;
-}
-
-export interface CertificateRequest {
-  id: string;
-  createdAt: string;
-  studentCode: string;
-  fullName: string;
-  certType: string;
-  degreeLevel?: string;
-  major?: string;
-  requestPurpose?: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
-  docNo?: string;
-  email?: string;
-  phone?: string;
-  note?: string;
-  rejectReason?: string;
-  enrollmentSlipUrl?: string;
-  passportCopyUrl?: string;
-  photoUrl?: string;
-  attachmentUrl?: string;
-  targetAudience?: 'THAI' | 'INTERNATIONAL' | 'ALL';
-  age?: number | string;
-  gender?: string;
-  nationality?: string;
-  country?: string;
-  passportNo?: string;
-  passportExpireDate?: string;
-  visaType?: string;
-  visaExpireDate?: string;
-  gpa?: number | string;
-  address?: string;
-  subdistrict?: string;
-  district?: string;
-  province?: string;
-  postalCode?: string;
-  bankName?: string;
-  bankBranch?: string;
-  bankTargetTh?: string;
-  bankActionTh?: string;
-  issueDateTh?: string;
-  issueDateEn?: string;
-  docTemplate?: string;
-  signerNameTh?: string;
-  signerTitleTh?: string;
-  signerNameEn?: string;
-  signerTitleEn?: string;
-  coordinatorNameTh?: string;
-  coordinatorPhoneTh?: string;
-}
-
-export interface AttendanceRecord {
-  id: string;
-  courseCode?: string;
-  date: string;
-  sessionId?: string;
-  studentCode: string;
-  studentName: string;
-  status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
-  recordedBy?: string;
-  createdAt: string;
-  note?: string;
-}
-
-export interface InstructorAccount {
-  id: string;
-  name: string;
-  nameEn?: string;
-  email: string;
-  gmail?: string;
-  password?: string;
-  defaultPassword?: string;
-  department?: string;
-  role?: 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR';
-  coursesCount?: number;
-  isActive?: boolean;
-  isSuspended?: boolean;
-  suspendReason?: string;
-  isSuperAdmin?: boolean;
-  aliases?: string[];
-  previousIds?: string[];
-  createdAt?: string;
-  updatedAt?: string;
-}
+// Domain types imported and re-exported from centralized @/types
+import {
+  Student,
+  Course,
+  TimetableItem,
+  CertificateRequest,
+  AttendanceRecord,
+  InstructorAccount,
+  UserAccount,
+  UserRole
+} from '@/types';
+export * from '@/types';
 
 // Local File Helper (with Vercel Serverless /tmp compatibility)
 function getLocalFilePath(filename: string): string {

@@ -72,103 +72,25 @@ import {
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
 
-interface CertificateRequest {
-  id: string;
-  createdAt: string;
-  studentCode: string;
-  fullName: string;
-  certType: string;
-  degreeLevel?: string;
-  major?: string;
-  requestPurpose?: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
-  docNo?: string;
-  email?: string;
-  phone?: string;
-  targetAudience?: 'THAI' | 'INTERNATIONAL' | 'ALL';
-  age?: number | string;
-  gender?: string;
-  nationality?: string;
-  country?: string;
-  passportNo?: string;
-  passportExpireDate?: string;
-  visaType?: string;
-  visaExpireDate?: string;
-  gpa?: number | string;
-  address?: string;
-  subdistrict?: string;
-  district?: string;
-  province?: string;
-  postalCode?: string;
-  bankTargetTh?: string;
-  bankActionTh?: string;
-  issueDateTh?: string;
-  issueDateEn?: string;
-  docTemplate?: string;
-  rejectReason?: string;
-  note?: string;
-  enrollmentSlipUrl?: string;
-  passportCopyUrl?: string;
-  photoUrl?: string;
-  attachmentUrl?: string;
-}
-
-interface SignatoryItem {
-  id: string;
-  label: string;
-  name: string;
-  title: string;
-  isDefault?: boolean;
-}
-
-interface SystemSettings {
-  universityNameTh: string;
-  universityNameEn: string;
-  facultyNameTh: string;
-  facultyNameEn: string;
-  logoUrl: string;
-  logoEmoji?: string;
-  signerNameTh: string;
-  signerTitleTh: string;
-  signerNameEn: string;
-  signerTitleEn: string;
-  contactPhone: string;
-  contactEmail: string;
-  websiteUrl?: string;
-  systemServiceUrl?: string;
-  addressTh: string;
-  addressEn: string;
-  announcementText: string;
-  signatories?: SignatoryItem[];
-  visaAlertTitle?: string;
-  visaAlertDesc?: string;
-  visaAlertEnabled?: boolean;
-  timelineAlertTitle?: string;
-  timelineAlertDesc?: string;
-  timelineAlertEnabled?: boolean;
-  accuracyAlertTitle?: string;
-  accuracyAlertDesc?: string;
-  accuracyAlertEnabled?: boolean;
-}
-
-interface UserAccount {
-  id: string;
-  name: string;
-  nameEn?: string;
-  aliases?: string[];
-  defaultPassword?: string;
-  password?: string;
-  email: string;
-  gmail?: string;
-  department?: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR';
-  coursesCount?: number;
-  isActive?: boolean;
-  isSuspended?: boolean;
-  suspendReason?: string;
-  isSuperAdmin?: boolean;
-  createdAt?: string;
-}
+import {
+  CertificateRequest,
+  SignatoryItem,
+  SystemSettings,
+  UserAccount,
+  Student,
+  Course,
+  TimetableItem,
+  AttendanceRecord
+} from '@/types';
+import {
+  matchInstructorStrict,
+  getSubstantiveTokens,
+  INSTRUCTOR_TITLE_REGEX,
+  INSTRUCTOR_THAI_TITLE_PREFIX,
+  formatThaiDate,
+  formatEnglishDate,
+  maskPassport
+} from '@/lib/utils';
 
 type AdminTab =
   | 'DASHBOARD'
@@ -235,58 +157,6 @@ const REJECT_PRESET_REASONS = [
   'หนังสือเดินทาง/วีซ่าไม่ตรงกับข้อมูลในระบบ',
   'สำเนาเอกสารแนบไม่ชัดเจนหรือไม่สมบูรณ์',
 ];
-
-const INSTRUCTOR_TITLE_REGEX = /\b(phra|phramaha|ven|dr|ph\.?d|asst|assoc|prof|mr|mrs|ms|พระ|พระมหา|พระครู|ผศ|รศ|ศ|ดร|อ\.ดร|อ)\b/gi;
-const INSTRUCTOR_THAI_TITLE_PREFIX = /^(ดร\.|ผศ\.|รศ\.|ศ\.|อ\.ดร\.|อ\.|พระมหา|พระครู|พระ)/;
-
-function getSubstantiveTokens(user: any): string[] {
-  if (!user) return [];
-  const substantive = new Set<string>();
-  if (Array.isArray(user.aliases)) {
-    user.aliases.forEach((al: string) => {
-      const clean = al.trim().toLowerCase();
-      if (clean && clean.length >= 3 && !['phra', 'พระ', 'ดร.', 'dr.', 'ven.'].includes(clean)) {
-        substantive.add(clean);
-      }
-    });
-  }
-  const names = [user.name || '', user.nameEn || ''];
-  names.forEach((n) => {
-    const cleanStr = n.replace(/[,*\/]/g, ' ');
-    cleanStr.split(/\s+/).forEach((part: string) => {
-      let token = part.trim().toLowerCase();
-      token = token.replace(/^[.\s]+|[.\s]+$/g, '');
-      token = token.replace(INSTRUCTOR_THAI_TITLE_PREFIX, '');
-      token = token.replace(INSTRUCTOR_TITLE_REGEX, '');
-      token = token.trim();
-      if (
-        token.length >= 3 &&
-        !['phra', 'พระ', 'ดร', 'dr', 'ven', 'asst', 'assoc', 'prof', 'ผศ', 'รศ', 'อาจารย์'].includes(token)
-      ) {
-        substantive.add(token);
-      }
-    });
-  });
-  return Array.from(substantive);
-}
-
-function matchInstructorStrict(user: any, instString?: string): boolean {
-  if (!user || !instString) return false;
-  const targetLower = instString.toLowerCase();
-  const tokens = getSubstantiveTokens(user);
-  if (tokens.length === 0) return false;
-  return tokens.some((token) => {
-    if (/[\u0E00-\u0E7F]/.test(token)) {
-      return targetLower.includes(token);
-    }
-    try {
-      const reg = new RegExp('\\b' + token + '\\b', 'i');
-      return reg.test(targetLower);
-    } catch {
-      return targetLower.includes(token);
-    }
-  });
-}
 
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<AdminTab>('DASHBOARD');

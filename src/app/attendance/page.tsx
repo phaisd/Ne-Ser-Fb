@@ -40,96 +40,9 @@ import {
   HelpCircle
 } from 'lucide-react';
 
-interface Student {
-  studentCode: string;
-  fullName?: string;
-  title?: string;
-  firstName: string;
-  lastName: string;
-  yearLevel?: number;
-  major?: string;
-}
+import { Student, TimetableItem, AttendanceHistoryItem } from '@/types';
+import { getSubstantiveTokens, matchInstructorStrict } from '@/lib/utils';
 
-interface TimetableItem {
-  timetableTitle?: string;
-  courseCode: string;
-  courseName: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  room: string;
-  instructor?: string;
-  yearLevel: number;
-}
-
-interface AttendanceHistoryItem {
-  id: string;
-  courseCode?: string;
-  date: string;
-  studentCode: string;
-  studentName: string;
-  status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
-  recordedBy?: string;
-  createdAt: string;
-}
-
-const TITLE_REGEX = /\b(phra|phramaha|ven|dr|ph\.?d|asst|assoc|prof|mr|mrs|ms|พระ|พระมหา|พระครู|ผศ|รศ|ศ|ดร|อ\.ดร|อ)\b/gi;
-const THAI_TITLE_PREFIX = /^(ดร\.|ผศ\.|รศ\.|ศ\.|อ\.ดร\.|อ\.|พระมหา|พระครู|พระ)/;
-
-function getSubstantiveTokens(user: any): string[] {
-  if (!user) return [];
-  const substantive = new Set<string>();
-
-  // 1. Defined Aliases in instructor profile (high priority)
-  if (Array.isArray(user.aliases)) {
-    user.aliases.forEach((al: string) => {
-      const clean = al.trim().toLowerCase();
-      if (clean && clean.length >= 3 && !['phra', 'พระ', 'ดร.', 'dr.', 'ven.'].includes(clean)) {
-        substantive.add(clean);
-      }
-    });
-  }
-
-  // 2. Substantive tokens from user name and nameEn
-  const names = [user.name || '', user.nameEn || ''];
-  names.forEach((n) => {
-    const cleanStr = n.replace(/[,*\/]/g, ' ');
-    cleanStr.split(/\s+/).forEach((part: string) => {
-      let token = part.trim().toLowerCase();
-      token = token.replace(/^[.\s]+|[.\s]+$/g, '');
-      token = token.replace(THAI_TITLE_PREFIX, '');
-      token = token.replace(TITLE_REGEX, '');
-      token = token.trim();
-      if (
-        token.length >= 3 &&
-        !['phra', 'พระ', 'ดร', 'dr', 'ven', 'asst', 'assoc', 'prof', 'ผศ', 'รศ', 'อาจารย์'].includes(token)
-      ) {
-        substantive.add(token);
-      }
-    });
-  });
-
-  return Array.from(substantive);
-}
-
-function matchInstructorStrict(user: any, instString?: string): boolean {
-  if (!user || !instString) return false;
-  const targetLower = instString.toLowerCase();
-  const tokens = getSubstantiveTokens(user);
-  if (tokens.length === 0) return false;
-
-  return tokens.some((token) => {
-    if (/[\u0E00-\u0E7F]/.test(token)) {
-      return targetLower.includes(token);
-    }
-    try {
-      const reg = new RegExp('\\b' + token + '\\b', 'i');
-      return reg.test(targetLower);
-    } catch {
-      return targetLower.includes(token);
-    }
-  });
-}
 
 const DEMO_INSTRUCTORS = [
   { name: 'พระมหาดวงเด่น ฐิตญาโณ, ผศ.ดร.', email: 'duangden@mcu.ac.th', title: 'ผศ.ดร. (ภาควิชาศาสนาและปรัชญา)' },
