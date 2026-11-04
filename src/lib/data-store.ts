@@ -144,6 +144,7 @@ export interface AttendanceRecord {
 export interface InstructorAccount {
   id: string;
   name: string;
+  nameEn?: string;
   email: string;
   gmail?: string;
   password?: string;
@@ -155,6 +156,8 @@ export interface InstructorAccount {
   isSuspended?: boolean;
   suspendReason?: string;
   isSuperAdmin?: boolean;
+  aliases?: string[];
+  previousIds?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -998,7 +1001,11 @@ export async function authenticateInstructor(
     const matchEmail = a.email?.toLowerCase() === cleanInput;
     const matchGmail = a.gmail?.toLowerCase() === cleanInput;
     const matchName = a.name?.toLowerCase() === cleanInput;
-    return matchEmail || matchGmail || matchName;
+    const matchNameEn = a.nameEn?.toLowerCase() === cleanInput;
+    const matchId = a.id?.toLowerCase() === cleanInput;
+    const matchPrevId = a.previousIds?.some((p) => p.toLowerCase() === cleanInput);
+    const matchAlias = a.aliases?.some((al) => al.toLowerCase() === cleanInput);
+    return matchEmail || matchGmail || matchName || matchNameEn || matchId || matchPrevId || matchAlias;
   });
 
   if (!found) {
@@ -1065,7 +1072,13 @@ export async function authenticateGoogleUser(gmailInput: string): Promise<Omit<I
   const clean = (gmailInput || '').trim().toLowerCase();
   if (!clean) return null;
 
-  let found = accounts.find((a) => a.gmail?.toLowerCase() === clean || a.email?.toLowerCase() === clean);
+  let found = accounts.find((a) => {
+    return (
+      a.gmail?.toLowerCase() === clean ||
+      a.email?.toLowerCase() === clean ||
+      a.aliases?.some((al) => al.toLowerCase() === clean)
+    );
+  });
 
   if (!found) {
     // If input is a student (numeric code or in students list), do not auto-create as instructor

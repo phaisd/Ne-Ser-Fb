@@ -32,6 +32,7 @@ interface Student {
 }
 
 interface TimetableItem {
+  timetableTitle?: string;
   courseCode: string;
   courseName: string;
   dayOfWeek: number;
@@ -142,9 +143,34 @@ export default function AttendancePage() {
   // Filter courses by selected instructor or logged-in teacher
   const availableCourses = timetables.filter((t) => {
     if (currentUser && filterMyCoursesOnly && currentUser.role !== 'ADMIN') {
-      const words = (currentUser.name || '').split(/[\s,]+/);
-      const matched = words.some((w: string) => w.length > 3 && t.instructor?.includes(w));
-      if (matched) return true;
+      const instName = (t.instructor || '').toLowerCase();
+      // 1. Direct name or nameEn match
+      const cName = (currentUser.name || '').toLowerCase();
+      const cNameEn = (currentUser.nameEn || '').toLowerCase();
+      if (cName && instName.includes(cName)) return true;
+      if (cNameEn && instName.includes(cNameEn)) return true;
+
+      // 2. Tokenized words from Thai and English names
+      const allWords = [
+        ...(currentUser.name || '').split(/[\s,]+/),
+        ...(currentUser.nameEn || '').split(/[\s,]+/)
+      ];
+      const wordMatch = allWords.some((w: string) => {
+        const cleanW = w.replace(/^(ดร\.|ผศ\.|รศ\.|ศ\.|พระมหา|พระครู|พระ|dr\.|prof\.|ven\.|phramaha|mr\.|mrs\.|ms\.)/i, '').trim();
+        return cleanW.length >= 3 && instName.includes(cleanW.toLowerCase());
+      });
+      if (wordMatch) return true;
+
+      // 3. Aliases match (supports cross Thai & English program teaching)
+      if (currentUser.aliases && Array.isArray(currentUser.aliases)) {
+        const aliasMatch = currentUser.aliases.some((al: string) => {
+          const cleanAl = al.trim().toLowerCase();
+          return cleanAl.length >= 3 && instName.includes(cleanAl);
+        });
+        if (aliasMatch) return true;
+      }
+
+      return false;
     }
     if (selectedInstructor === 'ALL') return true;
     return t.instructor?.toLowerCase().includes(selectedInstructor.toLowerCase());
@@ -418,11 +444,15 @@ export default function AttendancePage() {
                   onChange={(e) => handleCourseChange(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 >
-                  {availableCourses.map((c, i) => (
-                    <option key={i} value={c.courseCode}>
-                      {c.courseCode} — {c.courseName} (ปี {c.yearLevel})
-                    </option>
-                  ))}
+                  {availableCourses.map((c, i) => {
+                    const isEn = /inter|eng|english|นานาชาติ/i.test(c.timetableTitle || '') || /^[A-Za-z0-9\s:,-]+$/.test(c.courseName);
+                    return (
+                      <option key={i} value={c.courseCode}>
+                        {isEn ? '🌐 [Inter/EN] ' : '🇹🇭 [ภาคไทย] '}
+                        {c.courseCode} — {c.courseName} (ปี {c.yearLevel})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
@@ -442,40 +472,50 @@ export default function AttendancePage() {
             </div>
 
             {/* Course info banner */}
-            {currentCourse && (
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div>
-                    <span className="text-slate-400">วิชา:</span>{' '}
-                    <strong className="text-slate-800 font-mono">{currentCourse.courseCode}</strong> {currentCourse.courseName}
-                  </div>
-                  <div>
-                    <span className="text-slate-400">ชั้นปี:</span>{' '}
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
-                      ชั้นปีที่ {currentCourse.yearLevel}
+            {currentCourse && (() => {
+              const isEn = /inter|eng|english|นานาชาติ/i.test(currentCourse.timetableTitle || '') || /^[A-Za-z0-9\s:,-]+$/.test(currentCourse.courseName);
+              return (
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className={`px-2.5 py-1 rounded-lg font-bold border ${isEn ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+                      {isEn ? '🌐 หลักสูตรนานาชาติ (International/EN)' : '🇹🇭 หลักสูตรภาษาไทย (Thai Program)'}
                     </span>
+                    <div>
+                      <span className="text-slate-400">วิชา:</span>{' '}
+                      <strong className="text-slate-800 font-mono">{currentCourse.courseCode}</strong> {currentCourse.courseName}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">ชั้นปี:</span>{' '}
+                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+                        ชั้นปีที่ {currentCourse.yearLevel}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">ผู้สอน:</span>{' '}
+                      <strong className="text-slate-700">{currentCourse.instructor}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">เวลาเรียน:</span> {currentCourse.startTime || '-'} - {currentCourse.endTime || '-'} น.
+                    </div>
+                    <div>
+                      <span className="text-slate-400">ห้องเรียน:</span> {currentCourse.room || '-'}
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-slate-400">เวลาเรียน:</span> {currentCourse.startTime || '-'} - {currentCourse.endTime || '-'} น.
-                  </div>
-                  <div>
-                    <span className="text-slate-400">ห้องเรียน:</span> {currentCourse.room || '-'}
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={showOnlyTargetYear}
-                      onChange={(e) => setShowOnlyTargetYear(e.target.checked)}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <span>เฉพาะนิสิตชั้นปีที่ {currentCourse.yearLevel}</span>
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={showOnlyTargetYear}
+                        onChange={(e) => setShowOnlyTargetYear(e.target.checked)}
+                        className="rounded text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span>เฉพาะนิสิตชั้นปีที่ {currentCourse.yearLevel}</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Live Stats Bar */}
             <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">

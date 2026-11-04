@@ -926,26 +926,55 @@ export default function AdminConsolePage() {
   });
 
   // Filter Users
-  const filteredUsers = users.filter((u) => {
-    if (userRoleFilter === 'SUSPENDED') {
-      if (!u.isSuspended && u.isActive !== false) return false;
-    } else if (userRoleFilter === 'SUPER_ADMIN') {
-      if (u.role !== 'SUPER_ADMIN' && !u.isSuperAdmin && u.email !== 'phaisal.dis@mcu.ac.th') return false;
-    } else if (userRoleFilter !== 'ALL' && u.role !== userRoleFilter) {
-      return false;
+  const filteredUsers = useMemo(() => {
+    if (userRoleFilter === 'STUDENT') {
+      const q = userSearch.trim().toLowerCase();
+      return studentsList
+        .filter((s) => {
+          if (!q) return true;
+          return (
+            (s.fullName || '').toLowerCase().includes(q) ||
+            (s.studentCode || '').toLowerCase().includes(q) ||
+            (s.email || '').toLowerCase().includes(q) ||
+            (s.major || '').toLowerCase().includes(q) ||
+            (s.degree || '').toLowerCase().includes(q)
+          );
+        })
+        .map((s) => ({
+          id: s.studentCode || s.id,
+          name: s.fullName || `${s.title || ''}${s.firstName || ''} ${s.lastName || ''}`.trim(),
+          email: s.email || `${s.studentCode}@mcu.ac.th`,
+          gmail: s.gmail || '',
+          department: `${s.major || s.faculty || 'คณะพุทธศาสตร์'}${s.degree ? ` (${s.degree})` : ''}`,
+          role: 'STUDENT' as any,
+          isSuspended: s.studyStatus === 'พ้นสภาพ' || s.isActive === false,
+          isActive: s.isActive !== false,
+          isSuperAdmin: false,
+          studentData: s,
+        }));
     }
 
-    if (userSearch.trim()) {
-      const q = userSearch.toLowerCase();
-      return (
-        u.name?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.gmail?.toLowerCase().includes(q) ||
-        u.department?.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+    return users.filter((u) => {
+      if (userRoleFilter === 'SUSPENDED') {
+        if (!u.isSuspended && u.isActive !== false) return false;
+      } else if (userRoleFilter === 'SUPER_ADMIN') {
+        if (u.role !== 'SUPER_ADMIN' && !u.isSuperAdmin && u.email !== 'phaisal.dis@mcu.ac.th') return false;
+      } else if (userRoleFilter !== 'ALL' && u.role !== userRoleFilter) {
+        return false;
+      }
+
+      if (userSearch.trim()) {
+        const q = userSearch.toLowerCase();
+        return (
+          u.name?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q) ||
+          u.gmail?.toLowerCase().includes(q) ||
+          u.department?.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [users, studentsList, userRoleFilter, userSearch]);
 
   // Filter Courses
   const filteredCourses = useMemo(() => {
@@ -1993,6 +2022,14 @@ export default function AdminConsolePage() {
                     อาจารย์ ({users.filter((u) => u.role === 'INSTRUCTOR').length})
                   </button>
                   <button
+                    onClick={() => setUserRoleFilter('STUDENT')}
+                    className={`px-2.5 py-1.5 rounded-lg transition ${
+                      userRoleFilter === 'STUDENT' ? 'bg-amber-600 text-white shadow-sm' : 'text-amber-800 hover:bg-amber-50'
+                    }`}
+                  >
+                    🎓 นิสิต ({studentsList.length})
+                  </button>
+                  <button
                     onClick={() => setUserRoleFilter('SUSPENDED')}
                     className={`px-2.5 py-1.5 rounded-lg transition ${
                       userRoleFilter === 'SUSPENDED' ? 'bg-rose-600 text-white shadow-sm' : 'text-rose-700'
@@ -2018,18 +2055,25 @@ export default function AdminConsolePage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
-                      {filteredUsers.slice(0, 50).map((u) => {
+                      {filteredUsers.slice(0, 100).map((u) => {
                         const isSuper = u.role === 'SUPER_ADMIN' || u.isSuperAdmin || u.email === 'phaisal.dis@mcu.ac.th';
+                        const isStudent = u.role === 'STUDENT';
                         const isSuspended = !isSuper && (u.isSuspended || u.isActive === false);
 
                         return (
                           <tr key={u.id} className={`hover:bg-slate-50/80 transition-colors ${isSuspended ? 'bg-rose-50/30' : ''}`}>
                             <td className="px-5 py-3.5 font-medium text-slate-900">
                               <div className="flex items-center gap-2.5">
-                                <div className={`w-8 h-8 rounded-xl border text-slate-700 font-bold flex items-center justify-center shrink-0 ${
-                                  isSuper ? 'bg-purple-100 border-purple-300 text-purple-800' : isSuspended ? 'bg-rose-100 border-rose-300 text-rose-800' : 'bg-slate-100 border-slate-200'
+                                <div className={`w-8 h-8 rounded-xl border font-bold flex items-center justify-center shrink-0 ${
+                                  isSuper
+                                    ? 'bg-purple-100 border-purple-300 text-purple-800'
+                                    : isSuspended
+                                    ? 'bg-rose-100 border-rose-300 text-rose-800'
+                                    : isStudent
+                                    ? 'bg-amber-100 border-amber-300 text-amber-800'
+                                    : 'bg-slate-100 border-slate-200 text-slate-700'
                                 }`}>
-                                  {isSuper ? '👑' : isSuspended ? '⛔' : u.name ? u.name.charAt(0) : 'อ'}
+                                  {isSuper ? '👑' : isSuspended ? '⛔' : isStudent ? '🎓' : u.name ? u.name.charAt(0) : 'อ'}
                                 </div>
                                 <div>
                                   <div className="font-bold flex items-center gap-1.5">
@@ -2039,8 +2083,15 @@ export default function AdminConsolePage() {
                                         SUPER ADMIN
                                       </span>
                                     )}
+                                    {isStudent && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                        นิสิต
+                                      </span>
+                                    )}
                                   </div>
-                                  <div className="text-[10px] text-slate-400">ID: {u.id}</div>
+                                  <div className="text-[10px] text-slate-400">
+                                    {isStudent ? `รหัสนิสิต: ${u.id}` : `ID: ${u.id}`}
+                                  </div>
                                 </div>
                               </div>
                             </td>
@@ -2068,6 +2119,8 @@ export default function AdminConsolePage() {
                                     ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                                     : u.role === 'OFFICER'
                                     ? 'bg-sky-50 text-sky-700 border-sky-200'
+                                    : isStudent
+                                    ? 'bg-amber-50 text-amber-800 border-amber-300'
                                     : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 }`}
                               >
@@ -2077,6 +2130,8 @@ export default function AdminConsolePage() {
                                   ? 'ผู้ดูแลระบบ'
                                   : u.role === 'OFFICER'
                                   ? 'เจ้าหน้าที่'
+                                  : isStudent
+                                  ? '🎓 นิสิต (STUDENT)'
                                   : 'อาจารย์ผู้สอน'}
                               </span>
                             </td>
@@ -2088,72 +2143,97 @@ export default function AdminConsolePage() {
                               ) : isSuspended ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 animate-pulse">
                                   <Ban className="w-2.5 h-2.5" />
-                                  <span>ถูกระงับการใช้</span>
+                                  <span>{isStudent ? 'พ้นสภาพ/ระงับ' : 'ถูกระงับการใช้'}</span>
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                   <Check className="w-2.5 h-2.5" />
-                                  <span>ปกติ</span>
+                                  <span>{isStudent ? 'ปกติ (ลงทะเบียน)' : 'ปกติ'}</span>
                                 </span>
                               )}
                             </td>
                             <td className="px-5 py-3.5 text-right">
-                              <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                                {/* Edit Email & Profile Button */}
-                                <button
-                                  onClick={() => handleStartEditUser(u)}
-                                  className="px-2 py-1 rounded-lg text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 transition flex items-center gap-1 cursor-pointer"
-                                  title="แก้ไขอีเมลจริง, Gmail และข้อมูลผู้ใช้"
-                                >
-                                  <Edit className="w-3 h-3" />
-                                  <span>แก้ไข</span>
-                                </button>
+                              {isStudent ? (
+                                <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                                  <button
+                                    onClick={() => {
+                                      setActiveTab('STUDENTS');
+                                      setStudentSearch(u.id);
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition flex items-center gap-1 cursor-pointer"
+                                    title="เปิดดูประวัตินิสิตฉบับเต็ม"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                    <span>ดูประวัตินิสิต</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      alert(`ข้อมูลการเข้าสู่ระบบของนิสิต:\n\nชื่อ-สกุล: ${u.name}\nรหัสนิสิต: ${u.id}\nอีเมลล็อกอิน: ${u.email}\nรหัสผ่านเริ่มต้น: ${u.id} หรือ mcu123456\n\nหมายเหตุ: นิสิตสามารถใช้บัญชีนี้เข้าระบบเพื่อขอเอกสารรับรอง หรือเช็คชื่อเข้าชั้นเรียนได้`);
+                                    }}
+                                    className="px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+                                    title="ดูรหัสผ่านและวิธีเข้าสู่ระบบ"
+                                  >
+                                    รหัสล็อกอิน
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                                  {/* Edit Email & Profile Button */}
+                                  <button
+                                    onClick={() => handleStartEditUser(u)}
+                                    className="px-2 py-1 rounded-lg text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 transition flex items-center gap-1 cursor-pointer"
+                                    title="แก้ไขอีเมลจริง, Gmail และข้อมูลผู้ใช้"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                    <span>แก้ไข</span>
+                                  </button>
 
-                                {/* Suspend / Unsuspend Toggle */}
-                                {!isSuper ? (
-                                  isSuspended ? (
-                                    <button
-                                      onClick={() => handleToggleSuspend(u.id, true, u.name)}
-                                      className="px-2 py-1 rounded-lg text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1 cursor-pointer"
-                                      title="ปลดระงับการใช้งานบัญชีนี้"
-                                    >
-                                      <UserCheck className="w-3 h-3" />
-                                      <span>ปลดระงับ</span>
-                                    </button>
-                                  ) : (
-                                    <button
-                                      onClick={() => handleToggleSuspend(u.id, false, u.name)}
-                                      className="px-2 py-1 rounded-lg text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 transition flex items-center gap-1 cursor-pointer"
-                                      title="ระงับการใช้งานบัญชีนี้ชั่วคราว"
-                                    >
-                                      <Ban className="w-3 h-3" />
-                                      <span>ระงับ</span>
-                                    </button>
-                                  )
-                                ) : null}
+                                  {/* Suspend / Unsuspend Toggle */}
+                                  {!isSuper ? (
+                                    isSuspended ? (
+                                      <button
+                                        onClick={() => handleToggleSuspend(u.id, true, u.name)}
+                                        className="px-2 py-1 rounded-lg text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1 cursor-pointer"
+                                        title="ปลดระงับการใช้งานบัญชีนี้"
+                                      >
+                                        <UserCheck className="w-3 h-3" />
+                                        <span>ปลดระงับ</span>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleToggleSuspend(u.id, false, u.name)}
+                                        className="px-2 py-1 rounded-lg text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 transition flex items-center gap-1 cursor-pointer"
+                                        title="ระงับการใช้งานบัญชีนี้ชั่วคราว"
+                                      >
+                                        <Ban className="w-3 h-3" />
+                                        <span>ระงับ</span>
+                                      </button>
+                                    )
+                                  ) : null}
 
-                                {/* Change Role dropdown */}
-                                <select
-                                  value={u.role || 'INSTRUCTOR'}
-                                  disabled={isSuper}
-                                  onChange={(e) => handleUpdateRole(u.id, e.target.value as any)}
-                                  className="px-2 py-1 rounded-lg border border-slate-200 text-[11px] bg-white text-slate-700 cursor-pointer focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                                >
-                                  {isSuper && <option value="SUPER_ADMIN">👑 Super Admin</option>}
-                                  <option value="INSTRUCTOR">อาจารย์ผู้สอน</option>
-                                  <option value="OFFICER">เจ้าหน้าที่</option>
-                                  <option value="ADMIN">ผู้ดูแลระบบ</option>
-                                </select>
+                                  {/* Change Role dropdown */}
+                                  <select
+                                    value={u.role || 'INSTRUCTOR'}
+                                    disabled={isSuper}
+                                    onChange={(e) => handleUpdateRole(u.id, e.target.value as any)}
+                                    className="px-2 py-1 rounded-lg border border-slate-200 text-[11px] bg-white text-slate-700 cursor-pointer focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                                  >
+                                    {isSuper && <option value="SUPER_ADMIN">👑 Super Admin</option>}
+                                    <option value="INSTRUCTOR">อาจารย์ผู้สอน</option>
+                                    <option value="OFFICER">เจ้าหน้าที่</option>
+                                    <option value="ADMIN">ผู้ดูแลระบบ</option>
+                                  </select>
 
-                                {/* Reset password */}
-                                <button
-                                  onClick={() => handleResetPassword(u.id, u.name)}
-                                  className="px-2 py-1 rounded-lg text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition cursor-pointer"
-                                  title="รีเซ็ตรหัสผ่านเป็น mcu123456"
-                                >
-                                  รีเซ็ตรหัส
-                                </button>
-                              </div>
+                                  {/* Reset password */}
+                                  <button
+                                    onClick={() => handleResetPassword(u.id, u.name)}
+                                    className="px-2 py-1 rounded-lg text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition cursor-pointer"
+                                    title="รีเซ็ตรหัสผ่านเป็น mcu123456"
+                                  >
+                                    รีเซ็ตรหัส
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         );
