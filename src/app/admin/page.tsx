@@ -221,6 +221,7 @@ export default function AdminConsolePage() {
   const [previewTemplate, setPreviewTemplate] = useState<'THAI_STANDARD' | 'BANK_LETTER' | 'ENG_CERT' | 'INTERNAL_MEMO'>('THAI_STANDARD');
   const [docFontSize, setDocFontSize] = useState<number>(15);
   const [signerFontSize, setSignerFontSize] = useState<number>(14);
+  const [studentSignFontSize, setStudentSignFontSize] = useState<number>(14);
   const [docLineSpacing, setDocLineSpacing] = useState<number>(1.6);
   const [docSignerOffset, setDocSignerOffset] = useState<number>(20);
   const [photoBoxOffsetX, setPhotoBoxOffsetX] = useState<number>(0);
@@ -4152,6 +4153,30 @@ export default function AdminConsolePage() {
                   </div>
                 )}
 
+                {/* Student Name Font Size (ขนาดชื่อนิสิต) */}
+                {showStudentSign && (
+                  <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-indigo-200 shadow-sm" title="ขนาดตัวอักษรชื่อ-นามสกุลนิสิต">
+                    <span className="font-semibold text-indigo-700">ขนาดชื่อนิสิต:</span>
+                    <button
+                      type="button"
+                      onClick={() => setStudentSignFontSize((s) => Math.max(9, s - 1))}
+                      className="w-5 h-5 rounded bg-indigo-50 hover:bg-indigo-100 font-bold text-indigo-800 cursor-pointer"
+                      title="ลดขนาดตัวอักษรชื่อ-นามสกุล"
+                    >
+                      -
+                    </button>
+                    <span className="w-7 text-center font-bold text-indigo-900">{studentSignFontSize}pt</span>
+                    <button
+                      type="button"
+                      onClick={() => setStudentSignFontSize((s) => Math.min(24, s + 1))}
+                      className="w-5 h-5 rounded bg-indigo-50 hover:bg-indigo-100 font-bold text-indigo-800 cursor-pointer"
+                      title="เพิ่มขนาดตัวอักษรชื่อ-นามสกุล"
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
+
                 {/* Student Signature (Name) Shift */}
                 {showStudentSign && (
                   <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
@@ -4416,14 +4441,14 @@ export default function AdminConsolePage() {
                       </div>
                     </div>
 
-                    {/* 2. Photo Box & Student Signature: BELOW Dean signature, on the left (Adjustable offset & dots) */}
+                    {/* 2. Photo Box & Student Signature: BELOW Dean signature, on the left */}
                     <div className="pt-2 flex items-end justify-between">
-                      <div
-                        className="space-y-3 transition-transform"
-                        style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
-                      >
+                      <div className="space-y-3">
                         {showPhotoBox && (
-                          <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20">
+                          <div
+                            className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 transition-transform"
+                            style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
+                          >
                             <span>ติดรูปถ่าย<br />Photo 1.5 - 2&quot;</span>
                           </div>
                         )}
@@ -4442,14 +4467,14 @@ export default function AdminConsolePage() {
                             </div>
                             <div
                               style={{
-                                width: `${Math.max(140, dotsCount * 7.5)}px`,
-                                textAlign: 'center',
                                 transform: `translateX(${studentSignOffsetX}px)`,
-                                fontSize: `${Math.max(11, docFontSize - 2)}pt`,
+                                fontSize: `${studentSignFontSize}pt`,
+                                whiteSpace: 'nowrap',
                               }}
-                              className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50"
+                              className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50 whitespace-nowrap cursor-text"
                               contentEditable
                               suppressContentEditableWarning
+                              title="คลิกเพื่อแก้ไขชื่อ-นามสกุลได้โดยตรง"
                             >
                               ({previewRequest.fullName})
                             </div>
@@ -4639,14 +4664,14 @@ export default function AdminConsolePage() {
                       </div>
                     </div>
 
-                    {/* 2. Student Photo Box & Student Signature Block: BELOW DEAN SIGNATURE (ขยับขวาได้ สีแดง + จุดไข่ปลาสีส้ม) */}
+                    {/* 2. Student Photo Box & Student Signature Block: BELOW DEAN SIGNATURE */}
                     <div className="pt-2 flex items-end justify-between">
-                      <div
-                        className="space-y-3 transition-transform"
-                        style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
-                      >
+                      <div className="space-y-3">
                         {showPhotoBox && (
-                          <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 shadow-sm">
+                          <div
+                            className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 shadow-sm transition-transform"
+                            style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
+                          >
                             <span>ติดรูปถ่าย<br />1.5 - 2 นิ้ว</span>
                           </div>
                         )}
@@ -4663,17 +4688,17 @@ export default function AdminConsolePage() {
                                 {'.'.repeat(dotsCount)}
                               </span>
                             </div>
-                            {/* Centered / adjustable student name directly under dotted line */}
+                            {/* (ชื่อ-นามสกุล): อยู่ในบรรทัดเดียวเสมอ (whitespace-nowrap) ไม่ตัดบรรทัด ปรับขนาดได้ และขยับซ้าย/ขวาได้ */}
                             <div
                               style={{
-                                width: `${Math.max(140, dotsCount * 7.5)}px`,
-                                textAlign: 'center',
                                 transform: `translateX(${studentSignOffsetX}px)`,
-                                fontSize: `${Math.max(11, docFontSize - 2)}pt`,
+                                fontSize: `${studentSignFontSize}pt`,
+                                whiteSpace: 'nowrap',
                               }}
-                              className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50"
+                              className="mt-1 font-bold text-slate-900 transition-transform outline-none focus:bg-purple-50 whitespace-nowrap cursor-text"
                               contentEditable
                               suppressContentEditableWarning
+                              title="คลิกเพื่อแก้ไขชื่อ-นามสกุลได้โดยตรง"
                             >
                               ({previewRequest.fullName})
                             </div>
