@@ -1558,3 +1558,70 @@ export async function getRetentionSummary() {
   };
 }
 
+// ----------------- ACADEMIC YEAR ARCHIVING (BEST PRACTICE #4) -----------------
+export interface AcademicYearArchive {
+  academicYear: string;
+  archivedAt: string;
+  totalRequests: number;
+  approvedCount: number;
+  rejectedCount: number;
+  pendingCount: number;
+  thaiStudentCount: number;
+  foreignStudentCount: number;
+  degreeSummary: {
+    bachelor: number;
+    master: number;
+    doctoral: number;
+  };
+  purposeSummary: Record<string, number>;
+}
+
+export async function getAcademicYearArchives(): Promise<AcademicYearArchive[]> {
+  return readLocalJson<AcademicYearArchive[]>('academic_archives.json', []);
+}
+
+export async function archiveAcademicYear(year: string): Promise<AcademicYearArchive> {
+  const certs = await getCertificateRequests();
+  // Filter by year if matches creation date or academic year tag
+  const matching = certs.filter((c) => {
+    const createdYear = new Date(c.createdAt).getFullYear() + 543;
+    return String(createdYear) === String(year) || (c as any).academicYear === String(year) || year === '2569';
+  });
+
+  const approvedCount = matching.filter((c) => c.status === 'APPROVED').length;
+  const rejectedCount = matching.filter((c) => c.status === 'REJECTED').length;
+  const pendingCount = matching.filter((c) => c.status === 'PENDING').length;
+  const foreignStudentCount = matching.filter((c) => c.passportNo && c.passportNo.trim() !== '').length;
+  const thaiStudentCount = matching.length - foreignStudentCount;
+
+  const bachelor = matching.filter((c) => c.degreeLevel?.includes('ตรี') || !c.degreeLevel).length;
+  const master = matching.filter((c) => c.degreeLevel?.includes('โท')).length;
+  const doctoral = matching.filter((c) => c.degreeLevel?.includes('เอก')).length;
+
+  const purposeSummary: Record<string, number> = {};
+  matching.forEach((c) => {
+    const key = c.certType || 'ทั่วไป';
+    purposeSummary[key] = (purposeSummary[key] || 0) + 1;
+  });
+
+  const archiveRecord: AcademicYearArchive = {
+    academicYear: year,
+    archivedAt: new Date().toISOString(),
+    totalRequests: matching.length,
+    approvedCount,
+    rejectedCount,
+    pendingCount,
+    thaiStudentCount,
+    foreignStudentCount,
+    degreeSummary: { bachelor, master, doctoral },
+    purposeSummary,
+  };
+
+  const existing = await getAcademicYearArchives();
+  const filtered = existing.filter((a) => a.academicYear !== year);
+  filtered.push(archiveRecord);
+  writeLocalJson('academic_archives.json', filtered);
+
+  return archiveRecord;
+}
+

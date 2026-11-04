@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       const response = NextResponse.json({
         success: true,
         user,
-        message: `เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${user.name} (${user.role === 'STUDENT' ? 'นิสิต' : 'อาจารย์'})`,
+        message: `เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${user.name} (${(user as any).role === 'STUDENT' ? 'นิสิต' : 'อาจารย์'})`,
       });
 
       response.cookies.set('mcu_auth_user', JSON.stringify(user), {

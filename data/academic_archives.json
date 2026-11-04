@@ -1,0 +1,30 @@
+[
+  {
+    "academicYear": "2569",
+    "archivedAt": "2026-11-04T03:02:58.387Z",
+    "totalRequests": 26,
+    "approvedCount": 23,
+    "rejectedCount": 0,
+    "pendingCount": 1,
+    "thaiStudentCount": 26,
+    "foreignStudentCount": 0,
+    "degreeSummary": {
+      "bachelor": 22,
+      "master": 2,
+      "doctoral": 0
+    },
+    "purposeSummary": {
+      "Bonafide Certificate (ความเป็นนิสิต)": 4,
+      "Mobile Banking (เปิดใช้งานแอปพลิเคชันธนาคาร)": 1,
+      "Cancellation Visa (ยกเลิกวีซ่า)": 2,
+      "Extension for Visa (ต่อวีซ่า)": 4,
+      "Open Bank Account (เปิดบัญชีธนาคาร)": 4,
+      "Renew Passport (เปลี่ยนหนังสือเดินทางใหม่)": 2,
+      " ดร.": 2,
+      "Requisting for Domistory (ขอหอพักนิสิต)": 2,
+      "Graduation Certificate (รับรองจบ)": 2,
+      "Visa to Thailand": 2,
+      "หนังสือรับรองสภาพนิสิต": 1
+    }
+  }
+]

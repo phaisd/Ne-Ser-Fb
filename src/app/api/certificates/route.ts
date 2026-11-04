@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCertificateRequests, getCertificateTypes, createCertificateRequest, updateCertificateRequest } from '@/lib/data-store';
+import { sendNotification } from '@/lib/notifier';
 
 export async function GET(request: Request) {
   try {
@@ -46,6 +47,15 @@ export async function POST(request: Request) {
       ...rest,
     });
 
+    // Trigger Notification for new request
+    sendNotification({
+      toEmail: email,
+      studentName: fullName,
+      studentCode,
+      certType,
+      status: 'PENDING',
+    }).catch((e) => console.error('Notification error:', e));
+
     return NextResponse.json({ success: true, data: newReq });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -69,6 +79,19 @@ export async function PATCH(request: Request) {
 
     if (!updated) {
       return NextResponse.json({ success: false, error: 'ไม่พบคำร้องตาม id ที่ระบุ' }, { status: 404 });
+    }
+
+    // Trigger Notification for status update (Approved / Rejected)
+    if (status) {
+      sendNotification({
+        toEmail: updated.email,
+        studentName: updated.fullName,
+        studentCode: updated.studentCode,
+        docNo: updated.docNo,
+        certType: updated.certType,
+        status: status as any,
+        rejectReason: (rest as any).rejectReason || (rest as any).note,
+      }).catch((e) => console.error('Notification error on PATCH:', e));
     }
 
     return NextResponse.json({ success: true, data: updated });

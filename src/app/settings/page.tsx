@@ -21,6 +21,7 @@ import {
   Check,
   Sparkles,
   Building2,
+  Mail,
   Image as ImageIcon
 } from 'lucide-react';
 
@@ -45,6 +46,9 @@ interface SystemSettings {
   logoUrl: string;
   logoEmoji?: string;
   announcementText?: string;
+  lineNotifyToken?: string;
+  lineChannelAccessToken?: string;
+  contactEmail?: string;
 }
 
 export default function SettingsPage() {
@@ -62,11 +66,16 @@ export default function SettingsPage() {
     facultyNameEn: 'Faculty of Buddhism',
     logoUrl: '/uploads/logo-1793607295012.png',
     logoEmoji: '☸️',
+    lineNotifyToken: '',
+    lineChannelAccessToken: '',
+    contactEmail: 'buddhism@mcu.ac.th',
   });
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [savingLogo, setSavingLogo] = useState(false);
   const [pullingFromSheets, setPullingFromSheets] = useState(false);
   const [logoSaveSuccess, setLogoSaveSuccess] = useState<string | null>(null);
+  const [testingNotification, setTestingNotification] = useState(false);
+  const [notificationTestResult, setNotificationTestResult] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePullSettingsFromSheets = async () => {
@@ -531,6 +540,136 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          SECTION: AUTOMATED NOTIFICATIONS (EMAIL / LINE NOTIFY)
+         ───────────────────────────────────────────────────────────── */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b pb-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
+              <Mail className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">
+                ระบบแจ้งเตือนผลคำร้องผ่าน Email / LINE Notify (Automated Notification)
+              </h2>
+              <p className="text-xs text-slate-500">
+                แจ้งเตือนอัตโนมัติเมื่อมีคำร้องใหม่ หรือเมื่อเจ้าหน้าที่กดอนุมัติ/ปฏิเสธคำร้อง
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={testingNotification}
+            onClick={async () => {
+              setTestingNotification(true);
+              setNotificationTestResult(null);
+              try {
+                const res = await fetch('/api/notifications', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    studentName: 'ทดสอบแจ้งเตือน (Test Alert)',
+                    certType: 'หนังสือรับรองสถานภาพนิสิต',
+                    toEmail: settings.contactEmail || 'buddhism@mcu.ac.th',
+                  }),
+                });
+                const d = await res.json();
+                if (d.success) {
+                  setNotificationTestResult(`✅ ผลการทดสอบ: ${d.result?.message || 'ส่งแจ้งเตือนสำเร็จ'}`);
+                } else {
+                  setNotificationTestResult(`❌ ข้อผิดพลาด: ${d.error}`);
+                }
+              } catch (e: any) {
+                setNotificationTestResult(`❌ ไม่สามารถเชื่อมต่อ: ${e.message}`);
+              } finally {
+                setTestingNotification(false);
+              }
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${testingNotification ? 'animate-spin' : ''}`} />
+            <span>ทดสอบส่งการแจ้งเตือน</span>
+          </button>
+        </div>
+
+        {notificationTestResult && (
+          <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-purple-900 text-xs font-semibold">
+            {notificationTestResult}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* LINE Notify Token */}
+          <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200 space-y-2">
+            <label className="font-bold text-emerald-950 flex items-center justify-between">
+              <span>LINE Notify Access Token (แจ้งเตือนเข้ากลุ่มไลน์):</span>
+              <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-100 px-2 py-0.5 rounded-full">
+                LINE Notify
+              </span>
+            </label>
+            <input
+              type="password"
+              placeholder="ใส่ LINE Notify Token (เช่น ykX8...)"
+              value={settings.lineNotifyToken || ''}
+              onChange={(e) => setSettings({ ...settings, lineNotifyToken: e.target.value })}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            />
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              นำ Token จาก <code>notify-bot.line.me</code> มาใส่ เพื่อให้ระบบส่งข้อความเข้ากลุ่มเจ้าหน้าที่ทันทีที่มีการยื่นคำร้องใหม่หรืออนุมัติเอกสาร
+            </p>
+          </div>
+
+          {/* Email Notification */}
+          <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-200 space-y-2">
+            <label className="font-bold text-blue-950 flex items-center justify-between">
+              <span>อีเมลส่วนกลางคณะ (สำหรับรับแจ้งเตือน):</span>
+              <span className="text-[10px] text-blue-700 font-semibold bg-blue-100 px-2 py-0.5 rounded-full">
+                Email Alert
+              </span>
+            </label>
+            <input
+              type="email"
+              placeholder="เช่น buddhism@mcu.ac.th หรือ phaisal.dis@mcu.ac.th"
+              value={settings.contactEmail || ''}
+              onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              ระบบจะส่งอีเมลแจ้งเตือนไปยังนิสิตผู้ยื่นคำร้อง และสำเนาแจ้งเตือนมายังอีเมลคณะเมื่อคำร้องได้รับผลการพิจารณา
+            </p>
+          </div>
+        </div>
+
+        <div className="pt-2 flex justify-end">
+          <button
+            type="button"
+            disabled={savingLogo}
+            onClick={async () => {
+              setSavingLogo(true);
+              try {
+                const res = await fetch('/api/system-settings', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(settings),
+                });
+                const d = await res.json();
+                if (d.success) {
+                  alert('บันทึกการตั้งค่าระบบแจ้งเตือนสำเร็จเรียบร้อย');
+                }
+              } catch (e: any) {
+                alert('เกิดข้อผิดพลาด: ' + e.message);
+              } finally {
+                setSavingLogo(false);
+              }
+            }}
+            className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+          >
+            {savingLogo ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่าแจ้งเตือน'}
+          </button>
         </div>
       </div>
 

@@ -18,8 +18,10 @@ import {
   BookOpen,
   UserCheck,
   LogOut,
-  KeyRound
+  KeyRound,
+  Globe
 } from 'lucide-react';
+import { translations, Language } from '@/lib/translations';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -27,6 +29,25 @@ export default function Navbar() {
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
+  const [lang, setLang] = useState<Language>('th');
+
+  useEffect(() => {
+    try {
+      const savedLang = (localStorage.getItem('mcu_lang') as Language) || 'th';
+      setLang(savedLang);
+    } catch (e) {}
+  }, []);
+
+  const toggleLanguage = () => {
+    const nextLang: Language = lang === 'th' ? 'en' : 'th';
+    setLang(nextLang);
+    try {
+      localStorage.setItem('mcu_lang', nextLang);
+      window.dispatchEvent(new CustomEvent('mcu_lang_changed', { detail: nextLang }));
+    } catch (e) {}
+  };
+
+  const t = translations[lang];
 
   const loadSettings = () => {
     fetch('/api/system-settings')
@@ -81,18 +102,18 @@ export default function Navbar() {
   };
 
   const publicNavItems = [
-    { href: '/', label: 'หน้าแรกบริการ', icon: LayoutDashboard },
-    { href: '/certificates', label: 'ยื่นคำร้องขอหนังสือรับรอง', icon: FileText },
-    { href: '/courses', label: 'ตารางเรียนและรายวิชา', icon: BookOpen },
-    { href: '/students', label: 'ค้นหาทะเบียนนิสิต', icon: Users },
+    { href: '/', label: t.navHome, icon: LayoutDashboard },
+    { href: '/certificates', label: t.navCertificates, icon: FileText },
+    { href: '/courses', label: t.navCourses, icon: BookOpen },
+    { href: '/students', label: t.navStudents, icon: Users },
   ];
 
   const adminNavItems = [
-    { href: '/admin', label: 'ภาพรวม & อนุมัติคำร้อง', icon: ShieldCheck },
-    { href: '/courses', label: 'ทะเบียนรายวิชา & ตารางสอน', icon: BookOpen },
-    { href: '/attendance', label: 'ตรวจเข้าเรียน (อาจารย์)', icon: CheckSquare },
-    { href: '/students', label: 'จัดการทะเบียนนิสิต', icon: Users },
-    { href: '/settings', label: 'Google Sheets & ตั้งค่า', icon: Table2 },
+    { href: '/admin', label: t.navAdmin, icon: ShieldCheck },
+    { href: '/courses', label: t.navCourses, icon: BookOpen },
+    { href: '/attendance', label: t.navAttendance, icon: CheckSquare },
+    { href: '/students', label: t.navStudents, icon: Users },
+    { href: '/settings', label: t.navSettings, icon: Table2 },
   ];
 
   return (
@@ -168,8 +189,22 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* User Auth & Portal Switcher */}
+          {/* User Auth & Portal Switcher & Language Toggle */}
           <div className="flex items-center gap-2">
+            {/* Language Toggle Button */}
+            <button
+              onClick={toggleLanguage}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                isAdminRoute
+                  ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white'
+                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+              }`}
+              title="สลับภาษา (Switch Language TH/EN)"
+            >
+              <Globe className="w-3.5 h-3.5 text-orange-500" />
+              <span>{lang === 'th' ? '🇹🇭 TH' : '🇬🇧 EN'}</span>
+            </button>
+
             {currentUser ? (
               <div className="flex items-center gap-2">
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold ${

@@ -22,8 +22,11 @@ import {
   MapPin,
   BookOpen,
   UserCheck,
-  X
+  X,
+  Download,
+  Calendar
 } from 'lucide-react';
+import { exportElementToPdf } from '@/lib/pdf-export';
 
 interface CertificateRequest {
   id: string;
@@ -162,6 +165,22 @@ export default function CertificatesPage() {
 
   // Preview / Print Modal
   const [previewRequest, setPreviewRequest] = useState<CertificateRequest | null>(null);
+  const [pdfDownloading, setPdfDownloading] = useState<boolean>(false);
+
+  const handleDownloadPdf = async () => {
+    if (!previewRequest) return;
+    setPdfDownloading(true);
+    try {
+      const safeName = (previewRequest.fullName || 'student').replace(/[^a-zA-Z0-9ก-๙_-]/g, '_');
+      const filename = `หนังสือรับรอง_${safeName}_อว8002-${previewRequest.docNo || previewRequest.id}.pdf`;
+      await exportElementToPdf('printable-student-cert', filename);
+    } catch (e) {
+      console.error(e);
+      alert('เกิดข้อผิดพลาดในการสร้าง PDF กรุณาลองใช้ปุ่มพิมพ์เอกสาร');
+    } finally {
+      setPdfDownloading(false);
+    }
+  };
 
   // Available Buddhist Years in Certificate Requests
   const availableCertYears = useMemo(() => {
@@ -1253,7 +1272,7 @@ export default function CertificatesPage() {
             </div>
 
             {/* Modal Printable Sheet Area */}
-            <div className="p-8 sm:p-12 overflow-y-auto bg-white font-serif text-slate-900 space-y-6 print:p-0">
+            <div id="printable-student-cert" className="p-8 sm:p-12 overflow-y-auto bg-white font-serif text-slate-900 space-y-6 print:p-0">
               {/* Document Header */}
               <div className="flex justify-between items-start text-xs border-b pb-4">
                 <div>
@@ -1435,20 +1454,37 @@ export default function CertificatesPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-100 border-t flex justify-end gap-3 shrink-0">
-              <button
-                onClick={() => setPreviewRequest(null)}
-                className="px-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
-              >
-                ปิดหน้าต่าง
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 transition flex items-center gap-1.5 cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                พิมพ์เอกสารนี้
-              </button>
+            <div className="p-4 bg-slate-100 border-t flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <span className="text-xs text-slate-500 font-sans">
+                💡 สามารถเลือกสั่งพิมพ์ หรือดาวน์โหลดเป็นไฟล์ PDF คุณภาพสูงลงเครื่องได้โดยตรง
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewRequest(null)}
+                  className="px-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
+                >
+                  ปิดหน้าต่าง
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={pdfDownloading}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                  title="ดาวน์โหลดเป็นไฟล์ PDF ลงเครื่อง"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>{pdfDownloading ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลดไฟล์ PDF'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>พิมพ์เอกสารนี้</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -54,8 +54,14 @@ import {
   ShieldAlert,
   Image as ImageIcon,
   Trash2,
-  Camera
+  Camera,
+  Download,
+  Type,
+  MoveVertical,
+  Layers,
+  Send
 } from 'lucide-react';
+import { exportElementToPdf } from '@/lib/pdf-export';
 
 interface CertificateRequest {
   id: string;
@@ -211,6 +217,22 @@ export default function AdminConsolePage() {
   const [unmaskPassport, setUnmaskPassport] = useState<boolean>(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
+  // Document Customizer & Archiving States
+  const [previewTemplate, setPreviewTemplate] = useState<'THAI_STANDARD' | 'BANK_LETTER' | 'ENG_CERT' | 'INTERNAL_MEMO'>('THAI_STANDARD');
+  const [docFontSize, setDocFontSize] = useState<number>(15);
+  const [docLineSpacing, setDocLineSpacing] = useState<number>(1.6);
+  const [docSignerOffset, setDocSignerOffset] = useState<number>(20);
+  const [showPhotoBox, setShowPhotoBox] = useState<boolean>(true);
+  const [showStudentSign, setShowStudentSign] = useState<boolean>(true);
+  const [showQrCode, setShowQrCode] = useState<boolean>(true);
+  const [pdfDownloading, setPdfDownloading] = useState<boolean>(false);
+
+  // Academic Year Archiving
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState<boolean>(false);
+  const [archivingYear, setArchivingYear] = useState<string>('2569');
+  const [academicArchives, setAcademicArchives] = useState<any[]>([]);
+  const [archiveLoading, setArchiveLoading] = useState<boolean>(false);
+
   const formatPassport = (p?: string) => {
     if (!p) return '-';
     if (unmaskPassport) return p;
@@ -227,6 +249,15 @@ export default function AdminConsolePage() {
         margin: 1,
         color: { dark: '#0f172a', light: '#ffffff' },
       }).then(setQrCodeDataUrl).catch(() => setQrCodeDataUrl(''));
+
+      // Auto choose best template based on request
+      if (previewRequest.certType?.includes('ธนาคาร') || previewRequest.certType?.includes('Banking') || (previewRequest as any).bankTargetTh) {
+        setPreviewTemplate('BANK_LETTER');
+      } else if (previewRequest.certType?.includes('English') || previewRequest.certType?.includes('CONCERN')) {
+        setPreviewTemplate('ENG_CERT');
+      } else {
+        setPreviewTemplate('THAI_STANDARD');
+      }
     } else {
       setQrCodeDataUrl('');
     }
@@ -629,6 +660,47 @@ export default function AdminConsolePage() {
       }
     } catch (err: any) {
       alert('ข้อผิดพลาด: ' + err.message);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!previewRequest) return;
+    setPdfDownloading(true);
+    try {
+      const safeName = (previewRequest.fullName || 'student').replace(/[^a-zA-Z0-9ก-๙_-]/g, '_');
+      const filename = `หนังสือรับรอง_${safeName}_อว8002-${previewRequest.docNo || previewRequest.id}.pdf`;
+      await exportElementToPdf('printable-certificate', filename);
+    } catch (e) {
+      console.error('Download PDF error:', e);
+      alert('เกิดข้อผิดพลาดในการดาวน์โหลด PDF กรุณาลองใช้ปุ่ม สั่งพิมพ์ (Print to PDF)');
+    } finally {
+      setPdfDownloading(false);
+    }
+  };
+
+  const handleArchiveYear = async () => {
+    if (!confirm(`ยืนยันการสรุปปิดยอดและจัดเก็บประวัติปีการศึกษา ${archivingYear} หรือไม่?`)) return;
+    setArchiveLoading(true);
+    try {
+      const res = await fetch('/api/archives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ year: archivingYear }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionSuccess(`สรุปปิดยอดและจัดเก็บประวัติปีการศึกษา ${archivingYear} สำเร็จเรียบร้อย`);
+        fetch('/api/archives')
+          .then((r) => r.json())
+          .then((d) => d.success && setAcademicArchives(d.data));
+        setIsArchiveModalOpen(false);
+      } else {
+        alert('เกิดข้อผิดพลาด: ' + data.error);
+      }
+    } catch (err: any) {
+      alert('การจัดเก็บประวัติล้มเหลว: ' + err.message);
+    } finally {
+      setArchiveLoading(false);
     }
   };
 
@@ -1612,6 +1684,23 @@ export default function AdminConsolePage() {
                           ปี {yr}
                         </button>
                       ))}
+
+                      {/* Academic Year Archiving Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setArchivingYear(filterYear === 'ALL' ? '2569' : filterYear);
+                          setIsArchiveModalOpen(true);
+                          fetch('/api/archives')
+                            .then((r) => r.json())
+                            .then((d) => d.success && setAcademicArchives(d.data));
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-white hover:bg-purple-100 text-purple-800 border border-purple-200 transition font-bold flex items-center gap-1 cursor-pointer"
+                        title="สรุปสถิติและปิดยอดจัดเก็บประวัติแยกปีการศึกษา"
+                      >
+                        <Archive className="w-3.5 h-3.5 text-purple-600" />
+                        <span>ปิดยอดปีการศึกษา</span>
+                      </button>
                     </div>
 
                     {/* Status filter */}
@@ -2620,7 +2709,7 @@ export default function AdminConsolePage() {
                                   <td className="p-3 font-semibold text-slate-900">
                                     <div className="flex items-center gap-1.5">
                                       <span>{item.label}</span>
-                                      {item.isDefault && (
+                                      {(item as any).isDefault && (
                                         <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">
                                           เริ่มต้น
                                         </span>
@@ -3697,23 +3786,41 @@ export default function AdminConsolePage() {
               </button>
             </div>
 
-            {/* Signatory Customization Toolbar (Hidden on Print) */}
-            <div className="p-4 bg-purple-50/60 rounded-2xl border border-purple-200/80 space-y-3 print:hidden">
+            {/* Signatory & Document Customization Toolbar (Hidden on Print) */}
+            <div className="p-4 bg-purple-50/70 rounded-2xl border border-purple-200/80 space-y-3 print:hidden text-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <label className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                <label className="font-bold text-purple-900 flex items-center gap-1.5">
                   <UserCog className="w-4 h-4 text-purple-600" />
-                  <span>เลือกหรือกำหนดผู้ลงนามในหนังสือรับรอง (Signatory for this Document)</span>
+                  <span>เครื่องมือปรับแต่งเอกสาร &amp; เลือกแบบฟอร์ม (Document Customizer)</span>
                 </label>
-                <span className="text-[11px] text-purple-700 bg-purple-100/70 px-2 py-0.5 rounded-full font-semibold">
-                  เลือกจากเมนู หรือพิมพ์แก้ไขเองได้สดๆ
+                <span className="text-[11px] text-purple-700 bg-purple-100/80 px-2.5 py-0.5 rounded-full font-semibold">
+                  ✍️ ปรับแต่งได้สดๆ และคลิกแก้ไขข้อความบนเอกสารได้ทันที
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                {/* Dropdown Preset */}
-                <div className="sm:col-span-1">
+              {/* Template Selector & Signer Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                {/* Template Selection */}
+                <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    เมนู Dropdown เลือกตำแหน่งผู้ลงนาม:
+                    ชนิดแบบฟอร์มเอกสาร:
+                  </label>
+                  <select
+                    value={previewTemplate}
+                    onChange={(e: any) => setPreviewTemplate(e.target.value)}
+                    className="w-full px-2.5 py-2 rounded-xl border border-purple-300 bg-white font-bold text-xs text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm cursor-pointer"
+                  >
+                    <option value="THAI_STANDARD">📜 รับรองนิสิต (ไทย) + รูปถ่าย (หน้า 2-9)</option>
+                    <option value="BANK_LETTER">🏦 ขอความอนุเคราะห์ธนาคาร (หน้า 1)</option>
+                    <option value="ENG_CERT">🌐 รับรองภาษาอังกฤษ (TO WHOM) (PDF 2)</option>
+                    <option value="INTERNAL_MEMO">📑 บันทึกข้อความราชการ (หน้า 10)</option>
+                  </select>
+                </div>
+
+                {/* Dropdown Preset */}
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    ตำแหน่งผู้ลงนาม:
                   </label>
                   <select
                     value={selectedSignerPreset}
@@ -3735,171 +3842,481 @@ export default function AdminConsolePage() {
                         }
                       }
                     }}
-                    className="w-full px-3 py-2 rounded-xl border border-purple-200 bg-white font-medium text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm"
+                    className="w-full px-2.5 py-2 rounded-xl border border-purple-200 bg-white font-medium text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm cursor-pointer"
                   >
                     {activeSignatoriesList.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.label}
                       </option>
                     ))}
-                    <option value="CUSTOM">✍️ กำหนดเอง (พิมพ์ชื่อและตำแหน่งระบุเอง)</option>
+                    <option value="CUSTOM">✍️ กำหนดเอง (พิมพ์ระบุเอง)</option>
                   </select>
                 </div>
 
                 {/* Custom Signer Name Input */}
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    ชื่อผู้ลงนาม (พิมพ์เอง/แก้ไขได้):
+                    ชื่อผู้ลงนาม (แก้ไขได้):
                   </label>
                   <input
                     type="text"
-                    placeholder="พิมพ์ชื่อผู้ลงนาม หรือเว้นว่างไว้"
+                    placeholder="ชื่อผู้ลงนาม"
                     value={customSigner.name}
                     onChange={(e) => {
                       setCustomSigner({ ...customSigner, name: e.target.value });
                       setSelectedSignerPreset('CUSTOM');
                     }}
-                    className="w-full px-3 py-2 rounded-xl border border-purple-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm"
+                    className="w-full px-2.5 py-2 rounded-xl border border-purple-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm"
                   />
                 </div>
 
                 {/* Custom Signer Title Input */}
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    ตำแหน่งผู้ลงนาม (พิมพ์เอง/แก้ไขได้):
+                    ตำแหน่งผู้ลงนาม:
                   </label>
                   <input
                     type="text"
-                    placeholder="เช่น คณบดีคณะพุทธศาสตร์"
+                    placeholder="เช่น รองคณบดีฝ่ายวิชาการ"
                     value={customSigner.title}
                     onChange={(e) => {
                       setCustomSigner({ ...customSigner, title: e.target.value });
                       setSelectedSignerPreset('CUSTOM');
                     }}
-                    className="w-full px-3 py-2 rounded-xl border border-purple-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm"
+                    className="w-full px-2.5 py-2 rounded-xl border border-purple-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm"
                   />
                 </div>
+              </div>
+
+              {/* Typography & Layout Spacing Toolbar */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-purple-200/60">
+                {/* Font Size */}
+                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
+                  <Type className="w-3.5 h-3.5 text-purple-600" />
+                  <span className="font-semibold text-slate-600">ฟอนต์:</span>
+                  <button
+                    type="button"
+                    onClick={() => setDocFontSize((s) => Math.max(12, s - 1))}
+                    className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer"
+                    title="ลดขนาดตัวอักษร"
+                  >
+                    -
+                  </button>
+                  <span className="w-7 text-center font-bold text-purple-800">{docFontSize}pt</span>
+                  <button
+                    type="button"
+                    onClick={() => setDocFontSize((s) => Math.min(22, s + 1))}
+                    className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer"
+                    title="เพิ่มขนาดตัวอักษร"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Line Spacing */}
+                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
+                  <MoveVertical className="w-3.5 h-3.5 text-purple-600" />
+                  <span className="font-semibold text-slate-600">ระยะบรรทัด:</span>
+                  <select
+                    value={docLineSpacing}
+                    onChange={(e) => setDocLineSpacing(parseFloat(e.target.value))}
+                    className="bg-transparent font-bold text-purple-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value={1.3}>1.3 (แน่น)</option>
+                    <option value={1.5}>1.5 (มาตรฐาน)</option>
+                    <option value={1.7}>1.7 (โปร่ง)</option>
+                    <option value={2.0}>2.0 (กว้าง)</option>
+                  </select>
+                </div>
+
+                {/* Signature Offset */}
+                <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
+                  <span className="font-semibold text-slate-600">ขยับลายเซ็น:</span>
+                  <button
+                    type="button"
+                    onClick={() => setDocSignerOffset((o) => Math.max(0, o - 10))}
+                    className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 font-semibold cursor-pointer"
+                    title="เลื่อนบล็อกลายเซ็นขึ้น"
+                  >
+                    ⬆ ขึ้น
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDocSignerOffset((o) => Math.min(120, o + 10))}
+                    className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 font-semibold cursor-pointer"
+                    title="เลื่อนบล็อกลายเซ็นลง"
+                  >
+                    ⬇ ลง
+                  </button>
+                </div>
+
+                {/* Toggle Elements */}
+                <div className="flex items-center gap-3 bg-white px-3 py-1 rounded-xl border border-purple-200 shadow-sm">
+                  <label className="flex items-center gap-1 font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showPhotoBox}
+                      onChange={(e) => setShowPhotoBox(e.target.checked)}
+                      className="rounded text-purple-600"
+                    />
+                    <span>กรอบรูป 1.5 - 2&quot;</span>
+                  </label>
+                  <label className="flex items-center gap-1 font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showStudentSign}
+                      onChange={(e) => setShowStudentSign(e.target.checked)}
+                      className="rounded text-purple-600"
+                    />
+                    <span>ลายเซ็นนิสิต</span>
+                  </label>
+                  <label className="flex items-center gap-1 font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showQrCode}
+                      onChange={(e) => setShowQrCode(e.target.checked)}
+                      className="rounded text-purple-600"
+                    />
+                    <span>QR Code</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-amber-800 bg-amber-50/80 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span><b>คำแนะนำ:</b> ท่านสามารถใช้เมาส์คลิกที่ข้อความใดๆ ในเอกสารด้านล่างนี้ เพื่อพิมพ์แก้ไขคำ เปลี่ยนชื่อธนาคาร หรือปรับข้อความได้ทันทีก่อนสั่งพิมพ์หรือดาวน์โหลด PDF</span>
               </div>
             </div>
 
             {/* Official Paper Letter Canvas */}
-            <div id="printable-certificate" className="p-8 bg-white border border-slate-300 rounded-xl shadow-inner font-serif text-slate-900 space-y-4 leading-relaxed print:m-0 print:p-0 print:border-none print:shadow-none">
-              {/* Header Crest */}
-              <div className="flex items-center justify-between border-b pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center p-1 overflow-hidden shrink-0">
-                    {settings.logoUrl ? (
-                      <img
-                        src={settings.logoUrl}
-                        alt="MCU Logo"
-                        className="max-h-full max-w-full object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <span className="text-3xl">{settings.logoEmoji || '☸️'}</span>
+            <div
+              id="printable-certificate"
+              style={{
+                fontSize: `${docFontSize}pt`,
+                lineHeight: docLineSpacing,
+              }}
+              className="p-8 sm:p-12 bg-white border border-slate-300 rounded-xl shadow-inner font-serif text-slate-900 space-y-4 print:m-0 print:p-0 print:border-none print:shadow-none"
+            >
+              {/* TEMPLATE 1: BANK_LETTER (หนังสือขอความอนุเคราะห์ธนาคาร หน้า 1) */}
+              {previewTemplate === 'BANK_LETTER' && (
+                <div className="space-y-4 text-justify">
+                  {/* Top Reference */}
+                  <div className="flex justify-between items-start text-xs border-b pb-2">
+                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                      ที่ อว 8002 / {previewRequest.docNo || '077'}
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="text-right outline-none focus:bg-purple-50">
+                      {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2">
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      <span className="font-bold">เรื่อง</span> ขอความอนุเคราะห์อัพเดตการใช้ Mobile Banking ให้แก่นิสิต / เปิดบัญชีธนาคาร
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      <span className="font-bold">เจริญพร</span> ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      <span className="font-bold">สิ่งที่ส่งมาด้วย</span> หนังสือรับรองนิสิต จำนวน 1 ฉบับ
+                    </div>
+                  </div>
+
+                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50 pt-2">
+                    เนื่องด้วย <strong className="font-bold">{previewRequest.fullName}</strong> สัญชาติ{' '}
+                    <strong className="font-bold">{previewRequest.nationality || 'Bangladeshi'}</strong> ประเทศ{' '}
+                    <strong className="font-bold">{previewRequest.country || 'Bangladesh'}</strong>{' '}
+                    {previewRequest.passportNo && (
+                      <>ถือหนังสือเดินทางเลขที่ <strong className="font-mono font-bold">{previewRequest.passportNo}</strong> </>
+                    )}
+                    รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> เป็นนิสิตหลักสูตร
+                    {previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} (ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร 4 ปี) ชั้นปีที่{' '}
+                    {previewRequest.studentCode.substring(0, 2) ? '1' : '1'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} (ภาคภาษาอังกฤษ)
+                    คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย มีความประสงค์จะทำธุรกรรมกับธนาคาร เพื่ออำนวยความสะดวกในการทำธุรกรรมกับมหาวิทยาลัยในระหว่างที่กำลังศึกษาอยู่ในภาควิชาพระพุทธศาสนา คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา
+                  </p>
+
+                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
+                    จึงเจริญพรมาเพื่อให้ความอนุเคราะห์ในเรื่องการเปิดบัญชีหรืออัพเดตการใช้งานแอปพลิเคชั่นของธนาคารแก่นิสิตดังกล่าว จักขอบคุณยิ่ง
+                  </p>
+
+                  <div className="pt-4 text-center ml-auto w-72 space-y-1 text-xs" style={{ marginTop: `${docSignerOffset}px` }}>
+                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                      ขอเจริญพร
+                    </div>
+                    <div className="h-10" />
+                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                      ({customSigner.name || 'พระครูสิริรัตนบัณฑิต, ผศ.ดร.'})
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      {customSigner.title || 'รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์'}
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      {settings.universityNameTh}
+                    </div>
+                  </div>
+
+                  <div className="pt-8 border-t border-slate-100 flex justify-between items-end text-xs text-slate-600">
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
+                      <p className="font-bold text-slate-800">ติดต่อผู้ประสานงาน:</p>
+                      <p>สำนักงานคณะพุทธศาสตร์</p>
+                      <p>โทร. 089-516-7544 / 095-470-7849</p>
+                    </div>
+                    {showQrCode && qrCodeDataUrl && (
+                      <div className="flex items-center gap-2 p-1.5 bg-slate-50 border rounded-lg">
+                        <img src={qrCodeDataUrl} alt="Verify" className="w-14 h-14 object-contain" />
+                        <div className="text-[10px] text-slate-500 font-mono">
+                          อว 8002/{previewRequest.docNo || previewRequest.id}
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900">{settings.facultyNameTh}</h4>
-                    <p className="text-xs text-slate-600">{settings.universityNameTh}</p>
-                    <p className="text-[11px] text-slate-400">{settings.addressTh}</p>
-                  </div>
                 </div>
-                <div className="text-right text-xs space-y-0.5">
-                  <div className="font-mono font-bold text-purple-700">
-                    ที่ อว 8002 / {previewRequest.docNo || 'xxx'}
-                  </div>
-                  <div className="text-slate-500">
-                    วันที่ {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </div>
-                </div>
-              </div>
+              )}
 
-              {/* Title & Body */}
-              <div className="py-4 space-y-3">
-                <div className="text-center font-bold text-base underline underline-offset-4">
-                  {previewRequest.certType}
-                </div>
-                <p className="text-sm indent-8 leading-loose text-justify">
-                  หนังสือฉบับนี้ออกให้เพื่อรับรองว่า <strong className="font-bold">{previewRequest.fullName}</strong> รหัสนิสิต{' '}
-                  <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} ได้มีสถานภาพเป็นนิสิตของ{settings.facultyNameTh} {settings.universityNameTh} จริง
-                  {previewRequest.passportNo && (
-                    <> ถือหนังสือเดินทางเลขที่ <strong className="font-mono font-bold">{previewRequest.passportNo}</strong> สัญชาติ <strong className="font-bold">{previewRequest.nationality || '-'}</strong></>
-                  )}
-                </p>
-                <p className="text-sm indent-8 leading-loose text-justify">
-                  โดยหนังสือฉบับนี้ออกให้ตามความประสงค์ของนิสิต เพื่อนำไปใช้เป็นหลักฐานประกอบการ{previewRequest.requestPurpose || previewRequest.certType} ต่อไป
-                </p>
-              </div>
+              {/* TEMPLATE 2: ENG_CERT (TO WHOM IT MAY CONCERN หน้า PDF 2) */}
+              {previewTemplate === 'ENG_CERT' && (
+                <div className="space-y-4 text-justify font-sans">
+                  {/* Top Dean Header */}
+                  <div className="flex justify-between items-start text-xs border-b pb-3">
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
+                      <p className="font-bold">Office of Dean</p>
+                      <p>Tel. 0-3524-8000 ext. 8323</p>
+                      <p>Fax. 0-3524-8096</p>
+                      <p className="text-purple-700">https://fb.mcu.ac.th/</p>
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="font-mono font-bold text-right outline-none focus:bg-purple-50">
+                      MCU No. 8002 / {previewRequest.docNo || '166'}
+                    </div>
+                  </div>
 
-              {/* Signatures & Official Verification QR (Best Practice for Immigration / Embassies) */}
-              <div className="pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-end justify-between gap-4">
-                {/* Official Verification QR Code */}
-                <div className="flex items-center gap-3 p-3 bg-slate-50/80 rounded-xl border border-slate-200 text-left w-full sm:w-auto">
-                  {qrCodeDataUrl ? (
-                    <img
-                      src={qrCodeDataUrl}
-                      alt="Verify QR Code"
-                      className="w-20 h-20 object-contain shrink-0 bg-white p-1 rounded-lg border border-slate-300 shadow-sm"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 bg-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-xs">
-                      QR Code
-                    </div>
-                  )}
-                  <div className="space-y-1 text-[11px] text-slate-600">
-                    <div className="font-bold text-slate-900 flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>ระบบตรวจเอกสารทางการ มจร.</span>
-                    </div>
-                    <p className="text-[10px] text-slate-500 leading-tight">
-                      สำหรับ ตม. / สถานทูต สแกน QR Code ตรวจสอบความถูกต้องกับสารบบมหาวิทยาลัย
-                    </p>
-                    <div className="text-[10px] font-mono text-purple-700 font-bold">
-                      REF: อว 8002/{previewRequest.docNo || previewRequest.id}
-                    </div>
+                  <div contentEditable suppressContentEditableWarning className="text-center font-bold text-lg tracking-wider pt-2 pb-1 outline-none focus:bg-purple-50">
+                    TO WHOM IT MAY CONCERN
                   </div>
-                </div>
 
-                {/* Signatures */}
-                <div className="text-center space-y-1.5 text-xs shrink-0 self-end min-w-[220px]">
-                  <div className="h-10" />
-                  {customSigner.name ? (
-                    <div className="font-bold text-slate-900">({customSigner.name})</div>
-                  ) : (
-                    <div className="font-mono text-slate-400">
-                      ( ................................................................ )
-                    </div>
-                  )}
-                  <div className="text-slate-700 font-medium">
-                    {customSigner.title || 'คณบดีคณะพุทธศาสตร์'}
+                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
+                    This is to certify that <strong className="font-bold">{previewRequest.fullName}</strong>, whose age is{' '}
+                    <strong className="font-bold">{previewRequest.age || '29'}</strong> years old,{' '}
+                    <strong className="font-bold">{previewRequest.nationality || 'Myanmar'}</strong> Nationality, holding Passport No.{' '}
+                    <strong className="font-mono font-bold">{previewRequest.passportNo || 'MF772427'}</strong>, is currently enrolled as a student of the Faculty of Buddhism, Mahachulalongkornrajavidyalaya University, Lamsai Sub-District, Wangnoi District, Phra Nakhon Si Ayutthaya Province, 13170, Thailand. He/She is studying in the {previewRequest.degreeLevel || 'Bachelor of Arts Program (4-Year Undergraduate Program)'}, Major in {previewRequest.major || 'Religion and Philosophy (English Program)'}, Year 4, in the second semester of an Academic Year 2026, His/Her student identification is <strong className="font-mono font-bold">{previewRequest.studentCode}</strong>.
+                  </p>
+
+                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
+                    This letter of certification is therefore issued as evidence.
+                  </p>
+
+                  <div contentEditable suppressContentEditableWarning className="text-center text-xs outline-none focus:bg-purple-50 pt-2">
+                    Issued on {new Date(previewRequest.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </div>
-                  <div className="text-[11px] text-slate-500">
-                    {settings.facultyNameTh} {settings.universityNameTh}
+
+                  {/* Signer Block & Photo Box */}
+                  <div className="pt-6 flex justify-between items-end" style={{ marginTop: `${docSignerOffset}px` }}>
+                    <div className="space-y-3">
+                      {showPhotoBox && (
+                        <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center">
+                          <span>ติดรูปถ่าย<br />Photo 1.5 - 2&quot;</span>
+                        </div>
+                      )}
+                      {showStudentSign && (
+                        <div className="text-xs text-slate-600 pt-1">
+                          <p>Signature ....................................................</p>
+                          <p className="mt-1 font-bold">({previewRequest.fullName})</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-center space-y-1 text-xs min-w-[240px]">
+                      <div className="h-10" />
+                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                        ({customSigner.name ? customSigner.name : 'Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.'})
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        {customSigner.title ? customSigner.title : 'Vice Dean, Faculty of Buddhism'}
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                        Mahachulalongkornrajavidyalaya University
+                      </div>
+                      {showQrCode && qrCodeDataUrl && (
+                        <div className="pt-2 flex justify-center">
+                          <img src={qrCodeDataUrl} alt="QR" className="w-16 h-16 object-contain" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* TEMPLATE 3: INTERNAL_MEMO (บันทึกข้อความราชการ หน้า 10) */}
+              {previewTemplate === 'INTERNAL_MEMO' && (
+                <div className="space-y-4 text-justify">
+                  {/* Garuda Crest & Heading */}
+                  <div className="flex items-center gap-4 border-b pb-3">
+                    <div className="w-14 h-14 rounded-full bg-slate-50 border flex items-center justify-center p-1 overflow-hidden shrink-0">
+                      <span className="text-3xl">🦅</span>
+                    </div>
+                    <div className="text-center flex-1">
+                      <h2 className="text-2xl font-black tracking-wide">บันทึกข้อความ</h2>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs border-b pb-3">
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      <span className="font-bold">ส่วนงาน:</span> {settings.facultyNameTh} {settings.universityNameTh} โทร. {settings.contactPhone}
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="text-right outline-none focus:bg-purple-50">
+                      <span className="font-bold">วันที่:</span> {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      <span className="font-bold">ที่:</span> อว 8002 / {previewRequest.docNo || 'xxx'}
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      <span className="font-bold">เรื่อง:</span> ขอความอนุเคราะห์ออกหนังสือรับรองให้แก่นิสิต
+                    </div>
+                  </div>
+
+                  <div contentEditable suppressContentEditableWarning className="font-bold text-xs pt-1 outline-none focus:bg-purple-50">
+                    เรียน ผู้อำนวยการกองกิจการนิสิต / คณบดีคณะพุทธศาสตร์
+                  </div>
+
+                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
+                    ด้วย <strong className="font-bold">{previewRequest.fullName}</strong> รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> อายุ {previewRequest.age || '-'} ปี สัญชาติ {previewRequest.nationality || '-'} {previewRequest.passportNo && <>ถือหนังสือเดินทางเลขที่ {previewRequest.passportNo}</>} เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} ได้ยื่นคำร้องเพื่อขอรับรอง{previewRequest.requestPurpose || previewRequest.certType}
+                  </p>
+
+                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
+                    ในการนี้ คณะพุทธศาสตร์ จึงขอความอนุเคราะห์ในการออกหนังสือรับรองให้แก่นิสิตดังกล่าว เพื่อเป็นเอกสารประกอบการดำเนินการต่อไป
+                  </p>
+
+                  <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
+                    จึงเรียนมาเพื่อโปรดทราบและดำเนินการต่อไป
+                  </p>
+
+                  <div className="pt-6 text-center ml-auto w-72 space-y-1 text-xs" style={{ marginTop: `${docSignerOffset}px` }}>
+                    <div className="h-10" />
+                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                      ({customSigner.name || 'พระครูสิริรัตนบัณฑิต, ผศ.ดร.'})
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
+                      {customSigner.title || 'รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์'}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TEMPLATE 4: THAI_STANDARD (หนังสือรับรองนิสิตมาตรฐานภาษาไทย หน้า 2-9) */}
+              {previewTemplate === 'THAI_STANDARD' && (
+                <div className="space-y-4 text-justify">
+                  {/* Header Reference */}
+                  <div className="flex justify-between items-start text-xs border-b pb-3">
+                    <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
+                      ที่ อว 8002 / {previewRequest.docNo || 'xxx'}
+                    </div>
+                    <div contentEditable suppressContentEditableWarning className="text-right text-slate-500 outline-none focus:bg-purple-50">
+                      สำนักงานคณะพุทธศาสตร์ มจร.
+                    </div>
+                  </div>
+
+                  <div contentEditable suppressContentEditableWarning className="text-center font-bold text-xl pt-2 pb-1 outline-none focus:bg-purple-50">
+                    หนังสือรับรอง
+                  </div>
+
+                  <p contentEditable suppressContentEditableWarning className="indent-8 leading-relaxed outline-none focus:bg-purple-50">
+                    โดยหนังสือนี้ขอรับรองว่า <strong className="font-bold">{previewRequest.fullName}</strong>{' '}
+                    {previewRequest.age && <>อายุ <strong className="font-bold">{previewRequest.age}</strong> ปี </>}
+                    สัญชาติ <strong className="font-bold">{previewRequest.nationality || 'ไทย'}</strong>{' '}
+                    {previewRequest.country && previewRequest.country !== 'Thailand' && (
+                      <>ประเทศ <strong className="font-bold">{previewRequest.country}</strong> </>
+                    )}
+                    {previewRequest.passportNo && (
+                      <>ถือหนังสือเดินทางเลขที่ <strong className="font-mono font-bold">{previewRequest.passportNo}</strong> และวีซ่าประเภท {previewRequest.visaType || 'คนอยู่ชั่วคราว (Non-Immigrant Visa)'} </>
+                    )}
+                    เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'}{' '}
+                    (ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร 4 ปี) ชั้นปีที่{' '}
+                    {previewRequest.studentCode.substring(0, 2) ? '2' : '1'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'}{' '}
+                    ({previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai' ? 'ภาคภาษาไทย' : 'ภาคภาษาอังกฤษ'}) มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย รหัสประจำตัวนิสิต{' '}
+                    <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> เพื่อเป็นหลักฐาน สำหรับ
+                    <strong className="font-bold underline ml-1">{previewRequest.requestPurpose || previewRequest.certType}</strong> จึงออกหนังสือนี้ไว้เป็นสำคัญ
+                  </p>
+
+                  <div contentEditable suppressContentEditableWarning className="text-center text-xs pt-2 outline-none focus:bg-purple-50">
+                    ให้ไว้ ณ วันที่ {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </div>
+
+                  {/* Signer Block & Photo Box */}
+                  <div className="pt-6 flex justify-between items-end" style={{ marginTop: `${docSignerOffset}px` }}>
+                    <div className="space-y-3">
+                      {showPhotoBox && (
+                        <div className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center">
+                          <span>ติดรูปถ่าย<br />1.5 - 2 นิ้ว</span>
+                        </div>
+                      )}
+                      {showStudentSign && (
+                        <div className="text-xs text-slate-600 pt-1">
+                          <p>ลงชื่อ ..............................................................</p>
+                          <p className="mt-1 font-bold">({previewRequest.fullName})</p>
+                        </div>
+                      )}
+                      <div contentEditable suppressContentEditableWarning className="text-[11px] text-slate-500 pt-1 outline-none focus:bg-purple-50">
+                        <p className="font-bold text-slate-700">สำนักงานคณะพุทธศาสตร์</p>
+                        <p>โทรศัพท์ 035-247-8000 ต่อ 8323</p>
+                        <p className="text-purple-700 font-mono">https://fb.mcu.ac.th/</p>
+                      </div>
+                    </div>
+
+                    <div className="text-center space-y-1.5 text-xs min-w-[240px]">
+                      <div className="h-10" />
+                      <div contentEditable suppressContentEditableWarning className="font-bold text-slate-900 outline-none focus:bg-purple-50">
+                        ({customSigner.name || 'พระครูสิริรัตนบัณฑิต, ผศ.ดร.'})
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="text-slate-700 font-medium outline-none focus:bg-purple-50">
+                        {customSigner.title || 'รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์'}
+                      </div>
+                      <div contentEditable suppressContentEditableWarning className="text-[11px] text-slate-500 outline-none focus:bg-purple-50">
+                        {settings.facultyNameTh} {settings.universityNameTh}
+                      </div>
+                      {showQrCode && qrCodeDataUrl && (
+                        <div className="pt-2 flex justify-center">
+                          <img src={qrCodeDataUrl} alt="QR Code" className="w-16 h-16 object-contain" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-between gap-3 pt-2">
+            {/* Actions Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t">
               <Link
                 href={`/verify?docNo=${encodeURIComponent(previewRequest.docNo || previewRequest.id)}`}
                 target="_blank"
-                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-2 cursor-pointer transition"
+                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition"
               >
                 <ExternalLink className="w-4 h-4 text-purple-600" />
-                <span>เปิดหน้าระบบตรวจสอบจริง (Immigration View)</span>
+                <span>ตรวจสอบความถูกต้อง (Verify View)</span>
               </Link>
-              <button
-                onClick={() => window.print()}
-                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md"
-              >
-                <Printer className="w-4 h-4" />
-                <span>สั่งพิมพ์เอกสาร (Print Document)</span>
-              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Direct PDF Download Button */}
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={pdfDownloading}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md transition disabled:opacity-50"
+                  title="ดาวน์โหลดเป็นไฟล์ PDF คุณภาพสูงลงเครื่องทันที"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>{pdfDownloading ? 'กำลังสร้างไฟล์ PDF...' : 'ดาวน์โหลดไฟล์ PDF (Download)'}</span>
+                </button>
+
+                {/* Print Button */}
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md transition"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>สั่งพิมพ์เอกสาร (Print)</span>
+                </button>
+              </div>
             </div>
 
             {/* Print Stylesheet for exact A4 paper formatting */}
@@ -3924,6 +4341,158 @@ export default function AdminConsolePage() {
                 }
               }
             `}</style>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL 3: ACADEMIC YEAR ARCHIVING & SUMMARY
+         ───────────────────────────────────────────────────────────── */}
+      {isArchiveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-5">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-purple-100 text-purple-700">
+                  <Archive className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    ปิดยอดและจัดเก็บประวัติปีการศึกษา (Academic Year Archiving)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    ตามระเบียบงานสารบรรณ มจร. และการประกันคุณภาพการศึกษา
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsArchiveModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Year Selector */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <span className="text-xs font-bold text-slate-700">เลือกปีการศึกษาที่ต้องการปิดยอด:</span>
+              <div className="flex items-center gap-2">
+                {availableYears.map((yr) => (
+                  <button
+                    key={yr}
+                    type="button"
+                    onClick={() => setArchivingYear(yr)}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer ${
+                      archivingYear === yr
+                        ? 'bg-purple-700 text-white shadow-md'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    ปีการศึกษา {yr}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Statistics Preview for the Selected Year */}
+            {(() => {
+              const yearReqs = requests.filter((r) => {
+                const yr = r.createdAt ? new Date(r.createdAt).getFullYear() + 543 : null;
+                return String(yr) === archivingYear;
+              });
+              const approved = yearReqs.filter((r) => r.status === 'APPROVED').length;
+              const rejected = yearReqs.filter((r) => r.status === 'REJECTED').length;
+              const pending = yearReqs.filter((r) => r.status === 'PENDING').length;
+              const foreign = yearReqs.filter((r) => r.passportNo && r.passportNo.trim() !== '').length;
+              const thai = yearReqs.length - foreign;
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div className="p-3 bg-purple-50 rounded-2xl border border-purple-100">
+                      <div className="text-2xl font-black text-purple-700">{yearReqs.length}</div>
+                      <div className="text-[11px] font-bold text-slate-600">คำร้องทั้งหมด</div>
+                    </div>
+                    <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100">
+                      <div className="text-2xl font-black text-emerald-700">{approved}</div>
+                      <div className="text-[11px] font-bold text-slate-600">อนุมัติสำเร็จ</div>
+                    </div>
+                    <div className="p-3 bg-rose-50 rounded-2xl border border-rose-100">
+                      <div className="text-2xl font-black text-rose-700">{rejected}</div>
+                      <div className="text-[11px] font-bold text-slate-600">ปฏิเสธคำร้อง</div>
+                    </div>
+                    <div className="p-3 bg-amber-50 rounded-2xl border border-amber-100">
+                      <div className="text-2xl font-black text-amber-700">{pending}</div>
+                      <div className="text-[11px] font-bold text-slate-600">รอดำเนินการ</div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
+                    <div className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>สัดส่วนนิสิตผู้ยื่นคำร้อง:</span>
+                      <span className="text-purple-700">ไทย {thai} รูป/คน | ต่างชาติ {foreign} รูป/คน</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden flex">
+                      <div
+                        className="bg-orange-500 h-full"
+                        style={{ width: `${yearReqs.length ? (thai / yearReqs.length) * 100 : 50}%` }}
+                      />
+                      <div
+                        className="bg-blue-600 h-full"
+                        style={{ width: `${yearReqs.length ? (foreign / yearReqs.length) * 100 : 50}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t">
+              <button
+                type="button"
+                onClick={() => setIsArchiveModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={archiveLoading}
+                onClick={handleArchiveYear}
+                className="px-5 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-2 shadow-md transition cursor-pointer disabled:opacity-50"
+              >
+                <Archive className="w-4 h-4" />
+                <span>{archiveLoading ? 'กำลังบันทึกประวัติ...' : `ยืนยันปิดยอดปีการศึกษา ${archivingYear}`}</span>
+              </button>
+            </div>
+
+            {/* Archived History List */}
+            {academicArchives.length > 0 && (
+              <div className="pt-4 border-t space-y-2">
+                <h4 className="font-bold text-slate-800 text-xs">
+                  ประวัติการปิดยอดที่บันทึกไว้ในระบบ:
+                </h4>
+                <div className="space-y-1.5">
+                  {academicArchives.map((arch, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs"
+                    >
+                      <div>
+                        <span className="font-bold text-purple-900">ปีการศึกษา {arch.academicYear}</span>
+                        <span className="text-slate-400 text-[11px] ml-2">
+                          (บันทึกเมื่อ: {new Date(arch.archivedAt).toLocaleDateString('th-TH')})
+                        </span>
+                      </div>
+                      <div className="font-semibold text-slate-700">
+                        {arch.approvedCount} / {arch.totalRequests} ฉบับ
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
