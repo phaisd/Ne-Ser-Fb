@@ -6,12 +6,64 @@ import { verifyPassword, hashPassword } from '@/lib/auth-security';
 
 // ----------------- INSTRUCTORS & AUTH -----------------
 
+export async function syncInstructorToSheet(instructor: InstructorAccount): Promise<void> {
+  const gClient = getSheetsClient();
+  if (!gClient) return;
+
+  try {
+    await gClient.ensureSheetsExist(['Instructors']);
+    const rows = await gClient.getValues('Instructors!A2:E');
+    const cleanId = (instructor.id || '').trim().toLowerCase();
+    const cleanEmail = (instructor.email || '').trim().toLowerCase();
+    const cleanGmail = (instructor.gmail || '').trim().toLowerCase();
+
+    let rowIndex = -1;
+    if (rows && rows.length > 0) {
+      rowIndex = rows.findIndex((r) => {
+        const rId = (r[0] || '').trim().toLowerCase();
+        const isCol2Email = (r[2] || '').includes('@');
+        const rEmail = isCol2Email ? (r[2] || '').trim().toLowerCase() : (r[3] || '').trim().toLowerCase();
+        const rGmail = isCol2Email ? (r[3] || '').trim().toLowerCase() : (r[4] || '').trim().toLowerCase();
+        return (
+          (cleanId && rId === cleanId) ||
+          (cleanEmail && rEmail === cleanEmail) ||
+          (cleanGmail && rGmail === cleanGmail)
+        );
+      });
+    }
+
+    const rowData = [
+      instructor.id || '',
+      instructor.name || '',
+      instructor.nameEn || '',
+      instructor.email || '',
+      instructor.gmail || '',
+      instructor.department || 'คณะพุทธศาสตร์ มจร',
+      instructor.instructorType || 'อาจารย์ประจำ',
+      instructor.role || 'INSTRUCTOR',
+      instructor.isActive !== false ? 'TRUE' : 'FALSE',
+      instructor.isSuspended ? 'TRUE' : 'FALSE',
+      Array.isArray(instructor.aliases) ? instructor.aliases.join(';') : (instructor.aliases || ''),
+      instructor.updatedAt || new Date().toISOString(),
+    ];
+
+    if (rowIndex !== -1) {
+      const sheetRowNum = rowIndex + 2;
+      await gClient.updateValues(`Instructors!A${sheetRowNum}:L${sheetRowNum}`, [rowData]);
+    } else {
+      await gClient.appendValues('Instructors!A:L', [rowData]);
+    }
+  } catch (err) {
+    console.warn('Google Sheets syncInstructorToSheet warning:', err);
+  }
+}
+
 export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
   const localAccounts = readLocalJson<InstructorAccount[]>('instructors.json', []);
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Instructors!A2:I');
+      const rows = await gClient.getValues('Instructors!A2:L');
       if (rows && rows.length > 0) {
         const localById = new Map<string, InstructorAccount>();
         const localByEmail = new Map<string, InstructorAccount>();
@@ -19,39 +71,95 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
           if (acc.id) localById.set(acc.id.toLowerCase(), acc);
           if (acc.email) localByEmail.set(acc.email.toLowerCase(), acc);
           if (acc.gmail) localByEmail.set(acc.gmail.toLowerCase(), acc);
+          if (acc.aliases) {
+            acc.aliases.forEach((al) => {
+              if (al && al.includes('@')) localByEmail.set(al.toLowerCase(), acc);
+            });
+          }
         });
 
         const seenIds = new Set<string>();
         const merged = rows.map((r) => {
+          const hasAtInCol2 = (r[2] || '').includes('@');
           const id = (r[0] || '').trim();
-          const email = (r[2] || '').trim();
-          const gmail = (r[3] || '').trim();
+          const name = (r[1] || '').trim();
+          let nameEn = '';
+          let email = '';
+          let gmail = '';
+          let department = 'คณะพุทธศาสตร์ มจร';
+          let instructorType = 'อาจารย์ประจำ';
+          let role = 'INSTRUCTOR';
+          let isActive = true;
+          let isSuspended = false;
+          let aliases: string[] = [];
+          let updatedAt = '';
+
+          if (hasAtInCol2) {
+            // Legacy 9-col schema: id, name, email, gmail, department, role, isActive, isSuspended, createdAt
+            email = (r[2] || '').trim().toLowerCase();
+            gmail = (r[3] || '').trim().toLowerCase();
+            department = (r[4] || '').trim() || 'คณะพุทธศาสตร์ มจร';
+            role = (r[5] || '').trim() || 'INSTRUCTOR';
+            isActive = r[6] !== 'FALSE';
+            isSuspended = r[7] === 'TRUE';
+            updatedAt = r[8] || '';
+          } else {
+            // Standard 12-col schema: id, name, nameEn, email, gmail, department, instructorType, role, isActive, isSuspended, aliases, updatedAt
+            nameEn = (r[2] || '').trim();
+            email = (r[3] || '').trim().toLowerCase();
+            gmail = (r[4] || '').trim().toLowerCase();
+            department = (r[5] || '').trim() || 'คณะพุทธศาสตร์ มจร';
+            instructorType = (r[6] || '').trim() || 'อาจารย์ประจำ';
+            role = (r[7] || '').trim() || 'INSTRUCTOR';
+            isActive = r[8] !== 'FALSE';
+            isSuspended = r[9] === 'TRUE';
+            aliases = (r[10] || '').split(';').map((s: string) => s.trim()).filter(Boolean);
+            updatedAt = r[11] || '';
+          }
+
           const localMatch =
-            localById.get(id.toLowerCase()) ||
-            localByEmail.get(email.toLowerCase()) ||
+            (id ? localById.get(id.toLowerCase()) : undefined) ||
+            (email ? localByEmail.get(email.toLowerCase()) : undefined) ||
             (gmail ? localByEmail.get(gmail.toLowerCase()) : undefined);
 
           if (localMatch?.id) seenIds.add(localMatch.id.toLowerCase());
           if (id) seenIds.add(id.toLowerCase());
 
-          const effectiveEmail = localMatch?.email || email;
-          const effectiveRole = (localMatch?.role || (r[5] as any) || 'INSTRUCTOR');
+          // Google Sheet values are persistent cloud truth on Vercel
+          const effectiveEmail = email || localMatch?.email || '';
+          const effectiveGmail = gmail || localMatch?.gmail || '';
+          const effectiveRole = (role as any) || localMatch?.role || 'INSTRUCTOR';
           const isSuper =
             effectiveEmail === 'phaisal.dis@mcu.ac.th' ||
             effectiveRole === 'SUPER_ADMIN' ||
             Boolean(localMatch?.isSuperAdmin);
 
+          const combinedAliases = Array.from(
+            new Set([
+              ...(localMatch?.aliases || []),
+              ...aliases,
+              name,
+              nameEn,
+              effectiveEmail,
+              effectiveGmail,
+            ].filter(Boolean))
+          );
+
           return {
             ...(localMatch || {}),
-            id: localMatch?.id || id,
-            name: localMatch?.name || r[1] || '',
+            id: id || localMatch?.id || 'inst-' + Date.now(),
+            name: name || localMatch?.name || '',
+            nameEn: nameEn || localMatch?.nameEn || '',
             email: effectiveEmail,
-            gmail: localMatch?.gmail || gmail,
-            department: localMatch?.department || r[4] || 'คณะพุทธศาสตร์ มจร',
+            gmail: effectiveGmail,
+            department: department || localMatch?.department || 'คณะพุทธศาสตร์ มจร',
+            instructorType: instructorType || localMatch?.instructorType || 'อาจารย์ประจำ',
             role: isSuper ? 'SUPER_ADMIN' : effectiveRole,
-            isActive: localMatch?.isActive !== undefined ? localMatch.isActive : r[6] !== 'FALSE',
-            isSuspended: localMatch?.isSuspended !== undefined ? localMatch.isSuspended : r[7] === 'TRUE',
-            createdAt: localMatch?.createdAt || r[8] || '',
+            isActive: isActive,
+            isSuspended: isSuspended,
+            aliases: combinedAliases,
+            createdAt: localMatch?.createdAt || updatedAt || '',
+            updatedAt: updatedAt || localMatch?.updatedAt || '',
             isSuperAdmin: isSuper,
           } as InstructorAccount;
         });
@@ -276,6 +384,7 @@ export async function updateUserRole(
   list[idx].role = newRole;
   list[idx].updatedAt = new Date().toISOString();
   writeLocalJson('instructors.json', list);
+  await syncInstructorToSheet(list[idx]);
   return true;
 }
 
@@ -396,6 +505,7 @@ export async function updateUserProfile(
 
   list[idx] = updated;
   writeLocalJson('instructors.json', list);
+  await syncInstructorToSheet(updated);
   return updated;
 }
 
@@ -425,6 +535,7 @@ export async function toggleUserSuspension(
 
   list[idx] = target;
   writeLocalJson('instructors.json', list);
+  await syncInstructorToSheet(target);
 
   return {
     success: true,
@@ -496,6 +607,7 @@ export async function createUserAccount(accountData: Partial<InstructorAccount>)
   };
   list.unshift(newAccount);
   writeLocalJson('instructors.json', list);
+  await syncInstructorToSheet(newAccount);
   return newAccount;
 }
 
@@ -674,6 +786,16 @@ export async function batchProvisionInstructors(
   }
 
   writeLocalJson('instructors.json', list);
+
+  // Sync newly created instructors to Google Sheets
+  for (const c of candidatesToCreate) {
+    if (!c.name || !c.email) continue;
+    const cleanEmail = c.email.trim().toLowerCase();
+    const acc = list.find((u) => u.email?.toLowerCase() === cleanEmail);
+    if (acc) {
+      await syncInstructorToSheet(acc);
+    }
+  }
 
   return { createdCount, linkedCount };
 }

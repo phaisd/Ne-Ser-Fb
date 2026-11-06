@@ -978,9 +978,8 @@ export default function AdminConsolePage() {
     setEditUserSaving(true);
     try {
       const aliases = editUserForm.aliasesText
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
+        ? editUserForm.aliasesText.split(',').map((s) => s.trim()).filter(Boolean)
+        : (editingUser.aliases || []);
 
       const roleToSave = isOfficer ? 'INSTRUCTOR' : editUserForm.role;
 
@@ -1003,7 +1002,7 @@ export default function AdminConsolePage() {
       if (data.success) {
         setActionSuccess(`แก้ไขข้อมูลโปรไฟล์และอีเมลของ ${editUserForm.name} สำเร็จ`);
         setEditingUser(null);
-        loadData();
+        await loadData();
       } else {
         alert(data.error || 'ไม่สามารถแก้ไขข้อมูลได้');
       }

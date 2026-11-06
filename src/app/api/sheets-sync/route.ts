@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSheetsClient } from '@/lib/google-sheets';
 import { getSystemSettings, updateSystemSettings, convertGoogleDriveUrl } from '@/lib/data-store';
+import { readLocalJson } from '@/services/storageHelper';
 import { getAuthenticatedUserFromRequest, isServerAdminOrOfficer } from '@/lib/server-auth-guard';
 import fs from 'fs';
 import path from 'path';
@@ -184,8 +185,39 @@ export async function POST(request: Request) {
       await client.updateValues('Attendance!A1', attRows);
     }
 
-    const instRows = readCsvRows('instructors.csv');
-    if (instRows.length > 0) {
+    const localInstructors = readLocalJson<any[]>('instructors.json', []);
+    if (localInstructors.length > 0) {
+      const instructorHeader = [
+        'id',
+        'name',
+        'nameEn',
+        'email',
+        'gmail',
+        'department',
+        'instructorType',
+        'role',
+        'isActive',
+        'isSuspended',
+        'aliases',
+        'updatedAt',
+      ];
+      const instRows = [
+        instructorHeader,
+        ...localInstructors.map((inst) => [
+          inst.id || '',
+          inst.name || '',
+          inst.nameEn || '',
+          inst.email || '',
+          inst.gmail || '',
+          inst.department || 'คณะพุทธศาสตร์ มจร',
+          inst.instructorType || 'อาจารย์ประจำ',
+          inst.role || 'INSTRUCTOR',
+          inst.isActive !== false ? 'TRUE' : 'FALSE',
+          inst.isSuspended ? 'TRUE' : 'FALSE',
+          Array.isArray(inst.aliases) ? inst.aliases.join(';') : (inst.aliases || ''),
+          inst.updatedAt || inst.createdAt || new Date().toISOString(),
+        ]),
+      ];
       await client.updateValues('Instructors!A1', instRows);
     }
 

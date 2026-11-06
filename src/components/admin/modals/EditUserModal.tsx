@@ -12,6 +12,7 @@ interface EditUserFormState {
   instructorType?: string;
   department: string;
   role: UserRole;
+  aliasesText?: string;
 }
 
 interface EditUserModalProps {

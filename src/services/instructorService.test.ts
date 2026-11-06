@@ -92,4 +92,63 @@ describe('instructorService & Authentication', () => {
     expect(list[1].password).toMatch(/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/);
     expect(list[1].hasChangedPassword).toBe(true);
   });
+
+  it('updates instructor profile with new email and gmail, preserving aliases', async () => {
+    const list = JSON.parse(JSON.stringify(mockInstructors));
+    vi.mocked(storageHelper.readLocalJson).mockReturnValue(list);
+
+    const updated = await instructorService.updateUserProfile('inst-2', {
+      name: 'ผศ.ดร.สมชาย ใจดี',
+      nameEn: 'Asst. Prof. Dr. Somchai Jaidee',
+      email: 'new.somchai@mcu.ac.th',
+      gmail: 'somchai.personal@gmail.com',
+      department: 'ภาควิชาพระพุทธศาสนา',
+      instructorType: 'อาจารย์ประจำ',
+    });
+
+    expect(updated).not.toBeNull();
+    expect(updated?.email).toBe('new.somchai@mcu.ac.th');
+    expect(updated?.gmail).toBe('somchai.personal@gmail.com');
+    expect(updated?.nameEn).toBe('Asst. Prof. Dr. Somchai Jaidee');
+    // Aliases must contain the old email so old references don't break
+    expect(updated?.aliases).toContain('somchai.jai@mcu.ac.th');
+    expect(storageHelper.writeLocalJson).toHaveBeenCalledWith('instructors.json', expect.any(Array));
+  });
+
+  it('correctly parses 12-column Google Sheets rows in getInstructorAccounts', async () => {
+    const mockSheetsClient = {
+      getValues: vi.fn().mockResolvedValue([
+        [
+          'inst-92',
+          'อ.ดร.ดวงดี โอฐสู',
+          'Dr. Duangdee Aotsoo',
+          'duangdee.new@mcu.ac.th',
+          'duangdee.new@gmail.com',
+          'คณะพุทธศาสตร์ มจร',
+          'อาจารย์ประจำ',
+          'INSTRUCTOR',
+          'TRUE',
+          'FALSE',
+          'ดวงดี;โอฐสู',
+          '2026-11-06T12:00:00Z',
+        ],
+      ]),
+      ensureSheetsExist: vi.fn(),
+      updateValues: vi.fn(),
+      appendValues: vi.fn(),
+    };
+
+    vi.mocked(storageHelper.getSheetsClient).mockReturnValue(mockSheetsClient as any);
+    vi.mocked(storageHelper.readLocalJson).mockReturnValue([]);
+
+    const accounts = await instructorService.getInstructorAccounts();
+    expect(accounts).toHaveLength(1);
+    expect(accounts[0].id).toBe('inst-92');
+    expect(accounts[0].name).toBe('อ.ดร.ดวงดี โอฐสู');
+    expect(accounts[0].nameEn).toBe('Dr. Duangdee Aotsoo');
+    expect(accounts[0].email).toBe('duangdee.new@mcu.ac.th');
+    expect(accounts[0].gmail).toBe('duangdee.new@gmail.com');
+    expect(accounts[0].instructorType).toBe('อาจารย์ประจำ');
+    expect(accounts[0].role).toBe('INSTRUCTOR');
+  });
 });
