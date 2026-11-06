@@ -22,6 +22,10 @@ import {
   KeyRound,
   X,
   Plus,
+  HelpCircle,
+  Loader2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 function LoginForm() {
@@ -53,6 +57,18 @@ function LoginForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // Forgot Password Modal State
+  const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] = useState(false);
+  const [forgotIdentifier, setForgotIdentifier] = useState('');
+  const [forgotVerifyEmail, setForgotVerifyEmail] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [showForgotNewPass, setShowForgotNewPass] = useState(false);
+  const [showForgotConfirmPass, setShowForgotConfirmPass] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
+  const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
 
   const navigateAfterAuth = (user: any) => {
     if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.role === 'OFFICER') {
@@ -267,6 +283,58 @@ function LoginForm() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotSuccess(null);
+
+    if (!forgotIdentifier.trim() || !forgotVerifyEmail.trim()) {
+      setForgotError('กรุณากรอกอีเมลบัญชีผู้ใช้ และอีเมลสำรอง (Gmail) ที่ลงทะเบียนไว้');
+      return;
+    }
+    if (forgotNewPassword.length < 6) {
+      setForgotError('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+      return;
+    }
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotError('รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน');
+      return;
+    }
+
+    try {
+      setForgotLoading(true);
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'forgot-password',
+          identifier: forgotIdentifier.trim(),
+          verifyEmail: forgotVerifyEmail.trim(),
+          newPassword: forgotNewPassword.trim(),
+          confirmPassword: forgotConfirmPassword.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'ไม่สามารถรีเซ็ตรหัสผ่านได้ กรุณาตรวจสอบข้อมูล');
+      }
+
+      setForgotSuccess(data.message || 'รีเซ็ตรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว');
+      setEmail(forgotIdentifier);
+      setPassword(forgotNewPassword);
+
+      setTimeout(() => {
+        setIsForgotPasswordModalOpen(false);
+        setSuccess('รีเซ็ตรหัสผ่านใหม่สำเร็จแล้ว ท่านสามารถกดปุ่ม "เข้าสู่ระบบ" ได้ทันที');
+      }, 2500);
+    } catch (err: any) {
+      setForgotError(err.message || 'เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   const getRoleBadgeText = (role?: string) => {
     if (role === 'SUPER_ADMIN') return 'ผู้ดูแลระบบสูงสุด';
     if (role === 'ADMIN') return 'ผู้ดูแลระบบ';
@@ -408,9 +476,23 @@ function LoginForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              รหัสผ่าน (Password) <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-slate-700">
+                รหัสผ่าน (Password) <span className="text-rose-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotIdentifier(email || '');
+                  setForgotError(null);
+                  setForgotSuccess(null);
+                  setIsForgotPasswordModalOpen(true);
+                }}
+                className="text-xs text-orange-600 hover:text-orange-700 hover:underline font-bold transition cursor-pointer"
+              >
+                ลืมรหัสผ่าน? (Forgot Password)
+              </button>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -608,6 +690,178 @@ function LoginForm() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Forgot Password & Self-Service Reset Modal */}
+      {isForgotPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-200 overflow-hidden">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    รีเซ็ตรหัสผ่านใหม่ (Reset Password)
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    สำหรับอาจารย์และนิสิต คณะพุทธศาสตร์ มจร
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsForgotPasswordModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 font-bold cursor-pointer transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {forgotError && (
+              <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2 animate-in fade-in">
+                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                <span>{forgotError}</span>
+              </div>
+            )}
+
+            {forgotSuccess && (
+              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2 animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>{forgotSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleForgotPassword} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  1. อีเมลสถาบัน (@mcu.ac.th) หรือรหัสนิสิต <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น teacher@mcu.ac.th หรือรหัสนิสิต"
+                    value={forgotIdentifier}
+                    onChange={(e) => setForgotIdentifier(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  2. อีเมลสำรอง (Gmail) ที่ลงทะเบียนไว้ <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="เช่น teacher@gmail.com เพื่อยืนยันตัวตน"
+                    value={forgotVerifyEmail}
+                    onChange={(e) => setForgotVerifyEmail(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition font-mono"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  * ข้อมูลต้องตรงกับอีเมลสำรองที่เคยผูกไว้ในระบบ
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  3. รหัสผ่านใหม่ (New Password) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showForgotNewPass ? 'text' : 'password'}
+                    required
+                    placeholder="ความยาวอย่างน้อย 6 ตัวอักษร"
+                    value={forgotNewPassword}
+                    onChange={(e) => setForgotNewPassword(e.target.value)}
+                    className="w-full pl-9 pr-9 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotNewPass(!showForgotNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showForgotNewPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  4. ยืนยันรหัสผ่านใหม่ (Confirm Password) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showForgotConfirmPass ? 'text' : 'password'}
+                    required
+                    placeholder="พิมพ์รหัสผ่านใหม่อีกครั้งให้ตรงกัน"
+                    value={forgotConfirmPassword}
+                    onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                    className="w-full pl-9 pr-9 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotConfirmPass(!showForgotConfirmPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showForgotConfirmPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPasswordModalOpen(false)}
+                  className="flex-1 py-2.5 text-xs font-bold rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-orange-600 hover:bg-orange-700 text-white transition shadow-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {forgotLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <KeyRound className="w-3.5 h-3.5" />
+                  )}
+                  <span>บันทึกรหัสผ่านใหม่</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Admin Support Box */}
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 text-[11px] space-y-1 mt-2">
+              <div className="font-bold flex items-center gap-1.5 text-slate-800">
+                <HelpCircle className="w-3.5 h-3.5 text-orange-600" />
+                <span>จำอีเมลสำรองไม่ได้ หรือต้องการความช่วยเหลือ?</span>
+              </div>
+              <p className="text-slate-500 leading-relaxed">
+                อาจารย์สามารถติดต่อสำนักงานคณะพุทธศาสตร์ หรือส่งอีเมลถึงผู้ดูแลระบบสูงสุดเพื่อขอรับรหัสผ่านชั่วคราวได้:
+              </p>
+              <div className="pt-1">
+                <a
+                  href="mailto:phaisal.dis@mcu.ac.th?subject=ขอรีเซ็ตรหัสผ่านเข้าสู่ระบบบริการการศึกษาคณะพุทธศาสตร์&body=เรียน%20ผู้ดูแลระบบสูงสุด%0A%0Aกระผม/ดิฉัน%20อาจารย์ผู้สอน...%20มีความประสงค์ขอรีเซ็ตรหัสผ่านสำหรับเข้าใช้งานระบบบริการการศึกษา%20(อีเมล%20...@mcu.ac.th)%0A%0Aขอแสดงความนับถือ"
+                  className="inline-flex items-center gap-1 text-orange-600 hover:underline font-bold"
+                >
+                  <span>✉️ ติดต่อผู้ดูแลระบบ: phaisal.dis@mcu.ac.th</span>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       )}

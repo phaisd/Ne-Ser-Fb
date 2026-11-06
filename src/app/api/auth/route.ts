@@ -4,6 +4,7 @@ import {
   authenticateGoogleUser,
   authenticateStudent,
   getInstructorAccounts,
+  getStudents,
   getSystemSettings,
   updateInstructorPassword,
   updateStudentPassword,
@@ -67,6 +68,99 @@ export async function POST(request: Request) {
       // 2. Client-readable profile cookie for fast UI rendering (Non-sensitive display info only)
       resp.cookies.set('mcu_auth_user', JSON.stringify(u), getAuthCookieOptions(false));
     };
+
+    // 0.1 Forgot Password & Self-Service Reset Handler
+    if (action === 'forgot-password' || action === 'self-reset-password') {
+      const { identifier, verifyEmail, newPassword, confirmPassword } = body;
+      if (!identifier || !verifyEmail || !newPassword) {
+        return NextResponse.json(
+          { success: false, error: 'กรุณากรอกข้อมูลให้ครบถ้วน (อีเมลสถาบัน, อีเมลสำรอง Gmail, และรหัสผ่านใหม่)' },
+          { status: 400 }
+        );
+      }
+      if (newPassword.length < 6) {
+        return NextResponse.json(
+          { success: false, error: 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร' },
+          { status: 400 }
+        );
+      }
+      if (confirmPassword && newPassword !== confirmPassword) {
+        return NextResponse.json(
+          { success: false, error: 'รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน' },
+          { status: 400 }
+        );
+      }
+
+      const cleanId = String(identifier).trim().toLowerCase();
+      const cleanVerify = String(verifyEmail).trim().toLowerCase();
+
+      // Check instructor accounts
+      const instructors = await getInstructorAccounts();
+      const inst = instructors.find((a) =>
+        (a.email?.toLowerCase() === cleanId ||
+         a.id?.toLowerCase() === cleanId ||
+         a.gmail?.toLowerCase() === cleanId ||
+         a.aliases?.some((al) => al.toLowerCase() === cleanId) ||
+         a.name?.toLowerCase().includes(cleanId))
+      );
+
+      if (inst) {
+        const matchGmail = (inst.gmail || '').toLowerCase() === cleanVerify;
+        const matchEmail = (inst.email || '').toLowerCase() === cleanVerify;
+        if (!matchGmail && !matchEmail) {
+          return NextResponse.json(
+            { success: false, error: 'อีเมลสำรอง (Gmail) ไม่ตรงกับที่บันทึกไว้ในระบบอาจารย์ กรุณาตรวจสอบหรือติดต่อผู้ดูแลระบบ' },
+            { status: 400 }
+          );
+        }
+
+        const ok = await updateInstructorPassword(inst.id || inst.email, newPassword);
+        if (!ok) {
+          return NextResponse.json({ success: false, error: 'ไม่สามารถรีเซ็ตรหัสผ่านได้ กรุณาติดต่อผู้ดูแลระบบ' }, { status: 500 });
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: `รีเซ็ตรหัสผ่านสำหรับอาจารย์ ${inst.name} สำเร็จเรียบร้อยแล้ว ท่านสามารถเข้าสู่ระบบด้วยรหัสผ่านใหม่ได้ทันที`,
+          email: inst.email,
+        });
+      }
+
+      // Check student accounts
+      const students = await getStudents();
+      const student = students.find((s: any) =>
+        s.studentCode?.toLowerCase() === cleanId ||
+        s.email?.toLowerCase() === cleanId
+      );
+
+      if (student) {
+        const matchEmail = (student.email || '').toLowerCase() === cleanVerify;
+        const matchPhone = (student.phoneNumber || '').slice(-4) === cleanVerify;
+        if (!matchEmail && !matchPhone) {
+          return NextResponse.json(
+            { success: false, error: 'ข้อมูลยืนยันตัวตน (อีเมลหรือเบอร์โทรศัพท์) ไม่ตรงกับที่บันทึกไว้ในระบบนิสิต' },
+            { status: 400 }
+          );
+        }
+
+        const ok = await updateStudentPassword(student.studentCode, newPassword);
+        if (!ok) {
+          return NextResponse.json({ success: false, error: 'ไม่สามารถรีเซ็ตรหัสผ่านได้ กรุณาติดต่อผู้ดูแลระบบ' }, { status: 500 });
+        }
+
+        const studentDisplayName = student.fullName || `${student.firstName || ''} ${student.lastName || ''}`.trim();
+        return NextResponse.json({
+          success: true,
+          message: `รีเซ็ตรหัสผ่านสำหรับนิสิต ${studentDisplayName} สำเร็จเรียบร้อยแล้ว`,
+          email: student.studentCode,
+        });
+      }
+
+      return NextResponse.json(
+        { success: false, error: 'ไม่พบบัญชีผู้ใช้งานที่ระบุในระบบ กรุณาตรวจสอบอีเมลหรือติดต่อผู้ดูแลระบบ' },
+        { status: 404 }
+      );
+    }
 
     // 0. First-Time Login Password Change Handler
     if (action === 'change-password-first-login' || action === 'force-change-password') {
