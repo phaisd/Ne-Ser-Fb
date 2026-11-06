@@ -30,6 +30,7 @@ interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: AuthUser | null;
+  initialTab?: 'PROFILE' | 'PASSWORD' | 'HISTORY';
   onUserUpdated?: (updatedUser: AuthUser) => void;
 }
 
@@ -37,9 +38,16 @@ export default function UserProfileModal({
   isOpen,
   onClose,
   currentUser,
+  initialTab,
   onUserUpdated,
 }: UserProfileModalProps) {
   const [activeTab, setActiveTab] = useState<'PROFILE' | 'PASSWORD' | 'HISTORY'>('PROFILE');
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
 
   // Profile form state
   const [name, setName] = useState('');
@@ -233,14 +241,14 @@ export default function UserProfileModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 p-4 sm:p-6 flex justify-center items-center min-h-screen">
       <div
-        className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col my-auto max-h-[88vh]"
         role="dialog"
         aria-modal="true"
       >
         {/* Header Banner */}
-        <div className={`p-6 border-b shrink-0 ${
+        <div className={`p-5 sm:p-6 border-b shrink-0 ${
           isAdmin
             ? 'bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white border-purple-800'
             : 'bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white border-emerald-800'
@@ -333,7 +341,7 @@ export default function UserProfileModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-4">
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-4 max-h-[calc(88vh-180px)]">
           {/* Notifications */}
           {errorMsg && (
             <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5 animate-in fade-in">
