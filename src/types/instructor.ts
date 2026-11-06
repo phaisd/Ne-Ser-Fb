@@ -1,5 +1,15 @@
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR';
 
+export interface LoginAuditRecord {
+  id: string;
+  timestamp: string;
+  ip: string;
+  userAgent?: string;
+  device: string; // e.g. "Windows PC (Chrome)", "Mac (Safari)", "iPhone (Safari)"
+  sessionId: string;
+  status: 'ACTIVE' | 'SUPERSEDED' | 'LOGGED_OUT';
+}
+
 export interface InstructorAccount {
   id: string;
   name: string;
@@ -19,6 +29,10 @@ export interface InstructorAccount {
   aliases?: string[];
   previousIds?: string[];
   hasChangedPassword?: boolean;
+  activeSessionId?: string;
+  activeSessionDevice?: string;
+  lastLoginAt?: string;
+  loginHistory?: LoginAuditRecord[];
   createdAt?: string;
   updatedAt?: string;
 }

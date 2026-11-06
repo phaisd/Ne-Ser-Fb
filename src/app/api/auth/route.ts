@@ -9,6 +9,12 @@ import {
   updateStudentPassword,
 } from '@/lib/data-store';
 import { checkRateLimit, resetRateLimit, createSignedSessionToken, verifySessionToken } from '@/lib/auth-security';
+import {
+  recordUserLogin,
+  validateUserSession,
+  revokeUserSession,
+  getUserLoginHistory,
+} from '@/lib/session-manager';
 
 export async function POST(request: Request) {
   try {
@@ -40,6 +46,18 @@ export async function POST(request: Request) {
         opts.maxAge = 60 * 60 * 24 * 7; // 7 days for private devices
       }
       return opts;
+    };
+
+    const userAgent = request.headers.get('user-agent') || '';
+    const registerSession = (u: any) => {
+      const { sessionId } = recordUserLogin(
+        u.id || u.studentCode || u.email,
+        u.email,
+        u.name,
+        clientIp,
+        userAgent
+      );
+      return { ...u, sessionId };
     };
 
     const attachAuthCookies = (resp: NextResponse, u: any) => {
@@ -100,13 +118,14 @@ export async function POST(request: Request) {
         );
       }
 
+      const sessionUser = registerSession({ ...updatedUser, hasChangedPassword: true, mustChangePassword: false });
       const response = NextResponse.json({
         success: true,
-        user: { ...updatedUser, hasChangedPassword: true, mustChangePassword: false },
+        user: sessionUser,
         message: 'เปลี่ยนรหัสผ่านสำหรับการเข้าใช้งานครั้งแรกเรียบร้อยแล้ว',
       });
 
-      attachAuthCookies(response, { ...updatedUser, hasChangedPassword: true, mustChangePassword: false });
+      attachAuthCookies(response, sessionUser);
 
       return response;
     }
@@ -150,13 +169,15 @@ export async function POST(request: Request) {
 
       resetRateLimit(`auth:${clientIp}`);
 
+      const sessionUser = registerSession(user);
+
       const response = NextResponse.json({
         success: true,
-        user,
+        user: sessionUser,
         message: `เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${user.name} (${(user as any).role === 'STUDENT' ? 'นิสิต' : 'อาจารย์'})`,
       });
 
-      attachAuthCookies(response, user);
+      attachAuthCookies(response, sessionUser);
 
       return response;
     }
@@ -206,17 +227,19 @@ export async function POST(request: Request) {
       mustChangePassword,
     };
 
+    const sessionUser = registerSession(safeUserWithFlag);
+
     const response = NextResponse.json({
       success: true,
       mustChangePassword,
-      user: safeUserWithFlag,
+      user: sessionUser,
       message: mustChangePassword
         ? 'กรุณากำหนดรหัสผ่านใหม่สำหรับการเข้าใช้งานครั้งแรกเพื่อความปลอดภัย'
         : `ยินดีต้อนรับ ${user.name}`,
     });
 
     // Set secure cookie for session
-    attachAuthCookies(response, safeUserWithFlag);
+    attachAuthCookies(response, sessionUser);
 
     return response;
   } catch (err: any) {
@@ -236,24 +259,54 @@ export async function GET(request: Request) {
     }
 
     const cookieHeader = request.headers.get('cookie') || '';
+    let verified: any = null;
     
     // First, verify via cryptographically signed httpOnly session token
     const tokenMatch = cookieHeader.match(/mcu_session_token=([^;]+)/);
     if (tokenMatch && tokenMatch[1]) {
-      const verified = verifySessionToken(decodeURIComponent(tokenMatch[1]));
-      if (verified) {
-        return NextResponse.json({ success: true, authenticated: true, user: verified });
-      }
+      verified = verifySessionToken(decodeURIComponent(tokenMatch[1]));
     }
 
     // Fallback check on client cookie
-    const match = cookieHeader.match(/mcu_auth_user=([^;]+)/);
-    if (match && match[1]) {
-      try {
-        const decoded = decodeURIComponent(match[1]);
-        const user = JSON.parse(decoded);
-        return NextResponse.json({ success: true, authenticated: true, user });
-      } catch (e) {}
+    if (!verified) {
+      const match = cookieHeader.match(/mcu_auth_user=([^;]+)/);
+      if (match && match[1]) {
+        try {
+          verified = JSON.parse(decodeURIComponent(match[1]));
+        } catch (e) {}
+      }
+    }
+
+    // Login Audit History endpoint
+    if (action === 'history') {
+      const targetId = searchParams.get('userId') || verified?.id || verified?.email;
+      if (!targetId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุบัญชีผู้ใช้' }, { status: 400 });
+      }
+      const history = getUserLoginHistory(targetId);
+      return NextResponse.json({ success: true, history });
+    }
+
+    if (verified) {
+      // Validate single active session per user
+      const sessionCheck = validateUserSession(verified.id || verified.email, verified.sessionId);
+      if (sessionCheck.conflict) {
+        // Old session was superseded by another device login
+        const conflictResp = NextResponse.json({
+          success: true,
+          authenticated: false,
+          sessionConflict: true,
+          activeDevice: sessionCheck.activeDevice,
+          message: sessionCheck.message,
+          user: null,
+        });
+        const clearOpts = { path: '/', maxAge: 0 };
+        conflictResp.cookies.set('mcu_session_token', '', { ...clearOpts, httpOnly: true });
+        conflictResp.cookies.set('mcu_auth_user', '', { ...clearOpts, httpOnly: false });
+        return conflictResp;
+      }
+
+      return NextResponse.json({ success: true, authenticated: true, user: verified });
     }
 
     return NextResponse.json({ success: true, authenticated: false, user: null });
@@ -262,7 +315,18 @@ export async function GET(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  try {
+    const cookieHeader = request.headers.get('cookie') || '';
+    const tokenMatch = cookieHeader.match(/mcu_session_token=([^;]+)/);
+    if (tokenMatch && tokenMatch[1]) {
+      const verified = verifySessionToken(decodeURIComponent(tokenMatch[1]));
+      if (verified) {
+        revokeUserSession(verified.id || verified.email, verified.sessionId);
+      }
+    }
+  } catch {}
+
   const response = NextResponse.json({ success: true, message: 'ออกจากระบบสำเร็จ' });
   const clearOpts = {
     path: '/',

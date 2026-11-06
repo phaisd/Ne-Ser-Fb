@@ -115,6 +115,7 @@ export function createSignedSessionToken(user: any): string {
     faculty: user.faculty,
     programType: user.programType,
     mustChangePassword: !!user.mustChangePassword,
+    sessionId: user.sessionId,
     iat: Math.floor(Date.now() / 1000),
   });
   const b64 = Buffer.from(safeData, 'utf-8').toString('base64url');

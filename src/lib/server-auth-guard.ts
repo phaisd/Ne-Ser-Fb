@@ -1,4 +1,5 @@
 import { verifySessionToken } from '@/lib/auth-security';
+import { validateUserSession } from '@/lib/session-manager';
 
 export interface ServerAuthUser {
   id: string;
@@ -20,7 +21,13 @@ export function getAuthenticatedUserFromRequest(request: Request): ServerAuthUse
   const tokenMatch = cookieHeader.match(/mcu_session_token=([^;]+)/);
   if (tokenMatch && tokenMatch[1]) {
     const verified = verifySessionToken(decodeURIComponent(tokenMatch[1]));
-    if (verified) return verified as ServerAuthUser;
+    if (verified) {
+      const sessionCheck = validateUserSession(verified.id || verified.email, verified.sessionId);
+      if (sessionCheck.conflict) {
+        return null;
+      }
+      return verified as ServerAuthUser;
+    }
   }
 
   // Fallback to parsed user if running in dev environment
