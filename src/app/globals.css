@@ -64,6 +64,14 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+/* Form inputs base styling to prevent white-on-white text issues */
+input, select, textarea {
+  color: #0f172a;
+}
+input::placeholder, textarea::placeholder {
+  color: #94a3b8;
+}
+
 /* Subtle theme accent border on top of header */
 header.theme-nav-accent {
   border-top: 3px solid var(--color-primary, #db2777);

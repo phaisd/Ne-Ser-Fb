@@ -302,6 +302,14 @@ export async function updateUserProfile(
     : ((updates.gmail && updates.gmail.trim()) ? updates.gmail.trim().toLowerCase() : current.email);
   const newGmail = updates.gmail !== undefined ? updates.gmail.trim().toLowerCase() : current.gmail;
 
+  // Prevent email duplicate collision with other instructor accounts
+  if (newEmail && current.email && newEmail !== current.email.toLowerCase()) {
+    const duplicate = list.find((u, i) => i !== idx && u.email?.toLowerCase() === newEmail);
+    if (duplicate) {
+      throw new Error(`อีเมล "${newEmail}" มีอยู่ในระบบแล้ว กรุณาตรวจสอบหรือใช้อีเมลอื่น`);
+    }
+  }
+
   // Preserve previous email in aliases so course mappings and searches never break
   const aliasesList = Array.isArray(updates.aliases)
     ? [...updates.aliases]

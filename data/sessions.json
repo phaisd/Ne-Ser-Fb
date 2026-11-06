@@ -3,10 +3,28 @@
     "userId": "inst-001",
     "email": "test.teacher@mcu.ac.th",
     "name": "อาจารย์ทดสอบ",
-    "activeSessionId": "sess_1793957752513_088584eabd5da803",
+    "activeSessionId": "sess_1793958125663_070d2bdbae444cc0",
     "activeSessionDevice": "Mac (Safari)",
-    "lastLoginAt": "2026-11-06T09:35:52.513Z",
+    "lastLoginAt": "2026-11-06T09:42:05.663Z",
     "history": [
+      {
+        "id": "log-1793958125663-knd9",
+        "timestamp": "2026-11-06T09:42:05.663Z",
+        "ip": "192.168.1.50",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15",
+        "device": "Mac (Safari)",
+        "sessionId": "sess_1793958125663_070d2bdbae444cc0",
+        "status": "ACTIVE"
+      },
+      {
+        "id": "log-1793958125662-26aa",
+        "timestamp": "2026-11-06T09:42:05.661Z",
+        "ip": "10.0.0.5",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0",
+        "device": "Windows PC (Chrome)",
+        "sessionId": "sess_1793958125661_d6d6d3a9d39c5859",
+        "status": "SUPERSEDED"
+      },
       {
         "id": "log-1793957752513-5v3f",
         "timestamp": "2026-11-06T09:35:52.513Z",
@@ -14,7 +32,7 @@
         "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15",
         "device": "Mac (Safari)",
         "sessionId": "sess_1793957752513_088584eabd5da803",
-        "status": "ACTIVE"
+        "status": "SUPERSEDED"
       },
       {
         "id": "log-1793957752512-6rwo",
@@ -49,10 +67,28 @@
     "userId": "inst-001",
     "email": "test.teacher@mcu.ac.th",
     "name": "อาจารย์ทดสอบ",
-    "activeSessionId": "sess_1793957752513_088584eabd5da803",
+    "activeSessionId": "sess_1793958125663_070d2bdbae444cc0",
     "activeSessionDevice": "Mac (Safari)",
-    "lastLoginAt": "2026-11-06T09:35:52.513Z",
+    "lastLoginAt": "2026-11-06T09:42:05.663Z",
     "history": [
+      {
+        "id": "log-1793958125663-knd9",
+        "timestamp": "2026-11-06T09:42:05.663Z",
+        "ip": "192.168.1.50",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15",
+        "device": "Mac (Safari)",
+        "sessionId": "sess_1793958125663_070d2bdbae444cc0",
+        "status": "ACTIVE"
+      },
+      {
+        "id": "log-1793958125662-26aa",
+        "timestamp": "2026-11-06T09:42:05.661Z",
+        "ip": "10.0.0.5",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0",
+        "device": "Windows PC (Chrome)",
+        "sessionId": "sess_1793958125661_d6d6d3a9d39c5859",
+        "status": "SUPERSEDED"
+      },
       {
         "id": "log-1793957752513-5v3f",
         "timestamp": "2026-11-06T09:35:52.513Z",
@@ -60,7 +96,7 @@
         "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15",
         "device": "Mac (Safari)",
         "sessionId": "sess_1793957752513_088584eabd5da803",
-        "status": "ACTIVE"
+        "status": "SUPERSEDED"
       },
       {
         "id": "log-1793957752512-6rwo",
@@ -97,8 +133,26 @@
     "name": "ครูทดสอบ",
     "activeSessionId": "",
     "activeSessionDevice": "iPhone",
-    "lastLoginAt": "2026-11-06T09:35:52.516Z",
+    "lastLoginAt": "2026-11-06T09:42:05.667Z",
     "history": [
+      {
+        "id": "log-1793958125667-pvoy",
+        "timestamp": "2026-11-06T09:42:05.667Z",
+        "ip": "2.2.2.2",
+        "userAgent": "iPhone Safari",
+        "device": "iPhone",
+        "sessionId": "sess_1793958125667_e5723cbf8435bd45",
+        "status": "LOGGED_OUT"
+      },
+      {
+        "id": "log-1793958125666-katl",
+        "timestamp": "2026-11-06T09:42:05.666Z",
+        "ip": "1.1.1.1",
+        "userAgent": "Windows PC",
+        "device": "Windows PC",
+        "sessionId": "sess_1793958125666_58a962edd7b78e75",
+        "status": "SUPERSEDED"
+      },
       {
         "id": "log-1793957752516-r75g",
         "timestamp": "2026-11-06T09:35:52.516Z",

@@ -146,6 +146,12 @@ export default function UserProfileModal({
       return;
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setErrorMsg('กรุณากรอกอีเมลสถาบัน (@mcu.ac.th) ให้ถูกต้อง');
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await fetch('/api/users', {
@@ -158,6 +164,7 @@ export default function UserProfileModal({
             id: currentUser.id || currentUser.email,
             name: name.trim(),
             nameEn: nameEn.trim(),
+            email: cleanEmail,
             gmail: gmail.trim().toLowerCase(),
             department: department.trim(),
           },
@@ -174,6 +181,7 @@ export default function UserProfileModal({
         ...currentUser,
         name: name.trim(),
         nameEn: nameEn.trim(),
+        email: cleanEmail,
         gmail: gmail.trim().toLowerCase(),
         department: department.trim(),
       };
@@ -181,7 +189,7 @@ export default function UserProfileModal({
       saveAuthSession(updated, true);
       if (onUserUpdated) onUserUpdated(updated);
 
-      setSuccessMsg('บันทึกข้อมูลส่วนตัวสำเร็จเรียบร้อยแล้ว');
+      setSuccessMsg('บันทึกข้อมูลส่วนตัวและอัปเดตอีเมลสำเร็จเรียบร้อยแล้ว');
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err: any) {
       setErrorMsg(err.message || 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
@@ -371,8 +379,8 @@ export default function UserProfileModal({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    placeholder="เช่น พระมหาไพศาล ดิษฐพันธ์"
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+                    placeholder="เช่น อ.ดร.ดวงดี โอฐสู"
+                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-white text-slate-900 font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -387,17 +395,17 @@ export default function UserProfileModal({
                     type="text"
                     value={nameEn}
                     onChange={(e) => setNameEn(e.target.value)}
-                    placeholder="เช่น Phramaha Phaisal Ditthaphan"
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+                    placeholder="เช่น Dr. Duangdee Otsoo"
+                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-white text-slate-900 font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>อีเมลสถาบัน มจร (MCU Account)</span>
-                  <span className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                    บัญชีหลักของระบบ
+                  <span>อีเมลสถาบัน มจร (MCU Account) <span className="text-rose-500">*</span></span>
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-medium">
+                    ✏️ แก้ไขได้
                   </span>
                 </label>
                 <div className="relative">
@@ -405,13 +413,14 @@ export default function UserProfileModal({
                   <input
                     type="email"
                     value={email}
-                    disabled
-                    readOnly
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed font-mono"
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="เช่น duangdee.oth@mcu.ac.th"
+                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-white text-slate-900 font-mono font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  * อีเมลหลักของมหาวิทยาลัยใช้ผูกกับตารางสอน หากต้องการเปลี่ยนโปรดติดต่อสำนักงานคณะ
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                  * อาจารย์สามารถระบุอีเมล มจร (@mcu.ac.th) จริงของท่านได้ (ระบบจะจดจำอีเมลเดิมไว้ในฐานข้อมูลเพื่อเชื่อมโยงตารางสอนให้อัตโนมัติ)
                 </p>
               </div>
 
@@ -426,11 +435,11 @@ export default function UserProfileModal({
                     value={gmail}
                     onChange={(e) => setGmail(e.target.value)}
                     placeholder="เช่น teacher@gmail.com"
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition font-mono"
+                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-white text-slate-900 font-mono font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  ใช้สำหรับการลงชื่อเข้าใช้งานด้วย 1-Click Google Sign-In หรือรับแจ้งเตือน
+                <p className="text-[11px] text-slate-500 mt-1">
+                  ใช้สำหรับการลงชื่อเข้าใช้งานด้วย 1-Click Google Sign-In หรือรับแจ้งเตือนรีเซ็ตรหัสผ่าน
                 </p>
               </div>
 
@@ -445,7 +454,7 @@ export default function UserProfileModal({
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     placeholder="เช่น คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย"
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-white text-slate-900 font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -498,7 +507,7 @@ export default function UserProfileModal({
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
                     placeholder="กรอกรหัสผ่านเดิม (ถ้ามี)"
-                    className="w-full pl-9 pr-10 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+                    className="w-full pl-9 pr-10 py-2.5 text-xs bg-white text-slate-900 font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                   <button
                     type="button"
@@ -522,7 +531,7 @@ export default function UserProfileModal({
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                     placeholder="ความยาวอย่างน้อย 6 ตัวอักษร"
-                    className="w-full pl-9 pr-10 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+                    className="w-full pl-9 pr-10 py-2.5 text-xs bg-white text-slate-900 font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                   <button
                     type="button"
@@ -546,7 +555,7 @@ export default function UserProfileModal({
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     placeholder="กรอกรหัสผ่านใหม่อีกครั้งให้ตรงกัน"
-                    className="w-full pl-9 pr-10 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+                    className="w-full pl-9 pr-10 py-2.5 text-xs bg-white text-slate-900 font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                   <button
                     type="button"
