@@ -5,6 +5,7 @@ import {
   batchProvisionInstructors,
   updateUserRole,
   resetUserPassword,
+  updateInstructorPassword,
   createUserAccount,
   updateUserProfile,
   toggleUserSuspension,
@@ -13,6 +14,7 @@ import {
   restoreInstructor,
   deleteInstructorPermanent,
 } from '@/lib/data-store';
+import { verifyPassword } from '@/lib/auth-security';
 
 export async function GET(request: Request) {
   try {
@@ -96,7 +98,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: ok, message: ok ? 'เปลี่ยนบทบาทผู้ใช้สำเร็จ' : 'ไม่พบผู้ใช้' });
     }
 
-    // 4. Reset Password
+    // 4. Change Password (by user or admin)
+    if (action === 'change-password') {
+      const targetId = userId || updates?.id || updates?.email || body.email;
+      if (!targetId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุบัญชีผู้ใช้ที่ต้องการเปลี่ยนรหัสผ่าน' }, { status: 400 });
+      }
+
+      if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+        return NextResponse.json({ success: false, error: 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร' }, { status: 400 });
+      }
+
+      // If oldPassword is provided, verify it
+      if (body.oldPassword) {
+        const accounts = await getInstructorAccounts();
+        const clean = String(targetId).toLowerCase().trim();
+        const found = accounts.find((a) => 
+          (a.id || '').toLowerCase() === clean || 
+          (a.email || '').toLowerCase() === clean ||
+          (a.gmail || '').toLowerCase() === clean
+        );
+        if (found) {
+          const matchPass = await verifyPassword(body.oldPassword, found.password);
+          const matchDef = await verifyPassword(body.oldPassword, found.defaultPassword || 'mcu123456');
+          const matchFb = await verifyPassword(body.oldPassword, 'mcu123456');
+          if (!matchPass && !matchDef && !matchFb) {
+            return NextResponse.json({ success: false, error: 'รหัสผ่านเดิมไม่ถูกต้อง' }, { status: 400 });
+          }
+        }
+      }
+
+      const ok = await updateInstructorPassword(targetId, newPassword);
+      if (!ok) {
+        return NextResponse.json({ success: false, error: 'ไม่พบผู้ใช้ หรือไม่สามารถเปลี่ยนรหัสผ่านได้' }, { status: 404 });
+      }
+
+      return NextResponse.json({ success: true, message: 'เปลี่ยนรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว' });
+    }
+
+    // 5. Reset Password (by admin)
     if (action === 'reset-password') {
       if (!userId) {
         return NextResponse.json({ success: false, error: 'กรุณาระบุ userId' }, { status: 400 });

@@ -47,6 +47,7 @@ import { EligibilityTab, SemesterRoadmapTab, AddStudentToCourseModal, GradeSheet
 import { CourseEnrollment } from '@/types';
 import { getAuthUser, isAdminOrOfficer, clearAuthSession, saveAuthSession } from '@/lib/auth-client';
 import { toSafeCsvCell } from '@/lib/security';
+import UserProfileModal from '@/components/UserProfileModal';
 
 export default function AttendancePage() {
   const [activeMode, setActiveMode] = useState<'ROLL_CALL' | 'ROADMAP' | 'QR_CODE' | 'ELIGIBILITY' | 'GRADE_SHEET' | 'HISTORY'>('ROLL_CALL');
@@ -62,6 +63,7 @@ export default function AttendancePage() {
 
   // Auth & Current Instructor State
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Instructor & Course Selection
   const [selectedInstructor, setSelectedInstructor] = useState<string>('ALL');
@@ -1145,6 +1147,14 @@ export default function AttendancePage() {
 
             <div className="flex flex-wrap items-center gap-2">
               <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-emerald-100 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 rounded-xl transition cursor-pointer shadow-sm"
+              >
+                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>แก้ไขโปรไฟล์ & รหัสผ่าน</span>
+              </button>
+              <button
                 onClick={handleLogout}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-200 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl transition cursor-pointer"
               >
@@ -2147,6 +2157,14 @@ export default function AttendancePage() {
           currentUserName={currentUser?.name}
         />
       )}
+
+      {/* User Profile & Password Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentUser={currentUser}
+        onUserUpdated={(updated) => setCurrentUser(updated)}
+      />
     </div>
   );
 }

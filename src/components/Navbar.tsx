@@ -26,12 +26,14 @@ import {
 } from 'lucide-react';
 import { translations, Language } from '@/lib/translations';
 import { getAuthUser, isAdminOrOfficer, clearAuthSession } from '@/lib/auth-client';
+import UserProfileModal from '@/components/UserProfileModal';
 
 export default function Navbar() {
   const pathname = usePathname();
   const isAdminRoute = pathname.startsWith('/admin') || pathname === '/attendance' || pathname === '/settings';
 
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [lang, setLang] = useState<Language>('th');
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>('th');
@@ -386,12 +388,22 @@ export default function Navbar() {
                   </button>
                 )}
 
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold ${
-                  isAdminRoute ? 'bg-slate-800 text-emerald-300 border border-slate-700' : 'bg-orange-50 text-orange-900 border border-orange-200'
-                }`}>
-                  <UserCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                <button
+                  type="button"
+                  onClick={() => setIsProfileModalOpen(true)}
+                  title="คลิกเพื่อแก้ไขโปรไฟล์ & เปลี่ยนรหัสผ่านส่วนตัว"
+                  className={`group flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer hover:shadow-md ${
+                    isAdminRoute
+                      ? 'bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 hover:border-emerald-500/50'
+                      : 'bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-200 hover:border-orange-300'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4 text-emerald-500 shrink-0 group-hover:scale-110 transition-transform" />
                   <span className="hidden sm:inline truncate max-w-[140px]">{currentUser.name}</span>
-                </div>
+                  <span className="text-[10px] opacity-70 font-normal hidden md:inline ml-0.5 underline">
+                    (แก้ไข)
+                  </span>
+                </button>
                 <button
                   onClick={handleLogout}
                   title="ออกจากระบบ"
@@ -439,6 +451,14 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* User Profile & Password Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentUser={currentUser}
+        onUserUpdated={(updated) => setCurrentUser(updated)}
+      />
     </header>
   );
 }
