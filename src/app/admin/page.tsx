@@ -73,7 +73,8 @@ import {
   Hash,
   FileEdit,
   Save,
-  Award
+  Award,
+  Loader2
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
 import { getAuthUser, saveAuthSession, clearAuthSession, isAdminOrOfficer } from '@/lib/auth-client';
@@ -504,11 +505,8 @@ export default function AdminConsolePage() {
   const [syncingSheet, setSyncingSheet] = useState(false);
 
   // Current admin session
-  const [currentUser, setCurrentUser] = useState<any>({
-    name: 'พระมหาไพศาล ดิษฐพันธ์ (ผู้ดูแลระบบสูงสุด)',
-    role: 'SUPER_ADMIN',
-    email: 'phaisal.dis@mcu.ac.th',
-  });
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // Role Access Checks
   const isSuperAdmin = useMemo(() => {
@@ -690,33 +688,26 @@ export default function AdminConsolePage() {
 
   useEffect(() => {
     loadData();
-    try {
-      const user = getAuthUser();
-      if (user) {
+    const checkAuth = async () => {
+      try {
+        let user = getAuthUser();
+        if (!user) {
+          const res = await fetch('/api/auth');
+          const d = await res.json();
+          if (d.authenticated && d.user) {
+            user = d.user;
+            saveAuthSession(d.user, true);
+          }
+        }
         setCurrentUser(user);
-      } else {
-        fetch('/api/auth')
-          .then((r) => r.json())
-          .then((d) => {
-            if (d.authenticated && d.user) {
-              setCurrentUser(d.user);
-              saveAuthSession(d.user, true);
-            } else {
-              // Persist default Super Admin session when working from Admin Console
-              saveAuthSession(
-                {
-                  name: 'พระมหาไพศาล ดิษฐพันธ์ (ผู้ดูแลระบบสูงสุด)',
-                  role: 'SUPER_ADMIN',
-                  email: 'phaisal.dis@mcu.ac.th',
-                  isSuperAdmin: true,
-                },
-                true
-              );
-            }
-          })
-          .catch(() => {});
+      } catch (e) {
+      } finally {
+        setAuthChecked(true);
       }
+    };
+    checkAuth();
 
+    try {
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         const tabParam = urlParams.get('tab') as AdminTab | null;
@@ -1899,33 +1890,56 @@ ${coursesText}
     6: 'bg-purple-50 text-purple-700 border-purple-200',
   };
 
-  // Block non-admin/officer users (e.g. instructors) from Admin Console
-  if (currentUser && !isAdminOrOfficer(currentUser)) {
+  if (!authChecked) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200/90 shadow-xl p-8 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3 text-white">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+          <span className="text-xs font-bold text-slate-300">กำลังตรวจสอบสิทธิ์ Admin Console...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Strictly block non-admin / instructor / unauthenticated users from Admin Console
+  if (!currentUser || !isAdminOrOfficer(currentUser)) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl p-8 text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-inner">
             <Lock className="w-8 h-8" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-xl font-extrabold text-slate-900">
-              สงวนสิทธิ์เฉพาะผู้ดูแลระบบและเจ้าหน้าที่
+            <h2 className="text-lg font-bold text-white">
+              สงวนสิทธิ์เฉพาะผู้ดูแลระบบและเจ้าหน้าที่ (Admin Only)
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-              สำหรับอาจารย์ผู้สอน กรุณาใช้งานผ่านระบบบันทึกเวลาเรียนและการประเมินผล
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {currentUser
+                ? `บัญชีของคุณ (${currentUser.name}) เป็นสิทธิ์อาจารย์ผู้สอน ซึ่งไม่มีสิทธิ์เข้าถึงส่วนหลังบ้าน Admin Console กรุณาใช้งานผ่านระบบบันทึกเวลาเรียน`
+                : 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบหรือเจ้าหน้าที่เพื่อเข้าใช้งานส่วนนี้'}
             </p>
           </div>
           <div className="pt-2 flex flex-col gap-2">
-            <Link
-              href="/attendance"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm"
-            >
-              <CheckSquare className="w-4 h-4" />
-              <span>ไปยังระบบเช็คชื่ออาจารย์</span>
-            </Link>
+            {currentUser ? (
+              <Link
+                href="/attendance"
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm"
+              >
+                <CheckSquare className="w-4 h-4" />
+                <span>ไปยังระบบเช็คชื่ออาจารย์</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm"
+              >
+                <Lock className="w-4 h-4" />
+                <span>เข้าสู่ระบบ</span>
+              </Link>
+            )}
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold transition"
             >
               <span>กลับหน้าหลัก</span>
             </Link>

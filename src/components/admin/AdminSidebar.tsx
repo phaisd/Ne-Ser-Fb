@@ -18,6 +18,7 @@ import {
   Award,
 } from 'lucide-react';
 import { SystemSettings } from '@/types';
+import { isAdminOrOfficer } from '@/lib/auth-client';
 
 export type AdminTab =
   | 'DASHBOARD'
@@ -58,6 +59,10 @@ export function AdminSidebar({
   currentUser,
   handleLogout,
 }: AdminSidebarProps) {
+  if (!isAdminOrOfficer(currentUser)) {
+    return null;
+  }
+
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 ease-in-out border-r border-slate-800 print:hidden lg:static lg:translate-x-0 ${
