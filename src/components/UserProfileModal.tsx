@@ -55,6 +55,8 @@ export default function UserProfileModal({
   const [email, setEmail] = useState('');
   const [gmail, setGmail] = useState('');
   const [department, setDepartment] = useState('');
+  const [instructorType, setInstructorType] = useState('อาจารย์ประจำ');
+  const [fetchingProfile, setFetchingProfile] = useState(false);
 
   // Password form state
   const [oldPassword, setOldPassword] = useState('');
@@ -73,21 +75,49 @@ export default function UserProfileModal({
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Populate form when currentUser changes or modal opens
+  // Fetch full and latest user profile from database (จัดการผู้ใช้) when modal opens
   useEffect(() => {
-    if (currentUser) {
-      setName(currentUser.name || '');
-      setNameEn(currentUser.nameEn || '');
-      setEmail(currentUser.email || '');
-      setGmail(currentUser.gmail || '');
-      setDepartment(currentUser.department || 'คณะพุทธศาสตร์ มจร');
-    }
+    if (!isOpen || !currentUser) return;
+
+    // First populate from session
+    setName(currentUser.name || '');
+    setNameEn(currentUser.nameEn || '');
+    setEmail(currentUser.email || '');
+    setGmail(currentUser.gmail || '');
+    setDepartment(currentUser.department || 'คณะพุทธศาสตร์ มจร');
+    setInstructorType(currentUser.instructorType || 'อาจารย์ประจำ');
+
     setErrorMsg('');
     setSuccessMsg('');
     setOldPassword('');
     setNewPassword('');
     setConfirmPassword('');
-  }, [currentUser, isOpen]);
+
+    // Fetch live complete profile from /api/users
+    const fetchLatestProfile = async () => {
+      try {
+        setFetchingProfile(true);
+        const targetId = currentUser.id || currentUser.email;
+        const res = await fetch(`/api/users?userId=${encodeURIComponent(targetId)}`);
+        const d = await res.json();
+        if (d.success && d.user) {
+          const u = d.user;
+          if (u.name) setName(u.name);
+          if (u.nameEn) setNameEn(u.nameEn);
+          if (u.email) setEmail(u.email);
+          if (u.gmail) setGmail(u.gmail);
+          if (u.department) setDepartment(u.department);
+          if (u.instructorType) setInstructorType(u.instructorType);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch full user profile:', err);
+      } finally {
+        setFetchingProfile(false);
+      }
+    };
+
+    fetchLatestProfile();
+  }, [isOpen, currentUser]);
 
   // Load history when tab is opened
   useEffect(() => {
@@ -167,6 +197,7 @@ export default function UserProfileModal({
             email: cleanEmail,
             gmail: gmail.trim().toLowerCase(),
             department: department.trim(),
+            instructorType: instructorType,
           },
         }),
       });
@@ -184,6 +215,7 @@ export default function UserProfileModal({
         email: cleanEmail,
         gmail: gmail.trim().toLowerCase(),
         department: department.trim(),
+        instructorType: instructorType,
       };
 
       saveAuthSession(updated, true);
@@ -277,7 +309,7 @@ export default function UserProfileModal({
                       ? 'bg-purple-500/30 text-purple-200 border-purple-400/30'
                       : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/30'
                   }`}>
-                    {isAdmin ? '👑 สิทธิ์ผู้ดูแลระบบ' : '🔒 อาจารย์ผู้สอนประจำวิชา'}
+                    {isAdmin ? '👑 สิทธิ์ผู้ดูแลระบบ' : `🔒 ${instructorType || 'อาจารย์ประจำ'}`}
                   </span>
                 </div>
                 <h3 className="text-base font-bold text-white mt-1 truncate max-w-[280px]">
@@ -457,6 +489,28 @@ export default function UserProfileModal({
                     className="w-full pl-9 pr-3 py-2.5 text-xs bg-white text-slate-900 font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>ประเภทอาจารย์ผู้สอน (จากระบบจัดการผู้ใช้)</span>
+                  <span className="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 font-medium">
+                    {instructorType}
+                  </span>
+                </label>
+                <div className="relative">
+                  <UserCheck className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={instructorType}
+                    disabled
+                    readOnly
+                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-100 text-slate-700 font-medium border border-slate-200 rounded-xl cursor-not-allowed"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  * ข้อมูลทางการจากระบบจัดการผู้ใช้และบทบาท (เช่น อาจารย์ประจำ, อาจารย์พิเศษ)
+                </p>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2.5">

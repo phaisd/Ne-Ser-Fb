@@ -31,6 +31,23 @@ export async function GET(request: Request) {
 
     let accounts = await getInstructorAccounts();
 
+    const targetId = searchParams.get('id') || searchParams.get('userId') || searchParams.get('email');
+    if (targetId) {
+      const cleanTarget = targetId.trim().toLowerCase();
+      const user = accounts.find(
+        (a) =>
+          (a.id || '').toLowerCase() === cleanTarget ||
+          (a.email || '').toLowerCase() === cleanTarget ||
+          (a.gmail || '').toLowerCase() === cleanTarget ||
+          a.previousIds?.some((p) => p.toLowerCase() === cleanTarget) ||
+          a.aliases?.some((al) => al.toLowerCase() === cleanTarget)
+      );
+      if (user) {
+        const { password, ...safeUser } = user;
+        return NextResponse.json({ success: true, user: safeUser, data: [safeUser] });
+      }
+    }
+
     if (role && role !== 'ALL') {
       accounts = accounts.filter((a) => a.role === role);
     }

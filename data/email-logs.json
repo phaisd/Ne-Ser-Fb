@@ -1,5 +1,15 @@
 [
   {
+    "id": "mail-1793958850048",
+    "to": "teacher94@mcu.ac.th, teacher94.mcu@gmail.com",
+    "subject": "🔒 รหัสยืนยันและลิงก์รีเซ็ตรหัสผ่าน - คณะพุทธศาสตร์ มจร (374120)",
+    "otpCode": "374120",
+    "resetUrl": "https://ne-ser-fb.vercel.app/reset-password?token=76fd82508a6a8f1101bd69cc4543282dc760b7b845e8323f",
+    "sent": false,
+    "createdAt": "2026-11-06T09:54:10.048Z",
+    "error": "SMTP credentials not configured in environment (SMTP_USER/SMTP_PASS)"
+  },
+  {
     "id": "mail-1793958126068",
     "to": "teacher94@mcu.ac.th, teacher94.mcu@gmail.com",
     "subject": "🔒 รหัสยืนยันและลิงก์รีเซ็ตรหัสผ่าน - คณะพุทธศาสตร์ มจร (685896)",
