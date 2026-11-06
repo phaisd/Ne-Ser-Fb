@@ -196,12 +196,12 @@ export default function Navbar() {
   ];
 
   const adminNavItems = [
-    { href: '/admin', label: t.navAdmin, icon: ShieldCheck },
+    ...(isAdmin ? [{ href: '/admin', label: t.navAdmin, icon: ShieldCheck }] : []),
     ...(settings?.showCoursesMenu !== false ? [{ href: '/courses', label: t.navCourses, icon: BookOpen }] : []),
     { href: '/attendance', label: t.navAttendance, icon: CheckSquare },
     ...(settings?.showEventsMenu === true ? [{ href: '/events', label: 'กิจกรรมนิสิต', icon: Award }] : []),
-    ...(settings?.showStudentsSearch !== false ? [{ href: '/students', label: t.navStudents, icon: Users }] : []),
-    { href: '/settings', label: t.navSettings, icon: Table2 },
+    ...(isAdmin && settings?.showStudentsSearch !== false ? [{ href: '/students', label: t.navStudents, icon: Users }] : []),
+    ...(isAdmin ? [{ href: '/settings', label: t.navSettings, icon: Table2 }] : []),
   ];
 
   return (
@@ -211,7 +211,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Brand */}
-          <Link href={isAdminRoute ? '/admin' : '/'} className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+          <Link href={isAdminRoute ? (isAdmin ? '/admin' : '/attendance') : '/'} className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
             {settings?.logoUrl ? (
               <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-center p-1 overflow-hidden shrink-0 group-hover:scale-105 transition">
                 <img
@@ -419,7 +419,7 @@ export default function Navbar() {
                 <GraduationCap className="w-4 h-4 text-orange-400" />
                 <span>หน้าบ้าน</span>
               </Link>
-            ) : (
+            ) : isAdmin ? (
               <Link
                 href="/admin"
                 className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-md transition"
@@ -427,7 +427,15 @@ export default function Navbar() {
                 <Lock className="w-3.5 h-3.5 text-emerald-400" />
                 <span>หลังบ้าน</span>
               </Link>
-            )}
+            ) : currentUser ? (
+              <Link
+                href="/attendance"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-md transition"
+              >
+                <CheckSquare className="w-3.5 h-3.5 text-amber-400" />
+                <span>บันทึกเวลาเรียน</span>
+              </Link>
+            ) : null}
           </div>
         </div>
       </div>

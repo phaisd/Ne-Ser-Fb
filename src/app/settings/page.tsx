@@ -22,8 +22,11 @@ import {
   Sparkles,
   Building2,
   Mail,
+  Lock,
+  ArrowLeft,
   Image as ImageIcon
 } from 'lucide-react';
+import { getAuthUser, isAdminOrOfficer } from '@/lib/auth-client';
 
 interface SheetStatus {
   configured: boolean;
@@ -56,6 +59,9 @@ interface SystemSettings {
 }
 
 export default function SettingsPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
   // Google Sheets state
   const [status, setStatus] = useState<SheetStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -132,6 +138,12 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
+    try {
+      const u = getAuthUser();
+      setCurrentUser(u);
+    } catch {}
+    setAuthChecked(true);
+
     checkStatus();
     loadSettings();
   }, []);
@@ -266,6 +278,50 @@ export default function SettingsPage() {
       setSyncing(false);
     }
   };
+
+  const isAdmin = isAdminOrOfficer(currentUser);
+
+  if (!authChecked) {
+    return (
+      <div className="p-12 text-center text-slate-400 text-sm">
+        กำลังตรวจสอบสิทธิ์การเข้าถึง...
+      </div>
+    );
+  }
+
+  // Deny access for normal instructors / students / guests
+  if (!isAdmin) {
+    return (
+      <div className="max-w-xl mx-auto my-12 p-8 bg-white rounded-3xl border border-slate-200/90 shadow-lg text-center space-y-4">
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+          <Lock className="w-8 h-8" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-xl font-extrabold text-slate-900">
+            สงวนสิทธิ์เฉพาะผู้ดูแลระบบ (Admin Only)
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-md mx-auto">
+            หน้านี้สำหรับการตั้งค่าโลโก้สถาบัน การเชื่อมต่อ Google Sheets API และระบบแจ้งเตือนส่วนกลางของคณะ ซึ่งอนุญาตให้เฉพาะผู้ดูแลระบบและเจ้าหน้าที่เท่านั้น
+          </p>
+        </div>
+        <div className="pt-2 flex items-center justify-center gap-3">
+          <Link
+            href="/attendance"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>กลับไประบบเช็คชื่ออาจารย์</span>
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+          >
+            <span>หน้าหลัก</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">

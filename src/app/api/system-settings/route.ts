@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSystemSettings, updateSystemSettings } from '@/lib/data-store';
+import { getAuthenticatedUserFromRequest, isServerAdminOrOfficer } from '@/lib/server-auth-guard';
 import fs from 'fs';
 import path from 'path';
 
@@ -17,6 +18,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Only Admin / Officer can modify system settings & branding logo
+    const authUser = getAuthenticatedUserFromRequest(request);
+    if (!isServerAdminOrOfficer(authUser)) {
+      return NextResponse.json(
+        { success: false, error: 'สงวนสิทธิ์เฉพาะผู้ดูแลระบบและเจ้าหน้าที่เท่านั้น (Unauthorized)' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     // Auto-convert Base64 logoUrl to saved file

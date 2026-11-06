@@ -76,7 +76,7 @@ import {
   Award
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
-import { getAuthUser, saveAuthSession, clearAuthSession } from '@/lib/auth-client';
+import { getAuthUser, saveAuthSession, clearAuthSession, isAdminOrOfficer } from '@/lib/auth-client';
 import {
   AdminSheetsTab,
   AdminTimetablesTab,
@@ -1898,6 +1898,42 @@ ${coursesText}
     5: 'bg-sky-50 text-sky-700 border-sky-200',
     6: 'bg-purple-50 text-purple-700 border-purple-200',
   };
+
+  // Block non-admin/officer users (e.g. instructors) from Admin Console
+  if (currentUser && !isAdminOrOfficer(currentUser)) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200/90 shadow-xl p-8 text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-xl font-extrabold text-slate-900">
+              สงวนสิทธิ์เฉพาะผู้ดูแลระบบและเจ้าหน้าที่
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+              สำหรับอาจารย์ผู้สอน กรุณาใช้งานผ่านระบบบันทึกเวลาเรียนและการประเมินผล
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col gap-2">
+            <Link
+              href="/attendance"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm"
+            >
+              <CheckSquare className="w-4 h-4" />
+              <span>ไปยังระบบเช็คชื่ออาจารย์</span>
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+            >
+              <span>กลับหน้าหลัก</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-100 font-sans print:h-auto print:overflow-visible print:block">

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSheetsClient } from '@/lib/google-sheets';
 import { getSystemSettings, updateSystemSettings, convertGoogleDriveUrl } from '@/lib/data-store';
+import { getAuthenticatedUserFromRequest, isServerAdminOrOfficer } from '@/lib/server-auth-guard';
 import fs from 'fs';
 import path from 'path';
 
@@ -40,6 +41,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // Only Admin / Officer can trigger full synchronization with Google Sheets
+  const authUser = getAuthenticatedUserFromRequest(request);
+  if (!isServerAdminOrOfficer(authUser)) {
+    return NextResponse.json(
+      { success: false, error: 'สงวนสิทธิ์เฉพาะผู้ดูแลระบบและเจ้าหน้าที่เท่านั้น (Unauthorized)' },
+      { status: 403 }
+    );
+  }
+
   const client = getSheetsClient();
   if (!client) {
     return NextResponse.json(
