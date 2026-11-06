@@ -1,14 +1,31 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Users, GraduationCap, ExternalLink, Search, Eye, EyeOff, Trash2 } from 'lucide-react';
+import {
+  Users,
+  GraduationCap,
+  ExternalLink,
+  Search,
+  Eye,
+  EyeOff,
+  Trash2,
+  Download,
+  Upload,
+  FileSpreadsheet,
+  ChevronDown,
+  Check,
+  Archive,
+} from 'lucide-react';
 import { Student } from '@/types';
 import { maskPassport } from '@/lib/utils';
+import { StudentImportModal, ArchivedStudentsModal } from '../modals';
 
 interface AdminStudentsTabProps {
   studentsCount: { total: number; thai: number; intl: number };
   filteredStudents: Student[];
+  allStudents?: Student[];
+  onRefresh?: () => void;
   studentSearch: string;
   setStudentSearch: (val: string) => void;
   studentProgramFilter: string;
@@ -32,6 +49,8 @@ interface AdminStudentsTabProps {
 export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
   studentsCount,
   filteredStudents,
+  allStudents = [],
+  onRefresh,
   studentSearch,
   setStudentSearch,
   studentProgramFilter,
@@ -51,6 +70,64 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
   openDeleteBulkStudentsModal,
   openDeleteSingleStudentModal,
 }) => {
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+
+  const exportStudentsToCSV = (list: Student[], filename: string) => {
+    const headers = [
+      'รหัสนิสิต',
+      'คำนำหน้า',
+      'ชื่อ',
+      'นามสกุล',
+      'หลักสูตร',
+      'สาขาวิชา',
+      'คณะ',
+      'ชั้นปี',
+      'สัญชาติ',
+      'เลขประจำตัวประชาชน/Passport',
+      'สถานภาพ',
+      'เกรดเฉลี่ยสะสม (GPA)',
+      'ที่อยู่',
+      'เบอร์โทรศัพท์',
+      'อีเมล',
+    ];
+
+    const rows = list.map((s) => [
+      `"${s.studentCode || ''}"`,
+      `"${s.title || ''}"`,
+      `"${s.firstName || ''}"`,
+      `"${s.lastName || ''}"`,
+      `"${s.programType === 'ENGLISH' ? 'International' : 'Regular'}"`,
+      `"${s.major || ''}"`,
+      `"${s.faculty || ''}"`,
+      `"${s.yearLevel || ''}"`,
+      `"${s.nationality || ''}"`,
+      `"${s.passportNo || ''}"`,
+      `"${s.studyStatus || ''}"`,
+      `"${s.gpa || ''}"`,
+      `"${(s.address || '').replace(/"/g, '""')}"`,
+      `"${s.phoneNumber || ''}"`,
+      `"${s.email || ''}"`,
+    ]);
+
+    const csvContent =
+      '\uFEFF' +
+      [
+        headers.join(','),
+        ...rows.map((row) => row.join(',')),
+      ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    setIsExportMenuOpen(false);
+  };
+
   return (
     <div className="space-y-4">
       {/* Header Card */}
@@ -65,19 +142,110 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Import Button */}
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+            title="นำเข้าข้อมูลนิสิตจากไฟล์ Excel / CSV หรือวางข้อความ"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>📥 นำเข้า Excel / CSV</span>
+          </button>
+
+          {/* Export Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+              title="ส่งออกรายชื่อนิสิตเป็นไฟล์ Excel / CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>📤 ส่งออก Excel / CSV</span>
+              <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isExportMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsExportMenuOpen(false)}
+                />
+                <div className="absolute right-0 mt-1.5 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-3 py-1 text-[10px] font-bold text-slate-400 border-b border-slate-100">
+                    เลือกรูปแบบการส่งออก (UTF-8 BOM สำหรับ Excel)
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const list = allStudents.length > 0 ? allStudents : filteredStudents;
+                      exportStudentsToCSV(list, `students_all_${new Date().toISOString().slice(0, 10)}.csv`);
+                    }}
+                    className="w-full px-3 py-2 text-left hover:bg-slate-50 transition flex items-center justify-between cursor-pointer"
+                  >
+                    <span>📄 ส่งออกทั้งหมด</span>
+                    <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-bold">
+                      {studentsCount.total} คน
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      exportStudentsToCSV(filteredStudents, `students_filtered_${new Date().toISOString().slice(0, 10)}.csv`);
+                    }}
+                    className="w-full px-3 py-2 text-left hover:bg-slate-50 transition flex items-center justify-between cursor-pointer"
+                  >
+                    <span>🔍 ส่งออกตามตัวกรองที่แสดง</span>
+                    <span className="font-mono text-[10px] bg-amber-50 px-1.5 py-0.5 rounded text-amber-700 font-bold border border-amber-200">
+                      {filteredStudents.length} คน
+                    </span>
+                  </button>
+                  {adminSelectedStudentCodes.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const baseList = allStudents.length > 0 ? allStudents : filteredStudents;
+                        const selectedList = baseList.filter((s) => adminSelectedStudentCodes.has(s.studentCode));
+                        exportStudentsToCSV(selectedList, `students_selected_${new Date().toISOString().slice(0, 10)}.csv`);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-rose-50 text-rose-800 transition flex items-center justify-between cursor-pointer font-bold border-t border-slate-100"
+                    >
+                      <span>✅ ส่งออกเฉพาะที่เลือก</span>
+                      <span className="font-mono text-[10px] bg-rose-100 px-1.5 py-0.5 rounded text-rose-800">
+                        {adminSelectedStudentCodes.size} คน
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Archived Students Button */}
+          <button
+            type="button"
+            onClick={() => setIsArchiveModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer"
+            title="เปิดดูแฟ้มประวัตินิสิตที่ถูกลบ/จำหน่ายออก และกู้คืนข้อมูล (Google Sheets: Students_Archive)"
+          >
+            <Archive className="w-3.5 h-3.5 text-amber-700" />
+            <span>📁 แฟ้มประวัติที่ถูกลบ</span>
+          </button>
+
           <button
             type="button"
             onClick={openPromotionModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"
           >
             <GraduationCap className="w-4 h-4" />
-            <span>🎓 เลื่อนชั้นปีการศึกษา (Bulk Promotion)</span>
+            <span>🎓 เลื่อนชั้นปี</span>
           </button>
           <Link
             href="/students"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition cursor-pointer"
           >
-            <span>เปิดหน้าจอจัดการทะเบียนนิสิตเต็มรูปแบบ</span>
+            <span>จอเต็มรูปแบบ</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -311,7 +479,7 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                           <Link
-                            href={`/students?search=${s.studentCode}`}
+                            href={`/students?search=${s.studentCode}&edit=true`}
                             className="px-2.5 py-1 rounded-lg text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 transition inline-flex items-center gap-1"
                           >
                             <span>แก้ไข</span>
@@ -341,6 +509,25 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
           </div>
         )}
       </div>
+
+      {/* Student Import Modal */}
+      <StudentImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        existingStudents={allStudents.length > 0 ? allStudents : filteredStudents}
+        onSuccess={() => {
+          if (onRefresh) onRefresh();
+        }}
+      />
+
+      {/* Archived Students Modal (Google Sheets: Students_Archive) */}
+      <ArchivedStudentsModal
+        isOpen={isArchiveModalOpen}
+        onClose={() => setIsArchiveModalOpen(false)}
+        onStudentRestored={() => {
+          if (onRefresh) onRefresh();
+        }}
+      />
     </div>
   );
 };

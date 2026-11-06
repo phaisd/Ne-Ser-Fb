@@ -18,6 +18,7 @@ import {
   Archive,
 } from 'lucide-react';
 import { CertificateRequest, UserAccount } from '@/types';
+import { AcademicYearWorkflowCard } from '../AcademicYearWorkflowCard';
 
 interface AdminDashboardTabProps {
   pendingRequests: CertificateRequest[];
@@ -28,6 +29,7 @@ interface AdminDashboardTabProps {
   setActiveTab: (tab: any) => void;
   setStatusFilter: (filter: any) => void;
   setApprovingId: (id: string) => void;
+  onOpenArchiveModal?: () => void;
 }
 
 export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
@@ -39,6 +41,7 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
   setActiveTab,
   setStatusFilter,
   setApprovingId,
+  onOpenArchiveModal,
 }) => {
   return (
     <div className="space-y-6">
@@ -134,6 +137,12 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
         </div>
       </div>
 
+      {/* Recommended Workflow for New Academic Year */}
+      <AcademicYearWorkflowCard
+        onNavigateTab={setActiveTab}
+        onOpenArchiveModal={onOpenArchiveModal}
+      />
+
       {/* Quick Actions & Recent Pending Requests */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
@@ -212,6 +221,17 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
               <div>
                 <div className="font-bold">จัดการผู้ใช้งาน & กำหนดบทบาท</div>
                 <div className="text-[11px] text-slate-400">Admin, เจ้าหน้าที่, อาจารย์ ({users.length} ท่าน)</div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => setActiveTab('EVENTS')}
+              className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-900 border border-slate-200/80 transition flex items-center justify-between cursor-pointer"
+            >
+              <div>
+                <div className="font-bold">งานกิจกรรมและโครงการนิสิต</div>
+                <div className="text-[11px] text-slate-400">เช็คชื่อวิปัสสนากัมมัฏฐาน & ชั่วโมงกิจกรรม</div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </button>

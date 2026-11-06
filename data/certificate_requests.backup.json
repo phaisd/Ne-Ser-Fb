@@ -1,0 +1,699 @@
+[
+  {
+    "studentCode": "6801501088",
+    "fullName": "Akash Barua",
+    "certType": "หนังสือรับรองต่ออายุ Visa (Extension for Visa)",
+    "degreeLevel": "ปริญญาตรี",
+    "major": "Buddhist Studies",
+    "requestPurpose": "หนังสือรับรองต่ออายุ Visa (Extension for Visa)",
+    "status": "PENDING",
+    "email": "",
+    "phone": "",
+    "targetAudience": "INTERNATIONAL",
+    "age": "",
+    "gender": "ชาย",
+    "nationality": "International",
+    "country": "",
+    "passportNo": "",
+    "passportExpireDate": "",
+    "visaType": "Non-Immigrant Visa",
+    "visaExpireDate": "",
+    "gpa": "",
+    "address": "",
+    "subdistrict": "",
+    "district": "",
+    "province": "",
+    "postalCode": "",
+    "bankTargetTh": "ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร",
+    "bankActionTh": "เปิดบัญชีธนาคารและเปิดใช้งานแอปพลิเคชั่น Mobile Banking",
+    "docTemplate": "INT_VISA_EXT",
+    "id": "req-1793762534372",
+    "createdAt": "2026-11-04T03:22:14.372Z"
+  },
+  {
+    "studentCode": "660101001",
+    "fullName": "พระมหาธีรภัทร ญาณเมธี",
+    "certType": "หนังสือรับรองสภาพนิสิต",
+    "degreeLevel": "ปริญญาตรี",
+    "major": "พระพุทธศาสนา",
+    "requestPurpose": "หนังสือรับรองสภาพนิสิต",
+    "status": "PENDING",
+    "email": "",
+    "phone": "",
+    "id": "req-1793596334142",
+    "createdAt": "2026-11-02T05:12:14.142Z",
+    "docNo": "716",
+    "updatedAt": "2026-11-05T04:05:39.569Z",
+    "customBodyText": "โดยหนังสือนี้ขอรับรองว่า พระมหาธีรภัทร ญาณเมธี สัญชาติ ไทย เป็นนิสิตคณะพุทธศาสตร์ หลักสูตรปริญญาตรี (ระดับปริญญาตรี หลักสูตร ๔ ปี) ชั้นปีที่ ๒ สาขาวิชา พระพุทธศาสนา (ภาคภาษาอังกฤษ) มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย รหัสประจำตัวนิสิต ๖๖๐๑๐๑๐๐๑ เพื่อเป็นหลักฐาน สำหรับ หนังสือรับรองสภาพนิสิต จึงออกหนังสือนี้ไว้เป็นสำคัญ"
+  },
+  {
+    "id": "2002a5dc-e942-4202-ba28-f45a37738c9f",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "4e249b2f-64d8-4d48-aa04-3c4db07b5736",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":12,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6501501071\",\"fullName\":\"VIPASSANA\",\"age\":\"29\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MF772427\",\"passportExpireDate\":\"\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Religion and Philosophy\",\"requestPurpose\":\"Bonafide Certificate (ความเป็นนิสิต)\",\"language\":\"In English language\",\"gpa\":\"\",\"email\":\"6501501071@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"MCU\",\"subdistrict\":\"Lamsai\",\"district\":\"Wangnoi\",\"province\":\"Phra Nakhon Si Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 166\",\"issueDateTh\":\"\",\"issueDateEn\":\"August 4, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.300Z",
+    "updatedAt": "2026-10-28T19:43:19.300Z",
+    "certificateType": {
+      "id": "4e249b2f-64d8-4d48-aa04-3c4db07b5736",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Bonafide Certificate (ความเป็นนิสิต)",
+      "description": "รับรองสถานภาพความเป็นนิสิต (Bonafide Student Certificate) — สำหรับรับรองสถานภาพความเป็นนิสิต",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.035Z",
+      "updatedAt": "2026-10-17T02:44:04.035Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "47b74cbb-5896-4292-b931-52e31a479bab",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "f3ba6dbc-9744-4737-bf17-20dbbf097029",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":13,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6901501123\",\"fullName\":\"Tinku Barua\",\"age\":\"26\",\"sex\":\"M\",\"nationality\":\"Bangladeshi\",\"country\":\"Bangladesh\",\"passportNo\":\"A11511416\",\"passportExpireDate\":\"\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"\",\"classYear\":\"ปีที่ 1 (First year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Religion and Philosophy\",\"requestPurpose\":\"Mobile Banking (เปิดใช้งานแอปพลิเคชันธนาคาร)\",\"language\":\"In Thai language\",\"gpa\":\"\",\"email\":\"6901501123@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"MCU\",\"subdistrict\":\"ลำไทร\",\"district\":\"วังน้อย\",\"province\":\"พระนครศรีอยุธยา\",\"postalCode\":\"13170\",\"fullAddress\":\"\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"BANK_LETTER\",\"docNo\":\"8002/ 077\",\"issueDateTh\":\"14 ตุลาคม 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.292Z",
+    "updatedAt": "2026-10-28T19:43:19.292Z",
+    "certificateType": {
+      "id": "f3ba6dbc-9744-4737-bf17-20dbbf097029",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Mobile Banking (เปิดใช้งานแอปพลิเคชันธนาคาร)",
+      "description": "เปิดใช้งาน/อัพเดตแอปธนาคาร (Mobile Banking) — สำหรับการเปิดบัญชีธนาคารและเปิดใช้งานแอบพิเคชั่นของธนาคาร (Mobile Banking)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.020Z",
+      "updatedAt": "2026-10-17T02:44:04.020Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "f4f7e35b-fb32-4e07-9c9e-43c65e72b486",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "96fc28cb-119e-4a8e-abfc-80ab88d62de9",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":11,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6101501042\",\"fullName\":\"CHAU BUONL\",\"age\":\"34\",\"sex\":\"F\",\"nationality\":\"Vietnamese\",\"country\":\"Vietnam\",\"passportNo\":\"C4164904\",\"passportExpireDate\":\"2027-11-16\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"2022-10-02\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Cancellation Visa (ยกเลิกวีซ่า)\",\"language\":\"In Thai language\",\"gpa\":\"3.57\",\"email\":\"6101501042@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"วัดใหม่ยายแป้น\",\"subdistrict\":\"บางขุนนนท์\",\"district\":\"บางกอกน้อย\",\"province\":\"กรุงเทพมหานคร\",\"postalCode\":\"10700\",\"fullAddress\":\"วัดใหม่ยายแป้น ตำบลบางขุนนนท์ อำเภอบางกอกน้อย จังหวัดกรุงเทพมหานคร 10700\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 708\",\"issueDateTh\":\"12 เดือน ตุลาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.290Z",
+    "updatedAt": "2026-10-28T19:43:19.290Z",
+    "certificateType": {
+      "id": "96fc28cb-119e-4a8e-abfc-80ab88d62de9",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Cancellation Visa (ยกเลิกวีซ่า)",
+      "description": "ขอยกเลิกวีซ่า (Cancellation Visa) — สำหรับขอยกเลิกวีซ่า",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.027Z",
+      "updatedAt": "2026-10-17T02:44:04.027Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "1d12ff2c-865e-4ef1-bd98-065971ed675e",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "4e249b2f-64d8-4d48-aa04-3c4db07b5736",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":12,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6501501071\",\"fullName\":\"VIPASSANA\",\"age\":\"29\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MF772427\",\"passportExpireDate\":\"\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Religion and Philosophy\",\"requestPurpose\":\"Bonafide Certificate (ความเป็นนิสิต)\",\"language\":\"In English language\",\"gpa\":\"\",\"email\":\"6501501071@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"MCU\",\"subdistrict\":\"Lamsai\",\"district\":\"Wangnoi\",\"province\":\"Phra Nakhon Si Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 166\",\"issueDateTh\":\"\",\"issueDateEn\":\"August 4, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.287Z",
+    "updatedAt": "2026-10-28T19:43:19.287Z",
+    "certificateType": {
+      "id": "4e249b2f-64d8-4d48-aa04-3c4db07b5736",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Bonafide Certificate (ความเป็นนิสิต)",
+      "description": "รับรองสถานภาพความเป็นนิสิต (Bonafide Student Certificate) — สำหรับรับรองสถานภาพความเป็นนิสิต",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.035Z",
+      "updatedAt": "2026-10-17T02:44:04.035Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "87ac27cf-2f65-4a35-8579-e8a4413fd16c",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "a787b848-ec57-4ecf-8c4b-1a23b7526543",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":10,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6501401004\",\"fullName\":\"THACH VEN\",\"age\":\"33\",\"sex\":\"M\",\"nationality\":\"Vietnamese\",\"country\":\"Vietnam\",\"passportNo\":\"K0533022\",\"passportExpireDate\":\"2032-05-20\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"2022-09-12\",\"classYear\":\"ปีที่ 3 (Third year)\",\"degreeLevel\":\"ป.ตรี (B.A. Thai Program)\",\"major\":\"Philosophy\",\"requestPurpose\":\"Extension for Visa (ต่อวีซ่า)\",\"language\":\"In Thai language\",\"gpa\":\"3.65\",\"email\":\"6501401004@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"วัดทองจันทริการาม\",\"subdistrict\":\"พะยอม\",\"district\":\"วังน้อย\",\"province\":\"พระนครศรีอยุธยา\",\"postalCode\":\"13170\",\"fullAddress\":\"วัดทองจันทริการาม ตำบลพะยอม อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 715\",\"issueDateTh\":\"14 เดือน ตุลาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.251Z",
+    "updatedAt": "2026-10-28T19:43:19.251Z",
+    "certificateType": {
+      "id": "a787b848-ec57-4ecf-8c4b-1a23b7526543",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Extension for Visa (ต่อวีซ่า)",
+      "description": "ขอต่ออายุวีซ่า (Extension for Visa) — สำหรับต่ออายุ Visa (การตรวจลงตรา)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.023Z",
+      "updatedAt": "2026-10-17T02:44:04.023Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "ab4a460d-7b8e-495e-9dff-ec088ae35b4a",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "96fc28cb-119e-4a8e-abfc-80ab88d62de9",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":11,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6101501042\",\"fullName\":\"CHAU BUONL\",\"age\":\"34\",\"sex\":\"F\",\"nationality\":\"Vietnamese\",\"country\":\"Vietnam\",\"passportNo\":\"C4164904\",\"passportExpireDate\":\"2027-11-16\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"2022-10-02\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Cancellation Visa (ยกเลิกวีซ่า)\",\"language\":\"In Thai language\",\"gpa\":\"3.57\",\"email\":\"6101501042@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"วัดใหม่ยายแป้น\",\"subdistrict\":\"บางขุนนนท์\",\"district\":\"บางกอกน้อย\",\"province\":\"กรุงเทพมหานคร\",\"postalCode\":\"10700\",\"fullAddress\":\"วัดใหม่ยายแป้น ตำบลบางขุนนนท์ อำเภอบางกอกน้อย จังหวัดกรุงเทพมหานคร 10700\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 708\",\"issueDateTh\":\"12 เดือน ตุลาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.241Z",
+    "updatedAt": "2026-10-28T19:43:19.241Z",
+    "certificateType": {
+      "id": "96fc28cb-119e-4a8e-abfc-80ab88d62de9",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Cancellation Visa (ยกเลิกวีซ่า)",
+      "description": "ขอยกเลิกวีซ่า (Cancellation Visa) — สำหรับขอยกเลิกวีซ่า",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.027Z",
+      "updatedAt": "2026-10-17T02:44:04.027Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "d9542c39-283a-403d-b709-392198cd1ed6",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "818d3079-4048-4d3e-843e-5a8724d229ff",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":9,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6501501045\",\"fullName\":\"RAZAWANSA\",\"age\":\"24\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MF758127\",\"passportExpireDate\":\"2026-09-30\",\"visaType\":\"Tourist Visa\",\"visaExpireDate\":\"No Visa\",\"classYear\":\"ปีที่ 1 (First year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Open Bank Account (เปิดบัญชีธนาคาร)\",\"language\":\"In English language\",\"gpa\":\"4.00\",\"email\":\"6501501045@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"MCU\",\"subdistrict\":\"Lam Sai\",\"district\":\"Wang Noi\",\"province\":\"Pra Nakornsi Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"MCU ตำบลLam Sai อำเภอWang Noi จังหวัดPra Nakornsi Ayutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 170\",\"issueDateTh\":\"\",\"issueDateEn\":\"October 12, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.225Z",
+    "updatedAt": "2026-10-28T19:43:19.225Z",
+    "certificateType": {
+      "id": "818d3079-4048-4d3e-843e-5a8724d229ff",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Open Bank Account (เปิดบัญชีธนาคาร)",
+      "description": "เปิดบัญชีธนาคาร (Open Bank Account) — สำหรับการเปิดบัญชีธนาคารหรือทำธุรกรรมกับธนาคาร (Opening a Bank Account and/or Conducting Banking Transactions)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:03.919Z",
+      "updatedAt": "2026-10-17T02:44:03.919Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "1bb58489-0e6b-4bc0-8ea5-38a348e93e2f",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "a787b848-ec57-4ecf-8c4b-1a23b7526543",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":10,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6501401004\",\"fullName\":\"THACH VEN\",\"age\":\"33\",\"sex\":\"M\",\"nationality\":\"Vietnamese\",\"country\":\"Vietnam\",\"passportNo\":\"K0533022\",\"passportExpireDate\":\"2032-05-20\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"2022-09-12\",\"classYear\":\"ปีที่ 3 (Third year)\",\"degreeLevel\":\"ป.ตรี (B.A. Thai Program)\",\"major\":\"Philosophy\",\"requestPurpose\":\"Extension for Visa (ต่อวีซ่า)\",\"language\":\"In Thai language\",\"gpa\":\"3.65\",\"email\":\"6501401004@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"วัดทองจันทริการาม\",\"subdistrict\":\"พะยอม\",\"district\":\"วังน้อย\",\"province\":\"พระนครศรีอยุธยา\",\"postalCode\":\"13170\",\"fullAddress\":\"วัดทองจันทริการาม ตำบลพะยอม อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 715\",\"issueDateTh\":\"14 เดือน ตุลาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.213Z",
+    "updatedAt": "2026-10-28T19:43:19.213Z",
+    "certificateType": {
+      "id": "a787b848-ec57-4ecf-8c4b-1a23b7526543",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Extension for Visa (ต่อวีซ่า)",
+      "description": "ขอต่ออายุวีซ่า (Extension for Visa) — สำหรับต่ออายุ Visa (การตรวจลงตรา)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.023Z",
+      "updatedAt": "2026-10-17T02:44:04.023Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "34250267-f587-4023-8bb0-626a15956ccc",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "85222820-c327-487d-b749-63dd1eee7018",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":8,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6001501014\",\"fullName\":\"EAIK HTI\",\"age\":\"24\",\"sex\":\"F\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MC165867\",\"passportExpireDate\":\"2022-05-05\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"2022-05-05\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Philosophy\",\"requestPurpose\":\"Renew Passport (เปลี่ยนหนังสือเดินทางใหม่)\",\"language\":\"In English language\",\"gpa\":\"2.86\",\"email\":\"6001501014@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"MCU\",\"subdistrict\":\"Lamsai\",\"district\":\"Wangnoi\",\"province\":\"Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"MCU ตำบลLamsai อำเภอWangnoi จังหวัดAyutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 169\",\"issueDateTh\":\"\",\"issueDateEn\":\"September 1, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.203Z",
+    "updatedAt": "2026-10-28T19:43:19.203Z",
+    "certificateType": {
+      "id": "85222820-c327-487d-b749-63dd1eee7018",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Renew Passport (เปลี่ยนหนังสือเดินทางใหม่)",
+      "description": "ขอทำหนังสือเดินทางเล่มใหม่ (Renew Passport) — สำหรับการขอทำหนังสือเดินทางเล่มใหม่ (Renew Passport)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.042Z",
+      "updatedAt": "2026-10-17T02:44:04.042Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "512752fa-ec85-4cdf-8e57-a82c2d5c592f",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "818d3079-4048-4d3e-843e-5a8724d229ff",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":9,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6501501045\",\"fullName\":\"RAZAWANSA\",\"age\":\"24\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MF758127\",\"passportExpireDate\":\"2026-09-30\",\"visaType\":\"Tourist Visa\",\"visaExpireDate\":\"No Visa\",\"classYear\":\"ปีที่ 1 (First year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Open Bank Account (เปิดบัญชีธนาคาร)\",\"language\":\"In English language\",\"gpa\":\"4.00\",\"email\":\"6501501045@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"MCU\",\"subdistrict\":\"Lam Sai\",\"district\":\"Wang Noi\",\"province\":\"Pra Nakornsi Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"MCU ตำบลLam Sai อำเภอWang Noi จังหวัดPra Nakornsi Ayutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 170\",\"issueDateTh\":\"\",\"issueDateEn\":\"October 12, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.200Z",
+    "updatedAt": "2026-10-28T19:43:19.200Z",
+    "certificateType": {
+      "id": "818d3079-4048-4d3e-843e-5a8724d229ff",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Open Bank Account (เปิดบัญชีธนาคาร)",
+      "description": "เปิดบัญชีธนาคาร (Open Bank Account) — สำหรับการเปิดบัญชีธนาคารหรือทำธุรกรรมกับธนาคาร (Opening a Bank Account and/or Conducting Banking Transactions)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:03.919Z",
+      "updatedAt": "2026-10-17T02:44:03.919Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "1797d303-4b57-4a18-8255-e96db03603bf",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "4e249b2f-64d8-4d48-aa04-3c4db07b5736",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":7,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6101501069\",\"fullName\":\"BHIKKHUNI TRAN PHUONG THUYEN\",\"age\":\"29\",\"sex\":\"F\",\"nationality\":\"Vietnamese\",\"country\":\"Vietnam\",\"passportNo\":\"C1330730\",\"passportExpireDate\":\"2026-02-24\",\"visaType\":\"Transit Visa (30 Day)\",\"visaExpireDate\":\"2022-09-07\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Philosophy\",\"requestPurpose\":\"Bonafide Certificate (ความเป็นนิสิต)\",\"language\":\"In English language\",\"gpa\":\"3.85\",\"email\":\"6101501069@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"Mahachulalongkornrajavidyalaya University\",\"subdistrict\":\"Lam Sai\",\"district\":\"Wang Noi\",\"province\":\"Phra Nakhon Si Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"Mahachulalongkornrajavidyalaya University ตำบลLam Sai อำเภอWang Noi จังหวัดPhra Nakhon Si Ayutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 168\",\"issueDateTh\":\"\",\"issueDateEn\":\"August 24, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.193Z",
+    "updatedAt": "2026-10-28T19:43:19.193Z",
+    "certificateType": {
+      "id": "4e249b2f-64d8-4d48-aa04-3c4db07b5736",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Bonafide Certificate (ความเป็นนิสิต)",
+      "description": "รับรองสถานภาพความเป็นนิสิต (Bonafide Student Certificate) — สำหรับรับรองสถานภาพความเป็นนิสิต",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.035Z",
+      "updatedAt": "2026-10-17T02:44:04.035Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "60e8681e-c173-4e26-a251-f517250ac1cf",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "85222820-c327-487d-b749-63dd1eee7018",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":8,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6001501014\",\"fullName\":\"EAIK HTI\",\"age\":\"24\",\"sex\":\"F\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MC165867\",\"passportExpireDate\":\"2022-05-05\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"2022-05-05\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Philosophy\",\"requestPurpose\":\"Renew Passport (เปลี่ยนหนังสือเดินทางใหม่)\",\"language\":\"In English language\",\"gpa\":\"2.86\",\"email\":\"6001501014@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"MCU\",\"subdistrict\":\"Lamsai\",\"district\":\"Wangnoi\",\"province\":\"Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"MCU ตำบลLamsai อำเภอWangnoi จังหวัดAyutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 169\",\"issueDateTh\":\"\",\"issueDateEn\":\"September 1, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.191Z",
+    "updatedAt": "2026-10-28T19:43:19.191Z",
+    "certificateType": {
+      "id": "85222820-c327-487d-b749-63dd1eee7018",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Renew Passport (เปลี่ยนหนังสือเดินทางใหม่)",
+      "description": "ขอทำหนังสือเดินทางเล่มใหม่ (Renew Passport) — สำหรับการขอทำหนังสือเดินทางเล่มใหม่ (Renew Passport)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.042Z",
+      "updatedAt": "2026-10-17T02:44:04.042Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "67b04fda-073e-4a06-a856-49d916bae14e",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "4e249b2f-64d8-4d48-aa04-3c4db07b5736",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":7,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6101501069\",\"fullName\":\"BHIKKHUNI TRAN PHUONG THUYEN\",\"age\":\"29\",\"sex\":\"F\",\"nationality\":\"Vietnamese\",\"country\":\"Vietnam\",\"passportNo\":\"C1330730\",\"passportExpireDate\":\"2026-02-24\",\"visaType\":\"Transit Visa (30 Day)\",\"visaExpireDate\":\"2022-09-07\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Philosophy\",\"requestPurpose\":\"Bonafide Certificate (ความเป็นนิสิต)\",\"language\":\"In English language\",\"gpa\":\"3.85\",\"email\":\"6101501069@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"Mahachulalongkornrajavidyalaya University\",\"subdistrict\":\"Lam Sai\",\"district\":\"Wang Noi\",\"province\":\"Phra Nakhon Si Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"Mahachulalongkornrajavidyalaya University ตำบลLam Sai อำเภอWang Noi จังหวัดPhra Nakhon Si Ayutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 168\",\"issueDateTh\":\"\",\"issueDateEn\":\"August 24, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.188Z",
+    "updatedAt": "2026-10-28T19:43:19.188Z",
+    "certificateType": {
+      "id": "4e249b2f-64d8-4d48-aa04-3c4db07b5736",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Bonafide Certificate (ความเป็นนิสิต)",
+      "description": "รับรองสถานภาพความเป็นนิสิต (Bonafide Student Certificate) — สำหรับรับรองสถานภาพความเป็นนิสิต",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.035Z",
+      "updatedAt": "2026-10-17T02:44:04.035Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "2d9fe891-f01f-4c3e-b076-44950493b698",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "3adca062-7b4e-4d8f-8860-ba964b1b62cf",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":6,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"231001\",\"fullName\":\"พระจาตุรงค์ อาจารสุโภ, ดร.\",\"age\":\"39\",\"sex\":\"M\",\"nationality\":\"Thai\",\"country\":\"Thailand\",\"passportNo\":\"\",\"passportExpireDate\":\"\",\"visaType\":\"0\",\"visaExpireDate\":\"\",\"classYear\":\"อาจารย์\",\"degreeLevel\":\"ป.เอก (Ph.D.)\",\"major\":\"สาขาวิชาปรัชญา\",\"requestPurpose\":\"Scholarships (ทุนการศึกษา)\",\"language\":\"In Thai language\",\"gpa\":\"0\",\"email\":\"231001@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"มจร\",\"subdistrict\":\"ลำไทร\",\"district\":\"วังน้อย\",\"province\":\"อยุธยา\",\"postalCode\":\"13170\",\"fullAddress\":\"มจร ตำบลลำไทร อำเภอวังน้อย จังหวัดอยุธยา 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 412\",\"issueDateTh\":\"15 เดือน สิงหาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.180Z",
+    "updatedAt": "2026-10-28T19:43:19.180Z",
+    "certificateType": {
+      "id": "3adca062-7b4e-4d8f-8860-ba964b1b62cf",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Scholarships (ทุนการศึกษา)",
+      "description": "ขอรับทุนการศึกษา (Scholarships) — สำหรับประกอบการขอรับทุนการศึกษา",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.040Z",
+      "updatedAt": "2026-10-17T02:44:04.040Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "b5ec910a-fa40-40c7-89b0-328a0f2be2e8",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "3adca062-7b4e-4d8f-8860-ba964b1b62cf",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":6,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"231001\",\"fullName\":\"พระจาตุรงค์ อาจารสุโภ, ดร.\",\"age\":\"39\",\"sex\":\"M\",\"nationality\":\"Thai\",\"country\":\"Thailand\",\"passportNo\":\"\",\"passportExpireDate\":\"\",\"visaType\":\"0\",\"visaExpireDate\":\"\",\"classYear\":\"อาจารย์\",\"degreeLevel\":\"ป.เอก (Ph.D.)\",\"major\":\"สาขาวิชาปรัชญา\",\"requestPurpose\":\"Scholarships (ทุนการศึกษา)\",\"language\":\"In Thai language\",\"gpa\":\"0\",\"email\":\"231001@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"มจร\",\"subdistrict\":\"ลำไทร\",\"district\":\"วังน้อย\",\"province\":\"อยุธยา\",\"postalCode\":\"13170\",\"fullAddress\":\"มจร ตำบลลำไทร อำเภอวังน้อย จังหวัดอยุธยา 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 412\",\"issueDateTh\":\"15 เดือน สิงหาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.175Z",
+    "updatedAt": "2026-10-28T19:43:19.175Z",
+    "certificateType": {
+      "id": "3adca062-7b4e-4d8f-8860-ba964b1b62cf",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Scholarships (ทุนการศึกษา)",
+      "description": "ขอรับทุนการศึกษา (Scholarships) — สำหรับประกอบการขอรับทุนการศึกษา",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.040Z",
+      "updatedAt": "2026-10-17T02:44:04.040Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "3f5ee944-8182-4d15-bf3f-800a2d428ddf",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "a787b848-ec57-4ecf-8c4b-1a23b7526543",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":5,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6201501038\",\"fullName\":\"NYARNADHAJHA\",\"age\":\"24\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MF398445\",\"passportExpireDate\":\"2026-10-26\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"Education visa\",\"classYear\":\"ปีที่ 3 (Third year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Philosophy\",\"requestPurpose\":\"Extension for Visa (ต่อวีซ่า)\",\"language\":\"In Thai language\",\"gpa\":\"3.11\",\"email\":\"6201501038@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"Mahachulalongkornrajavidayala university\",\"subdistrict\":\"Lamsai\",\"district\":\"Wangnoi\",\"province\":\"Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"Mahachulalongkornrajavidayala university ตำบลLamsai อำเภอWangnoi จังหวัดAyutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 714\",\"issueDateTh\":\"14 เดือน ตุลาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.173Z",
+    "updatedAt": "2026-10-28T19:43:19.173Z",
+    "certificateType": {
+      "id": "a787b848-ec57-4ecf-8c4b-1a23b7526543",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Extension for Visa (ต่อวีซ่า)",
+      "description": "ขอต่ออายุวีซ่า (Extension for Visa) — สำหรับต่ออายุ Visa (การตรวจลงตรา)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.023Z",
+      "updatedAt": "2026-10-17T02:44:04.023Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "963d0c7c-3a8b-4d84-9130-74e21ffeddad",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "a787b848-ec57-4ecf-8c4b-1a23b7526543",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":5,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6201501038\",\"fullName\":\"NYARNADHAJHA\",\"age\":\"24\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MF398445\",\"passportExpireDate\":\"2026-10-26\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"Education visa\",\"classYear\":\"ปีที่ 3 (Third year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Philosophy\",\"requestPurpose\":\"Extension for Visa (ต่อวีซ่า)\",\"language\":\"In Thai language\",\"gpa\":\"3.11\",\"email\":\"6201501038@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"Mahachulalongkornrajavidayala university\",\"subdistrict\":\"Lamsai\",\"district\":\"Wangnoi\",\"province\":\"Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"Mahachulalongkornrajavidayala university ตำบลLamsai อำเภอWangnoi จังหวัดAyutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 714\",\"issueDateTh\":\"14 เดือน ตุลาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.171Z",
+    "updatedAt": "2026-10-28T19:43:19.171Z",
+    "certificateType": {
+      "id": "a787b848-ec57-4ecf-8c4b-1a23b7526543",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Extension for Visa (ต่อวีซ่า)",
+      "description": "ขอต่ออายุวีซ่า (Extension for Visa) — สำหรับต่ออายุ Visa (การตรวจลงตรา)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.023Z",
+      "updatedAt": "2026-10-17T02:44:04.023Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "a7917fca-436a-4821-b22e-8f44fe274caa",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "80544b91-a6e4-4da4-8438-42544fc7c41a",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":4,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6401201052\",\"fullName\":\"พระธนายุพงศ์ พลวุฑฺโฒ นามสกุล อาสนธ์\",\"age\":\"35\",\"sex\":\"M\",\"nationality\":\"Thai\",\"country\":\"Thailand\",\"passportNo\":\"\",\"passportExpireDate\":\"\",\"visaType\":\"0\",\"visaExpireDate\":\"\",\"classYear\":\"ปีที่ 1 (First year)\",\"degreeLevel\":\"ป.โท (M.A.)\",\"major\":\"สาขาวิชาพระไตรปิฎกศึกษา\",\"requestPurpose\":\"Requisting for Domistory (ขอหอพักนิสิต)\",\"language\":\"In Thai language\",\"gpa\":\"2.00\",\"email\":\"6401201052@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"วัดหนองบัวตากลาน 60ม.8\",\"subdistrict\":\"ห้วยหอม\",\"district\":\"ตาคลี\",\"province\":\"นครสวรรค์\",\"postalCode\":\"60140\",\"fullAddress\":\"วัดหนองบัวตากลาน 60ม.8 ตำบลห้วยหอม อำเภอตาคลี จังหวัดนครสวรรค์ 60140\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 362\",\"issueDateTh\":\"19 เดือน มิถุนายน พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.169Z",
+    "updatedAt": "2026-10-28T19:43:19.169Z",
+    "certificateType": {
+      "id": "80544b91-a6e4-4da4-8438-42544fc7c41a",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Requisting for Domistory (ขอหอพักนิสิต)",
+      "description": "ขอเข้าพักในหอพักนิสิต (Student's Dormitory) — สำหรับขอพักอยู่ในหอพักนิสิต (Student's Dormitory)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.030Z",
+      "updatedAt": "2026-10-17T02:44:04.030Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "0f16e720-7077-4f06-8ad4-a053b0d0067a",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "80544b91-a6e4-4da4-8438-42544fc7c41a",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":4,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6401201052\",\"fullName\":\"พระธนายุพงศ์ พลวุฑฺโฒ นามสกุล อาสนธ์\",\"age\":\"35\",\"sex\":\"M\",\"nationality\":\"Thai\",\"country\":\"Thailand\",\"passportNo\":\"\",\"passportExpireDate\":\"\",\"visaType\":\"0\",\"visaExpireDate\":\"\",\"classYear\":\"ปีที่ 1 (First year)\",\"degreeLevel\":\"ป.โท (M.A.)\",\"major\":\"สาขาวิชาพระไตรปิฎกศึกษา\",\"requestPurpose\":\"Requisting for Domistory (ขอหอพักนิสิต)\",\"language\":\"In Thai language\",\"gpa\":\"2.00\",\"email\":\"6401201052@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"วัดหนองบัวตากลาน 60ม.8\",\"subdistrict\":\"ห้วยหอม\",\"district\":\"ตาคลี\",\"province\":\"นครสวรรค์\",\"postalCode\":\"60140\",\"fullAddress\":\"วัดหนองบัวตากลาน 60ม.8 ตำบลห้วยหอม อำเภอตาคลี จังหวัดนครสวรรค์ 60140\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 362\",\"issueDateTh\":\"19 เดือน มิถุนายน พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.166Z",
+    "updatedAt": "2026-10-28T19:43:19.166Z",
+    "certificateType": {
+      "id": "80544b91-a6e4-4da4-8438-42544fc7c41a",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Requisting for Domistory (ขอหอพักนิสิต)",
+      "description": "ขอเข้าพักในหอพักนิสิต (Student's Dormitory) — สำหรับขอพักอยู่ในหอพักนิสิต (Student's Dormitory)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.030Z",
+      "updatedAt": "2026-10-17T02:44:04.030Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "76734ee6-9412-417c-b72e-a481a094e1c7",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "9a4bcd1f-ffa3-47c8-b852-7eaa5486dc6c",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":3,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6101501059\",\"fullName\":\"SUNANDA\",\"age\":\"29\",\"sex\":\"F\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MD210622\",\"passportExpireDate\":\"2023-04-05\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"2022-09-12\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Graduation Certificate (รับรองจบ)\",\"language\":\"In English language\",\"gpa\":\"3.53\",\"email\":\"6101501059@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"Wat Phrayasiri aiyasawan\",\"subdistrict\":\"Bang yi khan\",\"district\":\"Bang plat\",\"province\":\"Bangkok\",\"postalCode\":\"10700\",\"fullAddress\":\"Wat Phrayasiri aiyasawan ตำบลBang yi khan อำเภอBang plat จังหวัดBangkok 10700\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 167\",\"issueDateTh\":\"\",\"issueDateEn\":\"August 10, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.159Z",
+    "updatedAt": "2026-10-28T19:43:19.159Z",
+    "certificateType": {
+      "id": "9a4bcd1f-ffa3-47c8-b852-7eaa5486dc6c",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Graduation Certificate (รับรองจบ)",
+      "description": "รับรองการสำเร็จการศึกษา (Graduation Certificate) — สำหรับรับรองการสำเร็จการศึกษา",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.037Z",
+      "updatedAt": "2026-10-17T02:44:04.037Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "8dae255e-f611-4eed-8a0c-3d33b733f51e",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "9a4bcd1f-ffa3-47c8-b852-7eaa5486dc6c",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":3,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6101501059\",\"fullName\":\"SUNANDA\",\"age\":\"29\",\"sex\":\"F\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"MD210622\",\"passportExpireDate\":\"2023-04-05\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"2022-09-12\",\"classYear\":\"ปีที่ 4 (Fourth year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Graduation Certificate (รับรองจบ)\",\"language\":\"In English language\",\"gpa\":\"3.53\",\"email\":\"6101501059@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"Wat Phrayasiri aiyasawan\",\"subdistrict\":\"Bang yi khan\",\"district\":\"Bang plat\",\"province\":\"Bangkok\",\"postalCode\":\"10700\",\"fullAddress\":\"Wat Phrayasiri aiyasawan ตำบลBang yi khan อำเภอBang plat จังหวัดBangkok 10700\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 167\",\"issueDateTh\":\"\",\"issueDateEn\":\"August 10, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.156Z",
+    "updatedAt": "2026-10-28T19:43:19.156Z",
+    "certificateType": {
+      "id": "9a4bcd1f-ffa3-47c8-b852-7eaa5486dc6c",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Graduation Certificate (รับรองจบ)",
+      "description": "รับรองการสำเร็จการศึกษา (Graduation Certificate) — สำหรับรับรองการสำเร็จการศึกษา",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.037Z",
+      "updatedAt": "2026-10-17T02:44:04.037Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "c12a8f15-e1b7-4705-b165-78da22b9de0d",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "4d2482a1-88a3-48c3-a64b-697d38748449",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":2,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6301501077\",\"fullName\":\"VEN.KHEMARCARA\",\"age\":\"26\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"ME919394\",\"passportExpireDate\":\"2025-01-08\",\"visaType\":\"No Visa\",\"visaExpireDate\":\"No Visa\",\"classYear\":\"ปีที่ 2 (Second year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Visa to Thailand\",\"language\":\"In English language\",\"gpa\":\"3.00\",\"email\":\"6301501077@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"Yaphyu Monastery\",\"subdistrict\":\"Monywa\",\"district\":\"Kani\",\"province\":\"Yaphyu\",\"postalCode\":\"2121\",\"fullAddress\":\"Yaphyu Monastery ตำบลMonywa อำเภอKani จังหวัดYaphyu 2121\",\"passportCopyUrl\":\"https://drive.google.com/open?id=1p__gnQ9V6r-q4dG17BsxrAQxwa5gF_GW\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 166\",\"issueDateTh\":\"\",\"issueDateEn\":\"August 4, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.152Z",
+    "updatedAt": "2026-10-28T19:43:19.152Z",
+    "certificateType": {
+      "id": "4d2482a1-88a3-48c3-a64b-697d38748449",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Visa to Thailand",
+      "description": "ขอวีซ่าเข้าประเทศไทย (Visa to Thailand) — สำหรับขอรับการตรวจลงตรา (Visa) เข้าประเทศไทย",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.025Z",
+      "updatedAt": "2026-10-17T02:44:04.025Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "f80898bf-e3ee-408e-bb39-0b8578c82bbd",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "4d2482a1-88a3-48c3-a64b-697d38748449",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":2,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6301501077\",\"fullName\":\"VEN.KHEMARCARA\",\"age\":\"26\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"ME919394\",\"passportExpireDate\":\"2025-01-08\",\"visaType\":\"No Visa\",\"visaExpireDate\":\"No Visa\",\"classYear\":\"ปีที่ 2 (Second year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Visa to Thailand\",\"language\":\"In English language\",\"gpa\":\"3.00\",\"email\":\"6301501077@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"Yaphyu Monastery\",\"subdistrict\":\"Monywa\",\"district\":\"Kani\",\"province\":\"Yaphyu\",\"postalCode\":\"2121\",\"fullAddress\":\"Yaphyu Monastery ตำบลMonywa อำเภอKani จังหวัดYaphyu 2121\",\"passportCopyUrl\":\"https://drive.google.com/open?id=1p__gnQ9V6r-q4dG17BsxrAQxwa5gF_GW\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"ENG_CERT\",\"docNo\":\"8002/ 166\",\"issueDateTh\":\"\",\"issueDateEn\":\"August 4, 2026\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.148Z",
+    "updatedAt": "2026-10-28T19:43:19.148Z",
+    "certificateType": {
+      "id": "4d2482a1-88a3-48c3-a64b-697d38748449",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Visa to Thailand",
+      "description": "ขอวีซ่าเข้าประเทศไทย (Visa to Thailand) — สำหรับขอรับการตรวจลงตรา (Visa) เข้าประเทศไทย",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:04.025Z",
+      "updatedAt": "2026-10-17T02:44:04.025Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "484a1e3a-af38-4695-b61f-acd23e9ff5bb",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "818d3079-4048-4d3e-843e-5a8724d229ff",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":1,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6401501018\",\"fullName\":\"PONNYARDHAJA\",\"age\":\"27\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"ME123079\",\"passportExpireDate\":\"2024-04-06\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"28 DEC 2021\",\"classYear\":\"ปีที่ 1 (First year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Open Bank Account (เปิดบัญชีธนาคาร)\",\"language\":\"In Thai language\",\"gpa\":\"0\",\"email\":\"6401501018@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"MCU\",\"subdistrict\":\"Lamsai\",\"district\":\"Wangnoi\",\"province\":\"Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"MCU ตำบลLamsai อำเภอWangnoi จังหวัดAyutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 710\",\"issueDateTh\":\"12 เดือน ตุลาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.118Z",
+    "updatedAt": "2026-10-28T19:43:19.118Z",
+    "certificateType": {
+      "id": "818d3079-4048-4d3e-843e-5a8724d229ff",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Open Bank Account (เปิดบัญชีธนาคาร)",
+      "description": "เปิดบัญชีธนาคาร (Open Bank Account) — สำหรับการเปิดบัญชีธนาคารหรือทำธุรกรรมกับธนาคาร (Opening a Bank Account and/or Conducting Banking Transactions)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:03.919Z",
+      "updatedAt": "2026-10-17T02:44:03.919Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  },
+  {
+    "id": "6ccd18b6-242c-4e8f-a08a-dc940d54b8e1",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "userId": "1767b546-beea-4e17-8e62-4297210b3869",
+    "certificateTypeId": "818d3079-4048-4d3e-843e-5a8724d229ff",
+    "status": "APPROVED",
+    "reason": null,
+    "note": "{\"seqNo\":1,\"applicantType\":\"CURRENT_STUDENT\",\"staffPosition\":\"\",\"staffDepartment\":\"\",\"taughtCourses\":\"\",\"applicationNo\":\"\",\"admissionProofUrl\":\"\",\"studentCode\":\"6401501018\",\"fullName\":\"PONNYARDHAJA\",\"age\":\"27\",\"sex\":\"M\",\"nationality\":\"Myanmar\",\"country\":\"Myanmar\",\"passportNo\":\"ME123079\",\"passportExpireDate\":\"2024-04-06\",\"visaType\":\"Non-Immigrant Visa\",\"visaExpireDate\":\"28 DEC 2021\",\"classYear\":\"ปีที่ 1 (First year)\",\"degreeLevel\":\"ป.ตรี (B.A. English Program)\",\"major\":\"Buddhist Studies\",\"requestPurpose\":\"Open Bank Account (เปิดบัญชีธนาคาร)\",\"language\":\"In Thai language\",\"gpa\":\"0\",\"email\":\"6401501018@mcu.ac.th\",\"phone\":\"\",\"addressLine\":\"MCU\",\"subdistrict\":\"Lamsai\",\"district\":\"Wangnoi\",\"province\":\"Ayutthaya\",\"postalCode\":\"13170\",\"fullAddress\":\"MCU ตำบลLamsai อำเภอWangnoi จังหวัดAyutthaya 13170\",\"passportCopyUrl\":\"\",\"registrationPdfUrl\":\"\",\"paymentPdfUrl\":\"\",\"userNote\":\"\",\"docTemplate\":\"THAI_CERT\",\"docNo\":\"8002 / 710\",\"issueDateTh\":\"12 เดือน ตุลาคม พ.ศ. 2569\",\"issueDateEn\":\"\",\"academicYearEn\":\"2026\",\"semesterEn\":\"second semester\",\"bankTargetTh\":\"ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร\",\"bankActionTh\":\"อัพเดตการใช้ Mobile Banking ให้แก่นิสิต\",\"coordinatorNameTh\":\"นายดวงดี โอฐสู\",\"coordinatorPhoneTh\":\"089-516-7544 / 095-470-7849\",\"signerNameTh\":\"(พระครูสิริรัตนบัณฑิต, ผศ.ดร.)\",\"signerTitleTh\":\"รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์\",\"signerNameEn\":\"(Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.)\",\"signerTitleEn\":\"Vice Dean, Faculty of Buddhism\",\"officerName\":\"นายดวงดี โอฐสู\",\"officerPosition\":\"นักวิชาการศึกษา / เจ้าหน้าที่บริการการศึกษา\",\"customBodyText\":\"\",\"showSignatureGraphic\":true,\"showPhotoBox\":true,\"photoBoxPosition\":\"BOTTOM_LEFT\",\"photoBoxOffsetMm\":28,\"photoBoxSize\":\"1.5_INCH\",\"showVerificationQr\":true,\"lineHeight\":1.85,\"marginTopMm\":24,\"marginSideMm\":25,\"footerFontSizePt\":10.5,\"footerLayout\":\"TWO_COLUMNS\",\"footerLeftText\":\"\",\"portalVerifyUrl\":\"\",\"fontFamily\":\"Sarabun\"}",
+    "issuedDocumentUrl": null,
+    "createdAt": "2026-10-28T19:43:19.116Z",
+    "updatedAt": "2026-10-28T19:43:19.116Z",
+    "certificateType": {
+      "id": "818d3079-4048-4d3e-843e-5a8724d229ff",
+      "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+      "name": "Open Bank Account (เปิดบัญชีธนาคาร)",
+      "description": "เปิดบัญชีธนาคาร (Open Bank Account) — สำหรับการเปิดบัญชีธนาคารหรือทำธุรกรรมกับธนาคาร (Opening a Bank Account and/or Conducting Banking Transactions)",
+      "isActive": true,
+      "createdAt": "2026-10-17T02:44:03.919Z",
+      "updatedAt": "2026-10-17T02:44:03.919Z"
+    },
+    "user": {
+      "id": "1767b546-beea-4e17-8e62-4297210b3869",
+      "name": "ผู้ดูแลระบบ คณะพุทธศาสตร์",
+      "email": "phaisal.dis@mcu.ac.th"
+    }
+  }
+]

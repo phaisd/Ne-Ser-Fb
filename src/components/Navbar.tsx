@@ -20,10 +20,12 @@ import {
   LogOut,
   KeyRound,
   Globe,
-  Laptop
+  Laptop,
+  Award,
+  ChevronDown
 } from 'lucide-react';
 import { translations, Language } from '@/lib/translations';
-import { getAuthUser, clearAuthSession } from '@/lib/auth-client';
+import { getAuthUser, isAdminOrOfficer, clearAuthSession } from '@/lib/auth-client';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -32,12 +34,26 @@ export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
   const [lang, setLang] = useState<Language>('th');
+  const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>('th');
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [autoLogoutMins, setAutoLogoutMins] = useState<number>(15);
 
   useEffect(() => {
     try {
-      const savedLang = (localStorage.getItem('mcu_lang') as Language) || 'th';
-      setLang(savedLang);
+      const cookies = document.cookie.split(';');
+      const gtCookie = cookies.find((c) => c.trim().startsWith('googtrans='));
+      if (gtCookie) {
+        const val = gtCookie.split('=')[1]?.trim();
+        const code = val.replace('/th/', '');
+        if (code) {
+          setSelectedLanguageCode(code);
+          setLang(code === 'en' ? 'en' : 'th');
+        }
+      } else {
+        const savedLang = localStorage.getItem('mcu_lang') || 'th';
+        setSelectedLanguageCode(savedLang);
+        setLang(savedLang === 'en' ? 'en' : 'th');
+      }
     } catch (e) {}
 
     const loadAutoLogout = () => {
@@ -74,13 +90,41 @@ export default function Navbar() {
     } catch (e) {}
   };
 
-  const toggleLanguage = () => {
-    const nextLang: Language = lang === 'th' ? 'en' : 'th';
-    setLang(nextLang);
+  const handleSelectLanguage = (targetLang: string) => {
+    setIsLangMenuOpen(false);
+    setSelectedLanguageCode(targetLang);
+    setLang(targetLang === 'th' ? 'th' : 'en');
+
     try {
-      localStorage.setItem('mcu_lang', nextLang);
-      window.dispatchEvent(new CustomEvent('mcu_lang_changed', { detail: nextLang }));
+      localStorage.setItem('mcu_lang', targetLang);
+      window.dispatchEvent(new CustomEvent('mcu_lang_changed', { detail: targetLang }));
     } catch (e) {}
+
+    // Google Translate Cookie handling
+    if (targetLang === 'th') {
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
+    } else {
+      const cookieVal = `/th/${targetLang}`;
+      document.cookie = `googtrans=${cookieVal}; path=/;`;
+      document.cookie = `googtrans=${cookieVal}; path=/; domain=${window.location.hostname};`;
+      document.cookie = `googtrans=${cookieVal}; path=/; domain=.${window.location.hostname};`;
+    }
+
+    // Try live select
+    const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+    if (combo) {
+      combo.value = targetLang;
+      combo.dispatchEvent(new Event('change'));
+    } else {
+      window.location.reload();
+    }
+  };
+
+  const toggleLanguage = () => {
+    const next = selectedLanguageCode === 'th' ? 'en' : 'th';
+    handleSelectLanguage(next);
   };
 
   const t = translations[lang];
@@ -141,29 +185,33 @@ export default function Navbar() {
     window.location.href = '/';
   };
 
+  const isAdmin = isAdminOrOfficer(currentUser);
+
   const publicNavItems = [
     { href: '/', label: t.navHome, icon: LayoutDashboard },
-    { href: '/certificates', label: t.navCertificates, icon: FileText },
-    { href: '/courses', label: t.navCourses, icon: BookOpen },
-    { href: '/students', label: t.navStudents, icon: Users },
+    ...(settings?.showCertificatesMenu !== false ? [{ href: '/certificates', label: t.navCertificates, icon: FileText }] : []),
+    ...(settings?.showCoursesMenu !== false ? [{ href: '/courses', label: t.navCourses, icon: BookOpen }] : []),
+    ...(isAdmin && settings?.showStudentsSearch !== false ? [{ href: '/students', label: t.navStudents, icon: Users }] : []),
+    ...(settings?.showEventsMenu === true ? [{ href: '/events', label: 'กิจกรรมนิสิต', icon: Award }] : []),
   ];
 
   const adminNavItems = [
     { href: '/admin', label: t.navAdmin, icon: ShieldCheck },
-    { href: '/courses', label: t.navCourses, icon: BookOpen },
+    ...(settings?.showCoursesMenu !== false ? [{ href: '/courses', label: t.navCourses, icon: BookOpen }] : []),
     { href: '/attendance', label: t.navAttendance, icon: CheckSquare },
-    { href: '/students', label: t.navStudents, icon: Users },
+    ...(settings?.showEventsMenu === true ? [{ href: '/events', label: 'กิจกรรมนิสิต', icon: Award }] : []),
+    ...(settings?.showStudentsSearch !== false ? [{ href: '/students', label: t.navStudents, icon: Users }] : []),
     { href: '/settings', label: t.navSettings, icon: Table2 },
   ];
 
   return (
-    <header className={`sticky top-0 z-50 backdrop-blur border-b shadow-sm transition-colors duration-200 ${
+    <header className={`sticky top-0 z-50 backdrop-blur border-b shadow-sm transition-colors duration-200 print:hidden theme-nav-accent ${
       isAdminRoute ? 'bg-slate-900/95 border-slate-800 text-white' : 'bg-white/95 border-slate-200'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Brand */}
-          <Link href={isAdminRoute ? '/admin' : '/'} className="flex items-center gap-3 group">
+          <Link href={isAdminRoute ? '/admin' : '/'} className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
             {settings?.logoUrl ? (
               <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-center p-1 overflow-hidden shrink-0 group-hover:scale-105 transition">
                 <img
@@ -184,18 +232,18 @@ export default function Navbar() {
                 {settings?.logoEmoji || (isAdminRoute ? <ShieldCheck className="w-6 h-6" /> : <GraduationCap className="w-6 h-6" />)}
               </div>
             )}
-            <div>
-              <div className="flex items-center gap-2">
-                <span className={`font-bold text-base sm:text-lg leading-tight ${isAdminRoute ? 'text-white' : 'text-slate-900'}`}>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className={`font-bold text-sm sm:text-base leading-tight whitespace-nowrap ${isAdminRoute ? 'text-white' : 'text-slate-900'}`}>
                   {isAdminRoute ? 'Admin Console' : (settings?.facultyNameTh || 'คณะพุทธศาสตร์')}
                 </span>
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap ${
                   isAdminRoute ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-orange-100 text-orange-700'
                 }`}>
                   {isAdminRoute ? 'หลังบ้าน (อาจารย์/เจ้าหน้าที่)' : 'ระบบบริการการศึกษา'}
                 </span>
               </div>
-              <span className={`text-xs block ${isAdminRoute ? 'text-slate-400' : 'text-orange-600 font-medium'}`}>
+              <span className={`text-[11px] sm:text-xs block whitespace-nowrap truncate max-w-[220px] sm:max-w-none ${isAdminRoute ? 'text-slate-400' : 'text-orange-600 font-medium'}`}>
                 {isAdminRoute 
                   ? `${settings?.facultyNameTh || 'คณะพุทธศาสตร์'} • ${settings?.universityNameTh || 'มจร'}` 
                   : (settings?.universityNameTh || 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย')}
@@ -231,19 +279,89 @@ export default function Navbar() {
 
           {/* User Auth & Portal Switcher & Language Toggle */}
           <div className="flex items-center gap-2">
-            {/* Language Toggle Button */}
-            <button
-              onClick={toggleLanguage}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                isAdminRoute
-                  ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white'
-                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
-              }`}
-              title="สลับภาษา (Switch Language TH/EN)"
-            >
-              <Globe className="w-3.5 h-3.5 text-orange-500" />
-              <span>{lang === 'th' ? '🇹🇭 TH' : '🇬🇧 EN'}</span>
-            </button>
+            {/* Language Switcher Pill + Dropdown */}
+            <div className="relative">
+              <div
+                className={`flex items-center rounded-xl text-xs font-bold transition border overflow-hidden ${
+                  isAdminRoute
+                    ? 'bg-slate-800 border-slate-700 text-slate-200'
+                    : 'bg-slate-100 border-slate-200 text-slate-700'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
+                  title="คลิกเพื่อสลับภาษา ไทย / English (Translate Page)"
+                >
+                  <Globe className="w-3.5 h-3.5 text-orange-500" />
+                  <span>
+                    {selectedLanguageCode === 'th'
+                      ? '🇹🇭 TH'
+                      : selectedLanguageCode === 'en'
+                      ? '🇬🇧 EN'
+                      : selectedLanguageCode === 'my'
+                      ? '🇲🇲 MY'
+                      : selectedLanguageCode === 'vi'
+                      ? '🇻🇳 VI'
+                      : selectedLanguageCode === 'km'
+                      ? '🇰🇭 KM'
+                      : selectedLanguageCode === 'zh-CN'
+                      ? '🇨🇳 ZH'
+                      : '🌐 ' + selectedLanguageCode.toUpperCase()}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+                  className="px-1.5 py-1.5 border-l border-slate-200/60 dark:border-slate-700 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                  title="เลือกภาษาอื่นสำหรับนิสิตต่างประเทศ (More Languages for International Students)"
+                >
+                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+
+              {/* Language Dropdown Menu */}
+              {isLangMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsLangMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-1.5 w-52 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs text-slate-700 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-3 py-1 text-[10px] font-bold text-slate-400 border-b border-slate-100">
+                      แปลภาษาทั้งเว็บไซต์ (Translate Website)
+                    </div>
+                    {[
+                      { code: 'th', flag: '🇹🇭', label: 'ไทย (Thai)', sub: 'ต้นฉบับ' },
+                      { code: 'en', flag: '🇬🇧', label: 'English', sub: 'International' },
+                      { code: 'my', flag: '🇲🇲', label: 'မြန်မာ (Burmese)', sub: 'Myanmar' },
+                      { code: 'vi', flag: '🇻🇳', label: 'Tiếng Việt', sub: 'Vietnam' },
+                      { code: 'km', flag: '🇰🇭', label: 'ភាសាខ្មែរ', sub: 'Cambodia' },
+                      { code: 'zh-CN', flag: '🇨🇳', label: '中文 (Chinese)', sub: 'China' },
+                      { code: 'lo', flag: '🇱🇦', label: 'ພາສາລາວ', sub: 'Laos' },
+                    ].map((item) => (
+                      <button
+                        key={item.code}
+                        type="button"
+                        onClick={() => handleSelectLanguage(item.code)}
+                        className={`w-full px-3 py-2 text-left flex items-center justify-between hover:bg-orange-50 transition cursor-pointer ${
+                          selectedLanguageCode === item.code ? 'bg-orange-50 font-bold text-orange-950' : ''
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span>{item.flag}</span>
+                          <span>{item.label}</span>
+                        </span>
+                        {selectedLanguageCode === item.code && (
+                          <span className="text-[10px] text-orange-600 font-bold">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
             {currentUser ? (
               <div className="flex items-center gap-2">

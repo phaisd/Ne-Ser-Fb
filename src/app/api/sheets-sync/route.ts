@@ -86,15 +86,50 @@ export async function POST(request: Request) {
       });
     }
 
+    // Action 1.5: Ensure and Initialize Students_Archive Tab
+    if (body.action === 'init-archive' || body.action === 'ensure-archive') {
+      await client.ensureSheetsExist(['Students_Archive']);
+      const archiveRows = await client.getValues('Students_Archive!A1:A2');
+      if (!archiveRows || archiveRows.length === 0 || !archiveRows[0] || archiveRows[0].length === 0) {
+        await client.updateValues('Students_Archive!A1:R1', [[
+          'รหัสนิสิต',
+          'คำนำหน้า',
+          'ชื่อ',
+          'นามสกุล',
+          'ชื่อ-นามสกุล',
+          'ชั้นปี',
+          'ระดับการศึกษา',
+          'ภาควิชา',
+          'สาขาวิชา',
+          'สถานภาพเดิม',
+          'คณะ',
+          'เบอร์โทรศัพท์',
+          'อีเมล',
+          'หลักสูตร',
+          'หมายเหตุเดิม',
+          'วัน-เวลาที่ย้ายเข้าแฟ้มประวัติ (Deleted At)',
+          'ผู้ดำเนินการลบ (Deleted By)',
+          'เหตุผลการลบ (Reason)',
+        ]]);
+      }
+      return NextResponse.json({
+        success: true,
+        message: 'สร้างและตั้งค่าหัวตารางแท็บ Students_Archive บน Google Sheets เรียบร้อยแล้ว!',
+      });
+    }
+
     // Action 2: Standard Initial Export to Google Sheets
     const requiredTabs = [
       'Students',
+      'Students_Archive',
       'Courses',
       'Timetables',
       'CertificateRequests',
       'Attendance',
       'Instructors',
       'Settings',
+      'Events',
+      'EventRegistrations',
     ];
     await client.ensureSheetsExist(requiredTabs);
 
@@ -144,6 +179,16 @@ export async function POST(request: Request) {
       await client.updateValues('Instructors!A1', instRows);
     }
 
+    const eventsRows = readCsvRows('events.csv');
+    if (eventsRows.length > 0) {
+      await client.updateValues('Events!A1', eventsRows);
+    }
+
+    const eventRegRows = readCsvRows('event_registrations.csv');
+    if (eventRegRows.length > 0) {
+      await client.updateValues('EventRegistrations!A1', eventRegRows);
+    }
+
     // Export System Settings & Logo to 'Settings' tab
     const currentSettings = await getSystemSettings();
     const settingsRows: string[][] = [
@@ -175,6 +220,8 @@ export async function POST(request: Request) {
         'Attendance',
         'Instructors',
         'Settings',
+        'Events',
+        'EventRegistrations',
       ],
     });
   } catch (err: any) {

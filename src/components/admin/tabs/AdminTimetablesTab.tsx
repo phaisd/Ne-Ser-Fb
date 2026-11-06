@@ -1,9 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Calendar, RefreshCw, ExternalLink, Search } from 'lucide-react';
+import {
+  Calendar,
+  RefreshCw,
+  ExternalLink,
+  Search,
+  Upload,
+  Download,
+  ChevronDown,
+  Sparkles,
+  BookOpen,
+  FileSpreadsheet,
+} from 'lucide-react';
 import { TimetableItem } from '@/types';
+import { CourseImportModal } from '../modals';
 
 const DAY_COLORS: Record<number, string> = {
   1: 'bg-yellow-50 text-yellow-800 border-yellow-200',
@@ -54,6 +66,52 @@ export const AdminTimetablesTab: React.FC<AdminTimetablesTabProps> = ({
   handleScanTimetables,
   isScanningInstructors,
 }) => {
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+
+  // Export Timetables to CSV with UTF-8 BOM for Thai Excel compatibility
+  const exportTimetablesToCSV = (items: TimetableItem[], filename: string) => {
+    const headers = [
+      'รหัสวิชา',
+      'ชื่อรายวิชา',
+      'วันเรียน',
+      'รหัสวัน (1=จันทร์)',
+      'เวลาเริ่ม',
+      'เวลาสิ้นสุด',
+      'ห้องเรียน',
+      'อาจารย์ผู้สอน',
+      'ชั้นปี',
+      'ภาคเรียน',
+      'ปีการศึกษา',
+    ];
+
+    const rows = items.map((t) => [
+      `"${(t.courseCode || '').replace(/"/g, '""')}"`,
+      `"${(t.courseName || '').replace(/"/g, '""')}"`,
+      `"${DAY_NAMES[t.dayOfWeek] || ''}"`,
+      `"${t.dayOfWeek ?? ''}"`,
+      `"${t.startTime || ''}"`,
+      `"${t.endTime || ''}"`,
+      `"${(t.room || '').replace(/"/g, '""')}"`,
+      `"${(t.instructor || '').replace(/"/g, '""')}"`,
+      `"${t.yearLevel ?? ''}"`,
+      `"${t.semester ?? ''}"`,
+      `"${t.academicYear || ''}"`,
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setIsExportMenuOpen(false);
+  };
+
   return (
     <div className="space-y-4">
       {/* Header Card */}
@@ -68,6 +126,61 @@ export const AdminTimetablesTab: React.FC<AdminTimetablesTabProps> = ({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Import Modal Button */}
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"
+            title="นำเข้าตารางเรียนและรายวิชาจากไฟล์ Excel หรือ CSV"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>📥 นำเข้า Excel / CSV</span>
+          </button>
+
+          {/* Export Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>📤 ส่งออก</span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </button>
+
+            {isExportMenuOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-in fade-in slide-in-from-top-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    exportTimetablesToCSV(
+                      filteredTimetables,
+                      `timetables_filtered_${new Date().toISOString().slice(0, 10)}.csv`
+                    )
+                  }
+                  className="w-full text-left px-4 py-2 hover:bg-slate-100 flex items-center justify-between text-slate-700"
+                >
+                  <span>ส่งออกที่กรองอยู่ ({filteredTimetables.length} คาบ)</span>
+                  <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-mono">.csv</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    exportTimetablesToCSV(
+                      timetablesList,
+                      `timetables_all_${new Date().toISOString().slice(0, 10)}.csv`
+                    )
+                  }
+                  className="w-full text-left px-4 py-2 hover:bg-slate-100 flex items-center justify-between text-slate-700 border-t border-slate-100"
+                >
+                  <span>ส่งออกตารางเรียนทั้งหมด ({timetablesList.length} คาบ)</span>
+                  <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-mono">.csv</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={handleScanTimetables}
@@ -76,16 +189,51 @@ export const AdminTimetablesTab: React.FC<AdminTimetablesTabProps> = ({
             title="สแกนตารางสอนและตรวจสอบไอดีอาจารย์ผู้สอน"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isScanningInstructors ? 'animate-spin' : ''}`} />
-            <span>🔄 ซิงค์และสร้างไอดีอาจารย์จากตารางสอน</span>
+            <span>🔄 ซิงค์ไอดีอาจารย์</span>
           </button>
 
           <Link
             href="/courses"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition cursor-pointer"
           >
-            <span>ดูตารางสอนรายสัปดาห์</span>
+            <span>ดูหน้าตารางสอน</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
+        </div>
+      </div>
+
+      {/* Guide Banner for Adding Schedules for Next Term/Year */}
+      <div className="bg-gradient-to-r from-amber-50/80 via-indigo-50/50 to-blue-50/80 p-4 rounded-2xl border border-amber-200/70 shadow-xs">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-300/60 flex items-center justify-center shrink-0 text-amber-700">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div className="text-xs space-y-1.5 flex-1">
+            <h3 className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5">
+              <span>💡 คำแนะนำ: วิธีเพิ่มตารางเรียนในภาคการศึกษาหรือปีการศึกษาถัดไป (เช่น 2/2569 หรือ 1/2570)</span>
+            </h3>
+            <p className="text-slate-600 leading-relaxed">
+              ท่านสามารถเพิ่มและอัปเดตตารางเรียนล่วงหน้าได้ <strong className="text-indigo-700">2 วิธีหลัก</strong>:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+              <div className="bg-white/80 p-2.5 rounded-xl border border-indigo-100">
+                <span className="font-bold text-indigo-900 block mb-1">
+                  1. นำเข้าเป็นไฟล์ Excel / CSV (รวดเร็วและแม่นยำที่สุด)
+                </span>
+                <p className="text-slate-600 text-[11px] leading-normal">
+                  กดปุ่ม <span className="font-semibold text-indigo-700">"📥 นำเข้า Excel / CSV"</span> ด้านบน แล้วคลิก <span className="font-semibold text-emerald-700">"ดาวน์โหลดไฟล์ต้นแบบ (.CSV)"</span> จากนั้นกรอกข้อมูลปีการศึกษาถัดไป (เช่น <code className="bg-slate-100 px-1 rounded">2570</code>), ภาคเรียน (<code className="bg-slate-100 px-1 rounded">1</code>), วัน-เวลาเรียน แล้วอัปโหลดไฟล์เข้ามา ระบบจะตรวจสอบและเพิ่มเข้าสู่ตารางทันที
+                </p>
+              </div>
+              <div className="bg-white/80 p-2.5 rounded-xl border border-amber-100">
+                <span className="font-bold text-amber-900 block mb-1">
+                  2. เพิ่มรายวิชาทีละรายการผ่านหน้าเว็บ
+                </span>
+                <p className="text-slate-600 text-[11px] leading-normal">
+                  คลิกปุ่ม <Link href="/courses" className="font-semibold text-indigo-600 underline">"ดูหน้าตารางสอน (/courses)"</Link> แล้วกดปุ่ม <span className="font-semibold text-emerald-700">+ เพิ่มรายวิชา</span> ระบุปีการศึกษา (2570), ภาคเรียน, วันเรียน, และเวลาคาบสอนได้ทันที โดยสามารถสลับตัวเลือกปีกรองดูตารางของแต่ละปีการศึกษาได้อิสระ
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -204,6 +352,15 @@ export const AdminTimetablesTab: React.FC<AdminTimetablesTabProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Course & Timetable Excel / CSV Import Modal */}
+      <CourseImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          handleScanTimetables();
+        }}
+      />
     </div>
   );
 };

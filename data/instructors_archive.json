@@ -1,0 +1,93 @@
+[
+  {
+    "id": "inst-general",
+    "name": "อาจารย์ผู้สอนประจำวิชา (MCU Lecturer)",
+    "email": "teacher@mcu.ac.th",
+    "gmail": "teacher.mcu@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "คณะพุทธศาสตร์",
+    "role": "INSTRUCTOR",
+    "coursesCount": 0,
+    "isActive": false,
+    "createdAt": "2026-11-02T06:57:57.005Z",
+    "aliases": [
+      "อาจารย์ผู้สอนประจำวิชา",
+      "(MCU",
+      "Lecturer)",
+      "อาจารย์ผู้สอนประจำวิชา (MCU Lecturer)",
+      "Faculty Lecturer (MCU Instructor)"
+    ],
+    "previousIds": [
+      "inst-general"
+    ],
+    "isSuperAdmin": false,
+    "nameEn": "Faculty Lecturer (MCU Instructor)",
+    "isSuspended": true,
+    "suspendReason": "ถูกระงับการใช้งานโดยผู้ดูแลระบบ",
+    "updatedAt": "2026-11-05T08:55:54.470Z",
+    "archivedAt": "2026-11-05T09:49:05.784Z",
+    "archivedBy": "Admin",
+    "archiveReason": "บัญชีอาจารย์ทดสอบระบบ (Test Account)"
+  },
+  {
+    "id": "inst-107",
+    "name": "รศ.ดร.บัญญพน สวัสดี",
+    "email": "teacher113@mcu.ac.th",
+    "gmail": "teacher113.mcu@gmail.com",
+    "password": "mcu1112",
+    "defaultPassword": "mcu123456",
+    "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
+    "role": "INSTRUCTOR",
+    "coursesCount": 1,
+    "isActive": false,
+    "createdAt": "2026-11-02T06:57:57.005Z",
+    "aliases": [
+      "บัญญพน",
+      "สวัสดี",
+      "รศ.ดร.บัญญพน สวัสดี",
+      "Assoc. Prof. Dr. Banyapon Sawasdee"
+    ],
+    "previousIds": [
+      "inst-107"
+    ],
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Dr. Banyapon Sawasdee",
+    "isSuspended": true,
+    "suspendReason": "ถูกระงับการใช้งานโดยผู้ดูแลระบบ",
+    "updatedAt": "2026-11-05T09:16:29.283Z",
+    "archivedAt": "2026-11-05T09:49:05.784Z",
+    "archivedBy": "Admin",
+    "archiveReason": "บัญชีอาจารย์ทดสอบระบบ (Test Account)"
+  },
+  {
+    "id": "inst-108",
+    "name": "ดร.วิศาล มายัง",
+    "email": "teacher114@mcu.ac.th",
+    "gmail": "teacher114.mcu@gmail.com",
+    "password": "mcu1113",
+    "defaultPassword": "mcu123456",
+    "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
+    "role": "INSTRUCTOR",
+    "coursesCount": 1,
+    "isActive": false,
+    "createdAt": "2026-11-02T06:57:57.005Z",
+    "aliases": [
+      "วิศาล",
+      "มายัง",
+      "ดร.วิศาล มายัง",
+      "Dr. Wisan Mayang"
+    ],
+    "previousIds": [
+      "inst-108"
+    ],
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Wisan Mayang",
+    "isSuspended": true,
+    "suspendReason": "ถูกระงับการใช้งานโดยผู้ดูแลระบบ",
+    "updatedAt": "2026-11-05T09:16:34.186Z",
+    "archivedAt": "2026-11-05T09:49:05.784Z",
+    "archivedBy": "Admin",
+    "archiveReason": "บัญชีอาจารย์ทดสอบระบบ (Test Account)"
+  }
+]

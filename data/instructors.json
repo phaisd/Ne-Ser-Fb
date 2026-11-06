@@ -1,5 +1,29 @@
 [
   {
+    "id": "user-1793862082551",
+    "name": "พระมหาไพศาล ดิษฐพันธ์",
+    "nameEn": "",
+    "email": "phaisa.vilo@gmail.com",
+    "gmail": "phaisa.vilo@gmail.com",
+    "password": "mcu63289pidev",
+    "defaultPassword": "mcu123456",
+    "department": "สำนักงานคณบดี คณะพุทธศาสตร์ มจร",
+    "role": "ADMIN",
+    "coursesCount": 0,
+    "isActive": true,
+    "isSuspended": false,
+    "hasChangedPassword": false,
+    "aliases": [
+      "พระมหาไพศาล ดิษฐพันธ์",
+      "phaisa.vilo@gmail.com"
+    ],
+    "previousIds": [],
+    "createdAt": "2026-11-05T07:01:22.551Z",
+    "instructorType": "เจ้าหน้าที่",
+    "isSuperAdmin": false,
+    "updatedAt": "2026-11-06T03:18:56.427Z"
+  },
+  {
     "id": "inst-duangden",
     "name": "พระมหาดวงเด่น ฐิตญาโณ, ผศ.ดร.",
     "nameEn": "Asst. Prof. Dr. Phramaha Duangden Thitanyano",
@@ -16,13 +40,20 @@
       "ดวงเด่น",
       "ฐิตญาโณ",
       "Duangden",
-      "Thitanyano"
+      "Thitanyano",
+      "พระมหาดวงเด่น ฐิตญาโณ",
+      "ผศ.ดร.",
+      "Asst. Prof. Dr. Phramaha Duangden Thitanyano",
+      "duangden@mcu.ac.th",
+      "duangden.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-duangden"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.082Z"
+    "updatedAt": "2026-11-05T09:00:15.498Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 27
   },
   {
     "id": "inst-dharmapriya",
@@ -41,13 +72,18 @@
       "Dharma",
       "Priya",
       "ธรรมปรียา",
-      "Dharmapriya"
+      "Dharmapriya",
+      "Ven. Dr. Dharma Priya Bhikkhu",
+      "dharmapriya@mcu.ac.th",
+      "dharmapriya.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-dharmapriya"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.083Z"
+    "updatedAt": "2026-11-05T08:54:40.789Z",
+    "instructorType": "อาจารย์พิเศษ",
+    "coursesCount": 4
   },
   {
     "id": "inst-dhanardhip",
@@ -66,13 +102,19 @@
       "ธนาธิป",
       "ฮาดเนาลี",
       "Dhanardhip",
-      "Hardnualee"
+      "Hardnualee",
+      "ผศ.ดร.ธนาธิป ฮาดเนาลี",
+      "Asst. Prof. Dr. Dhanardhip Hardnualee",
+      "dhanardhip@mcu.ac.th",
+      "dhanardhip.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-dhanardhip"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.083Z"
+    "updatedAt": "2026-11-05T09:00:25.035Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 6
   },
   {
     "id": "inst-yongyut",
@@ -91,14 +133,21 @@
       "ยงยุทธ",
       "ธีรธมฺโม",
       "Yongyut",
-      "Dhiradhammo"
+      "Dhiradhammo",
+      "พระมหายงยุทธ ธีรธมฺโม",
+      "ผศ.ดร.",
+      "Asst. Prof. Phramaha Yongyut Dhiradhammo",
+      "yongyut.dhi@mcu.ac.th",
+      "yongyut.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-yongyut",
       "inst-1793779268060"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.083Z"
+    "updatedAt": "2026-11-05T09:00:30.131Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 31
   },
   {
     "id": "inst-jaroon",
@@ -118,13 +167,20 @@
       "กิตฺติปญฺโญ",
       "Jaroon",
       "Kittipanno",
-      "Kittiyanno"
+      "Kittiyanno",
+      "พระมหาจรูญ กิตฺติปญฺโญ",
+      "Phramaha Jaroon Kittipanno",
+      "jaroon.kit@mcu.ac.th",
+      "jaroon.newcustom@gmail.com",
+      "jaroon.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-jaroon"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.083Z"
+    "updatedAt": "2026-11-05T09:00:35.142Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 6
   },
   {
     "id": "inst-boonkerd",
@@ -143,13 +199,19 @@
       "บุญเกิด",
       "เจริญแนว",
       "Boonkerd",
-      "Charoennaeo"
+      "Charoennaeo",
+      "ผศ.ดร.บุญเกิด เจริญแนว",
+      "Asst. Prof. Dr. Boonkerd Charoennaeo",
+      "boonkerd.cha@mcu.ac.th",
+      "boonkerd.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-boonkerd"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.083Z"
+    "updatedAt": "2026-11-05T09:00:42.180Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 5
   },
   {
     "id": "inst-mongkolkarn",
@@ -168,13 +230,20 @@
       "มงคลกานต์",
       "ฐิตธมฺโม",
       "Mongkolkarn",
-      "Thitadhammo"
+      "Thitadhammo",
+      "พระมหามงคลกานต์ ฐิตธมฺโม",
+      "รศ.ดร.",
+      "Assoc. Prof. Dr. Phramaha Mongkolkarn Thitadhammo",
+      "mongkolkarn.thi@mcu.ac.th",
+      "mongkolkarn.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-mongkolkarn"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.083Z"
+    "updatedAt": "2026-11-05T09:00:46.631Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 26
   },
   {
     "id": "inst-suvinaya",
@@ -191,13 +260,18 @@
     "isSuperAdmin": false,
     "aliases": [
       "Suvinaya",
-      "สุวินัย"
+      "สุวินัย",
+      "Ven. Dr. Suvinaya Bhikkhu",
+      "vendrsuvinay@mcu.ac.th",
+      "vendrsuvinay.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-suvinaya"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.083Z"
+    "updatedAt": "2026-11-05T08:54:59.255Z",
+    "instructorType": "อาจารย์พิเศษ",
+    "coursesCount": 4
   },
   {
     "id": "inst-sukheesom",
@@ -217,7 +291,11 @@
       "สีลเตชปุตฺติโย",
       "Sukheesom",
       "Silatechaputtiyo",
-      "ปลัดสุขีศม"
+      "ปลัดสุขีศม",
+      "พระครูปลัดสุขีศม สีลเตชปุตฺติโย",
+      "Ven. Phra Sukheesom Silatechaputtiyo",
+      "phrasukheesom@mcu.ac.th",
+      "phrasukheesom.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-sukheesom",
@@ -225,7 +303,9 @@
       "inst-138"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.084Z"
+    "updatedAt": "2026-11-05T09:00:54.094Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 6
   },
   {
     "id": "inst-doungkamon",
@@ -243,18 +323,23 @@
     "aliases": [
       "Doungkamon",
       "Tongkanaraksa",
-      "ดวงกมล"
+      "ดวงกมล",
+      "Assoc. Prof. Dr. Doungkamon Tongkanaraksa",
+      "doungkamon@mcu.ac.th",
+      "doungkamon.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-doungkamon"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.084Z"
+    "updatedAt": "2026-11-05T08:55:07.872Z",
+    "instructorType": "อาจารย์พิเศษ",
+    "coursesCount": 3
   },
   {
     "id": "inst-jutamas",
     "name": "รศ.พิเศษ ดร.จุฑามาศ วารีแสงทิพย์",
-    "nameEn": "Assoc. Prof. Dr. Jutamas Vareesangthip",
+    "nameEn": "Assoc. Prof. (Specail) Dr. Jutamas Vareesangthip",
     "email": "jutamas.var@mcu.ac.th",
     "gmail": "jutamas.mcu@gmail.com",
     "department": "คณะพุทธศาสตร์",
@@ -268,18 +353,24 @@
       "จุฑามาศ",
       "วารีแสงทิพย์",
       "Jutamas",
-      "Vareesangthip"
+      "Vareesangthip",
+      "รศ.พิเศษ ดร.จุฑามาศ วารีแสงทิพย์",
+      "Assoc. Prof. Dr. Jutamas Vareesangthip",
+      "jutamas.var@mcu.ac.th",
+      "jutamas.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-jutamas",
       "inst-67"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.084Z"
+    "updatedAt": "2026-11-05T08:55:14.776Z",
+    "instructorType": "อาจารย์พิเศษ",
+    "coursesCount": 6
   },
   {
     "id": "inst-soontaraporn",
-    "name": "Asst. Prof. Dr. Soontaraporn Techapalokul",
+    "name": "ผศ.ดร.สุนทรราภรณ์ เตชะพะโลกุล",
     "nameEn": "Asst. Prof. Dr. Soontaraporn Techapalokul",
     "email": "soontaraporn@mcu.ac.th",
     "gmail": "soontaraporn.mcu@gmail.com",
@@ -293,13 +384,22 @@
     "aliases": [
       "Soontaraporn",
       "Techapalokul",
-      "สุนทรภรณ์"
+      "สุนทรภรณ์",
+      "Asst. Prof. Dr. Soontraraporn Techapalokul",
+      "Soontraraporn",
+      "ผศ.ดร.สุนทรราภรณ์ เตชะพะโลกุล",
+      "Asst. Prof. Dr. Soontaraporn Techapalokul",
+      "soontaraporn@mcu.ac.th",
+      "soontaraporn.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-soontaraporn"
+      "inst-soontaraporn",
+      "inst-50"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.084Z"
+    "updatedAt": "2026-11-05T08:55:23.979Z",
+    "coursesCount": 3,
+    "instructorType": "อาจารย์พิเศษ"
   },
   {
     "id": "inst-onjira",
@@ -319,14 +419,20 @@
       "วงษาพาน",
       "วงศ์สะพาน",
       "Onjira",
-      "Wongsapan"
+      "Wongsapan",
+      "อ.ดร.อรจิรา วงษาพาน",
+      "Dr. Onjira Wongsapan",
+      "onjira.won@mcu.ac.th",
+      "onjira.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-onjira",
       "inst-14"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.085Z"
+    "updatedAt": "2026-11-05T08:55:31.431Z",
+    "instructorType": "อาจารย์พิเศษ",
+    "coursesCount": 3
   },
   {
     "id": "inst-pisit",
@@ -343,13 +449,19 @@
     "isSuperAdmin": false,
     "aliases": [
       "พิศิษฐ์ธรรมพิสุทธิ์",
-      "Pisit"
+      "Pisit",
+      "พระครูพิศิษฐ์ธรรมพิสุทธิ์",
+      "Phrakhru Pisitdhammapisut",
+      "pisit.dha@mcu.ac.th",
+      "pisit.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-pisit"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.085Z"
+    "updatedAt": "2026-11-05T09:01:01.743Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 6
   },
   {
     "id": "inst-srisitti",
@@ -366,13 +478,19 @@
     "isSuperAdmin": false,
     "aliases": [
       "ศรีสิทธิบัณฑิต",
-      "Srisitti"
+      "Srisitti",
+      "พระครูศรีสิทธิบัณฑิต",
+      "Phrakhru Srisittibundit",
+      "srisitti.bun@mcu.ac.th",
+      "srisitti.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-srisitti"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.085Z"
+    "updatedAt": "2026-11-05T09:01:11.043Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 4
   },
   {
     "id": "inst-rachan",
@@ -391,14 +509,20 @@
       "ราชัน",
       "จิตฺตปาโล",
       "Rachan",
-      "Cittapalo"
+      "Cittapalo",
+      "พระมหาราชัน จิตฺตปาโล",
+      "Phramaha Rachan Cittapalo",
+      "rachan.cit@mcu.ac.th",
+      "rachan.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-rachan",
       "inst-132"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.085Z"
+    "updatedAt": "2026-11-05T09:01:16.862Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 4
   },
   {
     "id": "inst-atithep",
@@ -416,13 +540,19 @@
     "aliases": [
       "อธิเทพ",
       "ผาทา",
-      "Atithep"
+      "Atithep",
+      "ดร.อธิเทพ ผาทา",
+      "Dr. Atithep Phatha",
+      "atithep.pha@mcu.ac.th",
+      "atithep.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-atithep"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.085Z"
+    "updatedAt": "2026-11-05T09:01:24.014Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 3
   },
   {
     "id": "inst-kovit",
@@ -439,13 +569,19 @@
     "isSuperAdmin": false,
     "aliases": [
       "โกวิทสุตาภรณ์",
-      "Kovit"
+      "Kovit",
+      "พระครูโกวิทสุตาภรณ์",
+      "Phrakhru Kowitsutaporn",
+      "kovit.sut@mcu.ac.th",
+      "kovit.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-kovit"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.085Z"
+    "updatedAt": "2026-11-05T08:55:42.877Z",
+    "instructorType": "อาจารย์พิเศษ",
+    "coursesCount": 2
   },
   {
     "id": "inst-chaya",
@@ -463,13 +599,19 @@
     "aliases": [
       "ไชยา",
       "เสนแสนยา",
-      "Chaiya"
+      "Chaiya",
+      "ดร.ไชยา เสนแสนยา",
+      "Dr. Chaiya Sensaenya",
+      "chaiya.sen@mcu.ac.th",
+      "chaiya.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-chaya"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.085Z"
+    "updatedAt": "2026-11-05T09:01:28.638Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 6
   },
   {
     "id": "inst-wpiyaratana",
@@ -486,79 +628,76 @@
     "isSuperAdmin": false,
     "aliases": [
       "Piyaratana",
-      "ปิยรัตนะ"
+      "ปิยรัตนะ",
+      "Assoc. Prof. W. Piyaratana",
+      "piyaratana@mcu.ac.th",
+      "piyaratana.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-wpiyaratana"
     ],
     "createdAt": "2026-11-02T06:57:57.005Z",
-    "updatedAt": "2026-11-04T03:18:09.086Z"
+    "updatedAt": "2026-11-05T09:01:36.073Z",
+    "instructorType": "อาจารย์ประจำ",
+    "coursesCount": 8
   },
   {
     "id": "admin-1",
-    "name": "พระมหาไพศาล (ผู้ดูแลระบบสูงสุด)",
+    "name": "พระมหาไพศาล วิสาโล (ผู้ดูแลระบบสูงสุด)",
     "email": "phaisal.dis@mcu.ac.th",
-    "gmail": "phaisal.dis@gmail.com",
+    "gmail": "",
     "password": "mcu123456",
     "defaultPassword": "mcu123456",
     "department": "สำนักงานคณบดี",
     "role": "ADMIN",
-    "coursesCount": 99,
+    "coursesCount": 0,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "isSuperAdmin": true,
     "isSuspended": false,
-    "updatedAt": "2026-11-02T08:00:49.770Z",
+    "updatedAt": "2026-11-05T06:57:46.923Z",
     "aliases": [
       "พระมหาไพศาล",
-      "(ผู้ดูแลระบบสูงสุด)"
+      "(ผู้ดูแลระบบสูงสุด)",
+      "พระมหาไพศาล ฐิตปญฺโญ (ผู้ดูแลระบบสูงสุด)",
+      "Phramaha Phaisal Thitapanno (Super Admin)",
+      "phaisal.dis@mcu.ac.th",
+      "phaisal.dis@gmail.com"
     ],
     "previousIds": [
       "admin-1"
-    ]
-  },
-  {
-    "id": "inst-general",
-    "name": "อาจารย์ผู้สอนประจำวิชา (MCU Lecturer)",
-    "email": "teacher@mcu.ac.th",
-    "gmail": "teacher.mcu@gmail.com",
-    "password": "mcu123456",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 5,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "อาจารย์ผู้สอนประจำวิชา",
-      "(MCU",
-      "Lecturer)"
     ],
-    "previousIds": [
-      "inst-general"
-    ],
-    "isSuperAdmin": false
+    "nameEn": "Phramaha Phaisal Thitapanno (Super Admin)"
   },
   {
     "id": "inst-34",
     "name": "พระมหาจีรวัฒน์ กนฺตวณฺโณ, รศ.ดร.",
     "email": "teacher1@mcu.ac.th",
     "gmail": "teacher1.mcu@gmail.com",
-    "password": "mcu1000",
+    "password": "mcu123456",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 26,
+    "coursesCount": 24,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.004Z",
     "aliases": [
       "พระมหาจีรวัฒน์",
-      "กนฺตวณฺโณ"
+      "กนฺตวณฺโณ",
+      "พระมหาจีรวัฒน์ กนฺตวณฺโณ",
+      "รศ.ดร.",
+      "Assoc. Prof. Dr. Phramaha Jeerawat Kantavanno",
+      "teacher1@mcu.ac.th",
+      "teacher1.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-34"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Dr. Phramaha Jeerawat Kantavanno",
+    "hasChangedPassword": false,
+    "updatedAt": "2026-11-05T09:01:42.887Z",
+    "instructorType": "อาจารย์ประจำ"
   },
   {
     "id": "inst-2",
@@ -569,38 +708,25 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 24,
+    "coursesCount": 27,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระจาตุรงค์",
-      "อาจารสุโภ"
+      "อาจารสุโภ",
+      "พระจาตุรงค์ อาจารสุโภ",
+      "ผศ.ดร.",
+      "Asst. Prof. Dr. Phra Jaturong Ajarasubho",
+      "teacher2@mcu.ac.th",
+      "teacher2.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-2"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-11",
-    "name": "Dr. Duangdee Aotsoo",
-    "email": "drduangdeeao@mcu.ac.th",
-    "gmail": "drduangdeeao.mcu@gmail.com",
-    "password": "mcu1003",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 22,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Duangdee",
-      "Aotsoo"
-    ],
-    "previousIds": [
-      "inst-11"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Phra Jaturong Ajarasubho",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:01:48.854Z"
   },
   {
     "id": "inst-62",
@@ -611,17 +737,27 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 22,
+    "coursesCount": 6,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "สุดาพร",
-      "เขียวงามดี"
+      "เขียวงามดี",
+      "Dr. Sudaporn Kiewngamdee",
+      "Sudaporn",
+      "Kiewngamdee",
+      "อ.ดร.สุดาพร เขียวงามดี",
+      "teacher6@mcu.ac.th",
+      "teacher6.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-62"
+      "inst-62",
+      "inst-117"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Sudaporn Kiewngamdee",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:01:54.782Z"
   },
   {
     "id": "inst-9",
@@ -632,7 +768,7 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 18,
+    "coursesCount": 25,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -640,14 +776,21 @@
       "นรเชฏฺโฐ",
       "นราเชฏฺโฐ",
       "Yutthana",
-      "Narajettho"
+      "Narajettho",
+      "พระมหายุทธนา นรเชฏฺโฐ",
+      "รศ.ดร.",
+      "Assoc. Prof. Phramaha Yutthana Narajettho",
+      "yutthana.nar@mcu.ac.th",
+      "yutthana.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-9",
       "inst-59"
     ],
     "isSuperAdmin": false,
-    "nameEn": "Assoc. Prof. Phramaha Yutthana Narajettho, Ph.D."
+    "nameEn": "Assoc. Prof. Phramaha Yutthana Narajettho, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:01:59.406Z"
   },
   {
     "id": "inst-10",
@@ -658,17 +801,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 18,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "ขวัญตระกูล",
-      "บุทธิจักร"
+      "บุทธิจักร",
+      "อ.ดร.ขวัญตระกูล บุทธิจักร",
+      "Dr. Khwantrakool Butthijak",
+      "teacher9@mcu.ac.th",
+      "teacher9.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-10"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Khwantrakool Butthijak",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:02:05.960Z"
   },
   {
     "id": "inst-17",
@@ -679,16 +829,23 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 18,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "ศรียะอาจ"
+      "ศรียะอาจ",
+      "รศ.ดร.กฤต ศรียะอาจ",
+      "Assoc. Prof. Dr. Krit Sri-ya-at",
+      "teacher10@mcu.ac.th",
+      "teacher10.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-17"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Dr. Krit Sri-ya-at",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:02:12.411Z"
   },
   {
     "id": "inst-26",
@@ -699,16 +856,23 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 18,
+    "coursesCount": 27,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระครูสิริรัตนบัณฑิต"
+      "พระครูสิริรัตนบัณฑิต",
+      "ผศ.ดร.",
+      "Asst. Prof. Dr. Phrakhru Siriratanabundit",
+      "teacher12@mcu.ac.th",
+      "teacher12.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-26"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Phrakhru Siriratanabundit",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:02:17.395Z"
   },
   {
     "id": "inst-32",
@@ -719,21 +883,28 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 14,
+    "coursesCount": 27,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "สิทธิวัชรบัณฑิต",
       "Sitthivajarabundit",
       "Sitthivajara",
-      "Phra Sitthivajarabundit"
+      "Phra Sitthivajarabundit",
+      "พระสิทธิวัชรบัณฑิต",
+      "ผศ.ดร.",
+      "Asst. Prof. Phra Sitthivajarabundit",
+      "sitthivajarabundit@mcu.ac.th",
+      "sitthivajarabundit.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-32",
       "inst-28"
     ],
     "isSuperAdmin": false,
-    "nameEn": "Asst. Prof. Phra Sitthivajarabundit, Ph.D."
+    "nameEn": "Asst. Prof. Phra Sitthivajarabundit, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:10:42.271Z"
   },
   {
     "id": "inst-48",
@@ -744,17 +915,26 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 14,
+    "coursesCount": 4,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "อุดม",
-      "จันทิมา"
+      "จันทิมา",
+      "อาจารย์ ดร.อุดม จันทิมา",
+      "อ.ดร.อุดม จันทิมา",
+      "Dr. Udom Jantima",
+      "teacher18@mcu.ac.th",
+      "teacher18.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-48"
+      "inst-48",
+      "inst-6"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Udom Jantima",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:10:48.189Z"
   },
   {
     "id": "inst-5",
@@ -765,39 +945,28 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 12,
+    "coursesCount": 21,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระมหานิรันดร์",
-      "กลฺยาณเมธี"
-    ],
-    "previousIds": [
-      "inst-5"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-7",
-    "name": "Phramaha Niran Kalyanamedhi, Ph.D.",
-    "email": "phramahanira@mcu.ac.th",
-    "gmail": "phramahanira.mcu@gmail.com",
-    "password": "mcu1019",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 12,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
+      "กลฺยาณเมธี",
+      "Phramaha Niran Kalyanamedhi",
       "Phramaha",
       "Niran",
-      "Kalyanamedhi"
+      "Kalyanamedhi",
+      "พระมหานิรันดร์ กลฺยาณเมธี",
+      "teacher19@mcu.ac.th",
+      "teacher19.mcu@gmail.com"
     ],
     "previousIds": [
+      "inst-5",
       "inst-7"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phramaha Niran Kalyanamedhi, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:10:54.446Z"
   },
   {
     "id": "inst-66",
@@ -808,17 +977,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 12,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "ธีร์",
-      "พุ่มทับทิม"
+      "พุ่มทับทิม",
+      "ผศ.ธีร์ พุ่มทับทิม",
+      "Asst. Prof. Thee Poomthubthim",
+      "teacher23@mcu.ac.th",
+      "teacher23.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-66"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Thee Poomthubthim",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:11:00.222Z"
   },
   {
     "id": "inst-85",
@@ -829,39 +1005,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 12,
+    "coursesCount": 4,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "คงสฤษฎ์",
-      "แพงทรัพย์"
+      "แพงทรัพย์",
+      "ผศ.ดร.คงสฤษฎ์ แพงทรัพย์",
+      "Asst. Prof. Dr. Khongsaris Phaengsub",
+      "teacher24@mcu.ac.th",
+      "teacher24.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-85"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-8",
-    "name": "Assoc. Prof. Pha Dhammavajirapanyacarya, Ph.D.",
-    "email": "assocprofpha@mcu.ac.th",
-    "gmail": "assocprofpha.mcu@gmail.com",
-    "password": "mcu1025",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 10,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Assoc",
-      "Prof",
-      "Dhammavajirapanyacarya"
-    ],
-    "previousIds": [
-      "inst-8"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Khongsaris Phaengsub",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:11:07.224Z"
   },
   {
     "id": "inst-18",
@@ -872,16 +1033,22 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 10,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระศรีวชิราภินันท์"
+      "พระศรีวชิราภินันท์",
+      "Phra Srivajirabhinanda",
+      "teacher28@mcu.ac.th",
+      "teacher28.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-18"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phra Srivajirabhinanda, Ph.D.",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:56:29.549Z"
   },
   {
     "id": "inst-21",
@@ -892,17 +1059,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 10,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "สมหญิง",
-      "ลมูลพักตร์"
+      "ลมูลพักตร์",
+      "อ.ดร.สมหญิง ลมูลพักตร์",
+      "Dr. Somying Lamoolpak",
+      "teacher29@mcu.ac.th",
+      "teacher29.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-21"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Somying Lamoolpak",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:56:36.390Z"
   },
   {
     "id": "inst-25",
@@ -913,17 +1087,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 10,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "สมบูรณ์",
-      "บุญศิริ"
+      "บุญศิริ",
+      "อ.ดร.สมบูรณ์ บุญศิริ",
+      "Dr. Somboon Boonsiri",
+      "teacher30@mcu.ac.th",
+      "teacher30.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-25"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Somboon Boonsiri",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:56:43.095Z"
   },
   {
     "id": "inst-27",
@@ -934,40 +1115,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 10,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "จันทรา",
-      "บริกส์"
+      "บริกส์",
+      "อ.ดร.จันทรา บริกส์",
+      "Dr. Jantra Briggs",
+      "teacher31@mcu.ac.th",
+      "teacher31.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-27"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-36",
-    "name": "Asst. Prof. Dr. Supapan Permpool",
-    "email": "asstprofdrsu@mcu.ac.th",
-    "gmail": "asstprofdrsu.mcu@gmail.com",
-    "password": "mcu1032",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 10,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Asst",
-      "Prof",
-      "Supapan",
-      "Permpool"
-    ],
-    "previousIds": [
-      "inst-36"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Jantra Briggs",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:56:49.430Z"
   },
   {
     "id": "inst-58",
@@ -978,17 +1143,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 10,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระมหาไพโรจน์",
-      "ญาณกุสโล"
+      "ญาณกุสโล",
+      "พระมหาไพโรจน์ ญาณกุสโล",
+      "Phramaha Phairoje Nyanakusalo",
+      "teacher34@mcu.ac.th",
+      "teacher34.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-58"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phramaha Phairoje Nyanakusalo, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:11:16.546Z"
   },
   {
     "id": "inst-83",
@@ -999,38 +1171,52 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 10,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "แสวง",
-      "นิลนามะ"
+      "นิลนามะ",
+      "ผศ.ดร.แสวง นิลนามะ",
+      "Asst. Prof. Dr. Sawaeng Nilnama",
+      "teacher35@mcu.ac.th",
+      "teacher35.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-83"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Sawaeng Nilnama",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:11:23.798Z"
   },
   {
     "id": "inst-29",
-    "name": "Dr. Tratep Techapornchai",
+    "name": "ดร.ตรีเทพ เตชะพรชัย",
     "email": "drtrateptech@mcu.ac.th",
     "gmail": "drtrateptech.mcu@gmail.com",
     "password": "mcu1035",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 8,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "Tratep",
-      "Techapornchai"
+      "Techapornchai",
+      "ดร.ตรีเทพ เตชะพรชัย",
+      "Dr. Tratep Techapornchai",
+      "drtrateptech@mcu.ac.th",
+      "drtrateptech.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-29"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Tratep Techapornchai",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:56:57.853Z"
   },
   {
     "id": "inst-38",
@@ -1041,37 +1227,28 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 8,
+    "coursesCount": 20,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระมหาวีรเดช",
-      "อธิปญฺโญ"
+      "อธิปญฺโญ",
+      "Phramaha Veeradej Adhipanno",
+      "Phramaha",
+      "Veeradej",
+      "Adhipanno",
+      "พระมหาวีรเดช อธิปญฺโญ",
+      "teacher37@mcu.ac.th",
+      "teacher37.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-38"
+      "inst-38",
+      "inst-42"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-64",
-    "name": "พระธรรมวชิรปัญญาจารย์, รศ.ดร.",
-    "email": "teacher40@mcu.ac.th",
-    "gmail": "teacher40.mcu@gmail.com",
-    "password": "mcu1039",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 8,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "พระธรรมวชิรปัญญาจารย์"
-    ],
-    "previousIds": [
-      "inst-64"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phramaha Viradej Adhipanyo, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T08:53:16.826Z"
   },
   {
     "id": "inst-65",
@@ -1082,17 +1259,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 8,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระมหาสมเดช",
-      "ตปสีโล"
+      "ตปสีโล",
+      "พระมหาสมเดช ตปสีโล",
+      "Phramaha Somdej Tapasilo",
+      "teacher41@mcu.ac.th",
+      "teacher41.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-65"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phramaha Somdej Tapasilo, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:11:32.832Z"
   },
   {
     "id": "inst-70",
@@ -1103,18 +1287,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 8,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พิเศษ",
       "เสนาะ",
-      "ผดุงฉัตร"
+      "ผดุงฉัตร",
+      "ผศ.พิเศษ ดร.เสนาะ ผดุงฉัตร",
+      "Asst. Prof. Dr. Sanoe Phadungchat",
+      "teacher43@mcu.ac.th",
+      "teacher43.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-70"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Sanoe Phadungchat",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:11:43.160Z"
   },
   {
     "id": "inst-72",
@@ -1125,16 +1315,25 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 8,
+    "coursesCount": 24,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระครูภาวนาวัฒนบัณฑิต"
+      "พระครูภาวนาวัฒนบัณฑิต",
+      "รศ.ดร.",
+      "พระครูภาวนาวัฒนบัณฑิต วิ.",
+      "Assoc. Prof. Dr. Phrakhru Bhavanavattana-bundit",
+      "teacher44@mcu.ac.th",
+      "teacher44.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-72"
+      "inst-72",
+      "inst-76"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Dr. Phrakhru Bhavanavattana-bundit",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:11:49.723Z"
   },
   {
     "id": "inst-78",
@@ -1145,7 +1344,7 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 8,
+    "coursesCount": 5,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -1153,7 +1352,11 @@
       "สิริสกฺโก",
       "Kriengsak",
       "Kreingsak",
-      "Sirisakko"
+      "Sirisakko",
+      "พระสมุห์เกรียงศักดิ์ สิริสกฺโก",
+      "Phrasamu Kriengsak Sirisakko",
+      "kriengsak.sir@mcu.ac.th",
+      "kriengsak.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-78",
@@ -1162,30 +1365,37 @@
       "inst-131"
     ],
     "isSuperAdmin": false,
-    "nameEn": "Phrasamu Kriengsak Sirisakko, Ph.D."
+    "nameEn": "Phrasamu Kriengsak Sirisakko, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:11:56.942Z"
   },
   {
     "id": "inst-81",
-    "name": "Assoc. Prof. Dr. Naddhira Sridee",
+    "name": "รศ.ดร.ณัชธีร์ ศรีดี",
     "email": "assocprofdrn@mcu.ac.th",
     "gmail": "assocprofdrn.mcu@gmail.com",
     "password": "mcu1046",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 8,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "Assoc",
-      "Prof",
       "Naddhira",
-      "Sridee"
+      "Sridee",
+      "รศ.ดร.ณัชธีรา ศรีดี",
+      "Assoc. Prof. Dr. Naddhira Sridee",
+      "assocprofdrn@mcu.ac.th",
+      "assocprofdrn.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-81"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Dr. Naddhira Sridee",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T08:57:37.194Z"
   },
   {
     "id": "inst-87",
@@ -1196,144 +1406,138 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 8,
+    "coursesCount": 24,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระมหาขวัญชัย",
-      "กิตฺติเมธี"
+      "กิตฺติเมธี",
+      "พระมหาขวัญชัย กิตฺติเมธี",
+      "รศ.ดร.",
+      "Assoc. Prof. Dr. Phramaha Khwanchai Kittimedhi",
+      "teacher48@mcu.ac.th",
+      "teacher48.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-87"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Dr. Phramaha Khwanchai Kittimedhi",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T08:57:46.745Z"
   },
   {
     "id": "inst-90",
-    "name": "Phramaha Khunpon Samacitto, Ph.D.",
+    "name": "พระมหาขุนพล สมจิตฺโต, ดร.",
     "email": "phramahakhun@mcu.ac.th",
     "gmail": "phramahakhun.mcu@gmail.com",
     "password": "mcu1049",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 8,
+    "coursesCount": 18,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "Phramaha",
       "Khunpon",
-      "Samacitto"
+      "Samacitto",
+      "พระมหาขุนพล สมจิตฺโต",
+      "Phramaha Khunpon Samacitto",
+      "phramahakhun@mcu.ac.th",
+      "phramahakhun.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-90"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-15",
-    "name": "A.Dr. Sudtida Padrit",
-    "email": "adrsudtidapa@mcu.ac.th",
-    "gmail": "adrsudtidapa.mcu@gmail.com",
-    "password": "mcu1052",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 6,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Sudtida",
-      "Padrit"
-    ],
-    "previousIds": [
-      "inst-15"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phramaha Khunpon Samacitto, Ph.D.",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:57:53.576Z"
   },
   {
     "id": "inst-19",
-    "name": "Dr. Pattamawadee Sangkhuenkaew",
+    "name": "ดร.ปัทมาวดี สังข์ขื่นแก้ว",
     "email": "drpattamawad@mcu.ac.th",
     "gmail": "drpattamawad.mcu@gmail.com",
     "password": "mcu1053",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 6,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "Pattamawadee",
-      "Sangkhuenkaew"
+      "Sangkhuenkaew",
+      "ดร.ปัทมาวดี สังข์ขื่นแก้ว",
+      "Dr. Pattamawadee Sangkhuenkaew",
+      "drpattamawad@mcu.ac.th",
+      "drpattamawad.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-19"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Pattamawadee Sangkhuenkaew",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:58:00.809Z"
   },
   {
     "id": "inst-23",
-    "name": "Dr. Low Yuen Fah",
+    "name": "ดร.โลว์ ยวน ฟา",
     "email": "drlowyuenfah@mcu.ac.th",
     "gmail": "drlowyuenfah.mcu@gmail.com",
     "password": "mcu1054",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 6,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "Yuen"
+      "Yuen",
+      "ดร.โลว์ ยวน ฟา",
+      "Dr. Low Yuen Fah",
+      "drlowyuenfah@mcu.ac.th",
+      "drlowyuenfah.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-23"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Low Yuen Fah",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:46:31.866Z"
   },
   {
     "id": "inst-30",
-    "name": "Ven. Phrabaidika Senghurng Narinda, Ph.D.",
+    "name": "พระใบฎีกาแสงเหิง นรินฺโท, ดร.",
     "email": "venphrabaidi@mcu.ac.th",
     "gmail": "venphrabaidi.mcu@gmail.com",
     "password": "mcu1056",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 6,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "Phrabaidika",
       "Senghurng",
-      "Narinda"
+      "Narinda",
+      "พระใบฎีกาแสงเหิง นรินฺโท",
+      "Ven. Phrabaidika Senghurng Narinda",
+      "venphrabaidi@mcu.ac.th",
+      "venphrabaidi.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-30"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-6",
-    "name": "อาจารย์ ดร.อุดม จันทิมา",
-    "email": "teacher62@mcu.ac.th",
-    "gmail": "teacher62.mcu@gmail.com",
-    "password": "mcu1061",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "อุดม",
-      "จันทิมา"
-    ],
-    "previousIds": [
-      "inst-6"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Ven. Phrabaidika Senghurng Narinda, Ph.D.",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:58:15.715Z"
   },
   {
     "id": "inst-35",
@@ -1344,18 +1548,27 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 5,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พิเศษ",
       "สุภาพรรณ",
-      "เพิ่มพูน"
+      "เพิ่มพูน",
+      "Asst. Prof. Dr. Supapan Permpool",
+      "Supapan",
+      "Permpool",
+      "ผศ.พิเศษ ดร.สุภาพรรณ เพิ่มพูน",
+      "teacher66@mcu.ac.th",
+      "teacher66.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-35"
+      "inst-35",
+      "inst-36"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. (Specail) Dr. Supapan Permpool",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:48:26.259Z"
   },
   {
     "id": "inst-39",
@@ -1366,17 +1579,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "สันทยา",
-      "ประภารัตน์"
+      "ประภารัตน์",
+      "อ.ดร.สันทยา ประภารัตน์",
+      "Dr. Santhaya Prapharat",
+      "teacher67@mcu.ac.th",
+      "teacher67.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-39"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Santhaya Prapharat",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:58:26.609Z"
   },
   {
     "id": "inst-40",
@@ -1387,17 +1607,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "สุเทพ",
-      "พรมเลิศ"
+      "พรมเลิศ",
+      "รศ.ดร.สุเทพ พรมเลิศ",
+      "Assoc. Prof. Dr. Suthep Promlert",
+      "teacher68@mcu.ac.th",
+      "teacher68.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-40"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Dr. Suthep Promlert",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T08:59:22.224Z"
   },
   {
     "id": "inst-41",
@@ -1408,40 +1635,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พิเศษ",
       "อยุษกร",
-      "งามชาติ"
+      "งามชาติ",
+      "ผศ.พิเศษ ดร.อยุษกร งามชาติ",
+      "Asst. Prof. Dr. Ayusagorn Ngamchart",
+      "teacher69@mcu.ac.th",
+      "teacher69.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-41"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-42",
-    "name": "Phramaha Veeradej Adhipanno, Ph.D.",
-    "email": "phramahaveer@mcu.ac.th",
-    "gmail": "phramahaveer.mcu@gmail.com",
-    "password": "mcu1069",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Phramaha",
-      "Veeradej",
-      "Adhipanno"
-    ],
-    "previousIds": [
-      "inst-42"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Ayusagorn Ngamchart",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:59:15.010Z"
   },
   {
     "id": "inst-43",
@@ -1452,37 +1663,53 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 27,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระราชอุดมวัชรเมธี"
+      "พระราชอุดมวัชรเมธี",
+      "ผศ.ดร.",
+      "Asst. Prof. Phra Raj-udomvajiramedhi",
+      "teacher71@mcu.ac.th",
+      "teacher71.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-43"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Phra Raj-udomvajiramedhi, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T08:59:30.845Z"
   },
   {
     "id": "inst-44",
-    "name": "Dr. Sudtida Padrit",
+    "name": "อ.ดร.สุดธิดา ผัดฤทธิ์",
     "email": "drsudtidapad@mcu.ac.th",
     "gmail": "drsudtidapad.mcu@gmail.com",
     "password": "mcu1071",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "Sudtida",
-      "Padrit"
+      "Padrit",
+      "A.Dr. Sudtida Padrit",
+      "อ.ดร.สุดธิดา ผัดฤทธิ์",
+      "Dr. Sudtida Padrit",
+      "drsudtidapad@mcu.ac.th",
+      "drsudtidapad.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-44"
+      "inst-44",
+      "inst-15"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Sudtida Padrit",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:59:37.764Z"
   },
   {
     "id": "inst-46",
@@ -1493,17 +1720,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "ปรีชญา",
-      "เทพละออง"
+      "เทพละออง",
+      "อ.ดร.ปรีชญา เทพละออง",
+      "Dr. Preechaya Thepla-ong",
+      "teacher73@mcu.ac.th",
+      "teacher73.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-46"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Preechaya Thepla-ong",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T08:59:44.445Z"
   },
   {
     "id": "inst-47",
@@ -1514,39 +1748,23 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 27,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระราชญาณวชิรเวที"
+      "พระราชญาณวชิรเวที",
+      "ผศ.ดร.",
+      "Asst. Prof. Phra Raj-nyanavajiravedi",
+      "teacher74@mcu.ac.th",
+      "teacher74.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-47"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-50",
-    "name": "Asst. Prof. Dr. Soontraraporn Techapalokul",
-    "email": "asstprofdrso@mcu.ac.th",
-    "gmail": "asstprofdrso.mcu@gmail.com",
-    "password": "mcu1074",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Asst",
-      "Prof",
-      "Soontraraporn",
-      "Techapalokul"
-    ],
-    "previousIds": [
-      "inst-50"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Phra Raj-nyanavajiravedi, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T08:59:51.486Z"
   },
   {
     "id": "inst-51",
@@ -1557,17 +1775,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "วรินธร",
-      "ทวีโชติชัยกุล"
+      "ทวีโชติชัยกุล",
+      "อ.ดร.วรินธร ทวีโชติชัยกุล",
+      "Dr. Warinthorn Thaweechotchaikul",
+      "teacher76@mcu.ac.th",
+      "teacher76.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-51"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Warinthorn Thaweechotchaikul",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:00:00.482Z"
   },
   {
     "id": "inst-53",
@@ -1578,17 +1803,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "สิรีรัศมิ์",
-      "สิงห์สนธิ"
+      "สิงห์สนธิ",
+      "อ.ดร.สิรีรัศมิ์ สิงห์สนธิ",
+      "Dr. Sireerat Singhasonthi",
+      "teacher77@mcu.ac.th",
+      "teacher77.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-53"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Sireerat Singhasonthi",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:12:08.375Z"
   },
   {
     "id": "inst-60",
@@ -1599,17 +1831,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "นภาพัทธ์",
-      "งามบุษบงโสภิน"
+      "งามบุษบงโสภิน",
+      "อ.ดร.นภาพัทธ์ งามบุษบงโสภิน",
+      "Dr. Napaphat Ngambusabongsopin",
+      "teacher80@mcu.ac.th",
+      "teacher80.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-60"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Napaphat Ngambusabongsopin",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:12:16.589Z"
   },
   {
     "id": "inst-68",
@@ -1620,17 +1859,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "แม่ชีวรณิช",
-      "วสุรัตน์"
+      "วสุรัตน์",
+      "ผศ.ดร.แม่ชีวรณิช วสุรัตน์",
+      "Asst. Prof. Dr. Nun Voranit Vasurat",
+      "teacher82@mcu.ac.th",
+      "teacher82.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-68"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Nun Voranit Vasurat",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:12:31.942Z"
   },
   {
     "id": "inst-71",
@@ -1641,16 +1887,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 24,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระพรหมวชิรวิมลมุนี"
+      "พระพรหมวชิรวิมลมุนี",
+      "พระพรหมวชิรวิมลมุนี วิ.",
+      "รศ.ดร.",
+      "Assoc. Prof. Phra Brahmavajiravimalmuni",
+      "teacher83@mcu.ac.th",
+      "teacher83.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-71"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Phra Brahmavajiravimalmuni, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:12:37.978Z"
   },
   {
     "id": "inst-73",
@@ -1661,17 +1915,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "ฉวีวรรณ",
-      "สกุลสุพิชญ์"
+      "สกุลสุพิชญ์",
+      "อ.ดร.ฉวีวรรณ สกุลสุพิชญ์",
+      "Dr. Chaweewan Sakulsupitch",
+      "teacher84@mcu.ac.th",
+      "teacher84.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-73"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Chaweewan Sakulsupitch",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:12:45.383Z"
   },
   {
     "id": "inst-74",
@@ -1682,16 +1943,26 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระราชภาวนาวชิรสุนทร"
+      "พระราชภาวนาวชิรสุนทร",
+      "พระภาวนาวชิรสุนทร วิ.",
+      "พระภาวนาวชิรสุนทร",
+      "พระราชภาวนาวชิรสุนทร วิ.",
+      "Phrarajabhavanavajirasundorn",
+      "teacher85@mcu.ac.th",
+      "teacher85.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-74"
+      "inst-74",
+      "inst-125"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phrarajabhavanavajirasundorn, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:12:55.086Z"
   },
   {
     "id": "inst-75",
@@ -1702,38 +1973,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พิเศษ",
       "จุฑารัตน์",
-      "ทองอินจันทร์"
+      "ทองอินจันทร์",
+      "ผศ.พิเศษ ดร.จุฑารัตน์ ทองอินจันทร์",
+      "Asst. Prof. Dr. Jutarat Thonginchan",
+      "teacher86@mcu.ac.th",
+      "teacher86.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-75"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-76",
-    "name": "พระครูภาวนาวัฒนบัณฑิต, รศ.ดร.",
-    "email": "teacher87@mcu.ac.th",
-    "gmail": "teacher87.mcu@gmail.com",
-    "password": "mcu1086",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "พระครูภาวนาวัฒนบัณฑิต"
-    ],
-    "previousIds": [
-      "inst-76"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Jutarat Thonginchan",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:13:14.958Z"
   },
   {
     "id": "inst-77",
@@ -1744,17 +2001,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "แม่ชีวีณา",
-      "ศรีคุรุวาฬ"
+      "ศรีคุรุวาฬ",
+      "อ.ดร.แม่ชีวีณา ศรีคุรุวาฬ",
+      "Dr. Nun Veena Srikuruwal",
+      "teacher88@mcu.ac.th",
+      "teacher88.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-77"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Nun Veena Srikuruwal",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:13:23.153Z"
   },
   {
     "id": "inst-80",
@@ -1765,43 +2029,57 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 29,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "สมพงษ์",
       "คุณากโร",
       "Somphong",
-      "Khunakaro"
+      "Khunakaro",
+      "Asst. Prof. PM. Somphong Khunakaro",
+      "พระมหาสมพงษ์ คุณากโร",
+      "ผศ.ดร.",
+      "Asst. Prof. Phramaha Somphong Khunakaro",
+      "somphong.khu@mcu.ac.th",
+      "somphong.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-80"
+      "inst-80",
+      "inst-97"
     ],
     "isSuperAdmin": false,
-    "nameEn": "Asst. Prof. Phramaha Somphong Khunakaro, Ph.D."
+    "nameEn": "Asst. Prof. Phramaha Somphong Khunakaro, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:13:33.231Z"
   },
   {
     "id": "inst-82",
-    "name": "Asst. Prof. Dr. Khaimook Laopipatthana",
+    "name": "ผศ.ดร.ไข่มุกข์ เหล่าพิพัฒน์ธนา",
     "email": "asstprofdrkh@mcu.ac.th",
     "gmail": "asstprofdrkh.mcu@gmail.com",
     "password": "mcu1089",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "Asst",
-      "Prof",
       "Khaimook",
-      "Laopipatthana"
+      "Laopipatthana",
+      "ผศ.ดร.ไข่มุกข์ เหล่าพิพัฒน์ธนา",
+      "Asst. Prof. Dr. Khaimook Laopipatthana",
+      "asstprofdrkh@mcu.ac.th",
+      "asstprofdrkh.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-82"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Khaimook Laopipatthana",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:13:40.962Z"
   },
   {
     "id": "inst-86",
@@ -1812,16 +2090,22 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระครูโกมุทสุวรรณาภรณ์"
+      "พระครูโกมุทสุวรรณาภรณ์",
+      "Phrakhru Gomut-suwannaporn",
+      "teacher91@mcu.ac.th",
+      "teacher91.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-86"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phrakhru Gomut-suwannaporn, Ph.D.",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:13:48.451Z"
   },
   {
     "id": "inst-88",
@@ -1832,24 +2116,31 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "คำพอง",
-      "งามภักดิ์"
+      "งามภักดิ์",
+      "อ.ดร.คำพอง งามภักดิ์",
+      "Dr. Khamphong Ngampak",
+      "teacher92@mcu.ac.th",
+      "teacher92.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-88"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Khamphong Ngampak",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:13:56.629Z"
   },
   {
     "id": "inst-92",
     "name": "อ.ดร.ดวงดี โอฐสู",
     "email": "teacher94@mcu.ac.th",
     "gmail": "teacher94.mcu@gmail.com",
-    "password": "mcu1093",
+    "password": "$2b$10$HjJsHzv4xBMWwELtIdUcxupA9Bygz3U6ZN1y69lR6KLYSVr4HRhye",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
@@ -1858,12 +2149,25 @@
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "ดวงดี",
-      "โอฐสู"
+      "โอฐสู",
+      "อาจารย์ ดร.ดวงดี โอฐสู",
+      "Dr. Duangdee Aotsoo",
+      "Duangdee",
+      "Aotsoo",
+      "อ.ดร.ดวงดี โอฐสู",
+      "teacher94@mcu.ac.th",
+      "teacher94.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-92"
+      "inst-92",
+      "inst-98",
+      "inst-11"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Duangdee Aotsoo",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-06T03:30:00.183Z",
+    "hasChangedPassword": true
   },
   {
     "id": "inst-94",
@@ -1874,17 +2178,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระครูปลัดภาณุวัฒน์",
-      "วฑฺฒธมฺโม"
+      "วฑฺฒธมฺโม",
+      "พระครูปลัดภาณุวัฒน์ วฑฺฒธมฺโม",
+      "Phrakhrupalad Phanuwat Vaddhadhammo",
+      "teacher96@mcu.ac.th",
+      "teacher96.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-94"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phrakhrupalad Phanuwat Vaddhadhammo, Ph.D.",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:14:15.490Z"
   },
   {
     "id": "inst-95",
@@ -1895,65 +2206,28 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 29,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พรชัย",
       "สิริวโร",
       "Pornchai",
-      "Sirivaro"
+      "Sirivaro",
+      "พระมหาพรชัย สิริวโร",
+      "ผศ.ดร.",
+      "Asst. Prof. Phramaha Pornchai Sirivaro",
+      "pornchai.sir@mcu.ac.th",
+      "pornchai.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-95",
       "inst-96"
     ],
     "isSuperAdmin": false,
-    "nameEn": "Asst. Prof. Phramaha Pornchai Sirivaro, Ph.D."
-  },
-  {
-    "id": "inst-97",
-    "name": "Asst. Prof. PM. Somphong Khunakaro, Ph.D.",
-    "email": "asstprofpmso@mcu.ac.th",
-    "gmail": "asstprofpmso.mcu@gmail.com",
-    "password": "mcu1098",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Asst",
-      "Prof",
-      "Somphong",
-      "Khunakaro"
-    ],
-    "previousIds": [
-      "inst-97"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-98",
-    "name": "อาจารย์ ดร.ดวงดี โอฐสู",
-    "email": "teacher100@mcu.ac.th",
-    "gmail": "teacher100.mcu@gmail.com",
-    "password": "mcu1099",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "ดวงดี",
-      "โอฐสู"
-    ],
-    "previousIds": [
-      "inst-98"
-    ],
-    "isSuperAdmin": false
+    "nameEn": "Asst. Prof. Phramaha Pornchai Sirivaro, Ph.D.",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:14:23.587Z"
   },
   {
     "id": "inst-99",
@@ -1964,17 +2238,24 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระใบฎีกาธนกฤต",
-      "กตปุญฺโญ"
+      "กตปุญฺโญ",
+      "พระใบฎีกาธนกฤต กตปุญฺโญ",
+      "Phrabaidika Thanakrit Katapunno",
+      "teacher101@mcu.ac.th",
+      "teacher101.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-99"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Phrabaidika Thanakrit Katapunno, Ph.D.",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:14:32.882Z"
   },
   {
     "id": "inst-113",
@@ -1983,43 +2264,59 @@
     "gmail": "dhammavajirapanya.mcu@gmail.com",
     "password": "mcu1102",
     "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
+    "department": "ภาควิชาบาลีและสันสกฤต",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 28,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "ธรรมวัชรปัญญาจารย์",
-      "Dhammavajirapanyacarya"
+      "Dhammavajirapanyacarya",
+      "Assoc. Prof. Pha Dhammavajirapanyacarya",
+      "พระธรรมวชิรปัญญาจารย์",
+      "รศ.ดร.",
+      "พระธรรมวัชรปัญญาจารย์",
+      "Assoc. Prof. Phra Dhammavajirapanyacarya",
+      "dhammavajirapanya@mcu.ac.th",
+      "dhammavajirapanya.mcu@gmail.com"
     ],
     "previousIds": [
-      "inst-113"
+      "inst-113",
+      "inst-8",
+      "inst-64"
     ],
     "isSuperAdmin": false,
-    "nameEn": "Assoc. Prof. Phra Dhammavajirapanyacarya, Ph.D."
+    "nameEn": "Assoc. Prof. Phra Dhammavajirapanyacarya, Ph.D.",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:15:41.753Z"
   },
   {
     "id": "inst-114",
-    "name": "Asst. Prof. Piphat Khongprasert",
+    "name": "ผศ.พิพัฒน์ คงประเสริฐ",
     "email": "asstprofpiph@mcu.ac.th",
     "gmail": "asstprofpiph.mcu@gmail.com",
     "password": "mcu1103",
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "Asst",
-      "Prof",
       "Piphat",
-      "Khongprasert"
+      "Khongprasert",
+      "ผศ.พิพัฒน์ คงประเสริฐ",
+      "Asst. Prof. Piphat Khongprasert",
+      "asstprofpiph@mcu.ac.th",
+      "asstprofpiph.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-114"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Piphat Khongprasert",
+    "instructorType": "อาจารย์ประจำ",
+    "updatedAt": "2026-11-05T09:16:11.141Z"
   },
   {
     "id": "inst-101",
@@ -2030,143 +2327,108 @@
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 2,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "คงชิต",
-      "ชินสิญจ์"
+      "ชินสิญจ์",
+      "อ.ดร.คงชิต ชินสิญจ์",
+      "Dr. Khongchit Chinsin",
+      "teacher107@mcu.ac.th",
+      "teacher107.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-101"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-107",
-    "name": "รศ.ดร.บัญญพน สวัสดี",
-    "email": "teacher113@mcu.ac.th",
-    "gmail": "teacher113.mcu@gmail.com",
-    "password": "mcu1112",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
-    "role": "INSTRUCTOR",
-    "coursesCount": 2,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "บัญญพน",
-      "สวัสดี"
-    ],
-    "previousIds": [
-      "inst-107"
-    ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-108",
-    "name": "ดร.วิศาล มายัง",
-    "email": "teacher114@mcu.ac.th",
-    "gmail": "teacher114.mcu@gmail.com",
-    "password": "mcu1113",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
-    "role": "INSTRUCTOR",
-    "coursesCount": 2,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "วิศาล",
-      "มายัง"
-    ],
-    "previousIds": [
-      "inst-108"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Khongchit Chinsin",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:15:55.329Z"
   },
   {
     "id": "inst-112",
-    "name": "Ven. Thit Zana",
+    "name": "พระฐิตชานะ (Ven. Thit Zana)",
     "email": "venthitzana@mcu.ac.th",
     "gmail": "venthitzana.mcu@gmail.com",
     "password": "mcu1117",
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 1 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
     "role": "INSTRUCTOR",
-    "coursesCount": 2,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "Thit",
-      "Zana"
+      "Zana",
+      "พระฐิตชานะ (Ven. Thit Zana)",
+      "Ven. Thit Zana",
+      "venthitzana@mcu.ac.th",
+      "venthitzana.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-112"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-117",
-    "name": "Dr. Sudaporn Kiewngamdee",
-    "email": "drsudapornki@mcu.ac.th",
-    "gmail": "drsudapornki.mcu@gmail.com",
-    "password": "mcu1119",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
-    "role": "INSTRUCTOR",
-    "coursesCount": 2,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "Sudaporn",
-      "Kiewngamdee"
-    ],
-    "previousIds": [
-      "inst-117"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Ven. Thit Zana",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:16:49.111Z"
   },
   {
     "id": "inst-119",
-    "name": "Ven. Dr. Subinoy Bhikku",
+    "name": "พระ ดร.สุวิโนย ภิกขุ (Ven. Dr. Subinoy Bhikku)",
     "email": "vendrsubinoy@mcu.ac.th",
     "gmail": "vendrsubinoy.mcu@gmail.com",
     "password": "mcu1120",
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
     "role": "INSTRUCTOR",
-    "coursesCount": 2,
+    "coursesCount": 5,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "Subinoy",
-      "Bhikku"
+      "Bhikku",
+      "พระ ดร.สุวิโนย ภิกขุ (Ven. Dr. Subinoy Bhikku)",
+      "Ven. Dr. Subinoy Bhikkhu",
+      "vendrsubinoy@mcu.ac.th",
+      "vendrsubinoy.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-119"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Ven. Dr. Subinoy Bhikkhu",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:17:01.228Z"
   },
   {
     "id": "inst-120",
-    "name": "Dr. Nadnapang Phophichit",
+    "name": "ดร.ณัฐนภางค์ โพธิพิจิตร",
     "email": "drnadnapangp@mcu.ac.th",
     "gmail": "drnadnapangp.mcu@gmail.com",
     "password": "mcu1121",
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
     "role": "INSTRUCTOR",
-    "coursesCount": 2,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "Nadnapang",
-      "Phophichit"
+      "Phophichit",
+      "ดร.ณัฐนภางค์ โพธิพิจิตร",
+      "Dr. Nadnapang Phophichit",
+      "drnadnapangp@mcu.ac.th",
+      "drnadnapangp.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-120"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Dr. Nadnapang Phophichit",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:17:09.734Z"
   },
   {
     "id": "inst-124",
@@ -2177,75 +2439,105 @@
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 2,
+    "coursesCount": 4,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "พระครูภาวนาพัฒนบัณฑิต"
+      "พระครูภาวนาพัฒนบัณฑิต",
+      "พระครูภาวนาพัฒนบัณฑิต วิ.",
+      "ผศ. ดร.",
+      "Asst. Prof. Dr. Phrakhru Bhavanapattana-bundit",
+      "teacher126@mcu.ac.th",
+      "teacher126.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-124"
     ],
-    "isSuperAdmin": false
-  },
-  {
-    "id": "inst-125",
-    "name": "พระภาวนาวชิรสุนทร วิ., ดร.",
-    "email": "teacher127@mcu.ac.th",
-    "gmail": "teacher127.mcu@gmail.com",
-    "password": "mcu1126",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
-    "role": "INSTRUCTOR",
-    "coursesCount": 2,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "พระภาวนาวชิรสุนทร"
-    ],
-    "previousIds": [
-      "inst-125"
-    ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Asst. Prof. Dr. Phrakhru Bhavanapattana-bundit",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:17:29.587Z"
   },
   {
     "id": "inst-128",
-    "name": "รศ.ดร.วิลาวัลย์",
+    "name": "รศ.ดร.วิลาวัลย์ สมุทรวณิช",
     "email": "teacher130@mcu.ac.th",
     "gmail": "teacher130.mcu@gmail.com",
     "password": "mcu1129",
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 2,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "วิลาวัลย์"
+      "วิลาวัลย์",
+      "รศ.ดร.วิลาวัลย์ สมุทรวณิช",
+      "Assoc. Prof. Dr. Wilawan Samutwanich",
+      "teacher130@mcu.ac.th",
+      "teacher130.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-128"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Dr. Wilawan Samutwanich",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:17:42.064Z"
   },
   {
     "id": "inst-129",
-    "name": "รศ.ดร.วราพร",
+    "name": "รศ.ดร.วราพร กฤตยาเกียรณ์",
     "email": "teacher131@mcu.ac.th",
     "gmail": "teacher131.mcu@gmail.com",
     "password": "mcu1130",
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 2,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
-      "วราพร"
+      "วราพร",
+      "รศ.ดร.วราพร กฤตยาเกียรณ์",
+      "Assoc. Prof. Dr. Waraporn Kittayakiarn",
+      "teacher131@mcu.ac.th",
+      "teacher131.mcu@gmail.com"
     ],
     "previousIds": [
       "inst-129"
     ],
-    "isSuperAdmin": false
+    "isSuperAdmin": false,
+    "nameEn": "Assoc. Prof. Dr. Waraporn Kittayakiarn",
+    "instructorType": "อาจารย์พิเศษ",
+    "updatedAt": "2026-11-05T09:18:02.143Z"
+  },
+  {
+    "id": "inst-1793872909909",
+    "name": "อาจารย์ (yongyut)",
+    "email": "yongyut@mcu.ac.th",
+    "gmail": "yongyut@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "คณะพุทธศาสตร์ มจร",
+    "role": "INSTRUCTOR",
+    "coursesCount": 0,
+    "isActive": true,
+    "isSuspended": false,
+    "createdAt": "2026-11-05T10:01:49.909Z"
+  },
+  {
+    "id": "inst-1793941110512",
+    "name": "อาจารย์ (jutamas)",
+    "email": "jutamas@mcu.ac.th",
+    "gmail": "jutamas@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "คณะพุทธศาสตร์ มจร",
+    "role": "INSTRUCTOR",
+    "coursesCount": 0,
+    "isActive": true,
+    "isSuspended": false,
+    "createdAt": "2026-11-06T04:58:30.512Z"
   }
 ]

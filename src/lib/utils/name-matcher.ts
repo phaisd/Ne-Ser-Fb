@@ -3,11 +3,25 @@
  */
 
 export const INSTRUCTOR_TITLE_REGEX = /\b(phra|phramaha|ven|dr|ph\.?d|asst|assoc|prof|mr|mrs|ms|พระ|พระมหา|พระครู|ผศ|รศ|ศ|ดร|อ\.ดร|อ)\b/gi;
-export const INSTRUCTOR_THAI_TITLE_PREFIX = /^(ดร\.|ผศ\.|รศ\.|ศ\.|อ\.ดร\.|อ\.|พระมหา|พระครู|พระ)/;
+export const INSTRUCTOR_THAI_TITLE_PREFIX = /^(ดร\.|ผศ\.|รศ\.|ศ\.|อ\.ดร\.|อ\.|พระมหา|พระครู|พระ|อาจารย์)/;
 
 const STOP_WORDS = new Set([
-  'phra', 'พระ', 'ดร', 'dr', 'ven', 'asst', 'assoc', 'prof', 'ผศ', 'รศ', 'อาจารย์', 'อ', 'mr', 'mrs', 'ms'
+  'phra', 'พระ', 'ดร', 'dr', 'ven', 'asst', 'assoc', 'prof', 'ผศ', 'รศ', 'ศ', 'อาจารย์', 'อ', 'mr', 'mrs', 'ms',
+  'phd', 'ph.d', 'ph.d.', 'ดร.', 'ผศ.', 'รศ.', 'ศ.', 'อ.', 'อ.ดร.', 'อ.ดร', 'พิเศษ', 'specail', 'special'
 ]);
+
+/**
+ * Strips all leading academic and monastic titles repeatedly (e.g. ผศ.ดร.สมชาย -> สมชาย)
+ */
+export function stripLeadingTitles(raw: string): string {
+  let text = raw.trim();
+  let prev = '';
+  while (prev !== text) {
+    prev = text;
+    text = text.replace(/^(ผศ\.|รศ\.|ศ\.|ดร\.|อ\.ดร\.|อ\.|พระมหา|พระครู|พระ|อาจารย์|\.)\s*/i, '').trim();
+  }
+  return text;
+}
 
 /**
  * Extracts substantive, searchable name tokens from a user or instructor account.
@@ -19,8 +33,10 @@ export function getSubstantiveTokens(user?: { name?: string; nameEn?: string; al
   // 1. Process custom aliases if present
   if (Array.isArray(user.aliases)) {
     user.aliases.forEach((al) => {
-      const clean = al.trim().toLowerCase();
-      if (clean && clean.length >= 3 && !STOP_WORDS.has(clean)) {
+      let clean = al.trim().toLowerCase();
+      clean = clean.replace(/^[.\s]+|[.\s]+$/g, '');
+      const bare = clean.replace(/[\.\s]/g, '');
+      if (clean && clean.length >= 3 && !STOP_WORDS.has(clean) && !STOP_WORDS.has(bare)) {
         substantive.add(clean);
       }
     });
@@ -33,7 +49,7 @@ export function getSubstantiveTokens(user?: { name?: string; nameEn?: string; al
     cleanStr.split(/\s+/).forEach((part: string) => {
       let token = part.trim().toLowerCase();
       token = token.replace(/^[.\s]+|[.\s]+$/g, '');
-      token = token.replace(INSTRUCTOR_THAI_TITLE_PREFIX, '');
+      token = stripLeadingTitles(token);
       token = token.replace(INSTRUCTOR_TITLE_REGEX, '');
       token = token.trim();
       if (token.length >= 3 && !STOP_WORDS.has(token)) {
@@ -77,8 +93,7 @@ export function matchInstructorStrict(
  */
 export function cleanInstructorName(raw: string): string {
   if (!raw) return '';
-  return raw
-    .replace(INSTRUCTOR_THAI_TITLE_PREFIX, '')
-    .replace(INSTRUCTOR_TITLE_REGEX, '')
-    .trim();
+  let cleaned = stripLeadingTitles(raw);
+  cleaned = cleaned.replace(INSTRUCTOR_TITLE_REGEX, '');
+  return cleaned.replace(/^[.\s]+|[.\s]+$/g, '').trim();
 }

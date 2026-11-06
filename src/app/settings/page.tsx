@@ -52,6 +52,7 @@ interface SystemSettings {
   contactEmail?: string;
   websiteUrl?: string;
   systemServiceUrl?: string;
+  forcePasswordChangeOnFirstLogin?: boolean;
 }
 
 export default function SettingsPage() {
@@ -791,6 +792,39 @@ export default function SettingsPage() {
             <p className="text-[11px] text-slate-500 leading-relaxed">
               ระบบจะส่งอีเมลแจ้งเตือนไปยังนิสิตผู้ยื่นคำร้อง และสำเนาแจ้งเตือนมายังอีเมลคณะเมื่อคำร้องได้รับผลการพิจารณา
             </p>
+          </div>
+
+          {/* Force Password Change on First Login Setting */}
+          <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/60 flex items-center justify-between gap-4 mt-2">
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                <span>บังคับเปลี่ยนรหัสผ่านเมื่อเข้าใช้งานครั้งแรก (First-Time Login Password Change)</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    settings.forcePasswordChangeOnFirstLogin !== false
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : 'bg-slate-100 text-slate-600 border border-slate-300'
+                  }`}
+                >
+                  {settings.forcePasswordChangeOnFirstLogin !== false ? 'เปิดใช้งานอยู่ (ON)' : 'ปิดใช้งาน (OFF)'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                อาจารย์และนิสิตที่เข้าสู่ระบบครั้งแรกด้วยรหัสผ่านเริ่มต้น (mcu123456 หรือรหัสนิสิต) จะต้องตั้งรหัสผ่านใหม่ส่วนตัวก่อนเข้าสู่ระบบ
+              </p>
+            </div>
+
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+              <input
+                type="checkbox"
+                checked={settings.forcePasswordChangeOnFirstLogin !== false}
+                onChange={(e) =>
+                  setSettings({ ...settings, forcePasswordChangeOnFirstLogin: e.target.checked })
+                }
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+            </label>
           </div>
         </div>
 

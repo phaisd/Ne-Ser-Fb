@@ -1,5 +1,6 @@
-import { Student } from '@/types';
+import { Student, ArchivedStudent } from '@/types';
 import { readLocalJson, writeLocalJson, getSheetsClient } from './storageHelper';
+import { hashPassword } from '@/lib/auth-security';
 
 // ----------------- STUDENTS -----------------
 
@@ -122,6 +123,25 @@ export async function updateStudent(studentCode: string, updates: Partial<Studen
   return updated;
 }
 
+export async function updateStudentPassword(studentCode: string, newPassword: string): Promise<boolean> {
+  const localList = readLocalJson<any[]>('students.json', []);
+  const cleanCode = (studentCode || '').trim().toLowerCase();
+  const idx = localList.findIndex(
+    (s) =>
+      (s.studentCode || '').toLowerCase() === cleanCode ||
+      (s.id || '').toLowerCase() === cleanCode ||
+      (s.email || '').toLowerCase() === cleanCode
+  );
+  if (idx === -1) return false;
+
+  const hashedPassword = await hashPassword(newPassword);
+  localList[idx].password = hashedPassword;
+  localList[idx].hasChangedPassword = true;
+  localList[idx].updatedAt = new Date().toISOString();
+  writeLocalJson('students.json', localList);
+  return true;
+}
+
 export async function batchUpdateStudents(
   updatesList: Partial<Student>[],
   mode: 'UPDATE_ONLY' | 'UPSERT' = 'UPDATE_ONLY'
@@ -190,8 +210,8 @@ export async function batchUpdateStudents(
   if (gClient && (updatedCount > 0 || addedCount > 0)) {
     try {
       const rows = await gClient.getValues('Students!A2:A');
+      const codeToRowMap = new Map<string, number>();
       if (rows && rows.length > 0) {
-        const codeToRowMap = new Map<string, number>();
         rows.forEach((r, i) => {
           if (r[0]) codeToRowMap.set(r[0].trim(), i + 2);
         });
@@ -222,6 +242,33 @@ export async function batchUpdateStudents(
           }
         }
       }
+
+      // Append any newly added students (mode === 'UPSERT') to Google Sheets Students!A:O
+      if (addedCount > 0) {
+        const newStudentsToAppend = localList
+          .slice(-addedCount)
+          .filter((s) => !codeToRowMap.has(s.studentCode));
+        if (newStudentsToAppend.length > 0) {
+          const appendValues = newStudentsToAppend.map((student) => [
+            student.studentCode,
+            student.title || '',
+            student.firstName || '',
+            student.lastName || '',
+            student.fullName || '',
+            String(student.yearLevel || 1),
+            student.degree || 'ปริญญาตรี',
+            student.department || '',
+            student.major || 'พระพุทธศาสนา',
+            student.studyStatus || 'ปกติ (เทียบโอน/เดินเรียน)',
+            student.faculty || 'คณะพุทธศาสตร์',
+            student.phoneNumber || '',
+            student.email || '',
+            student.programType === 'ENGLISH' ? 'หลักสูตรภาคภาษาอังกฤษ (ENGLISH)' : 'หลักสูตรภาคภาษาไทย (THAI)',
+            student.remarks || '',
+          ]);
+          await gClient.appendValues('Students!A:O', appendValues);
+        }
+      }
     } catch (err) {
       console.warn('Google Sheets batch update student failed:', err);
     }
@@ -237,34 +284,106 @@ export async function batchUpdateStudents(
 }
 
 export async function deleteStudents(
-  studentCodes: string[]
-): Promise<{ deletedCount: number; deletedCodes: string[]; remainingCount: number }> {
+  studentCodes: string[],
+  deletedBy: string = 'ผู้ดูแลระบบ (Admin)',
+  reason: string = 'จำหน่าย/ลบข้อมูลนิสิตออกจากทะเบียน'
+): Promise<{ deletedCount: number; deletedCodes: string[]; remainingCount: number; archivedCount: number }> {
   const codesSet = new Set(studentCodes.map((c) => String(c).trim().toLowerCase()));
   const localList = readLocalJson<Student[]>('students.json', []);
+  const archiveList = readLocalJson<ArchivedStudent[]>('students_archive.json', []);
 
   const originalCount = localList.length;
   const deletedCodes: string[] = [];
+  const studentsToArchive: ArchivedStudent[] = [];
+
+  const nowIso = new Date().toISOString();
+  const thaiDateStr = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
 
   const remainingList = localList.filter((s) => {
     const code = String(s.studentCode || '').trim().toLowerCase();
     if (codesSet.has(code)) {
       deletedCodes.push(s.studentCode);
+      studentsToArchive.push({
+        ...s,
+        archivedAt: nowIso,
+        deletedAt: nowIso,
+        deletedBy,
+        deletionReason: reason,
+      });
       return false;
     }
     return true;
   });
 
   const deletedCount = originalCount - remainingList.length;
-  writeLocalJson('students.json', remainingList);
 
-  // If Google Sheets client is available, clear matching rows in Students sheet
+  // 1. Update local files (students.json & students_archive.json)
+  writeLocalJson('students.json', remainingList);
+  if (studentsToArchive.length > 0) {
+    const updatedArchive = [...studentsToArchive, ...archiveList];
+    writeLocalJson('students_archive.json', updatedArchive);
+  }
+
+  // 2. Synchronize with Google Sheets (Archive to Students_Archive sheet tab)
   const gClient = getSheetsClient();
   if (gClient && deletedCodes.length > 0) {
     try {
-      const rows = await gClient.getValues('Students!A2:A');
-      if (rows && rows.length > 0) {
-        for (let i = 0; i < rows.length; i++) {
-          const rowCode = (rows[i][0] || '').trim().toLowerCase();
+      // Ensure 'Students_Archive' sheet tab exists in Google Sheets
+      await gClient.ensureSheetsExist(['Students_Archive']);
+
+      // Check header in Students_Archive!A1:R1
+      const archiveRows = await gClient.getValues('Students_Archive!A1:A2');
+      if (!archiveRows || archiveRows.length === 0 || !archiveRows[0] || archiveRows[0].length === 0) {
+        await gClient.updateValues('Students_Archive!A1:R1', [[
+          'รหัสนิสิต',
+          'คำนำหน้า',
+          'ชื่อ',
+          'นามสกุล',
+          'ชื่อ-นามสกุล',
+          'ชั้นปี',
+          'ระดับการศึกษา',
+          'ภาควิชา',
+          'สาขาวิชา',
+          'สถานภาพเดิม',
+          'คณะ',
+          'เบอร์โทรศัพท์',
+          'อีเมล',
+          'หลักสูตร',
+          'หมายเหตุเดิม',
+          'วัน-เวลาที่ย้ายเข้าแฟ้มประวัติ (Deleted At)',
+          'ผู้ดำเนินการลบ (Deleted By)',
+          'เหตุผลการลบ (Reason)',
+        ]]);
+      }
+
+      // Append archived students to Students_Archive!A:R
+      const rowsToAppend = studentsToArchive.map((s) => [
+        s.studentCode || '',
+        s.title || '',
+        s.firstName || '',
+        s.lastName || '',
+        s.fullName || '',
+        String(s.yearLevel || 1),
+        s.degree || '',
+        s.department || '',
+        s.major || '',
+        s.studyStatus || 'ปกติ',
+        s.faculty || '',
+        s.phoneNumber || '',
+        s.email || '',
+        s.programType || 'THAI',
+        s.remarks || '',
+        thaiDateStr,
+        deletedBy,
+        reason,
+      ]);
+      await gClient.appendValues('Students_Archive!A:R', rowsToAppend);
+
+      // Clear matching rows in active Students sheet
+      const activeRows = await gClient.getValues('Students!A2:A');
+      if (activeRows && activeRows.length > 0) {
+        for (let i = 0; i < activeRows.length; i++) {
+          const rowCode = (activeRows[i][0] || '').trim().toLowerCase();
           if (codesSet.has(rowCode)) {
             const sheetRowNum = i + 2;
             const emptyRow = Array(15).fill('');
@@ -273,7 +392,7 @@ export async function deleteStudents(
         }
       }
     } catch (err) {
-      console.warn('Google Sheets delete student sync warning:', err);
+      console.warn('Google Sheets archive/delete student warning:', err);
     }
   }
 
@@ -281,9 +400,121 @@ export async function deleteStudents(
     deletedCount,
     deletedCodes,
     remainingCount: remainingList.length,
+    archivedCount: studentsToArchive.length,
   };
 }
 
-export async function deleteStudent(studentCode: string) {
-  return deleteStudents([studentCode]);
+export async function deleteStudent(studentCode: string, deletedBy?: string, reason?: string) {
+  return deleteStudents([studentCode], deletedBy, reason);
+}
+
+export async function getArchivedStudents(): Promise<ArchivedStudent[]> {
+  const localArchive = readLocalJson<ArchivedStudent[]>('students_archive.json', []);
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const rows = await gClient.getValues('Students_Archive!A2:R');
+      if (rows && rows.length > 0) {
+        const sheetArchived: ArchivedStudent[] = rows
+          .filter((r) => r[0] && String(r[0]).trim())
+          .map((r) => ({
+            studentCode: String(r[0]).trim(),
+            title: r[1] || '',
+            firstName: r[2] || '',
+            lastName: r[3] || '',
+            fullName: r[4] || `${r[1] || ''} ${r[2] || ''} ${r[3] || ''}`.trim(),
+            yearLevel: r[5] ? parseInt(r[5], 10) : 1,
+            degree: r[6] || '',
+            department: r[7] || '',
+            major: r[8] || '',
+            studyStatus: r[9] || 'จำหน่ายออก/ถูกลบ',
+            faculty: r[10] || '',
+            phoneNumber: r[11] || '',
+            email: r[12] || '',
+            programType: r[13] === 'ENGLISH' ? 'ENGLISH' : 'THAI',
+            remarks: r[14] || '',
+            archivedAt: r[15] || new Date().toISOString(),
+            deletedAt: r[15] || new Date().toISOString(),
+            deletedBy: r[16] || 'Admin',
+            deletionReason: r[17] || 'ลบข้อมูลนิสิตออกจากระบบ',
+          }));
+
+        if (sheetArchived.length > 0) {
+          // Merge with local archive (deduplicate by studentCode)
+          const map = new Map<string, ArchivedStudent>();
+          sheetArchived.forEach((s) => map.set(s.studentCode, s));
+          localArchive.forEach((s) => {
+            if (!map.has(s.studentCode)) map.set(s.studentCode, s);
+          });
+          return Array.from(map.values());
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets read error for Students_Archive:', err);
+    }
+  }
+  return localArchive;
+}
+
+export async function restoreStudent(studentCode: string): Promise<Student | null> {
+  const codeClean = String(studentCode).trim().toLowerCase();
+  const archiveList = readLocalJson<ArchivedStudent[]>('students_archive.json', []);
+  const targetIdx = archiveList.findIndex((s) => String(s.studentCode).trim().toLowerCase() === codeClean);
+
+  if (targetIdx === -1) {
+    return null;
+  }
+
+  const restored = archiveList[targetIdx];
+  const { archivedAt, deletedAt, deletedBy, deletionReason, ...activeStudent } = restored;
+
+  // 1. Remove from archive
+  archiveList.splice(targetIdx, 1);
+  writeLocalJson('students_archive.json', archiveList);
+
+  // 2. Add back to active students
+  const localList = readLocalJson<Student[]>('students.json', []);
+  localList.unshift(activeStudent);
+  writeLocalJson('students.json', localList);
+
+  // 3. Synchronize with Google Sheets
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      // Append back to active Students sheet
+      await gClient.appendValues('Students!A:O', [[
+        activeStudent.studentCode,
+        activeStudent.title || '',
+        activeStudent.firstName || '',
+        activeStudent.lastName || '',
+        activeStudent.fullName || '',
+        String(activeStudent.yearLevel || 1),
+        activeStudent.degree || '',
+        activeStudent.department || '',
+        activeStudent.major || '',
+        activeStudent.studyStatus || 'ปกติ',
+        activeStudent.faculty || '',
+        activeStudent.phoneNumber || '',
+        activeStudent.email || '',
+        activeStudent.programType || 'THAI',
+        activeStudent.remarks || '',
+      ]]);
+
+      // Clear row from Students_Archive
+      const archiveRows = await gClient.getValues('Students_Archive!A2:A');
+      if (archiveRows && archiveRows.length > 0) {
+        for (let i = 0; i < archiveRows.length; i++) {
+          if ((archiveRows[i][0] || '').trim().toLowerCase() === codeClean) {
+            const rowNum = i + 2;
+            const emptyRow = Array(18).fill('');
+            await gClient.updateValues(`Students_Archive!A${rowNum}:R${rowNum}`, [emptyRow]);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets restore student warning:', err);
+    }
+  }
+
+  return activeStudent;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   FileText,
@@ -12,6 +12,12 @@ import {
   ShieldCheck,
   FileCheck2,
   Paperclip,
+  Trash2,
+  FileSpreadsheet,
+  Download,
+  Sparkles,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import { CertificateRequest } from '@/types';
 
@@ -38,10 +44,12 @@ interface AdminCertificatesTabProps {
   setApprovingId: (id: string | null) => void;
   docNoInput: string;
   setDocNoInput: (v: string) => void;
-  handleApprove: (id: string) => void;
+  handleApprove: (id: string, defaultDocNo?: string, prefix?: '8002' | '8002.1') => void;
   handleOpenRejectModal: (r: CertificateRequest) => void;
   setPreviewRequest: (r: CertificateRequest | null) => void;
   setPreviewTab: (t: 'DOCUMENT' | 'ATTACHMENTS') => void;
+  onRefreshData?: () => void;
+  onSuccessMessage?: (msg: string) => void;
 }
 
 export function AdminCertificatesTab({
@@ -71,7 +79,133 @@ export function AdminCertificatesTab({
   handleOpenRejectModal,
   setPreviewRequest,
   setPreviewTab,
+  onRefreshData,
+  onSuccessMessage,
 }: AdminCertificatesTabProps) {
+  const [requestToDelete, setRequestToDelete] = useState<CertificateRequest | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showClearMockModal, setShowClearMockModal] = useState(false);
+  const [isClearingMock, setIsClearingMock] = useState(false);
+  const [isSyncingSheets, setIsSyncingSheets] = useState(false);
+  const [quickApprovePrefix, setQuickApprovePrefix] = useState<'8002' | '8002.1'>('8002');
+
+  // Sync to Google Sheets
+  const handleSyncSheets = async () => {
+    setIsSyncingSheets(true);
+    try {
+      const res = await fetch('/api/certificates?action=sync_sheets', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        if (onSuccessMessage) {
+          onSuccessMessage(`ซิงค์ข้อมูลไปยัง Google Sheets สำเร็จ (${data.count} รายการ)`);
+        } else {
+          alert(`ซิงค์ข้อมูลไปยัง Google Sheets สำเร็จ (${data.count} รายการ)`);
+        }
+      } else {
+        alert('เกิดข้อผิดพลาดในการซิงค์: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      alert('ไม่สามารถเชื่อมต่อกับ Google Sheets ได้: ' + err.message);
+    } finally {
+      setIsSyncingSheets(false);
+    }
+  };
+
+  // Export to CSV
+  const handleExportCsv = () => {
+    if (requests.length === 0) {
+      alert('ไม่มีรายการคำร้องที่จะส่งออก');
+      return;
+    }
+    const headers = [
+      'ID',
+      'วันที่ยื่น',
+      'รหัสนิสิต',
+      'ชื่อ-สกุล',
+      'ประเภทหนังสือ',
+      'ระดับการศึกษา',
+      'สาขาวิชา',
+      'วัตถุประสงค์',
+      'สถานะ',
+      'เลขที่หนังสือ อว',
+      'อีเมล',
+      'เบอร์โทร',
+      'สัญชาติ',
+      'พาสปอร์ต',
+    ];
+    const rows = requests.map((r) => [
+      `"${r.id}"`,
+      `"${new Date(r.createdAt).toLocaleDateString('th-TH')}"`,
+      `"${r.studentCode}"`,
+      `"${(r.fullName || '').replace(/"/g, '""')}"`,
+      `"${(r.certType || '').replace(/"/g, '""')}"`,
+      `"${r.degreeLevel || ''}"`,
+      `"${r.major || ''}"`,
+      `"${(r.requestPurpose || '').replace(/"/g, '""')}"`,
+      `"${r.status}"`,
+      `"${r.docNo || ''}"`,
+      `"${r.email || ''}"`,
+      `"${r.phone || ''}"`,
+      `"${r.nationality || ''}"`,
+      `"${r.passportNo || ''}"`,
+    ]);
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `certificate_requests_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Confirm delete single request
+  const handleConfirmDelete = async () => {
+    if (!requestToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/certificates?id=${requestToDelete.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        if (onSuccessMessage) {
+          onSuccessMessage(`ลบคำร้องของ "${requestToDelete.fullName}" เรียบร้อยแล้ว`);
+        }
+        setRequestToDelete(null);
+        if (onRefreshData) onRefreshData();
+      } else {
+        alert('ลบไม่สำเร็จ: ' + data.error);
+      }
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Confirm clear mock data
+  const handleConfirmClearMock = async () => {
+    setIsClearingMock(true);
+    try {
+      const res = await fetch('/api/certificates?action=clear_mock', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        if (onSuccessMessage) {
+          onSuccessMessage(data.message || 'ล้างข้อมูลทดสอบเรียบร้อยแล้ว');
+        } else {
+          alert(data.message || 'ล้างข้อมูลทดสอบเรียบร้อยแล้ว');
+        }
+        setShowClearMockModal(false);
+        if (onRefreshData) onRefreshData();
+      } else {
+        alert('ล้างข้อมูลไม่สำเร็จ: ' + data.error);
+      }
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } finally {
+      setIsClearingMock(false);
+    }
+  };
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 space-y-3">
@@ -206,6 +340,48 @@ export function AdminCertificatesTab({
             <span>ระบบตรวจเอกสาร ตม. (/verify)</span>
           </Link>
         </div>
+
+        {/* Action Toolbar for Data Sync & Export */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSyncSheets}
+              disabled={isSyncingSheets}
+              className="px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs disabled:opacity-50"
+              title="ซิงค์และสำรองข้อมูลคำร้องทั้งหมดไปยัง Google Sheets"
+            >
+              {isSyncingSheets ? (
+                <RefreshCw className="w-3.5 h-3.5 text-emerald-700 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+              )}
+              <span>{isSyncingSheets ? 'กำลังซิงค์...' : 'ซิงค์ Google Sheets'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+              title="ดาวน์โหลดข้อมูลคำร้องทั้งหมดเป็นไฟล์ Excel / CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-blue-700" />
+              <span>ดาวน์โหลด CSV</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowClearMockModal(true)}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-amber-300 bg-white hover:bg-amber-50 text-slate-600 hover:text-amber-800 text-xs font-medium flex items-center gap-1.5 transition cursor-pointer"
+              title="ล้างข้อมูลจำลอง/ทดสอบที่ตกค้างในระบบ (สำรองไฟล์ก่อนล้างอัตโนมัติ)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>ล้างข้อมูลทดสอบ</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Requests Table */}
@@ -240,7 +416,23 @@ export function AdminCertificatesTab({
                         {new Date(r.createdAt).toLocaleDateString('th-TH')}
                       </td>
                       <td className="px-5 py-4 font-mono font-bold text-purple-700">
-                        {r.studentCode}
+                        {r.applicantType === 'STAFF' || r.targetAudience === 'STAFF' ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                              👔 อาจารย์/บุคลากร
+                            </span>
+                            <div className="text-[11px] text-slate-500 font-mono">{r.studentCode || 'STAFF'}</div>
+                          </div>
+                        ) : r.applicantType === 'CANDIDATE' || r.targetAudience === 'CANDIDATE' ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                              🎓 ผู้ผ่านการคัดเลือก
+                            </span>
+                            <div className="text-[11px] text-emerald-800 font-mono font-bold">{r.studentCode}</div>
+                          </div>
+                        ) : (
+                          r.studentCode
+                        )}
                       </td>
                       <td className="px-5 py-4 font-medium text-slate-900">
                         <div>{r.fullName}</div>
@@ -272,7 +464,7 @@ export function AdminCertificatesTab({
                       <td className="px-5 py-4 text-xs font-mono">
                         {r.docNo ? (
                           <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">
-                            อว 8002/{r.docNo}
+                            อว {r.docNoPrefix || (r.docNo.includes('8002.1') ? '8002.1' : '8002')}/{r.docNo.replace(/^(8002\.1|8002)\s*\/\s*/i, '')}
                           </span>
                         ) : (
                           <span className="text-slate-400 italic">ยังไม่ออกเลข</span>
@@ -303,6 +495,15 @@ export function AdminCertificatesTab({
                       <td className="px-5 py-4 text-right">
                         {isApprovingThis ? (
                           <div className="flex items-center justify-end gap-1.5 animate-in fade-in">
+                            <select
+                              value={quickApprovePrefix}
+                              onChange={(e) => setQuickApprovePrefix(e.target.value as any)}
+                              className="px-1.5 py-1 text-xs border border-purple-300 rounded font-bold text-purple-900 bg-purple-50"
+                              title="เลือกระดับเลขที่หนังสือ: คณบดี (8002) หรือ เลขานุการ (8002.1)"
+                            >
+                              <option value="8002">อว 8002 (คณบดี)</option>
+                              <option value="8002.1">อว 8002.1 (เลขานุการ)</option>
+                            </select>
                             <input
                               type="text"
                               placeholder="001/2569"
@@ -311,7 +512,7 @@ export function AdminCertificatesTab({
                               className="w-24 px-2 py-1 text-xs border border-purple-300 rounded font-mono"
                             />
                             <button
-                              onClick={() => handleApprove(r.id)}
+                              onClick={() => handleApprove(r.id, undefined, quickApprovePrefix)}
                               className="px-2.5 py-1 rounded bg-emerald-600 text-white text-xs font-bold"
                             >
                               ยืนยัน
@@ -367,6 +568,14 @@ export function AdminCertificatesTab({
                               <Eye className="w-3.5 h-3.5" />
                               <span>พิมพ์/ดู</span>
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => setRequestToDelete(r)}
+                              className="p-1.5 rounded-lg text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition cursor-pointer"
+                              title="ลบคำร้องนี้"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         )}
                       </td>
@@ -378,6 +587,108 @@ export function AdminCertificatesTab({
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {requestToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-rose-100 text-rose-700">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-900 text-base">
+                  ยืนยันการลบคำร้อง
+                </h3>
+                <p className="text-xs text-slate-500">
+                  ระบบจะลบรายการนี้ออกจากฐานข้อมูลและ Google Sheets
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+              <div className="font-bold text-slate-900 text-sm">{requestToDelete.fullName}</div>
+              <div className="text-slate-600">รหัสนิสิต: <span className="font-mono font-bold text-purple-700">{requestToDelete.studentCode || '-'}</span></div>
+              <div className="text-slate-600">ประเภทหนังสือ: <span className="font-medium text-slate-800">{requestToDelete.certType}</span></div>
+              {requestToDelete.docNo && (
+                <div className="text-slate-600">เลขที่ อว: <span className="font-mono text-purple-700 font-bold">{requestToDelete.docNo}</span></div>
+              )}
+              <div className="text-slate-600">สถานะ: <span className="font-semibold">{requestToDelete.status}</span></div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+              <span>คำร้องที่ถูกลบจะไม่สามารถกู้คืนได้ โปรดยืนยันหากต้องการลบรายการนี้</span>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setRequestToDelete(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                {isDeleting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                <span>{isDeleting ? 'กำลังลบ...' : 'ยืนยันลบคำร้อง'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Mock Data Modal */}
+      {showClearMockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-amber-100 text-amber-700">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-900 text-base">
+                  ล้างข้อมูลทดสอบ (Mock Data)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  ลบรายการคำร้องทดสอบเดิมออกจากตารางอนุมัติ
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs space-y-1 leading-relaxed">
+              <p>ระบบจะทำการสำรองข้อมูลเดิมทั้งหมดไว้ที่ไฟล์ <code>certificate_requests.backup.json</code> โดยอัตโนมัติก่อนล้าง</p>
+              <p className="text-slate-500">รายการคำร้องจริงที่ยื่นเข้ามาจะไม่ได้รับผลกระทบ</p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowClearMockModal(false)}
+                disabled={isClearingMock}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmClearMock}
+                disabled={isClearingMock}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                {isClearingMock ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                <span>{isClearingMock ? 'กำลังล้าง...' : 'ยืนยันล้างข้อมูลทดสอบ'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

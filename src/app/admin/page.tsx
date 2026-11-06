@@ -28,6 +28,7 @@ import {
   AlertCircle,
   LayoutDashboard,
   Sliders,
+  SlidersHorizontal,
   BookOpen,
   Settings,
   Palette,
@@ -68,10 +69,14 @@ import {
   CheckCheck,
   Square,
   ArrowRight,
-  Copy
+  Copy,
+  Hash,
+  FileEdit,
+  Save,
+  Award
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
-import { getAuthUser, clearAuthSession } from '@/lib/auth-client';
+import { getAuthUser, saveAuthSession, clearAuthSession } from '@/lib/auth-client';
 import {
   AdminSheetsTab,
   AdminTimetablesTab,
@@ -82,17 +87,22 @@ import {
   AdminUsersTab,
   AdminBrandingTab,
   AdminCertificatesTab,
+  AdminEventsTab,
 } from '@/components/admin/tabs';
 import {
   StudentDeleteModal,
   TeachingSlipModal,
+  BatchTeachingSlipsModal,
   EditUserModal,
   AutoProvisionModal,
   AddUserModal,
   CertRejectModal,
   ArchiveSummaryModal,
   BulkPromotionModal,
+  AdminCertificatePreviewModal,
 } from '@/components/admin/modals';
+import { NewAcademicYearWorkflowModal } from '@/components/admin/NewAcademicYearWorkflowModal';
+import { AdminSidebar, AdminTab } from '@/components/admin/AdminSidebar';
 
 import {
   CertificateRequest,
@@ -114,17 +124,6 @@ import {
   maskPassport
 } from '@/lib/utils';
 
-type AdminTab =
-  | 'DASHBOARD'
-  | 'CERTIFICATES'
-  | 'STUDENTS'
-  | 'COURSES'
-  | 'TIMETABLES'
-  | 'ATTENDANCE'
-  | 'USERS'
-  | 'BRANDING'
-  | 'SHEETS';
-
 const SIGNER_PRESETS = [
   {
     id: 'DEAN',
@@ -145,26 +144,32 @@ const SIGNER_PRESETS = [
     title: 'รองคณบดีฝ่ายกิจการนิสิต คณะพุทธศาสตร์',
   },
   {
+    id: 'SECRETARY',
+    label: '4. เลขานุการสำนักงานคณบดีคณะพุทธศาสตร์',
+    name: '',
+    title: 'เลขานุการสำนักงานคณบดีคณะพุทธศาสตร์',
+  },
+  {
     id: 'ACTING_DEAN',
-    label: '4. ผู้รักษาราชการแทนคณบดีคณะพุทธศาสตร์',
+    label: '5. ผู้รักษาราชการแทนคณบดีคณะพุทธศาสตร์',
     name: '',
     title: 'รักษาราชการแทนคณบดีคณะพุทธศาสตร์',
   },
   {
     id: 'REGISTRAR',
-    label: '5. ผู้อำนวยการส่วนทะเบียนและวัดผล (นายทะเบียน)',
+    label: '6. ผู้อำนวยการส่วนทะเบียนและวัดผล (นายทะเบียน)',
     name: 'พระมหาสุริยัน ปญฺญาวชิโร, ผศ.ดร.',
     title: 'ผู้อำนวยการส่วนทะเบียนและวัดผล',
   },
   {
     id: 'BLANK',
-    label: '6. เว้นว่างไว้สำหรับลงนามสดด้วยลายมือปากกา (Handwritten)',
+    label: '7. เว้นว่างไว้สำหรับลงนามสดด้วยลายมือปากกา (Handwritten)',
     name: '',
     title: 'คณบดีคณะพุทธศาสตร์',
   },
   {
     id: 'CUSTOM',
-    label: '7. กำหนดเอง (พิมพ์ชื่อและตำแหน่งระบุเอง)',
+    label: '8. กำหนดเอง (พิมพ์ชื่อและตำแหน่งระบุเอง)',
     name: '',
     title: '',
   },
@@ -199,40 +204,18 @@ export default function AdminConsolePage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [previewRequest, setPreviewRequest] = useState<CertificateRequest | null>(null);
   const [unmaskPassport, setUnmaskPassport] = useState<boolean>(false);
-  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
   // Rejection Dialog states
   const [rejectingRequest, setRejectingRequest] = useState<CertificateRequest | null>(null);
   const [rejectReasonInput, setRejectReasonInput] = useState<string>('');
   const [rejectSubmitting, setRejectSubmitting] = useState<boolean>(false);
 
-  // Preview & Attachment Inspection States
+  // Preview Tab State
   const [previewTab, setPreviewTab] = useState<'DOCUMENT' | 'ATTACHMENTS'>('DOCUMENT');
-  const [inspectionDocTab, setInspectionDocTab] = useState<'ENROLLMENT' | 'PASSPORT' | 'SIDE_BY_SIDE'>('ENROLLMENT');
-  const [zoomImage, setZoomImage] = useState<string | null>(null);
-  const [uploadingAttachment, setUploadingAttachment] = useState<boolean>(false);
 
-  // Document Customizer & Archiving States
-  const [previewTemplate, setPreviewTemplate] = useState<'THAI_STANDARD' | 'BANK_LETTER' | 'ENG_CERT' | 'INTERNAL_MEMO'>('THAI_STANDARD');
-  const [docFontSize, setDocFontSize] = useState<number>(15);
-  const [signerFontSize, setSignerFontSize] = useState<number>(14);
-  const [studentSignFontSize, setStudentSignFontSize] = useState<number>(14);
-  const [docLineSpacing, setDocLineSpacing] = useState<number>(1.6);
-  const [docSignerOffset, setDocSignerOffset] = useState<number>(20);
-  const [photoBoxOffsetX, setPhotoBoxOffsetX] = useState<number>(0);
-  const [dotsCount, setDotsCount] = useState<number>(22);
-  const [headerTitleSpacing, setHeaderTitleSpacing] = useState<number>(24);
-  const [headerTopSpacing, setHeaderTopSpacing] = useState<number>(0);
-  const [docFontFamily, setDocFontFamily] = useState<string>('Sarabun, "TH Sarabun New", "TH Sarabun PSK", sans-serif');
-  const [studentSignAlign, setStudentSignAlign] = useState<'left' | 'center' | 'right'>('center');
-  const [studentSignOffsetX, setStudentSignOffsetX] = useState<number>(0);
-  const [showPhotoBox, setShowPhotoBox] = useState<boolean>(true);
-  const [showStudentSign, setShowStudentSign] = useState<boolean>(true);
-  const [showQrCode, setShowQrCode] = useState<boolean>(true);
-  const [pdfDownloading, setPdfDownloading] = useState<boolean>(false);
-
-  // Academic Year Archiving
+  // Academic Year Archiving & New Academic Year Workflow
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState<boolean>(false);
+  const [isNewYearWorkflowModalOpen, setIsNewYearWorkflowModalOpen] = useState<boolean>(false);
   const [archivingYear, setArchivingYear] = useState<string>('2569');
   const [academicArchives, setAcademicArchives] = useState<any[]>([]);
   const [archiveLoading, setArchiveLoading] = useState<boolean>(false);
@@ -243,29 +226,6 @@ export default function AdminConsolePage() {
     if (p.length <= 4) return '••••';
     return `${p.slice(0, 2)}••••${p.slice(-2)}`;
   };
-
-  useEffect(() => {
-    if (previewRequest) {
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3020';
-      const verifyUrl = `${origin}/verify?docNo=${encodeURIComponent(previewRequest.docNo || previewRequest.id)}`;
-      QRCode.toDataURL(verifyUrl, {
-        width: 180,
-        margin: 1,
-        color: { dark: '#0f172a', light: '#ffffff' },
-      }).then(setQrCodeDataUrl).catch(() => setQrCodeDataUrl(''));
-
-      // Auto choose best template based on request
-      if (previewRequest.certType?.includes('ธนาคาร') || previewRequest.certType?.includes('Banking') || (previewRequest as any).bankTargetTh) {
-        setPreviewTemplate('BANK_LETTER');
-      } else if (previewRequest.certType?.includes('English') || previewRequest.certType?.includes('CONCERN')) {
-        setPreviewTemplate('ENG_CERT');
-      } else {
-        setPreviewTemplate('THAI_STANDARD');
-      }
-    } else {
-      setQrCodeDataUrl('');
-    }
-  }, [previewRequest]);
 
   // Users & Roles State
   const [users, setUsers] = useState<UserAccount[]>([]);
@@ -299,6 +259,7 @@ export default function AdminConsolePage() {
     email: '',
     gmail: '',
     aliasesText: '',
+    instructorType: 'อาจารย์ประจำ',
     department: 'คณะพุทธศาสตร์ มจร',
     role: 'INSTRUCTOR' as 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR',
   });
@@ -307,11 +268,14 @@ export default function AdminConsolePage() {
   const [teachingSlipUser, setTeachingSlipUser] = useState<any | null>(null);
   const [teachingSlipQr, setTeachingSlipQr] = useState<string | null>(null);
   const [copiedLineUserId, setCopiedLineUserId] = useState<string | null>(null);
+  const [isBatchTeachingSlipOpen, setIsBatchTeachingSlipOpen] = useState(false);
 
   const [newUserForm, setNewUserForm] = useState({
     name: '',
+    nameEn: '',
     email: '',
     gmail: '',
+    instructorType: 'อาจารย์ประจำ',
     department: 'คณะพุทธศาสตร์ มจร',
     role: 'INSTRUCTOR' as 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR',
     password: 'mcu123456',
@@ -348,13 +312,6 @@ export default function AdminConsolePage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
-
-  // Signatory Customization for Print Preview
-  const [selectedSignerPreset, setSelectedSignerPreset] = useState<string>('DEAN');
-  const [customSigner, setCustomSigner] = useState({
-    name: 'พระครูสุธีกิตติบัณฑิต, รศ.ดร.',
-    title: 'คณบดีคณะพุทธศาสตร์',
-  });
 
   // Signatories Management State (Option 3: GUI Management)
   const [editingSignatoryId, setEditingSignatoryId] = useState<string | null>(null);
@@ -458,16 +415,6 @@ export default function AdminConsolePage() {
     } catch {}
   };
 
-  useEffect(() => {
-    if (previewRequest) {
-      setSelectedSignerPreset('DEAN');
-      setCustomSigner({
-        name: settings.signerNameTh || 'พระครูสุธีกิตติบัณฑิต, รศ.ดร.',
-        title: settings.signerTitleTh || 'คณบดีคณะพุทธศาสตร์',
-      });
-    }
-  }, [previewRequest, settings.signerNameTh, settings.signerTitleTh]);
-
   const handleLogoFileUpload = async (file: File) => {
     if (!file) return;
     setUploadingLogo(true);
@@ -558,16 +505,31 @@ export default function AdminConsolePage() {
 
   // Current admin session
   const [currentUser, setCurrentUser] = useState<any>({
-    name: 'อาจารย์ไพศาล (ผู้ดูแลระบบสูงสุด)',
+    name: 'พระมหาไพศาล ดิษฐพันธ์ (ผู้ดูแลระบบสูงสุด)',
     role: 'SUPER_ADMIN',
     email: 'phaisal.dis@mcu.ac.th',
   });
+
+  // Role Access Checks
+  const isSuperAdmin = useMemo(() => {
+    return (
+      currentUser?.role === 'SUPER_ADMIN' ||
+      currentUser?.isSuperAdmin === true ||
+      currentUser?.email === 'phaisal.dis@mcu.ac.th'
+    );
+  }, [currentUser]);
+
+  const isOfficer = useMemo(() => {
+    return currentUser?.role === 'OFFICER' && !isSuperAdmin;
+  }, [currentUser, isSuperAdmin]);
 
   // Data collections for full views
   const [studentsList, setStudentsList] = useState<any[]>([]);
   const [coursesList, setCoursesList] = useState<any[]>([]);
   const [timetablesList, setTimetablesList] = useState<any[]>([]);
   const [attendanceList, setAttendanceList] = useState<any[]>([]);
+  const [eventsList, setEventsList] = useState<any[]>([]);
+  const [eventRegistrationsList, setEventRegistrationsList] = useState<any[]>([]);
 
   // Courses filter states
   const [courseSearch, setCourseSearch] = useState('');
@@ -638,8 +600,9 @@ export default function AdminConsolePage() {
       fetch('/api/users').then((res) => res.json()),
       fetch('/api/system-settings').then((res) => res.json()),
       fetch('/api/sheets-sync').then((res) => res.json()),
+      fetch('/api/events').then((res) => res.json()),
     ])
-      .then(([reqRes, stdRes, crsRes, ttbRes, attRes, usrRes, setRes, shtRes]) => {
+      .then(([reqRes, stdRes, crsRes, ttbRes, attRes, usrRes, setRes, shtRes, evtRes]) => {
         if (reqRes.success) setRequests(reqRes.data);
         if (stdRes.success) {
           setStudentsList(stdRes.data);
@@ -653,11 +616,76 @@ export default function AdminConsolePage() {
         }
         if (ttbRes.success) setTimetablesList(ttbRes.data);
         if (attRes.success) setAttendanceList(attRes.data);
-        if (usrRes.success) setUsers(usrRes.data);
+        if (usrRes.success) {
+          setUsers(usrRes.data);
+          // Sync currentUser name with the real ชื่อ-นามสกุล in the system database
+          setCurrentUser((prev: any) => {
+            if (!prev) return prev;
+            const prevEmail = (prev.email || '').toLowerCase();
+            const prevGmail = (prev.gmail || '').toLowerCase();
+            const matched = (usrRes.data as any[]).find(
+              (u) =>
+                (prev.id && u.id === prev.id) ||
+                (prevEmail && (u.email?.toLowerCase() === prevEmail || u.gmail?.toLowerCase() === prevEmail)) ||
+                (prevGmail && (u.email?.toLowerCase() === prevGmail || u.gmail?.toLowerCase() === prevGmail))
+            );
+            // If Super Admin phaisal.dis@mcu.ac.th, also check user-1793862082551 (พระมหาไพศาล ดิษฐพันธ์) for full name
+            const fullNameAccount =
+              prevEmail === 'phaisal.dis@mcu.ac.th'
+                ? (usrRes.data as any[]).find((u) => u.email === 'phaisa.vilo@gmail.com') || matched
+                : matched;
+
+            if (fullNameAccount && fullNameAccount.name) {
+              const roleLabel =
+                prev.role === 'SUPER_ADMIN' || prev.isSuperAdmin || prevEmail === 'phaisal.dis@mcu.ac.th'
+                  ? 'ผู้ดูแลระบบสูงสุด'
+                  : prev.role === 'OFFICER'
+                  ? 'เจ้าหน้าที่'
+                  : prev.role === 'ADMIN'
+                  ? 'ผู้ดูแลระบบ'
+                  : 'อาจารย์ผู้สอน';
+              const cleanBaseName = String(fullNameAccount.name).replace(/\s*\(.*?\)\s*$/, '').trim();
+              const formattedName = `${cleanBaseName} (${roleLabel})`;
+              const updatedUser = {
+                ...prev,
+                name: formattedName,
+              };
+              saveAuthSession(updatedUser, true);
+              return updatedUser;
+            }
+            if (prev.name && prev.name.includes('อาจารย์ไพศาล')) {
+              const updatedUser = {
+                ...prev,
+                name: 'พระมหาไพศาล ดิษฐพันธ์ (ผู้ดูแลระบบสูงสุด)',
+              };
+              saveAuthSession(updatedUser, true);
+              return updatedUser;
+            }
+            return prev;
+          });
+        }
         if (setRes.success && setRes.data) setSettings(setRes.data);
         if (shtRes) setSheetStatus(shtRes);
+        if (evtRes && evtRes.success) {
+          setEventsList(evtRes.events || []);
+          setEventRegistrationsList(evtRes.registrations || []);
+        }
       })
       .finally(() => setLoading(false));
+  };
+
+  const handleToggleEventStatus = async (regId: string, currentStatus: string) => {
+    const nextStatus = currentStatus === 'ATTENDED' ? 'REGISTERED' : 'ATTENDED';
+    const res = await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'checkin', registrationId: regId, status: nextStatus }),
+    });
+    if (res.ok) {
+      setEventRegistrationsList((prev) =>
+        prev.map((r) => (r.id === regId ? { ...r, status: nextStatus } : r))
+      );
+    }
   };
 
   useEffect(() => {
@@ -670,7 +698,21 @@ export default function AdminConsolePage() {
         fetch('/api/auth')
           .then((r) => r.json())
           .then((d) => {
-            if (d.authenticated && d.user) setCurrentUser(d.user);
+            if (d.authenticated && d.user) {
+              setCurrentUser(d.user);
+              saveAuthSession(d.user, true);
+            } else {
+              // Persist default Super Admin session when working from Admin Console
+              saveAuthSession(
+                {
+                  name: 'พระมหาไพศาล ดิษฐพันธ์ (ผู้ดูแลระบบสูงสุด)',
+                  role: 'SUPER_ADMIN',
+                  email: 'phaisal.dis@mcu.ac.th',
+                  isSuperAdmin: true,
+                },
+                true
+              );
+            }
           })
           .catch(() => {});
       }
@@ -678,7 +720,7 @@ export default function AdminConsolePage() {
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         const tabParam = urlParams.get('tab') as AdminTab | null;
-        if (tabParam && ['DASHBOARD', 'CERTIFICATES', 'STUDENTS', 'COURSES', 'TIMETABLES', 'ATTENDANCE', 'USERS', 'BRANDING', 'SHEETS'].includes(tabParam)) {
+        if (tabParam && ['DASHBOARD', 'CERTIFICATES', 'STUDENTS', 'COURSES', 'TIMETABLES', 'ATTENDANCE', 'EVENTS', 'USERS', 'BRANDING', 'SHEETS'].includes(tabParam)) {
           setActiveTab(tabParam);
         }
         if (urlParams.get('promote') === 'true') {
@@ -689,6 +731,13 @@ export default function AdminConsolePage() {
       }
     } catch (e) {}
   }, []);
+
+  // Redirect Officer away from restricted tabs (BRANDING, SHEETS) to DASHBOARD
+  useEffect(() => {
+    if (isOfficer && (activeTab === 'BRANDING' || activeTab === 'SHEETS')) {
+      setActiveTab('DASHBOARD');
+    }
+  }, [isOfficer, activeTab]);
 
   // Distinct Buddhist Years from requests
   const availableYears = useMemo(() => {
@@ -704,7 +753,7 @@ export default function AdminConsolePage() {
   }, [requests]);
 
   // Certificate Approvals
-  const handleApprove = async (id: string, defaultDocNo?: string) => {
+  const handleApprove = async (id: string, defaultDocNo?: string, prefix?: '8002' | '8002.1') => {
     const targetReq = requests.find((r) => r.id === id);
     const targetYear = targetReq?.createdAt
       ? new Date(targetReq.createdAt).getFullYear() + 543
@@ -719,6 +768,7 @@ export default function AdminConsolePage() {
     const nextSeq = String(approvedThisYear + 1).padStart(3, '0');
     const autoDocNo = `${nextSeq}/${targetYear}`;
     const finalDocNo = docNoInput.trim() || defaultDocNo || autoDocNo;
+    const finalPrefix = prefix || (targetReq as any)?.docNoPrefix || '8002';
 
     try {
       const res = await fetch('/api/certificates', {
@@ -728,11 +778,12 @@ export default function AdminConsolePage() {
           id,
           status: 'APPROVED',
           docNo: finalDocNo,
+          docNoPrefix: finalPrefix,
         }),
       });
       const data = await res.json();
       if (data.success) {
-        setActionSuccess(`อนุมัติคำร้องเรียบร้อย! ออกเลขที่หนังสือ: อว 8002/${finalDocNo}`);
+        setActionSuccess(`อนุมัติคำร้องเรียบร้อย! ออกเลขที่หนังสือ: อว ${finalPrefix}/${finalDocNo}`);
         setApprovingId(null);
         setDocNoInput('');
         loadData();
@@ -783,57 +834,6 @@ export default function AdminConsolePage() {
     }
   };
 
-  const handleUploadAdditionalAttachment = async (file: File, type: 'enrollment' | 'passport' | 'photo') => {
-    if (!previewRequest) return;
-    setUploadingAttachment(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        const updatePayload: any = { id: previewRequest.id };
-        if (type === 'enrollment') updatePayload.enrollmentSlipUrl = data.url;
-        else if (type === 'passport') updatePayload.passportCopyUrl = data.url;
-        else if (type === 'photo') updatePayload.photoUrl = data.url;
-
-        await fetch('/api/certificates', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatePayload),
-        });
-
-        setPreviewRequest((prev) => (prev ? { ...prev, ...updatePayload } : null));
-        loadData();
-        setActionSuccess('อัปโหลดและแนบเอกสารสำเร็จเรียบร้อย');
-      } else {
-        alert(data.error || 'อัปโหลดล้มเหลว');
-      }
-    } catch (e: any) {
-      alert('เกิดข้อผิดพลาด: ' + e.message);
-    } finally {
-      setUploadingAttachment(false);
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!previewRequest) return;
-    setPdfDownloading(true);
-    try {
-      const safeName = (previewRequest.fullName || 'student').replace(/[^a-zA-Z0-9ก-๙_-]/g, '_');
-      const filename = `หนังสือรับรอง_${safeName}_อว8002-${previewRequest.docNo || previewRequest.id}.pdf`;
-      await exportElementToPdf('printable-certificate', filename);
-    } catch (e) {
-      console.error('Download PDF error:', e);
-      alert('เกิดข้อผิดพลาดในการดาวน์โหลด PDF กรุณาลองใช้ปุ่ม สั่งพิมพ์ (Print to PDF)');
-    } finally {
-      setPdfDownloading(false);
-    }
-  };
-
   const handleArchiveYear = async () => {
     if (!confirm(`ยืนยันการสรุปปิดยอดและจัดเก็บประวัติปีการศึกษา ${archivingYear} หรือไม่?`)) return;
     setArchiveLoading(true);
@@ -862,6 +862,10 @@ export default function AdminConsolePage() {
 
   // User & Roles actions
   const handleUpdateRole = async (userId: string, newRole: 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR') => {
+    if (isOfficer) {
+      alert('เจ้าหน้าที่ (OFFICER) ไม่มีสิทธิ์ในการปรับเปลี่ยนระดับสิทธิ์ของผู้ใช้งาน กรุณาติดต่อ Super Admin');
+      return;
+    }
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
@@ -966,6 +970,7 @@ export default function AdminConsolePage() {
       email: user.email || '',
       gmail: user.gmail || '',
       aliasesText: Array.isArray(user.aliases) ? user.aliases.join(', ') : '',
+      instructorType: user.instructorType || 'อาจารย์ประจำ',
       department: user.department || 'คณะพุทธศาสตร์ มจร',
       role: user.role || 'INSTRUCTOR',
     });
@@ -974,8 +979,9 @@ export default function AdminConsolePage() {
   const handleSaveEditUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
-    if (!editUserForm.email.trim()) {
-      alert('กรุณากรอกอีเมลสำหรับเข้าสู่ระบบ');
+    const primaryEmail = (editUserForm.email || editUserForm.gmail || '').trim();
+    if (!primaryEmail) {
+      alert('กรุณากรอกอีเมลสำหรับเข้าสู่ระบบ (Gmail หรือ @mcu.ac.th)');
       return;
     }
     setEditUserSaving(true);
@@ -985,6 +991,8 @@ export default function AdminConsolePage() {
         .map((s) => s.trim())
         .filter(Boolean);
 
+      const roleToSave = isOfficer ? 'INSTRUCTOR' : editUserForm.role;
+
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -993,6 +1001,9 @@ export default function AdminConsolePage() {
           userId: editingUser.id,
           updates: {
             ...editUserForm,
+            role: roleToSave,
+            email: editUserForm.email?.trim() || primaryEmail,
+            gmail: editUserForm.gmail?.trim() || (primaryEmail.endsWith('@gmail.com') ? primaryEmail : ''),
             aliases,
           },
         }),
@@ -1040,18 +1051,68 @@ export default function AdminConsolePage() {
     }
   };
 
-    const getCoursesForInstructor = (user: any) => {
+  // Distinct Academic Years for teaching and courses (sorted latest first)
+  const availableAcademicYears = useMemo(() => {
+    const set = new Set<string>();
+    timetablesList.forEach((t) => {
+      if (t.academicYear) set.add(String(t.academicYear).trim());
+    });
+    coursesList.forEach((c) => {
+      if (c.academicYear) set.add(String(c.academicYear).trim());
+    });
+    if (set.size === 0) set.add('2569');
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [timetablesList, coursesList]);
+
+  const getCoursesForInstructor = (user: any, filterYear: string = 'ALL', filterSemester: string = 'ALL') => {
     if (!user) return [];
-    const matched = timetablesList.filter((t) => matchInstructorStrict(user, t.instructor));
+
+    // 1. Match from Timetables (ตารางสอน)
+    const matchedTimetables = timetablesList.filter((t) => {
+      if (filterYear !== 'ALL' && t.academicYear && String(t.academicYear) !== String(filterYear)) return false;
+      if (filterSemester !== 'ALL' && t.semester && String(t.semester) !== String(filterSemester)) return false;
+      return matchInstructorStrict(user, t.instructor);
+    });
+
+    // 2. Match from Courses (ตารางรายวิชา)
+    const matchedCourses = coursesList.filter((c) => {
+      if (filterYear !== 'ALL' && c.academicYear && String(c.academicYear) !== String(filterYear)) return false;
+      if (filterSemester !== 'ALL' && c.semester && String(c.semester) !== String(filterSemester)) return false;
+      return matchInstructorStrict(user, c.instructor);
+    });
+
     const unique: any[] = [];
     const seen = new Set<string>();
-    matched.forEach((c) => {
-      const key = `${c.courseCode}-${c.dayOfWeek || ''}-${c.startTime || ''}`;
+
+    matchedTimetables.forEach((c) => {
+      const key = `${c.courseCode}-${c.academicYear || ''}-${c.semester || ''}-${c.dayOfWeek || ''}-${c.startTime || ''}`;
       if (!seen.has(key)) {
         seen.add(key);
         unique.push(c);
       }
     });
+
+    matchedCourses.forEach((c) => {
+      const key = `${c.courseCode}-${c.academicYear || ''}-${c.semester || ''}-${c.dayOfWeek || ''}-${c.startTime || ''}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push({
+          academicYear: c.academicYear || '2569',
+          semester: c.semester || 1,
+          yearLevel: c.yearLevel || 1,
+          timetableTitle: c.programType === 'ENGLISH' ? 'หลักสูตรนานาชาติ' : 'ภาคภาษาไทย',
+          courseCode: c.courseCode,
+          courseName: c.courseName,
+          dayOfWeek: c.dayOfWeek || 1,
+          startTime: c.startTime || '',
+          endTime: c.endTime || '',
+          room: c.room || '',
+          instructor: c.instructor || user.name,
+          periodLabel: '',
+        });
+      }
+    });
+
     return unique;
   };
 
@@ -1068,8 +1129,10 @@ export default function AdminConsolePage() {
     }
   };
 
-  const generateInstructorLineMessage = (user: any) => {
-    const courses = getCoursesForInstructor(user);
+  const generateInstructorLineMessage = (user: any, selectedYear?: string, selectedSemester?: string) => {
+    const yearToUse = selectedYear && selectedYear !== 'ALL' ? selectedYear : (availableAcademicYears[0] || '2569');
+    const semToUse = selectedSemester && selectedSemester !== 'ALL' ? `ภาคการศึกษาที่ ${selectedSemester} ` : '';
+    const courses = getCoursesForInstructor(user, selectedYear, selectedSemester);
     const coursesText = courses.length > 0
       ? courses
           .map(
@@ -1082,7 +1145,7 @@ export default function AdminConsolePage() {
     return `เรียน ${user.name}
 คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
 
-ฝ่ายทะเบียนและวิชาการ ขอแจ้งข้อมูลภาระงานสอนและบัญชีเข้าสู่ระบบตรวจเช็คชื่อนิสิตเข้าชั้นเรียน ประจำปีการศึกษา 2569 ดังนี้ครับ:
+ฝ่ายทะเบียนและวิชาการ ขอแจ้งข้อมูลภาระงานสอนและบัญชีเข้าสู่ระบบตรวจเช็คชื่อนิสิตเข้าชั้นเรียน ${semToUse}ประจำปีการศึกษา ${yearToUse} ดังนี้ครับ:
 
 📚 รายวิชาที่ท่านรับผิดชอบบรรยาย:
 ${coursesText}
@@ -1096,8 +1159,8 @@ ${coursesText}
 * หมายเหตุ: ระบบจำกัดสิทธิ์ให้อาจารย์ตรวจเช็คชื่อได้เฉพาะรายวิชาที่ท่านรับผิดชอบบรรยายเท่านั้น หากพบว่ารายวิชาคลาดเคลื่อน โปรดติดต่อสำนักงานคณะพุทธศาสตร์ครับ`;
   };
 
-  const handleCopyLineTeachingMessage = (user: any) => {
-    const text = generateInstructorLineMessage(user);
+  const handleCopyLineTeachingMessage = (user: any, selectedYear?: string, selectedSemester?: string) => {
+    const text = generateInstructorLineMessage(user, selectedYear, selectedSemester);
     navigator.clipboard.writeText(text);
     setCopiedLineUserId(user.id);
     setTimeout(() => setCopiedLineUserId(null), 3000);
@@ -1125,15 +1188,27 @@ ${coursesText}
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUserForm.name || !newUserForm.email) {
-      alert('กรุณากรอกชื่อและอีเมลให้ครบถ้วน');
+    const primaryEmail = (newUserForm.email || newUserForm.gmail || '').trim();
+    if (!newUserForm.name?.trim() || !primaryEmail) {
+      alert('กรุณากรอกชื่อ และระบุอีเมลอย่างน้อย 1 ช่องทาง (Gmail หรือ @mcu.ac.th)');
       return;
     }
     try {
+      const emailToSave = newUserForm.email?.trim() || primaryEmail;
+      const gmailToSave = newUserForm.gmail?.trim() || (primaryEmail.endsWith('@gmail.com') ? primaryEmail : '');
+      const roleToSave = isOfficer ? 'INSTRUCTOR' : (newUserForm.role || 'INSTRUCTOR');
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create-user', userData: newUserForm }),
+        body: JSON.stringify({
+          action: 'create-user',
+          userData: {
+            ...newUserForm,
+            role: roleToSave,
+            email: emailToSave,
+            gmail: gmailToSave,
+          },
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -1141,8 +1216,10 @@ ${coursesText}
         setIsAddUserOpen(false);
         setNewUserForm({
           name: '',
+          nameEn: '',
           email: '',
           gmail: '',
+          instructorType: 'อาจารย์ประจำ',
           department: 'คณะพุทธศาสตร์ มจร',
           role: 'INSTRUCTOR',
           password: 'mcu123456',
@@ -1179,6 +1256,27 @@ ${coursesText}
       alert(e.message);
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  const handleToggleForcePasswordChange = async (enabled: boolean) => {
+    try {
+      setSettings((prev) => ({ ...prev, forcePasswordChangeOnFirstLogin: enabled }));
+      const res = await fetch('/api/system-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...settings, forcePasswordChangeOnFirstLogin: enabled }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionSuccess(
+          enabled
+            ? 'เปิดระบบบังคับเปลี่ยนรหัสผ่านเมื่อเข้าใช้งานครั้งแรกแล้ว (อาจารย์และนิสิตต้องตั้งรหัสผ่านใหม่ก่อนใช้งาน)'
+            : 'ปิดระบบบังคับเปลี่ยนรหัสผ่านเมื่อเข้าใช้งานครั้งแรกแล้ว'
+        );
+      }
+    } catch (e: any) {
+      alert('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า: ' + e.message);
     }
   };
 
@@ -1235,6 +1333,18 @@ ${coursesText}
 
   // Filter Users
   const filteredUsers = useMemo(() => {
+    // If Officer: strictly hide SUPER_ADMIN and ADMIN accounts! Officers only manage INSTRUCTOR (and view students if requested)
+    let baseUsers = users;
+    if (isOfficer) {
+      baseUsers = users.filter(
+        (u) =>
+          u.role !== 'SUPER_ADMIN' &&
+          u.role !== 'ADMIN' &&
+          !u.isSuperAdmin &&
+          u.email !== 'phaisal.dis@mcu.ac.th'
+      );
+    }
+
     if (userRoleFilter === 'STUDENT') {
       const q = userSearch.trim().toLowerCase();
       return studentsList
@@ -1262,7 +1372,7 @@ ${coursesText}
         }));
     }
 
-    return users.filter((u) => {
+    return baseUsers.filter((u) => {
       if (userRoleFilter === 'SUSPENDED') {
         if (!u.isSuspended && u.isActive !== false) return false;
       } else if (userRoleFilter === 'SUPER_ADMIN') {
@@ -1282,7 +1392,7 @@ ${coursesText}
       }
       return true;
     });
-  }, [users, studentsList, userRoleFilter, userSearch]);
+  }, [users, studentsList, userRoleFilter, userSearch, isOfficer]);
 
   // Filter Courses
   const filteredCourses = useMemo(() => {
@@ -1389,7 +1499,7 @@ ${coursesText}
     });
   };
 
-  const handleConfirmDeleteStudents = async () => {
+  const handleConfirmDeleteStudents = async (reason?: string) => {
     if (studentDeleteModal.targets.length === 0) return;
     setIsDeletingStudents(true);
     try {
@@ -1397,7 +1507,11 @@ ${coursesText}
       const res = await fetch('/api/students', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentCodes: codes }),
+        body: JSON.stringify({
+          studentCodes: codes,
+          deletedBy: currentUser?.name || 'ผู้ดูแลระบบ (Admin)',
+          reason: reason || 'จำหน่าย/ลบข้อมูลนิสิตออกจากทะเบียน',
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -1416,7 +1530,7 @@ ${coursesText}
           return next;
         });
 
-        alert(`ลบข้อมูลนิสิตเรียบร้อยแล้ว จำนวน ${data.deletedCount || codes.length} รูป/คน`);
+        alert(`ย้ายข้อมูลนิสิตเข้าสู่แฟ้มประวัติ (Students_Archive บน Google Sheets) เรียบร้อยแล้ว จำนวน ${data.deletedCount || codes.length} รูป/คน`);
         setStudentDeleteModal({ isOpen: false, targets: [], isBulk: false });
       } else {
         alert('เกิดข้อผิดพลาดในการลบ: ' + (data.error || 'ไม่สามารถลบได้'));
@@ -1786,264 +1900,25 @@ ${coursesText}
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-100 font-sans">
-      {/* ─────────────────────────────────────────────────────────────
-          1. BACKEND SIDEBAR (เมนูด้านข้าง)
-         ───────────────────────────────────────────────────────────── */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 ease-in-out border-r border-slate-800 lg:static lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        {/* Sidebar Brand Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white border border-slate-700 flex items-center justify-center p-1 overflow-hidden shrink-0 shadow-md">
-              {settings.logoUrl ? (
-                <img
-                  src={settings.logoUrl}
-                  alt="Admin Logo"
-                  className="max-h-full max-w-full object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <span className="text-xl">{settings.logoEmoji || '☸️'}</span>
-              )}
-            </div>
-            <div className="overflow-hidden">
-              <div className="text-xs font-bold text-orange-400 tracking-wider uppercase">
-                ADMIN CONSOLE
-              </div>
-              <div className="text-sm font-bold text-white truncate">
-                {settings.facultyNameTh || 'คณะพุทธศาสตร์'}
-              </div>
-              <div className="text-[10px] text-slate-400 truncate">
-                {settings.universityNameTh || 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-white"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Sidebar Navigation Items */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-6">
-          {/* Section 1: Main Backend Operations */}
-          <div>
-            <div className="px-3 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-              ระบบหลัก (Operations)
-            </div>
-            <nav className="space-y-1">
-              <button
-                onClick={() => {
-                  setActiveTab('DASHBOARD');
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  activeTab === 'DASHBOARD'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4 text-blue-400" />
-                <span>แดชบอร์ดภาพรวม</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('CERTIFICATES');
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  activeTab === 'CERTIFICATES'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="w-4 h-4 text-purple-400" />
-                  <span>อนุมัติหนังสือรับรอง</span>
-                </div>
-                {pendingRequests.length > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
-                    {pendingRequests.length}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('STUDENTS');
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  activeTab === 'STUDENTS'
-                    ? 'bg-orange-600 text-white shadow-md shadow-orange-600/30 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Users className="w-4 h-4 text-orange-400" />
-                  <span>ทะเบียนนิสิต</span>
-                </div>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  {studentsCount.total}
-                </span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('COURSES');
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  activeTab === 'COURSES'
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <BookOpen className="w-4 h-4 text-emerald-400" />
-                <span>หลักสูตร & รายวิชา</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('TIMETABLES');
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  activeTab === 'TIMETABLES'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <Calendar className="w-4 h-4 text-indigo-400" />
-                <span>ตารางเรียน & ตารางสอน</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('ATTENDANCE');
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  activeTab === 'ATTENDANCE'
-                    ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <CheckSquare className="w-4 h-4 text-teal-400" />
-                <span>บันทึกตรวจเวลาเรียน</span>
-              </button>
-            </nav>
-          </div>
-
-          {/* Section 2: Administration & Configuration */}
-          <div>
-            <div className="px-3 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-              การจัดการและตั้งค่า (Administration)
-            </div>
-            <nav className="space-y-1">
-              <button
-                onClick={() => {
-                  setActiveTab('USERS');
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  activeTab === 'USERS'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <UserCog className="w-4 h-4 text-sky-400" />
-                <span>จัดการผู้ใช้และบทบาท</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('BRANDING');
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  activeTab === 'BRANDING'
-                    ? 'bg-pink-600 text-white shadow-md shadow-pink-600/30 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <Palette className="w-4 h-4 text-pink-400" />
-                <span>ตั้งค่าโลโก้ & ข้อความ</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('SHEETS');
-                  setSidebarOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  activeTab === 'SHEETS'
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <Table2 className="w-4 h-4 text-emerald-400" />
-                <span>เชื่อมต่อ Google Sheets</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* Sidebar Bottom Profile & Public Site Link */}
-        <div className="p-4 border-t border-slate-800 space-y-3 bg-slate-950/60">
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-sm shrink-0 shadow-sm ${
-              currentUser.role === 'SUPER_ADMIN' || currentUser.email === 'phaisal.dis@mcu.ac.th'
-                ? 'bg-gradient-to-tr from-purple-600 to-indigo-600 border border-purple-400/30'
-                : 'bg-orange-600'
-            }`}>
-              {currentUser.role === 'SUPER_ADMIN' || currentUser.email === 'phaisal.dis@mcu.ac.th' ? '👑' : currentUser.name ? currentUser.name.charAt(0) : 'A'}
-            </div>
-            <div className="overflow-hidden">
-              <div className="text-xs font-bold text-white truncate">{currentUser.name || 'อาจารย์ไพศาล'}</div>
-              <div className="text-[10px] text-purple-300 font-mono truncate">
-                {currentUser.email || 'phaisal.dis@mcu.ac.th'}
-              </div>
-              <div className="text-[9px] text-emerald-400 font-bold uppercase mt-0.5">
-                สิทธิ์: {currentUser.role === 'SUPER_ADMIN' || currentUser.email === 'phaisal.dis@mcu.ac.th' ? 'SUPER ADMIN' : currentUser.role || 'ADMIN'}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 pt-1">
-            <Link
-              href="/"
-              target="_blank"
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition"
-              title="เปิดหน้าบ้านในแท็บใหม่"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>เปิดหน้าบ้าน</span>
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 text-xs font-medium transition flex items-center justify-center"
-              title="ออกจากระบบ"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      </aside>
+    <div className="flex h-screen overflow-hidden bg-slate-100 font-sans print:h-auto print:overflow-visible print:block">
+      <AdminSidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        settings={settings}
+        pendingRequestsCount={pendingRequests.length}
+        studentsTotalCount={studentsCount.total}
+        isOfficer={isOfficer}
+        isSuperAdmin={isSuperAdmin}
+        currentUser={currentUser}
+        handleLogout={handleLogout}
+      />
 
       {/* ─────────────────────────────────────────────────────────────
           2. MAIN CONTENT AREA WITH TOP HEADER
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden print:hidden">
         {/* Top Navbar */}
         <header className="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
@@ -2063,6 +1938,7 @@ ${coursesText}
                 {activeTab === 'COURSES' && 'หลักสูตรและรายวิชา'}
                 {activeTab === 'TIMETABLES' && 'ตารางเรียนและตารางสอน'}
                 {activeTab === 'ATTENDANCE' && 'บันทึกเวลาเรียน'}
+                {activeTab === 'EVENTS' && 'งานกิจกรรมและโครงการนิสิต'}
                 {activeTab === 'USERS' && 'จัดการผู้ใช้งานและบทบาท'}
                 {activeTab === 'BRANDING' && 'ตั้งค่าโลโก้และข้อความระบบ'}
                 {activeTab === 'SHEETS' && 'การเชื่อมต่อ Google Sheets API'}
@@ -2082,6 +1958,17 @@ ${coursesText}
                 โหมดข้อมูลภายใน (Local)
               </span>
             )}
+
+            <button
+              type="button"
+              onClick={() => setIsNewYearWorkflowModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
+              title="ดูคำแนะนำขั้นตอนการทำงานเมื่อเปิดปีการศึกษาใหม่"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden sm:inline">ขั้นตอนเปิดปีการศึกษาใหม่</span>
+              <span className="sm:hidden">เปิดปีใหม่</span>
+            </button>
 
             <Link
               href="/"
@@ -2124,6 +2011,7 @@ ${coursesText}
               setActiveTab={setActiveTab}
               setStatusFilter={setStatusFilter}
               setApprovingId={setApprovingId}
+              onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
             />
           )}
 
@@ -2158,6 +2046,8 @@ ${coursesText}
               handleOpenRejectModal={handleOpenRejectModal}
               setPreviewRequest={setPreviewRequest}
               setPreviewTab={setPreviewTab}
+              onRefreshData={loadData}
+              onSuccessMessage={(msg) => setActionSuccess(msg)}
             />
           )}
 
@@ -2185,13 +2075,19 @@ ${coursesText}
               handleToggleSuspend={handleToggleSuspend}
               handleUpdateRole={handleUpdateRole}
               handleResetPassword={handleResetPassword}
+              forcePasswordChangeOnFirstLogin={settings?.forcePasswordChangeOnFirstLogin !== false}
+              onToggleForcePasswordChange={handleToggleForcePasswordChange}
+              onOpenNewYearWorkflow={() => setIsNewYearWorkflowModalOpen(true)}
+              onOpenBatchTeachingSlips={() => setIsBatchTeachingSlipOpen(true)}
+              isOfficer={isOfficer}
+              isSuperAdmin={isSuperAdmin}
             />
           )}
 
           {/* ─────────────────────────────────────────────────────────
               TAB D: BRANDING & SYSTEM SETTINGS (ปรับแต่งโลโก้ & ข้อความ)
              ───────────────────────────────────────────────────────── */}
-          {activeTab === 'BRANDING' && (
+          {!isOfficer && activeTab === 'BRANDING' && (
             <AdminBrandingTab
               settings={settings}
               setSettings={setSettings}
@@ -2221,7 +2117,7 @@ ${coursesText}
           {/* ─────────────────────────────────────────────────────────
               TAB E: GOOGLE SHEETS SETTINGS
              ───────────────────────────────────────────────────────── */}
-          {activeTab === 'SHEETS' && (
+          {!isOfficer && activeTab === 'SHEETS' && (
             <AdminSheetsTab
               sheetStatus={sheetStatus}
               syncingSheet={syncingSheet}
@@ -2236,6 +2132,8 @@ ${coursesText}
             <AdminStudentsTab
               studentsCount={studentsCount}
               filteredStudents={filteredStudents}
+              allStudents={studentsList}
+              onRefresh={() => loadData()}
               studentSearch={studentSearch}
               setStudentSearch={setStudentSearch}
               studentProgramFilter={studentProgramFilter}
@@ -2268,6 +2166,8 @@ ${coursesText}
               setCourseSearch={setCourseSearch}
               courseProgramFilter={courseProgramFilter}
               setCourseProgramFilter={setCourseProgramFilter}
+              instructors={users.filter((u) => u.role === 'INSTRUCTOR')}
+              onRefreshCourses={loadData}
             />
           )}
 
@@ -2302,6 +2202,34 @@ ${coursesText}
               setAttendanceSearch={setAttendanceSearch}
               attendanceStatusFilter={attendanceStatusFilter}
               setAttendanceStatusFilter={setAttendanceStatusFilter}
+              timetablesList={timetablesList}
+              studentsList={studentsList}
+              currentUser={currentUser}
+              logoUrl={settings.logoUrl}
+              onRefresh={loadData}
+            />
+          )}
+
+          {/* ─────────────────────────────────────────────────────────
+              TAB J: EVENTS MANAGEMENT VIEW (งานกิจกรรมและโครงการนิสิต)
+             ───────────────────────────────────────────────────────── */}
+          {activeTab === 'EVENTS' && (
+            <AdminEventsTab
+              eventsList={eventsList}
+              registrationsList={eventRegistrationsList}
+              onToggleStatus={handleToggleEventStatus}
+              onRefresh={() => {
+                fetch('/api/events')
+                  .then((r) => r.json())
+                  .then((d) => {
+                    if (d.success) {
+                      setEventsList(d.events || []);
+                      setEventRegistrationsList(d.registrations || []);
+                    }
+                  });
+                loadData();
+              }}
+              settings={settings}
             />
           )}
         </main>
@@ -2311,6 +2239,7 @@ ${coursesText}
         isOpen={isAddUserOpen}
         newUserForm={newUserForm}
         setNewUserForm={setNewUserForm}
+        isOfficer={isOfficer}
         onClose={() => setIsAddUserOpen(false)}
         onSubmit={handleCreateUser}
       />
@@ -2320,1634 +2249,26 @@ ${coursesText}
         editUserForm={editUserForm}
         setEditUserForm={setEditUserForm as any}
         editUserSaving={editUserSaving}
+        isOfficer={isOfficer}
         onClose={() => setEditingUser(null)}
         onSubmit={handleSaveEditUser}
       />
 
-      {/* ─────────────────────────────────────────────────────────────
-          MODAL 2: PRINT & PREVIEW CERTIFICATE
-         ───────────────────────────────────────────────────────────── */}
-      {previewRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className={`bg-white rounded-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto space-y-4 transition-all duration-200 ${
-            previewTab === 'ATTACHMENTS' ? 'max-w-5xl' : 'max-w-3xl'
-          }`}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
-              <div className="flex items-center gap-2">
-                <Printer className="w-5 h-5 text-purple-600" />
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm">
-                    {previewTab === 'DOCUMENT'
-                      ? 'ตัวอย่างเอกสารทางการ (Official Document Preview)'
-                      : 'ตรวจสอบเอกสารสำเนาที่แนบมา (Attached Copies Inspection)'}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    คำร้อง: <span className="font-bold text-slate-800">{previewRequest.fullName}</span> ({previewRequest.studentCode})
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Tab Switcher: Document vs Attachments */}
-                <div className="flex p-0.5 bg-slate-100 rounded-xl text-xs font-bold border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => setPreviewTab('DOCUMENT')}
-                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                      previewTab === 'DOCUMENT'
-                        ? 'bg-purple-600 text-white shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>ตัวอย่างหนังสือ</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewTab('ATTACHMENTS')}
-                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                      previewTab === 'ATTACHMENTS'
-                        ? 'bg-purple-600 text-white shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <Paperclip className="w-3.5 h-3.5" />
-                    <span>ตรวจเอกสารแนบ</span>
-                    {previewRequest.enrollmentSlipUrl ? (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" title="มีสำเนาลงเรียนแล้ว"></span>
-                    ) : (
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="ขาดสำเนาลงเรียน"></span>
-                    )}
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => setPreviewRequest(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {previewTab === 'ATTACHMENTS' ? (
-              /* ── ATTACHMENT INSPECTION SCREEN ── */
-              <div className="space-y-4 animate-in fade-in py-1">
-                {/* Student Info Bar */}
-                <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-                  <div>
-                    <span className="text-purple-600 block text-[11px] font-bold">ข้อมูลผู้ยื่นคำร้อง:</span>
-                    <span className="font-bold text-slate-900 text-sm">{previewRequest.fullName}</span>
-                    <span className="text-purple-700 font-mono font-bold ml-2">({previewRequest.studentCode})</span>
-                    <span className="text-slate-600 ml-2">| หลักสูตร: {previewRequest.degreeLevel || 'ปริญญาตรี'} สาขา: {previewRequest.major || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[11px]">สถานะคำร้อง:</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-bold text-xs ${
-                      previewRequest.status === 'APPROVED'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : previewRequest.status === 'REJECTED'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {previewRequest.status === 'APPROVED' ? 'อนุมัติแล้ว' : previewRequest.status === 'REJECTED' ? 'ปฏิเสธ' : 'รอพิจารณา'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Document View Switcher (สลับตรวจข้อ 1 หรือข้อ 2 หรือเทียบข้างกัน) */}
-                <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-slate-100 rounded-2xl border border-slate-200">
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
-                    <button
-                      type="button"
-                      onClick={() => setInspectionDocTab('ENROLLMENT')}
-                      className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-                        inspectionDocTab === 'ENROLLMENT'
-                          ? 'bg-emerald-600 text-white shadow-sm'
-                          : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      <FileCheck2 className="w-3.5 h-3.5" />
-                      <span>ข้อ 1. ใบสำเนาการลงทะเบียนเรียน / ใบเสร็จ</span>
-                      {previewRequest.enrollmentSlipUrl ? (
-                        <span className="w-2 h-2 rounded-full bg-emerald-300" title="มีไฟล์แนบแล้ว"></span>
-                      ) : (
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="ยังไม่แนบ"></span>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setInspectionDocTab('PASSPORT')}
-                      className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-                        inspectionDocTab === 'PASSPORT'
-                          ? 'bg-sky-600 text-white shadow-sm'
-                          : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      <Globe className="w-3.5 h-3.5" />
-                      <span>ข้อ 2. สำเนาหนังสือเดินทาง (Passport)</span>
-                      {previewRequest.passportCopyUrl ? (
-                        <span className="w-2 h-2 rounded-full bg-sky-300" title="มีไฟล์แนบแล้ว"></span>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 font-normal">
-                          {previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai' ? '(ไทย)' : '(ยังไม่แนบ)'}
-                        </span>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setInspectionDocTab('SIDE_BY_SIDE')}
-                      className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
-                        inspectionDocTab === 'SIDE_BY_SIDE'
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'bg-white hover:bg-slate-200 text-slate-700 border border-slate-200'
-                      }`}
-                      title="ดูเทียบเอกสารทั้ง 2 ฉบับพร้อมกันแบบ 2 ฝั่ง"
-                    >
-                      <Layers className="w-3.5 h-3.5" />
-                      <span>เทียบ 2 ฝั่ง (Side-by-Side)</span>
-                    </button>
-                  </div>
-
-                  <div className="text-[11px] text-slate-500 font-medium px-2">
-                    * รูปถ่ายนิสิต 1.5 - 2 นิ้ว ให้นิสิตนำมาติดเองบนหนังสือรับรองตอนรับเอกสาร
-                  </div>
-                </div>
-
-                {/* Preview View Area */}
-                <div className={`grid gap-4 ${inspectionDocTab === 'SIDE_BY_SIDE' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-                  {/* ───────────────── PREVIEW ข้อ 1: ใบสำเนาลงเรียน / ใบเสร็จ ───────────────── */}
-                  {(inspectionDocTab === 'ENROLLMENT' || inspectionDocTab === 'SIDE_BY_SIDE') && (
-                    <div className={`p-4 rounded-2xl border-2 space-y-3 transition-all ${
-                      previewRequest.enrollmentSlipUrl ? 'bg-emerald-50/20 border-emerald-300' : 'bg-amber-50/50 border-amber-300'
-                    }`}>
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-100 pb-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-white ${
-                            previewRequest.enrollmentSlipUrl ? 'bg-emerald-600' : 'bg-amber-500'
-                          }`}>
-                            <FileCheck2 className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
-                              <span>ข้อ 1: ใบสำเนาการลงทะเบียนเรียน / ใบเสร็จรับเงิน</span>
-                              {previewRequest.enrollmentSlipUrl ? (
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                                  ✓ แนบแล้ว
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-bold">
-                                  ⚠️ ขาดเอกสารนี้
-                                </span>
-                              )}
-                            </h4>
-                            <p className="text-[11px] text-slate-500">เอกสารสำคัญใช้ตรวจสอบสถานะการเป็นนิสิตและการลงทะเบียนเรียน</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-xs">
-                          {previewRequest.enrollmentSlipUrl && (
-                            <a
-                              href={previewRequest.enrollmentSlipUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold flex items-center gap-1 shadow-xs transition"
-                              title="เปิดเอกสารในแท็บใหม่"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>เปิดแท็บใหม่</span>
-                            </a>
-                          )}
-
-                          <label className="px-2.5 py-1 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 hover:bg-purple-100 font-bold flex items-center gap-1 cursor-pointer transition shadow-xs">
-                            <UploadCloud className="w-3.5 h-3.5" />
-                            <span>{uploadingAttachment ? 'กำลังอัปโหลด...' : 'แนบไฟล์แทน'}</span>
-                            <input
-                              type="file"
-                              accept="image/*,.pdf"
-                              className="hidden"
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) handleUploadAdditionalAttachment(f, 'enrollment');
-                              }}
-                            />
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Interactive Document Preview Box */}
-                      {previewRequest.enrollmentSlipUrl ? (
-                        <div className="space-y-2">
-                          {previewRequest.enrollmentSlipUrl.toLowerCase().endsWith('.pdf') ? (
-                            <div className="rounded-xl overflow-hidden border border-emerald-200 bg-slate-900 shadow-inner">
-                              <iframe
-                                src={`${previewRequest.enrollmentSlipUrl}#toolbar=0&navpanes=0`}
-                                className="w-full h-[520px] bg-white"
-                                title="พรีวิวสำเนาลงเรียน (PDF)"
-                              />
-                            </div>
-                          ) : (
-                            <div
-                              onClick={() => setZoomImage(previewRequest.enrollmentSlipUrl!)}
-                              className="relative h-[520px] bg-slate-900/5 rounded-xl border border-emerald-200 overflow-hidden flex items-center justify-center cursor-zoom-in group shadow-inner"
-                              title="คลิกเพื่อดูภาพขยายใหญ่เต็มจอ"
-                            >
-                              <img
-                                src={previewRequest.enrollmentSlipUrl}
-                                alt="ใบสำเนาการลงทะเบียนเรียน"
-                                className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
-                              />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition gap-1.5">
-                                <ZoomIn className="w-4 h-4" />
-                                <span>คลิกเพื่อดูภาพขยายใหญ่ (Lightbox Zoom)</span>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
-                            <span>
-                              ชนิดไฟล์: {previewRequest.enrollmentSlipUrl.toLowerCase().endsWith('.pdf') ? 'เอกสาร PDF' : 'ไฟล์รูปภาพ'}
-                            </span>
-                            {!previewRequest.enrollmentSlipUrl.toLowerCase().endsWith('.pdf') && (
-                              <button
-                                type="button"
-                                onClick={() => setZoomImage(previewRequest.enrollmentSlipUrl!)}
-                                className="text-purple-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
-                              >
-                                <ZoomIn className="w-3.5 h-3.5" /> คลิกซูมดูภาพขนาดเต็ม
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-8 bg-white/90 rounded-xl border border-amber-200 text-xs text-center space-y-3 my-4">
-                          <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
-                          <div>
-                            <p className="font-bold text-amber-950 text-sm">นิสิตยังไม่ได้แนบใบสำเนาการลงทะเบียนเรียน</p>
-                            <p className="text-xs text-amber-800 max-w-md mx-auto mt-1">
-                              หากไม่พบคีย์ข้อมูลการลงทะเบียนเรียนในระบบ สามารถกดปฏิเสธคำร้องพร้อมแจ้งให้นิสิตส่งเอกสารเข้ามาใหม่ได้ทันที
-                            </p>
-                          </div>
-                          {previewRequest.status === 'PENDING' && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleOpenRejectModal(previewRequest);
-                                setRejectReasonInput('ขาดสำเนาเอกสารการลงทะเบียน');
-                              }}
-                              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-200 cursor-pointer inline-flex items-center gap-1.5 transition"
-                            >
-                              <XCircle className="w-4 h-4" />
-                              <span>ปฏิเสธคำร้อง (ระบุว่าขาดสำเนาลงทะเบียนเรียน)</span>
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ───────────────── PREVIEW ข้อ 2: สำเนาหนังสือเดินทาง (Passport) ───────────────── */}
-                  {(inspectionDocTab === 'PASSPORT' || inspectionDocTab === 'SIDE_BY_SIDE') && (
-                    <div className={`p-4 rounded-2xl border-2 space-y-3 transition-all ${
-                      previewRequest.passportCopyUrl ? 'bg-sky-50/20 border-sky-300' : 'bg-slate-50 border-slate-200'
-                    }`}>
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-100 pb-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-white ${
-                            previewRequest.passportCopyUrl ? 'bg-sky-600' : 'bg-slate-400'
-                          }`}>
-                            <Globe className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
-                              <span>ข้อ 2: สำเนาหนังสือเดินทาง (Passport Copy)</span>
-                              {previewRequest.passportCopyUrl ? (
-                                <span className="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-bold">
-                                  ✓ แนบแล้ว
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold">
-                                  {previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai' ? 'สัญชาติไทย' : 'ยังไม่ได้แนบ'}
-                                </span>
-                              )}
-                            </h4>
-                            <p className="text-[11px] text-slate-500 font-mono">
-                              เลขที่หนังสือเดินทาง: {previewRequest.passportNo || 'ไม่มี (ใช้เลขบัตร ปชช. ในระบบทะเบียน)'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-xs">
-                          {previewRequest.passportCopyUrl && (
-                            <a
-                              href={previewRequest.passportCopyUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold flex items-center gap-1 shadow-xs transition"
-                              title="เปิดเอกสารในแท็บใหม่"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>เปิดแท็บใหม่</span>
-                            </a>
-                          )}
-
-                          <label className="px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200 text-sky-700 hover:bg-sky-100 font-bold flex items-center gap-1 cursor-pointer transition shadow-xs">
-                            <UploadCloud className="w-3.5 h-3.5" />
-                            <span>{uploadingAttachment ? 'กำลังอัปโหลด...' : 'แนบไฟล์แทน'}</span>
-                            <input
-                              type="file"
-                              accept="image/*,.pdf"
-                              className="hidden"
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) handleUploadAdditionalAttachment(f, 'passport');
-                              }}
-                            />
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Interactive Document Preview Box */}
-                      {previewRequest.passportCopyUrl ? (
-                        <div className="space-y-2">
-                          {previewRequest.passportCopyUrl.toLowerCase().endsWith('.pdf') ? (
-                            <div className="rounded-xl overflow-hidden border border-sky-200 bg-slate-900 shadow-inner">
-                              <iframe
-                                src={`${previewRequest.passportCopyUrl}#toolbar=0&navpanes=0`}
-                                className="w-full h-[520px] bg-white"
-                                title="พรีวิวสำเนาพาสปอร์ต (PDF)"
-                              />
-                            </div>
-                          ) : (
-                            <div
-                              onClick={() => setZoomImage(previewRequest.passportCopyUrl!)}
-                              className="relative h-[520px] bg-slate-900/5 rounded-xl border border-sky-200 overflow-hidden flex items-center justify-center cursor-zoom-in group shadow-inner"
-                              title="คลิกเพื่อดูภาพขยายใหญ่เต็มจอ"
-                            >
-                              <img
-                                src={previewRequest.passportCopyUrl}
-                                alt="สำเนาหนังสือเดินทาง"
-                                className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
-                              />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition gap-1.5">
-                                <ZoomIn className="w-4 h-4" />
-                                <span>คลิกเพื่อดูภาพขยายใหญ่ (Lightbox Zoom)</span>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
-                            <span>
-                              ชนิดไฟล์: {previewRequest.passportCopyUrl.toLowerCase().endsWith('.pdf') ? 'เอกสาร PDF' : 'ไฟล์รูปภาพ'}
-                            </span>
-                            {!previewRequest.passportCopyUrl.toLowerCase().endsWith('.pdf') && (
-                              <button
-                                type="button"
-                                onClick={() => setZoomImage(previewRequest.passportCopyUrl!)}
-                                className="text-purple-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
-                              >
-                                <ZoomIn className="w-3.5 h-3.5" /> คลิกซูมดูภาพขนาดเต็ม
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-8 bg-white/90 rounded-xl border border-slate-200 text-xs text-center space-y-2 my-4">
-                          <p className="font-bold text-slate-700 text-sm">
-                            {previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai'
-                              ? '🇹🇭 นิสิตสัญชาติไทย (ใช้ฐานข้อมูลทะเบียนประวัตินิสิต)'
-                              : 'ยังไม่มีสำเนาพาสปอร์ตแนบมาในระบบ'}
-                          </p>
-                          <p className="text-xs text-slate-500 max-w-md mx-auto">
-                            เลขพาสปอร์ตที่บันทึก: <strong className="font-mono text-purple-700">{previewRequest.passportNo || 'ไม่มี'}</strong>
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* ───────────────── SUMMARY & ACTION FOOTER BAR ───────────────── */}
-                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
-                  <div className="space-y-1">
-                    <div className="font-bold text-slate-900 flex flex-wrap items-center gap-3">
-                      <span>สรุปเอกสาร:</span>
-                      <span className={previewRequest.enrollmentSlipUrl ? 'text-emerald-700 font-bold' : 'text-amber-700 font-bold'}>
-                        1. สำเนาลงเรียน {previewRequest.enrollmentSlipUrl ? '✓ เรียบร้อย' : '⚠️ ยังไม่แนบ'}
-                      </span>
-                      <span className="text-slate-300">|</span>
-                      <span className={previewRequest.passportCopyUrl ? 'text-sky-700 font-bold' : 'text-slate-600'}>
-                        2. สำเนาพาสปอร์ต {previewRequest.passportCopyUrl ? '✓ แนบแล้ว' : '(ใช้ข้อมูลทะเบียน)'}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-amber-800 font-medium">
-                      📸 <strong>ข้อ 3. รูปถ่ายนิสิต (ขนาด 1.5 - 2 นิ้ว):</strong> ให้นิสิตนำรูปถ่ายจริงมาติดบนหนังสือรับรองด้วยตนเองในวันมารับเอกสารฉบับจริง (เว้นช่องเส้นประไว้บนแบบฟอร์มแล้ว)
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewTab('DOCUMENT')}
-                      className="px-4 py-2.5 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 text-purple-700 font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs"
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span>สลับไปดูตัวอย่างหนังสือรับรอง</span>
-                    </button>
-
-                    {previewRequest.status === 'PENDING' && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenRejectModal(previewRequest)}
-                          className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-sm"
-                        >
-                          <XCircle className="w-4 h-4" />
-                          <span>ปฏิเสธคำร้อง</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await handleApprove(previewRequest.id);
-                            setPreviewRequest(null);
-                          }}
-                          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-sm"
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>อนุมัติคำร้อง</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* ── DOCUMENT PREVIEW & CUSTOMIZER ── */
-              <>
-                {/* Quick Attachment Indicator Bar inside Document tab */}
-                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-slate-700">เอกสารแนบ:</span>
-                    {previewRequest.enrollmentSlipUrl ? (
-                      <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">
-                        <FileCheck2 className="w-3.5 h-3.5" /> มีใบสำเนาลงเรียนแล้ว
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-md">
-                        ⚠️ ขาดสำเนาการลงทะเบียนเรียน
-                      </span>
-                    )}
-                    {previewRequest.passportCopyUrl && (
-                      <span className="inline-flex items-center gap-1 font-bold text-sky-700 bg-sky-100/70 px-2 py-0.5 rounded-md">
-                        <Paperclip className="w-3.5 h-3.5" /> สำเนาพาสปอร์ต
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewTab('ATTACHMENTS')}
-                      className="text-purple-700 hover:text-purple-900 font-bold flex items-center gap-1 underline cursor-pointer"
-                    >
-                      <Paperclip className="w-3.5 h-3.5" />
-                      <span>คลิกเพื่อตรวจสอบเอกสารสำเนาแนบ</span>
-                    </button>
-                    {previewRequest.status === 'PENDING' && (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenRejectModal(previewRequest)}
-                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer transition"
-                      >
-                        ปฏิเสธคำร้อง
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Signatory & Document Customization Toolbar (Hidden on Print) */}
-                <div className="p-4 bg-purple-50/70 rounded-2xl border border-purple-200/80 space-y-3 print:hidden text-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <label className="font-bold text-purple-900 flex items-center gap-1.5">
-                      <UserCog className="w-4 h-4 text-purple-600" />
-                      <span>เครื่องมือปรับแต่งเอกสาร &amp; เลือกแบบฟอร์ม (Document Customizer)</span>
-                    </label>
-                    <span className="text-[11px] text-purple-700 bg-purple-100/80 px-2.5 py-0.5 rounded-full font-semibold">
-                      ✍️ ปรับแต่งได้สดๆ และคลิกแก้ไขข้อความบนเอกสารได้ทันที
-                    </span>
-                  </div>
-
-              {/* Template Selector & Signer Controls */}
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-                {/* Template Selection */}
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    ชนิดแบบฟอร์มเอกสาร:
-                  </label>
-                  <select
-                    value={previewTemplate}
-                    onChange={(e: any) => setPreviewTemplate(e.target.value)}
-                    className="w-full px-2.5 py-2 rounded-xl border border-purple-300 bg-white font-bold text-xs text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm cursor-pointer"
-                  >
-                    <option value="THAI_STANDARD">📜 รับรองนิสิต (ไทย) + รูปถ่าย (หน้า 2-9)</option>
-                    <option value="BANK_LETTER">🏦 ขอความอนุเคราะห์ธนาคาร (หน้า 1)</option>
-                    <option value="ENG_CERT">🌐 รับรองภาษาอังกฤษ (TO WHOM) (PDF 2)</option>
-                    <option value="INTERNAL_MEMO">📑 บันทึกข้อความราชการ (หน้า 10)</option>
-                  </select>
-                </div>
-
-                {/* Dropdown Preset */}
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    ตำแหน่งผู้ลงนาม:
-                  </label>
-                  <select
-                    value={selectedSignerPreset}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSelectedSignerPreset(val);
-                      const found = activeSignatoriesList.find((p) => p.id === val);
-                      if (found) {
-                        if (val === 'DEAN') {
-                          setCustomSigner({
-                            name: settings.signerNameTh || found.name,
-                            title: settings.signerTitleTh || found.title,
-                          });
-                        } else {
-                          setCustomSigner({
-                            name: found.name,
-                            title: found.title,
-                          });
-                        }
-                      }
-                    }}
-                    className="w-full px-2.5 py-2 rounded-xl border border-purple-200 bg-white font-medium text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm cursor-pointer"
-                  >
-                    {activeSignatoriesList.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.label}
-                      </option>
-                    ))}
-                    <option value="CUSTOM">✍️ กำหนดเอง (พิมพ์ระบุเอง)</option>
-                  </select>
-                </div>
-
-                {/* Custom Signer Name Input */}
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    ชื่อผู้ลงนาม (แก้ไขได้):
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="ชื่อผู้ลงนาม"
-                    value={customSigner.name}
-                    onChange={(e) => {
-                      setCustomSigner({ ...customSigner, name: e.target.value });
-                      setSelectedSignerPreset('CUSTOM');
-                    }}
-                    className="w-full px-2.5 py-2 rounded-xl border border-purple-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm"
-                  />
-                </div>
-
-                {/* Custom Signer Title Input */}
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">
-                    ตำแหน่งผู้ลงนาม:
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="เช่น รองคณบดีฝ่ายวิชาการ"
-                    value={customSigner.title}
-                    onChange={(e) => {
-                      setCustomSigner({ ...customSigner, title: e.target.value });
-                      setSelectedSignerPreset('CUSTOM');
-                    }}
-                    className="w-full px-2.5 py-2 rounded-xl border border-purple-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Typography & Layout Spacing Toolbar */}
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-purple-200/60">
-                {/* Font Family Selector (Official Government Fonts) */}
-                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
-                  <Type className="w-3.5 h-3.5 text-purple-600" />
-                  <span className="font-semibold text-slate-600">ฟอนต์:</span>
-                  <select
-                    value={docFontFamily}
-                    onChange={(e) => setDocFontFamily(e.target.value)}
-                    className="bg-transparent font-bold text-purple-900 focus:outline-none cursor-pointer text-xs"
-                    title="เลือกฟอนต์หนังสือราชการไทยหรืออังกฤษ"
-                  >
-                    <optgroup label="🇹🇭 ฟอนต์ราชการไทย">
-                      <option value="'Sarabun', 'TH Sarabun New', 'TH Sarabun PSK', sans-serif">
-                        TH Sarabun (มาตรฐานหนังสือราชการ)
-                      </option>
-                      <option value="'Krub', sans-serif">Krub (ราชการทางการ)</option>
-                      <option value="'Bai Jamjuree', sans-serif">Bai Jamjuree (ทางการ)</option>
-                    </optgroup>
-                    <optgroup label="🌐 ฟอนต์สากล / ภาษาอังกฤษ (Official EN)">
-                      <option value="'Times New Roman', Times, serif">
-                        Times New Roman (มาตรฐานสากล)
-                      </option>
-                      <option value="'Georgia', serif">Georgia (ทางการ)</option>
-                      <option value="'Garamond', serif">Garamond (ทางการคลาสสิก)</option>
-                      <option value="'Arial', sans-serif">Arial (สากล Clean)</option>
-                    </optgroup>
-                  </select>
-                </div>
-
-                {/* Font Size (Content & ที่ อว) */}
-                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm" title="ขนาดตัวอักษรเนื้อหา และ ที่ อว (ปรับเท่ากัน)">
-                  <span className="font-semibold text-slate-600">ขนาดเนื้อหา & ที่ อว:</span>
-                  <button
-                    type="button"
-                    onClick={() => setDocFontSize((s) => Math.max(11, s - 1))}
-                    className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer"
-                    title="ลดขนาดตัวอักษรเนื้อหาและที่ อว"
-                  >
-                    -
-                  </button>
-                  <span className="w-7 text-center font-bold text-purple-800">{docFontSize}pt</span>
-                  <button
-                    type="button"
-                    onClick={() => setDocFontSize((s) => Math.min(24, s + 1))}
-                    className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer"
-                    title="เพิ่มขนาดตัวอักษรเนื้อหาและที่ อว"
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Signer Font Size (สีน้ำเงิน) */}
-                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-blue-200 shadow-sm" title="ขนาดตัวอักษรผู้ลงนามและตำแหน่ง (สีน้ำเงิน)">
-                  <span className="font-semibold text-blue-700">ขนาดผู้ลงนาม:</span>
-                  <button
-                    type="button"
-                    onClick={() => setSignerFontSize((s) => Math.max(9, s - 1))}
-                    className="w-5 h-5 rounded bg-blue-50 hover:bg-blue-100 font-bold text-blue-800 cursor-pointer"
-                    title="ลดขนาดตัวอักษรชื่อและตำแหน่งผู้ลงนาม"
-                  >
-                    -
-                  </button>
-                  <span className="w-7 text-center font-bold text-blue-900">{signerFontSize}pt</span>
-                  <button
-                    type="button"
-                    onClick={() => setSignerFontSize((s) => Math.min(22, s + 1))}
-                    className="w-5 h-5 rounded bg-blue-50 hover:bg-blue-100 font-bold text-blue-800 cursor-pointer"
-                    title="เพิ่มขนาดตัวอักษรชื่อและตำแหน่งผู้ลงนาม"
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Line Spacing */}
-                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
-                  <MoveVertical className="w-3.5 h-3.5 text-purple-600" />
-                  <span className="font-semibold text-slate-600">ระยะบรรทัด:</span>
-                  <select
-                    value={docLineSpacing}
-                    onChange={(e) => setDocLineSpacing(parseFloat(e.target.value))}
-                    className="bg-transparent font-bold text-purple-800 focus:outline-none cursor-pointer"
-                  >
-                    <option value={1.3}>1.3 (แน่น)</option>
-                    <option value={1.5}>1.5 (มาตรฐาน)</option>
-                    <option value={1.7}>1.7 (โปร่ง)</option>
-                    <option value={2.0}>2.0 (กว้าง)</option>
-                  </select>
-                </div>
-
-                {/* Signature Vertical Offset */}
-                <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm">
-                  <span className="font-semibold text-slate-600">ขยับลายเซ็น:</span>
-                  <button
-                    type="button"
-                    onClick={() => setDocSignerOffset((o) => Math.max(0, o - 10))}
-                    className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 font-semibold cursor-pointer"
-                    title="เลื่อนบล็อกลายเซ็นขึ้น"
-                  >
-                    ⬆ ขึ้น
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDocSignerOffset((o) => Math.min(120, o + 10))}
-                    className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 font-semibold cursor-pointer"
-                    title="เลื่อนบล็อกลายเซ็นลง"
-                  >
-                    ⬇ ลง
-                  </button>
-                </div>
-
-                {/* Header & Title Spacing (เว้นช่องใส่ตรา 1-2 นิ้ว หรือแบบฟอร์มกระดาษราชการ) */}
-                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-sky-200 shadow-sm text-xs" title="ปรับระยะห่างความสูงระหว่าง ที่ อว กับ หนังสือรับรอง เพื่อเว้นช่องใส่ตรา 1-2 นิ้ว หรือแบบฟอร์มสำเร็จรูปของหน่วยงาน">
-                  <span className="font-semibold text-sky-800">เว้นช่องตรา (ที่ อว ↔ ชื่อเรื่อง):</span>
-                  <button
-                    type="button"
-                    onClick={() => setHeaderTitleSpacing((s) => Math.max(0, s - 10))}
-                    className="w-5 h-5 rounded bg-sky-50 hover:bg-sky-100 font-bold text-sky-800 flex items-center justify-center cursor-pointer"
-                    title="ลดระยะห่าง (-10px)"
-                  >
-                    -
-                  </button>
-                  <span className="font-mono text-xs font-bold text-sky-900 min-w-16 text-center">
-                    {headerTitleSpacing}px {headerTitleSpacing >= 180 ? '(~2 นิ้ว)' : headerTitleSpacing >= 135 ? '(~1.5 นิ้ว)' : headerTitleSpacing >= 90 ? '(~1 นิ้ว)' : headerTitleSpacing === 24 ? '(ปกติ)' : ''}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setHeaderTitleSpacing((s) => Math.min(260, s + 10))}
-                    className="w-5 h-5 rounded bg-sky-50 hover:bg-sky-100 font-bold text-sky-800 flex items-center justify-center cursor-pointer"
-                    title="เพิ่มระยะห่าง (+10px)"
-                  >
-                    +
-                  </button>
-                  
-                  {/* Preset shortcut chips */}
-                  <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => setHeaderTitleSpacing(24)}
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
-                        headerTitleSpacing === 24 ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                      title="ระยะมาตรฐาน (24px)"
-                    >
-                      ปกติ
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setHeaderTitleSpacing(96)}
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
-                        headerTitleSpacing === 96 ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                      title="เว้นช่องตรา 1 นิ้ว (96px)"
-                    >
-                      1 นิ้ว
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setHeaderTitleSpacing(144)}
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
-                        headerTitleSpacing === 144 ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                      title="เว้นช่องตรา 1.5 นิ้ว (144px)"
-                    >
-                      1.5 นิ้ว
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setHeaderTitleSpacing(192)}
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition ${
-                        headerTitleSpacing === 192 ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                      title="เว้นช่องตรา 2 นิ้ว (192px)"
-                    >
-                      2 นิ้ว
-                    </button>
-                  </div>
-                </div>
-
-                {/* Top Margin (เว้นหัวกระดาษแบบฟอร์มหน่วยงาน) */}
-                <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-sky-200 shadow-sm text-xs" title="ขยับ ที่ อว ลงเพื่อเว้นหัวกระดาษที่มีข้อความแบบฟอร์มพิมพ์ไว้แล้ว">
-                  <span className="font-semibold text-slate-600">ขยับ ที่ อว ลง:</span>
-                  <button
-                    type="button"
-                    onClick={() => setHeaderTopSpacing((t) => Math.max(0, t - 10))}
-                    className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs flex items-center justify-center cursor-pointer"
-                    title="ลดระยะหัวกระดาษ (-10px)"
-                  >
-                    -
-                  </button>
-                  <span className="font-mono text-xs font-bold text-slate-800 w-8 text-center">
-                    {headerTopSpacing}px
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setHeaderTopSpacing((t) => Math.min(150, t + 10))}
-                    className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs flex items-center justify-center cursor-pointer"
-                    title="เพิ่มระยะหัวกระดาษ (+10px)"
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Photo Box Shift (กรอบรูป เลื่อนขวา/ซ้าย) */}
-                {showPhotoBox && (
-                  <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-rose-200 shadow-sm" title="ขยับกรอบรูปไปทางขวาหรือซ้าย">
-                    <span className="font-semibold text-rose-700">กรอบรูป:</span>
-                    <button
-                      type="button"
-                      onClick={() => setPhotoBoxOffsetX((x) => Math.max(0, x - 20))}
-                      className="px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 font-bold text-xs text-rose-800 cursor-pointer"
-                      title="เลื่อนกรอบรูปไปทางซ้าย"
-                    >
-                      ◀ ซ้าย
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPhotoBoxOffsetX(0)}
-                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
-                        photoBoxOffsetX === 0 ? 'bg-rose-100 text-rose-900' : 'bg-slate-100 text-slate-700'
-                      }`}
-                      title="ชิดซ้าย"
-                    >
-                      ชิดซ้าย
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPhotoBoxOffsetX(100)}
-                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
-                        photoBoxOffsetX === 100 ? 'bg-rose-100 text-rose-900' : 'bg-slate-100 text-slate-700'
-                      }`}
-                      title="กึ่งกลาง"
-                    >
-                      กลาง
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPhotoBoxOffsetX((x) => Math.min(300, x + 20))}
-                      className="px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 font-bold text-xs text-rose-800 cursor-pointer"
-                      title="เลื่อนกรอบรูปไปทางขวา"
-                    >
-                      ขวา ▶
-                    </button>
-                    <span className="text-[10px] text-rose-600 font-mono">({photoBoxOffsetX}px)</span>
-                  </div>
-                )}
-
-                {/* Dots Length (ความยาวจุดไข่ปลา) */}
-                {showStudentSign && (
-                  <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-amber-200 shadow-sm" title="ปรับความยาวจุดไข่ปลาให้สั้นลงหรือยาวขึ้น">
-                    <span className="font-semibold text-amber-800">จุดไข่ปลา:</span>
-                    <button
-                      type="button"
-                      onClick={() => setDotsCount((d) => Math.max(8, d - 4))}
-                      className="px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 font-bold text-xs text-amber-900 cursor-pointer"
-                      title="ลดความยาวจุดไข่ปลา (ลบออก)"
-                    >
-                      - สั้นลง
-                    </button>
-                    <span className="w-8 text-center font-bold text-amber-900 font-mono text-xs">{dotsCount} จุด</span>
-                    <button
-                      type="button"
-                      onClick={() => setDotsCount((d) => Math.min(55, d + 4))}
-                      className="px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 font-bold text-xs text-amber-900 cursor-pointer"
-                      title="เพิ่มความยาวจุดไข่ปลา"
-                    >
-                      + ยาวขึ้น
-                    </button>
-                  </div>
-                )}
-
-                {/* Student Name Font Size (ขนาดชื่อนิสิต) */}
-                {showStudentSign && (
-                  <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-indigo-200 shadow-sm" title="ขนาดตัวอักษรชื่อ-นามสกุลนิสิต">
-                    <span className="font-semibold text-indigo-700">ขนาดชื่อนิสิต:</span>
-                    <button
-                      type="button"
-                      onClick={() => setStudentSignFontSize((s) => Math.max(9, s - 1))}
-                      className="w-5 h-5 rounded bg-indigo-50 hover:bg-indigo-100 font-bold text-indigo-800 cursor-pointer"
-                      title="ลดขนาดตัวอักษรชื่อ-นามสกุล"
-                    >
-                      -
-                    </button>
-                    <span className="w-7 text-center font-bold text-indigo-900">{studentSignFontSize}pt</span>
-                    <button
-                      type="button"
-                      onClick={() => setStudentSignFontSize((s) => Math.min(24, s + 1))}
-                      className="w-5 h-5 rounded bg-indigo-50 hover:bg-indigo-100 font-bold text-indigo-800 cursor-pointer"
-                      title="เพิ่มขนาดตัวอักษรชื่อ-นามสกุล"
-                    >
-                      +
-                    </button>
-                  </div>
-                )}
-
-                {/* Student Signature (Name) Shift */}
-                {showStudentSign && (
-                  <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-purple-200 shadow-sm text-xs">
-                    <span className="font-semibold text-slate-600">ตำแหน่ง (ชื่อ):</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStudentSignAlign('left');
-                        setStudentSignOffsetX(0);
-                      }}
-                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
-                        studentSignAlign === 'left' && studentSignOffsetX === 0
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                      title="จัดชิดซ้ายของจุดไข่ปลา"
-                    >
-                      ◀ ซ้าย
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStudentSignAlign('center');
-                        setStudentSignOffsetX(0);
-                      }}
-                      className={`px-2.5 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
-                        studentSignAlign === 'center' && studentSignOffsetX === 0
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                      title="จัดกึ่งกลางของจุดไข่ปลา"
-                    >
-                      กึ่งกลาง
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStudentSignAlign('right');
-                        setStudentSignOffsetX(0);
-                      }}
-                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
-                        studentSignAlign === 'right' && studentSignOffsetX === 0
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                      }`}
-                      title="จัดชิดขวาของจุดไข่ปลา"
-                    >
-                      ขวา ▶
-                    </button>
-                    {/* Fine-tuning offset nudge */}
-                    <div className="flex items-center gap-0.5 ml-1 pl-1.5 border-l border-slate-200">
-                      <button
-                        type="button"
-                        onClick={() => setStudentSignOffsetX((x) => x - 5)}
-                        className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs flex items-center justify-center cursor-pointer"
-                        title="ขยับละเอียดไปทางซ้าย (-5px)"
-                      >
-                        -
-                      </button>
-                      <span className="font-mono text-[10px] text-slate-500 w-8 text-center" title="ระยะขยับละเอียด (px)">
-                        {studentSignOffsetX > 0 ? `+${studentSignOffsetX}` : studentSignOffsetX}px
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setStudentSignOffsetX((x) => x + 5)}
-                        className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 font-bold text-xs flex items-center justify-center cursor-pointer"
-                        title="ขยับละเอียดไปทางขวา (+5px)"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Toggle Elements */}
-                <div className="flex items-center gap-3 bg-white px-3 py-1 rounded-xl border border-purple-200 shadow-sm">
-                  <label className="flex items-center gap-1 font-semibold text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showPhotoBox}
-                      onChange={(e) => setShowPhotoBox(e.target.checked)}
-                      className="rounded text-purple-600"
-                    />
-                    <span>กรอบรูป 1.5 - 2&quot;</span>
-                  </label>
-                  <label className="flex items-center gap-1 font-semibold text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showStudentSign}
-                      onChange={(e) => setShowStudentSign(e.target.checked)}
-                      className="rounded text-purple-600"
-                    />
-                    <span>ลายเซ็นนิสิต</span>
-                  </label>
-                  <label className="flex items-center gap-1 font-semibold text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showQrCode}
-                      onChange={(e) => setShowQrCode(e.target.checked)}
-                      className="rounded text-purple-600"
-                    />
-                    <span>QR Code</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="text-[11px] text-amber-800 bg-amber-50/80 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span><b>คำแนะนำ:</b> ท่านสามารถใช้เมาส์คลิกที่ข้อความใดๆ ในเอกสารด้านล่างนี้ เพื่อพิมพ์แก้ไขคำ เปลี่ยนชื่อธนาคาร หรือพิมพ์/ลบจุดไข่ปลาได้ทันทีก่อนสั่งพิมพ์หรือดาวน์โหลด PDF</span>
-              </div>
-            </div>
-
-            {/* Official Paper Letter Canvas Desk Wrapper (Exact A4 210mm x 297mm Layout) */}
-            <div className="w-full overflow-x-auto bg-slate-200/60 p-4 sm:p-8 rounded-2xl flex justify-center border border-slate-200">
-              <div
-                id="printable-certificate"
-                style={{
-                  fontFamily: docFontFamily,
-                  width: '210mm',
-                  minHeight: '297mm',
-                  padding: '25mm 20mm 15mm 25mm',
-                  boxSizing: 'border-box',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  backgroundColor: '#ffffff',
-                }}
-                className="bg-white border border-slate-300 shadow-2xl text-slate-900 shrink-0 print:border-none print:shadow-none print:m-0"
-              >
-              {/* TEMPLATE 1: BANK_LETTER (หนังสือขอความอนุเคราะห์ธนาคาร หน้า 1) */}
-              {previewTemplate === 'BANK_LETTER' && (
-                <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Top Reference */}
-                    <div className="flex justify-between items-start pb-2" style={{ fontSize: `${docFontSize}pt` }}>
-                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                        ที่ อว 8002 / {previewRequest.docNo || '077'}
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="text-right outline-none focus:bg-purple-50">
-                        {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5 pt-2" style={{ fontSize: `${docFontSize}pt` }}>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                        <span className="font-bold">เรื่อง</span> ขอความอนุเคราะห์อัพเดตการใช้ Mobile Banking ให้แก่นิสิต / เปิดบัญชีธนาคาร
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                        <span className="font-bold">เจริญพร</span> ผู้จัดการธนาคารกรุงไทย สาขาโลตัส นวนคร
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                        <span className="font-bold">สิ่งที่ส่งมาด้วย</span> หนังสือรับรองนิสิต จำนวน 1 ฉบับ
-                      </div>
-                    </div>
-
-                    <p
-                      contentEditable
-                      suppressContentEditableWarning
-                      className="indent-8 outline-none focus:bg-purple-50 pt-2 text-justify"
-                      style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
-                    >
-                      เนื่องด้วย <strong className="font-bold">{previewRequest.fullName}</strong> สัญชาติ{' '}
-                      <strong className="font-bold">{previewRequest.nationality || 'Bangladeshi'}</strong> ประเทศ{' '}
-                      <strong className="font-bold">{previewRequest.country || 'Bangladesh'}</strong>{' '}
-                      {previewRequest.passportNo && (
-                        <>ถือหนังสือเดินทางเลขที่ <strong className="font-mono font-bold">{previewRequest.passportNo}</strong> </>
-                      )}
-                      รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> เป็นนิสิตหลักสูตร
-                      {previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} (ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร 4 ปี) ชั้นปีที่{' '}
-                      {previewRequest.studentCode.substring(0, 2) ? '1' : '1'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} (ภาคภาษาอังกฤษ)
-                      คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย มีความประสงค์จะทำธุรกรรมกับธนาคาร เพื่ออำนวยความสะดวกในการทำธุรกรรมกับมหาวิทยาลัยในระหว่างที่กำลังศึกษาอยู่ในภาควิชาพระพุทธศาสนา คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา
-                    </p>
-
-                    <p
-                      contentEditable
-                      suppressContentEditableWarning
-                      className="indent-8 outline-none focus:bg-purple-50"
-                      style={{ fontSize: `${docFontSize}pt` }}
-                    >
-                      จึงเจริญพรมาเพื่อให้ความอนุเคราะห์ในเรื่องการเปิดบัญชีหรืออัพเดตการใช้งานแอปพลิเคชั่นของธนาคารแก่นิสิตดังกล่าว จักขอบคุณยิ่ง
-                    </p>
-
-                    <div
-                      className="pt-6 text-center ml-auto w-72 space-y-1"
-                      style={{
-                        marginTop: `${docSignerOffset}px`,
-                        fontSize: `${signerFontSize}pt`,
-                      }}
-                    >
-                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                        ขอเจริญพร
-                      </div>
-                      <div className="h-10" />
-                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                        ({customSigner.name || 'พระครูสิริรัตนบัณฑิต, ผศ.ดร.'})
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                        {customSigner.title || 'รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์'}
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="text-slate-600 outline-none focus:bg-purple-50">
-                        {settings.universityNameTh}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bottom Footer (ชิดล่างสุดของเอกสาร) */}
-                  <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
-                      <p className="font-bold text-slate-800">ติดต่อผู้ประสานงาน:</p>
-                      <p>{settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh}` : 'สำนักงานคณะพุทธศาสตร์'}</p>
-                      <p>โทร. {settings.contactPhone || '035-247-8000 ต่อ 8323'}</p>
-                      <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
-                      <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
-                    </div>
-
-                    <div className="flex flex-col items-center text-center space-y-1">
-                      <div contentEditable suppressContentEditableWarning className="text-[11px] font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded">
-                        ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
-                      </div>
-                      {showQrCode && qrCodeDataUrl && (
-                        <img src={qrCodeDataUrl} alt="Verify" className="w-14 h-14 object-contain" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TEMPLATE 2: ENG_CERT (TO WHOM IT MAY CONCERN หน้า PDF 2) */}
-              {previewTemplate === 'ENG_CERT' && (
-                <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Top Left Office Header - Top Right is clean/empty */}
-                    <div
-                      className="flex justify-between items-start pb-2 transition-all"
-                      style={{
-                        marginTop: `${headerTopSpacing}px`,
-                        fontSize: `${docFontSize}pt`,
-                      }}
-                    >
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 space-y-0.5">
-                        <p className="font-bold text-slate-900">Office of Dean</p>
-                        <p>Tel. {settings.contactPhone || '0-3524-8000 ext. 8323'}</p>
-                        <p>Fax. 0-3524-8096</p>
-                        <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
-                        <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
-                        <p className="font-mono font-bold pt-1 text-slate-900">
-                          MCU No. 8002 / {previewRequest.docNo || '166'}
-                        </p>
-                      </div>
-                      <div></div>
-                    </div>
-
-                    {/* Centered Title with customizable vertical spacing */}
-                    <div
-                      className="pb-2 text-center transition-all"
-                      style={{ paddingTop: `${headerTitleSpacing}px` }}
-                    >
-                      <span
-                        contentEditable
-                        suppressContentEditableWarning
-                        className="font-bold tracking-wider outline-none focus:bg-purple-50"
-                        style={{ fontSize: `${Math.round(docFontSize * 1.5)}pt` }}
-                      >
-                        TO WHOM IT MAY CONCERN
-                      </span>
-                    </div>
-
-                    <p
-                      contentEditable
-                      suppressContentEditableWarning
-                      className="indent-8 outline-none focus:bg-purple-50 pt-2 leading-relaxed text-justify"
-                      style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
-                    >
-                      This is to certify that <strong className="font-bold">{previewRequest.fullName}</strong>, whose age is{' '}
-                      <strong className="font-bold">{previewRequest.age || '29'}</strong> years old,{' '}
-                      <strong className="font-bold">{previewRequest.nationality || 'Myanmar'}</strong> Nationality, holding Passport No.{' '}
-                      <strong className="font-mono font-bold">{previewRequest.passportNo || 'MF772427'}</strong>, is currently enrolled as a student of the Faculty of Buddhism, Mahachulalongkornrajavidyalaya University, Lamsai Sub-District, Wangnoi District, Phra Nakhon Si Ayutthaya Province, 13170, Thailand. He/She is studying in the {previewRequest.degreeLevel || 'Bachelor of Arts Program (4-Year Undergraduate Program)'}, Major in {previewRequest.major || 'Religion and Philosophy (English Program)'}, Year 4, in the second semester of an Academic Year 2026, His/Her student identification is <strong className="font-mono font-bold">{previewRequest.studentCode}</strong>.
-                    </p>
-
-                    <p
-                      contentEditable
-                      suppressContentEditableWarning
-                      className="indent-8 outline-none focus:bg-purple-50"
-                      style={{ fontSize: `${docFontSize}pt` }}
-                    >
-                      This letter of certification is therefore issued as evidence.
-                    </p>
-
-                    <div
-                      contentEditable
-                      suppressContentEditableWarning
-                      className="text-center pt-2 outline-none focus:bg-purple-50"
-                      style={{ fontSize: `${docFontSize}pt` }}
-                    >
-                      Issued on {new Date(previewRequest.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </div>
-
-                    {/* 1. Dean / Authorized Signer Block: ABOVE the photo box, on the right (Adjustable font size) */}
-                    <div
-                      className="pt-6 ml-auto w-80 text-center space-y-1"
-                      style={{
-                        marginTop: `${docSignerOffset}px`,
-                        fontSize: `${signerFontSize}pt`,
-                      }}
-                    >
-                      <div className="h-10" />
-                      <div contentEditable suppressContentEditableWarning className="font-bold text-slate-900 outline-none focus:bg-purple-50">
-                        ({customSigner.name ? customSigner.name : 'Asst. Prof. Phrakhru Sirirattanabundit, Ph.D.'})
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="text-slate-800 font-medium outline-none focus:bg-purple-50">
-                        {customSigner.title ? customSigner.title : 'Vice Dean, Faculty of Buddhism'}
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="text-slate-600 outline-none focus:bg-purple-50">
-                        Mahachulalongkornrajavidyalaya University
-                      </div>
-                    </div>
-
-                    {/* 2. Photo Box & Student Signature: BELOW Dean signature, on the left */}
-                    <div className="pt-2 flex items-end justify-between">
-                      <div className="space-y-3">
-                        {showPhotoBox && (
-                          <div
-                            className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 transition-transform"
-                            style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
-                          >
-                            <span>ติดรูปถ่าย<br />Photo 1.5 - 2&quot;</span>
-                          </div>
-                        )}
-                        {showStudentSign && (
-                          <div className="pt-1 inline-flex flex-col">
-                            <div className="flex items-baseline gap-1 text-slate-800" style={{ fontSize: `${Math.max(11, docFontSize - 2)}pt` }}>
-                              <span className="shrink-0 font-medium">Signature</span>
-                              <span
-                                contentEditable
-                                suppressContentEditableWarning
-                                className="tracking-wider font-mono outline-none focus:bg-purple-50 select-text"
-                                title="คลิกเพื่อลบหรือพิมพ์จุดไข่ปลาได้อิสระ"
-                              >
-                                {'.'.repeat(dotsCount)}
-                              </span>
-                            </div>
-                            <div
-                              className="w-full flex"
-                              style={{
-                                justifyContent:
-                                  studentSignAlign === 'left'
-                                    ? 'flex-start'
-                                    : studentSignAlign === 'right'
-                                    ? 'flex-end'
-                                    : 'center',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  transform: `translateX(${studentSignOffsetX}px)`,
-                                  fontSize: `${studentSignFontSize}pt`,
-                                  whiteSpace: 'nowrap',
-                                }}
-                                className="mt-1 font-bold text-slate-900 transition-all outline-none focus:bg-purple-50 whitespace-nowrap cursor-text"
-                                contentEditable
-                                suppressContentEditableWarning
-                                title="คลิกเพื่อแก้ไขชื่อ-นามสกุลได้โดยตรง"
-                              >
-                                ({previewRequest.fullName})
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 3. Bottom Footer (ชิดล่างสุดของเอกสาร) */}
-                  <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
-                      <p className="font-bold text-slate-800">{settings.facultyNameEn ? `Faculty of ${settings.facultyNameEn.replace(/^Faculty of /i, '')}` : 'Faculty of Buddhism'}</p>
-                      <p>Tel. {settings.contactPhone ? `+66 ${settings.contactPhone.replace(/^0/, '')}` : '+66 35 248 000 ext. 8323'}</p>
-                      <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
-                      <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
-                    </div>
-
-                    <div className="flex flex-col items-center text-center space-y-1">
-                      <div contentEditable suppressContentEditableWarning className="text-[11px] font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded">
-                        ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'Academic Officer'}</span>
-                      </div>
-                      {showQrCode && qrCodeDataUrl && (
-                        <img src={qrCodeDataUrl} alt="QR" className="w-14 h-14 object-contain" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TEMPLATE 3: INTERNAL_MEMO (บันทึกข้อความราชการ หน้า 10) */}
-              {previewTemplate === 'INTERNAL_MEMO' && (
-                <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Garuda Crest & Heading */}
-                    <div className="flex items-center gap-4 border-b pb-3">
-                      <div className="w-14 h-14 rounded-full bg-slate-50 border flex items-center justify-center p-1 overflow-hidden shrink-0">
-                        <span className="text-3xl">🦅</span>
-                      </div>
-                      <div className="text-center flex-1">
-                        <h2 className="text-2xl font-black tracking-wide">บันทึกข้อความ</h2>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs border-b pb-3 pt-2">
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                        <span className="font-bold">ส่วนงาน:</span> {settings.facultyNameTh} {settings.universityNameTh} โทร. {settings.contactPhone}
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="text-right outline-none focus:bg-purple-50">
-                        <span className="font-bold">วันที่:</span> {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                        <span className="font-bold">ที่:</span> อว 8002 / {previewRequest.docNo || 'xxx'}
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                        <span className="font-bold">เรื่อง:</span> ขอความอนุเคราะห์ออกหนังสือรับรองให้แก่นิสิต
-                      </div>
-                    </div>
-
-                    <div contentEditable suppressContentEditableWarning className="font-bold text-xs pt-1 outline-none focus:bg-purple-50">
-                      เรียน ผู้อำนวยการกองกิจการนิสิต / คณบดีคณะพุทธศาสตร์
-                    </div>
-
-                    <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50 pt-2 leading-relaxed">
-                      ด้วย <strong className="font-bold">{previewRequest.fullName}</strong> รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> อายุ {previewRequest.age || '-'} ปี สัญชาติ {previewRequest.nationality || '-'} {previewRequest.passportNo && <>ถือหนังสือเดินทางเลขที่ {previewRequest.passportNo}</>} เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} ได้ยื่นคำร้องเพื่อขอรับรอง{previewRequest.requestPurpose || previewRequest.certType}
-                    </p>
-
-                    <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
-                      ในการนี้ คณะพุทธศาสตร์ จึงขอความอนุเคราะห์ในการออกหนังสือรับรองให้แก่นิสิตดังกล่าว เพื่อเป็นเอกสารประกอบการดำเนินการต่อไป
-                    </p>
-
-                    <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
-                      จึงเรียนมาเพื่อโปรดทราบและดำเนินการต่อไป
-                    </p>
-
-                    <div
-                      className="pt-6 text-center ml-auto w-72 space-y-1"
-                      style={{
-                        marginTop: `${docSignerOffset}px`,
-                        fontSize: `${signerFontSize}pt`,
-                      }}
-                    >
-                      <div className="h-10" />
-                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                        ({customSigner.name || 'พระครูสิริรัตนบัณฑิต, ผศ.ดร.'})
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50">
-                        {customSigner.title || 'รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์'}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bottom Footer */}
-                  <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
-                      <p className="font-bold text-slate-800">{settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh}` : 'สำนักงานคณะพุทธศาสตร์'}</p>
-                      <p>โทรศัพท์ {settings.contactPhone || '035-247-8000 ต่อ 8323'}</p>
-                      <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
-                      <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
-                    </div>
-
-                    <div className="flex flex-col items-center text-center space-y-1">
-                      <div contentEditable suppressContentEditableWarning className="text-[11px] font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded">
-                        ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
-                      </div>
-                      {showQrCode && qrCodeDataUrl && (
-                        <img src={qrCodeDataUrl} alt="QR Code" className="w-14 h-14 object-contain" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TEMPLATE 4: THAI_STANDARD (หนังสือรับรองนิสิตมาตรฐานภาษาไทย หน้า 2-9) */}
-              {previewTemplate === 'THAI_STANDARD' && (
-                <div className="space-y-4 text-justify flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Header Reference: ที่ อว 8002 / docNo with same docFontSize */}
-                    <div
-                      className="flex justify-between items-start pb-2 transition-all"
-                      style={{
-                        marginTop: `${headerTopSpacing}px`,
-                        fontSize: `${docFontSize}pt`,
-                      }}
-                    >
-                      <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50">
-                        ที่ อว 8002 / {previewRequest.docNo || 'xxx'}
-                      </div>
-                      {/* Top right removed as requested */}
-                      <div></div>
-                    </div>
-
-                    {/* Title with customizable vertical spacing (เว้นช่องใส่ตรา 1-2 นิ้ว หรือแบบฟอร์มสำเร็จรูป) */}
-                    <div
-                      className="pb-2 text-center transition-all"
-                      style={{ paddingTop: `${headerTitleSpacing}px` }}
-                    >
-                      <span
-                        contentEditable
-                        suppressContentEditableWarning
-                        className="font-bold tracking-wide outline-none focus:bg-purple-50"
-                        style={{ fontSize: `${Math.round(docFontSize * 1.5)}pt` }}
-                      >
-                        หนังสือรับรอง
-                      </span>
-                    </div>
-
-                    {/* Body Paragraph: Font size matches ที่ อว, text-justify */}
-                    <p
-                      contentEditable
-                      suppressContentEditableWarning
-                      className="indent-10 leading-relaxed outline-none focus:bg-purple-50 pt-2 text-justify"
-                      style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
-                    >
-                      โดยหนังสือนี้ขอรับรองว่า <strong className="font-bold">{previewRequest.fullName}</strong>{' '}
-                      {previewRequest.age && <>อายุ <strong className="font-bold">{previewRequest.age}</strong> ปี </>}
-                      สัญชาติ <strong className="font-bold">{previewRequest.nationality || 'ไทย'}</strong>{' '}
-                      {previewRequest.country && previewRequest.country !== 'Thailand' && (
-                        <>ประเทศ <strong className="font-bold">{previewRequest.country}</strong> </>
-                      )}
-                      {previewRequest.passportNo && (
-                        <>ถือหนังสือเดินทางเลขที่ <strong className="font-mono font-bold">{previewRequest.passportNo}</strong> และวีซ่าประเภท {previewRequest.visaType || 'คนอยู่ชั่วคราว (Non-Immigrant Visa)'} </>
-                      )}
-                      เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'}{' '}
-                      (ระดับ{previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร 4 ปี) ชั้นปีที่{' '}
-                      {previewRequest.studentCode.substring(0, 2) ? '2' : '1'} สาขาวิชา {previewRequest.major || 'พระพุทธศาสนา'}{' '}
-                      ({previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai' ? 'ภาคภาษาไทย' : 'ภาคภาษาอังกฤษ'}) มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย รหัสประจำตัวนิสิต{' '}
-                      <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> เพื่อเป็นหลักฐาน สำหรับ
-                      <strong className="font-bold underline ml-1">{previewRequest.requestPurpose || previewRequest.certType}</strong> จึงออกหนังสือนี้ไว้เป็นสำคัญ
-                    </p>
-
-                    <div
-                      contentEditable
-                      suppressContentEditableWarning
-                      className="text-center pt-2 outline-none focus:bg-purple-50"
-                      style={{ fontSize: `${docFontSize}pt` }}
-                    >
-                      ให้ไว้ ณ วันที่ {new Date(previewRequest.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </div>
-
-                    {/* 1. Dean / Authorized Signer Block: ABOVE THE PHOTO BOX (ขนาดปรับได้ สีน้ำเงิน) */}
-                    <div
-                      className="pt-6 ml-auto w-80 text-center space-y-1.5"
-                      style={{
-                        marginTop: `${docSignerOffset}px`,
-                        fontSize: `${signerFontSize}pt`,
-                      }}
-                    >
-                      <div className="h-10" />
-                      <div contentEditable suppressContentEditableWarning className="font-bold text-slate-900 outline-none focus:bg-purple-50">
-                        ({customSigner.name || 'พระครูสิริรัตนบัณฑิต, ผศ.ดร.'})
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="text-slate-800 font-medium outline-none focus:bg-purple-50">
-                        {customSigner.title || 'รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์'}
-                      </div>
-                      <div contentEditable suppressContentEditableWarning className="text-slate-600 outline-none focus:bg-purple-50">
-                        {settings.facultyNameTh} {settings.universityNameTh}
-                      </div>
-                    </div>
-
-                    {/* 2. Student Photo Box & Student Signature Block: BELOW DEAN SIGNATURE */}
-                    <div className="pt-2 flex items-end justify-between">
-                      <div className="space-y-3">
-                        {showPhotoBox && (
-                          <div
-                            className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 shadow-sm transition-transform"
-                            style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
-                          >
-                            <span>ติดรูปถ่าย<br />1.5 - 2 นิ้ว</span>
-                          </div>
-                        )}
-                        {showStudentSign && (
-                          <div className="pt-1 inline-flex flex-col">
-                            <div className="flex items-baseline gap-1 text-slate-800" style={{ fontSize: `${Math.max(11, docFontSize - 2)}pt` }}>
-                              <span className="shrink-0 font-medium">ลงชื่อ</span>
-                              <span
-                                contentEditable
-                                suppressContentEditableWarning
-                                className="tracking-wider font-mono outline-none focus:bg-purple-50 select-text"
-                                title="คลิกเพื่อลบหรือพิมพ์จุดไข่ปลาได้อิสระ"
-                              >
-                                {'.'.repeat(dotsCount)}
-                              </span>
-                            </div>
-                            {/* (ชื่อ-นามสกุล): จัดกึ่งกลาง ชิดซ้าย หรือชิดขวาได้อัตโนมัติ พร้อมปุ่มขยับละเอียด */}
-                            <div
-                              className="w-full flex"
-                              style={{
-                                justifyContent:
-                                  studentSignAlign === 'left'
-                                    ? 'flex-start'
-                                    : studentSignAlign === 'right'
-                                    ? 'flex-end'
-                                    : 'center',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  transform: `translateX(${studentSignOffsetX}px)`,
-                                  fontSize: `${studentSignFontSize}pt`,
-                                  whiteSpace: 'nowrap',
-                                }}
-                                className="mt-1 font-bold text-slate-900 transition-all outline-none focus:bg-purple-50 whitespace-nowrap cursor-text"
-                                contentEditable
-                                suppressContentEditableWarning
-                                title="คลิกเพื่อแก้ไขชื่อ-นามสกุลได้โดยตรง"
-                              >
-                                ({previewRequest.fullName})
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 3. Footer (ภาพที่ 2 และ 3): ชิดล่างสุดของเอกสาร */}
-                  <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
-                    {/* ภาพที่ 2: ข้อมูลติดต่อสำนักงาน (แก้ไขข้อความได้สด) */}
-                    <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
-                      <p className="font-bold text-slate-800">{settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh}` : 'สำนักงานคณะพุทธศาสตร์'}</p>
-                      <p>โทรศัพท์ {settings.contactPhone || '035-247-8000 ต่อ 8323'}</p>
-                      <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
-                      <p className="text-purple-700 font-mono">{settings.systemServiceUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://fb-service.mcu.ac.th/')}</p>
-                    </div>
-
-                    {/* ภาพที่ 3: ผู้ออกเอกสาร/ปริ้นเอกสาร + QR Code */}
-                    <div className="flex flex-col items-center text-center space-y-1">
-                      <div contentEditable suppressContentEditableWarning className="text-[11px] font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded">
-                        ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
-                      </div>
-                      {showQrCode && qrCodeDataUrl && (
-                        <img src={qrCodeDataUrl} alt="QR Code" className="w-14 h-14 object-contain" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-              </div>
-            </div>
-
-            {/* Actions Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t">
-              <Link
-                href={`/verify?docNo=${encodeURIComponent(previewRequest.docNo || previewRequest.id)}`}
-                target="_blank"
-                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition"
-              >
-                <ExternalLink className="w-4 h-4 text-purple-600" />
-                <span>ตรวจสอบความถูกต้อง (Verify View)</span>
-              </Link>
-
-              <div className="flex items-center gap-2">
-                {/* Direct PDF Download Button */}
-                <button
-                  type="button"
-                  onClick={handleDownloadPdf}
-                  disabled={pdfDownloading}
-                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md transition disabled:opacity-50"
-                  title="ดาวน์โหลดเป็นไฟล์ PDF คุณภาพสูงลงเครื่องทันที"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>{pdfDownloading ? 'กำลังสร้างไฟล์ PDF...' : 'ดาวน์โหลดไฟล์ PDF (Download)'}</span>
-                </button>
-
-                {/* Print Button */}
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md transition"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>สั่งพิมพ์เอกสาร (Print)</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Print Stylesheet for exact A4 paper formatting */}
-            <style jsx global>{`
-              @page {
-                size: A4 portrait;
-                margin: 0;
-              }
-              @media print {
-                html, body {
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  background: #ffffff !important;
-                }
-                body * {
-                  visibility: hidden !important;
-                }
-                #printable-certificate, #printable-certificate * {
-                  visibility: visible !important;
-                }
-                #printable-certificate {
-                  position: absolute !important;
-                  left: 0 !important;
-                  top: 0 !important;
-                  width: 210mm !important;
-                  height: 297mm !important;
-                  min-height: 297mm !important;
-                  max-height: 297mm !important;
-                  padding: 25mm 20mm 15mm 25mm !important;
-                  margin: 0 !important;
-                  background: #ffffff !important;
-                  border: none !important;
-                  box-shadow: none !important;
-                  display: flex !important;
-                  flex-direction: column !important;
-                  justify-content: space-between !important;
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
-                  overflow: hidden !important;
-                }
-              }
-            `}</style>
-            </>
-          )}
-          </div>
-        </div>
-      )}
+      <AdminCertificatePreviewModal
+        previewRequest={previewRequest}
+        setPreviewRequest={setPreviewRequest}
+        previewTab={previewTab}
+        setPreviewTab={setPreviewTab}
+        requests={requests}
+        settings={settings}
+        activeSignatoriesList={activeSignatoriesList}
+        currentUser={currentUser}
+        handleApprove={handleApprove}
+        handleOpenRejectModal={handleOpenRejectModal}
+        setRejectReasonInput={setRejectReasonInput}
+        loadData={loadData}
+        setActionSuccess={setActionSuccess}
+      />
 
       <CertRejectModal
         rejectingRequest={rejectingRequest}
@@ -3957,32 +2278,6 @@ ${coursesText}
         onClose={() => setRejectingRequest(null)}
         onConfirm={handleConfirmReject}
       />
-
-      {/* ─────────────────────────────────────────────────────────────
-          MODAL: LIGHTBOX ZOOM
-         ───────────────────────────────────────────────────────────── */}
-      {zoomImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm cursor-zoom-out"
-          onClick={() => setZoomImage(null)}
-        >
-          <div className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl p-2 overflow-hidden shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setZoomImage(null)}
-              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/80 hover:bg-white text-slate-900 flex items-center justify-center font-bold text-sm shadow-md cursor-pointer"
-            >
-              ✕
-            </button>
-            <img
-              src={zoomImage}
-              alt="ภาพขยายเอกสารแนบ"
-              className="max-h-[85vh] max-w-full object-contain mx-auto rounded-lg"
-            />
-          </div>
-        </div>
-      )}
-
       <ArchiveSummaryModal
         isOpen={isArchiveModalOpen}
         availableYears={availableYears}
@@ -3998,9 +2293,24 @@ ${coursesText}
       <TeachingSlipModal
         user={teachingSlipUser}
         teachingSlipQr={teachingSlipQr}
+        availableAcademicYears={availableAcademicYears}
         getCoursesForInstructor={getCoursesForInstructor}
         onCopyLineMessage={handleCopyLineTeachingMessage}
         onClose={() => setTeachingSlipUser(null)}
+        settings={settings}
+        signatories={activeSignatoriesList}
+        adminName={currentUser?.name || 'ผู้ดูแลระบบ'}
+      />
+
+      <BatchTeachingSlipsModal
+        isOpen={isBatchTeachingSlipOpen}
+        onClose={() => setIsBatchTeachingSlipOpen(false)}
+        instructors={users.filter((u) => u.role === 'INSTRUCTOR' || u.role === 'ADMIN' || u.role === 'OFFICER' || u.role === 'SUPER_ADMIN')}
+        availableAcademicYears={availableAcademicYears}
+        getCoursesForInstructor={getCoursesForInstructor}
+        settings={settings}
+        signatories={activeSignatoriesList}
+        adminName={currentUser?.name || 'ผู้ดูแลระบบ'}
       />
 
       <BulkPromotionModal
@@ -4026,6 +2336,14 @@ ${coursesText}
         onCustomFieldChange={handlePromotionCustomFieldChange}
         promotionSubmitting={promotionSubmitting}
         onExecuteBulkPromotion={handleExecuteBulkPromotion}
+      />
+
+      {/* New Academic Year Recommended Workflow Modal */}
+      <NewAcademicYearWorkflowModal
+        isOpen={isNewYearWorkflowModalOpen}
+        onClose={() => setIsNewYearWorkflowModalOpen(false)}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+        onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
       />
       {/* Modals from components */}
       <StudentDeleteModal

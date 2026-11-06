@@ -41,6 +41,7 @@ import {
   Trash2,
   AlertTriangle
 } from 'lucide-react';
+import { getAuthUser, isAdminOrOfficer, saveAuthSession } from '@/lib/auth-client';
 
 interface Student {
   studentCode: string;
@@ -248,6 +249,38 @@ function parseCSVToStudents(rawText: string): Partial<Student>[] {
 }
 
 export default function StudentsPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  useEffect(() => {
+    const user = getAuthUser();
+    if (user) {
+      setCurrentUser(user);
+      setIsAuthChecking(false);
+    } else {
+      fetch('/api/auth')
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.authenticated && d.user) {
+            setCurrentUser(d.user);
+            saveAuthSession(d.user, true);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setIsAuthChecking(false));
+    }
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const qSearch = params.get('search');
+      if (qSearch) {
+        setSearch(qSearch);
+      }
+    }
+  }, []);
+
+  const isAdmin = isAdminOrOfficer(currentUser);
+
   const [students, setStudents] = useState<Student[]>([]);
   const [filtered, setFiltered] = useState<Student[]>([]);
   const [search, setSearch] = useState('');
@@ -317,6 +350,18 @@ export default function StudentsPage() {
         if (data.success) {
           setStudents(data.data);
           setFiltered(data.data);
+
+          if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const qSearch = params.get('search')?.trim();
+            const shouldEdit = params.get('edit') === 'true';
+            if (qSearch && shouldEdit && Array.isArray(data.data)) {
+              const target = data.data.find((s: Student) => s.studentCode === qSearch);
+              if (target) {
+                startEdit(target);
+              }
+            }
+          }
         }
       })
       .finally(() => setLoading(false));
@@ -731,6 +776,37 @@ export default function StudentsPage() {
   const intlCount = students.length - thaiCount;
   const thaiProgramCount = students.filter((s) => s.programType === 'THAI').length;
   const engProgramCount = students.filter((s) => s.programType === 'ENGLISH').length;
+
+  // Access Control: Only Admin / Super Admin can view the Student Directory
+  if (!isAuthChecking && !isAdmin) {
+    return (
+      <div className="max-w-xl mx-auto my-16 p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-4 animate-fade-in">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
+          <ShieldCheck className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+          พื้นที่สงวนสิทธิ์เฉพาะผู้ดูแลระบบ (Admin Only)
+        </h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+          ระบบฐานข้อมูลทะเบียนนิสิต (Directory) สงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบและเจ้าหน้าที่ทะเบียน คณะพุทธศาสตร์ เท่านั้น เพื่อคุ้มครองข้อมูลส่วนบุคคลของนิสิต
+        </p>
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            href="/"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition"
+          >
+            ← กลับสู่หน้าหลัก
+          </Link>
+          <Link
+            href="/admin"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-semibold text-xs transition shadow-md"
+          >
+            เข้าสู่ระบบผู้ดูแลระบบ (Login Admin) →
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

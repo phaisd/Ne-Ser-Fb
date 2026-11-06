@@ -226,5 +226,65 @@
     "description": "สำหรับผู้ผ่านการคัดเลือกเข้าเป็นนิสิตใหม่ เพื่อใช้เป็นหลักฐานยืนยันสิทธิ์การเข้าศึกษา ประกอบการขออนุมัติลาศึกษาต่อจากต้นสังกัด หรือยื่นขอรับทุนการศึกษา",
     "templateType": "THAI_ADMISSION",
     "isActive": true
+  },
+  {
+    "id": "cert-staff-employment",
+    "code": "STAFF-01",
+    "name": "หนังสือรับรองการปฏิบัติงาน / การเป็นอาจารย์ผู้สอน (Certificate of Employment)",
+    "targetAudience": "STAFF",
+    "badge": "อาจารย์/บุคลากร",
+    "category": "STAFF",
+    "iconName": "UserCheck",
+    "description": "รับรองการเป็นอาจารย์ประจำ อาจารย์พิเศษ อาจารย์ผู้ช่วยสอน หรือเจ้าหน้าที่ สังกัดคณะพุทธศาสตร์ มจร. เพื่อประกอบการติดต่อหน่วยงานราชการ สมัครงาน ศึกษาต่อ หรือยื่นขอวีซ่า",
+    "templateType": "STAFF_EMPLOYMENT",
+    "isActive": true
+  },
+  {
+    "id": "cert-staff-workload",
+    "code": "STAFF-02",
+    "name": "หนังสือรับรองภาระงานสอน / การปฏิบัติการสอน (Certificate of Teaching Workload)",
+    "targetAudience": "STAFF",
+    "badge": "อาจารย์/บุคลากร",
+    "category": "STAFF",
+    "iconName": "BookOpen",
+    "description": "รับรองภาระงานสอนและรายวิชาที่รับผิดชอบสอนในแต่ละภาคการศึกษา เพื่อประกอบการประเมินผลงานทางวิชาการ หรือการต่อสัญญาจ้าง",
+    "templateType": "STAFF_WORKLOAD",
+    "isActive": true
+  },
+  {
+    "id": "cert-staff-salary",
+    "code": "STAFF-03",
+    "name": "หนังสือรับรองเงินเดือน / รายได้และค่าตอบแทน (Salary & Remuneration Certificate)",
+    "targetAudience": "STAFF",
+    "badge": "อาจารย์/บุคลากร",
+    "category": "STAFF",
+    "iconName": "Landmark",
+    "description": "รับรองอัตราเงินเดือนและค่าตอบแทนการสอน เพื่อใช้เป็นหลักฐานประกอบการยื่นขอสินเชื่อ บัตรเครดิต หรือธุรกรรมทางการเงินกับสถาบันการเงิน",
+    "templateType": "STAFF_SALARY",
+    "isActive": true
+  },
+  {
+    "id": "cert-staff-adjunct-ta",
+    "code": "STAFF-04",
+    "name": "หนังสือรับรองการเป็นอาจารย์พิเศษ / อาจารย์ผู้ช่วยสอน (Adjunct Lecturer / TA Certificate)",
+    "targetAudience": "STAFF",
+    "badge": "อาจารย์พิเศษ/ผู้ช่วยสอน",
+    "category": "STAFF",
+    "iconName": "Award",
+    "description": "รับรองการปฏิบัติหน้าที่สอนในฐานะอาจารย์พิเศษ หรือผู้ช่วยสอน (Teaching Assistant) ในรายวิชาของคณะพุทธศาสตร์",
+    "templateType": "STAFF_ADJUNCT_TA",
+    "isActive": true
+  },
+  {
+    "id": "cert-staff-mission-travel",
+    "code": "STAFF-05",
+    "name": "หนังสือรับรองการเดินทางไปปฏิบัติราชการ / ศาสนกิจ / ประชุมวิชาการ (Official Mission & Travel)",
+    "targetAudience": "STAFF",
+    "badge": "อาจารย์/บุคลากร",
+    "category": "STAFF",
+    "iconName": "PlaneTakeoff",
+    "description": "รับรองการเดินทางไปปฏิบัติหน้าที่ราชการ เดินทางไปต่างประเทศ หรือเข้าร่วมประชุมวิชาการ เพื่อขอวีซ่าหรือทำหนังสือเดินทางราชการ",
+    "templateType": "STAFF_MISSION_TRAVEL",
+    "isActive": true
   }
 ]

@@ -1,6 +1,32 @@
 import { NextResponse } from 'next/server';
 import { getCourses, createCourse, updateCourse, deleteCourse, Course, importCoursesBatch } from '@/lib/data-store';
 
+function checkCourseManageAuth(request: Request): { authorized: boolean; role?: string } {
+  const cookieHeader = request.headers.get('cookie') || '';
+  const match = cookieHeader.match(/mcu_auth_user=([^;]+)/);
+  if (!match || !match[1]) {
+    return { authorized: false };
+  }
+  try {
+    const decoded = decodeURIComponent(match[1]);
+    const user = JSON.parse(decoded);
+    const role = String(user?.role || '').toUpperCase();
+    const isAllowed =
+      role === 'SUPER_ADMIN' ||
+      role === 'ADMIN' ||
+      role === 'OFFICER' ||
+      role === 'STAFF' ||
+      user?.isSuperAdmin === true ||
+      user?.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th';
+    return {
+      authorized: isAllowed,
+      role,
+    };
+  } catch {
+    return { authorized: false };
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -60,21 +86,29 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = checkCourseManageAuth(request);
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) และเจ้าหน้าที่เท่านั้นที่มีสิทธิ์จัดการรายวิชา' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
-    console.log('POST body received:', body);
 
     // Handle Bulk Import
     if (body.action === 'import' || Array.isArray(body.courses)) {
-      console.log('Action is import, courses len:', body.courses?.length);
       const coursesList = Array.isArray(body.courses) ? body.courses : [];
       if (coursesList.length === 0) {
         return NextResponse.json({ success: false, error: 'ไม่พบรายการวิชาที่ต้องการนำเข้า' }, { status: 400 });
       }
       const mode = body.mode === 'APPEND' ? 'APPEND' : 'UPSERT';
-      console.log('Calling importCoursesBatch...');
       const result = await importCoursesBatch(coursesList, mode);
-      console.log('Result from importCoursesBatch:', result);
-      return NextResponse.json({ success: true, ...result, message: `นำเข้าสำเร็จ: เพิ่ม ${result.added} รายการ, อัปเดต ${result.updated} รายการ` });
+      return NextResponse.json({
+        success: true,
+        ...result,
+        message: `นำเข้าสำเร็จ: เพิ่ม ${result.added} รายการ, อัปเดต ${result.updated} รายการ`,
+      });
     }
 
     if (!body.courseCode || !body.courseName) {
@@ -118,6 +152,14 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const auth = checkCourseManageAuth(request);
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) และเจ้าหน้าที่เท่านั้นที่มีสิทธิ์แก้ไขรายวิชา' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const idOrCode = body.id || body.courseCode;
 
@@ -144,6 +186,14 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const auth = checkCourseManageAuth(request);
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) และเจ้าหน้าที่เท่านั้นที่มีสิทธิ์ลบรายวิชา' },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const idOrCode = searchParams.get('id') || searchParams.get('courseCode');
 

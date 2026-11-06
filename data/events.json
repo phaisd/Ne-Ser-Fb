@@ -1,0 +1,198 @@
+[
+  {
+    "id": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "title": "โครงการปฏิบัติวิปัสสนากัมมัฏฐานประจำปี นิสิตคณะพุทธศาสตร์ (Annual Meditation Practice)",
+    "description": "โครงการปฏิบัติวิปัสสนากัมมัฏฐานประจำปี สำหรับนิสิตคณะพุทธศาสตร์ ชั้นปีที่ 1 - 4 ทั้งหลักสูตรภาษาไทยและภาษาอังกฤษ รวมระยะเวลา 12 วัน ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม",
+    "location": "ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม",
+    "startDate": "2026-01-12",
+    "endDate": "2025-12-25",
+    "capacity": 200,
+    "isActive": true,
+    "academicYear": "2568",
+    "activityHours": 72,
+    "eventType": "MEDITATION",
+    "targetGroup": "FACULTY",
+    "meditationConfig": {
+      "groups": [
+        {
+          "nameEn": "Group 1",
+          "nameTh": "กลุ่มที่ 1",
+          "program": "THAI",
+          "advisorName": "พระมหาอาทิตย์ อภิธมฺโม",
+          "groupNumber": 1
+        },
+        {
+          "nameEn": "Group 2",
+          "nameTh": "กลุ่มที่ 2",
+          "program": "THAI",
+          "advisorName": "พระครูสมุห์รัชกฤช ภทฺทปญฺโญ",
+          "groupNumber": 2
+        },
+        {
+          "nameEn": "Group 3",
+          "nameTh": "กลุ่มที่ 3",
+          "program": "THAI",
+          "advisorName": "พระมหาอุเทน อุเทโน",
+          "groupNumber": 3
+        },
+        {
+          "nameEn": "Group : 12",
+          "nameTh": "กลุ่มที่ 12 (English)",
+          "program": "ENGLISH",
+          "advisorName": "Ven. Dr. Phramaha Somphong",
+          "groupNumber": 12
+        }
+      ],
+      "endDate": "2025-12-22",
+      "periods": [
+        {
+          "id": "p1",
+          "time": "04.00-04.30",
+          "nameEn": "Dawn Period",
+          "nameTh": "ภาคเช้ามืด"
+        },
+        {
+          "id": "p2",
+          "time": "08.00-08.30",
+          "nameEn": "Morning Period",
+          "nameTh": "ภาคเช้า"
+        },
+        {
+          "id": "p3",
+          "time": "12.30-13.00",
+          "nameEn": "Afternoon Period",
+          "nameTh": "ภาคบ่าย"
+        },
+        {
+          "id": "p4",
+          "time": "17.30-18.00",
+          "nameEn": "Evening Period",
+          "nameTh": "ภาคค่ำ"
+        }
+      ],
+      "rulesEn": [
+        "Please sign-in during the scheduled times above. Or you will not get credit for your ATTENDANCE !",
+        "In order to get one full-day credit, you must sign in for 4 periods which can be done in different days."
+      ],
+      "rulesTh": [
+        "นิสิตจะต้องลงชื่อตามช่วงเวลาที่กำหนดให้ข้างต้นนี้ หากไม่ลงชื่อตามช่วงเวลาที่กำหนด ถือว่าขาดในช่วงระยะเวลานั้น ๆ",
+        "หากขาด ๔ ช่วงเวลา เท่ากับว่าขาด ๑ วัน และถือว่าไม่ผ่านการปฏิบัติ"
+      ],
+      "daysCount": 12,
+      "startDate": "2025-12-11",
+      "locationEn": "AT Bodhiyanmahavijjalai, Nakhon Pathom",
+      "locationTh": "ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม",
+      "isMeditationEvent": true
+    },
+    "createdAt": "2026-10-29T08:38:37.142Z",
+    "updatedAt": "2026-11-05T05:49:24.073Z",
+    "eventTime": "4:30 - 21:30 น.",
+    "semester": 1,
+    "maxParticipants": 200,
+    "status": "ACTIVE",
+    "targetDegree": "ALL",
+    "targetProgram": "ALL",
+    "targetMajors": [],
+    "targetYearLevels": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "coordinatorName": "คณะพุทธศาสตร์",
+    "coordinatorTitle": "ผู้รับผิดชอบโครงการ คณะพุทธศาสตร์",
+    "coordinatorPhone": "",
+    "coordinatorEmail": "",
+    "showCoordinator": true
+  },
+  {
+    "id": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "title": "โครงการปฏิบัติวิปัสสนากัมมัฏฐานประจำปี นิสิตคณะพุทธศาสตร์ (Annual Meditation Practice)",
+    "description": "โครงการปฏิบัติวิปัสสนากัมมัฏฐานประจำปี สำหรับนิสิตคณะพุทธศาสตร์ ชั้นปีที่ 1 - 4 ทั้งหลักสูตรภาษาไทยและภาษาอังกฤษ รวมระยะเวลา 12 วัน ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม",
+    "location": "ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม",
+    "startDate": "2025-12-10T17:00:00.000Z",
+    "endDate": "2025-12-22T16:59:59.000Z",
+    "capacity": 200,
+    "isActive": true,
+    "academicYear": "2568",
+    "activityHours": 72,
+    "eventType": "MEDITATION",
+    "targetGroup": "FACULTY",
+    "meditationConfig": {
+      "groups": [
+        {
+          "nameEn": "Group 1",
+          "nameTh": "กลุ่มที่ 1",
+          "program": "THAI",
+          "advisorName": "พระมหาอาทิตย์ อภิธมฺโม",
+          "groupNumber": 1
+        },
+        {
+          "nameEn": "Group 2",
+          "nameTh": "กลุ่มที่ 2",
+          "program": "THAI",
+          "advisorName": "พระครูสมุห์รัชกฤช ภทฺทปญฺโญ",
+          "groupNumber": 2
+        },
+        {
+          "nameEn": "Group 3",
+          "nameTh": "กลุ่มที่ 3",
+          "program": "THAI",
+          "advisorName": "พระมหาอุเทน อุเทโน",
+          "groupNumber": 3
+        },
+        {
+          "nameEn": "Group : 12",
+          "nameTh": "กลุ่มที่ 12 (English)",
+          "program": "ENGLISH",
+          "advisorName": "Ven. Dr. Phramaha Somphong",
+          "groupNumber": 12
+        }
+      ],
+      "endDate": "2025-12-22",
+      "periods": [
+        {
+          "id": "p1",
+          "time": "04.00-04.30",
+          "nameEn": "Dawn Period",
+          "nameTh": "ภาคเช้ามืด"
+        },
+        {
+          "id": "p2",
+          "time": "08.00-08.30",
+          "nameEn": "Morning Period",
+          "nameTh": "ภาคเช้า"
+        },
+        {
+          "id": "p3",
+          "time": "12.30-13.00",
+          "nameEn": "Afternoon Period",
+          "nameTh": "ภาคบ่าย"
+        },
+        {
+          "id": "p4",
+          "time": "17.30-18.00",
+          "nameEn": "Evening Period",
+          "nameTh": "ภาคค่ำ"
+        }
+      ],
+      "rulesEn": [
+        "Please sign-in during the scheduled times above. Or you will not get credit for your ATTENDANCE !",
+        "In order to get one full-day credit, you must sign in for 4 periods which can be done in different days."
+      ],
+      "rulesTh": [
+        "นิสิตจะต้องลงชื่อตามช่วงเวลาที่กำหนดให้ข้างต้นนี้ หากไม่ลงชื่อตามช่วงเวลาที่กำหนด ถือว่าขาดในช่วงระยะเวลานั้น ๆ",
+        "หากขาด ๔ ช่วงเวลา เท่ากับว่าขาด ๑ วัน และถือว่าไม่ผ่านการปฏิบัติ"
+      ],
+      "daysCount": 12,
+      "startDate": "2025-12-11",
+      "locationEn": "AT Bodhiyanmahavijjalai, Nakhon Pathom",
+      "locationTh": "ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม",
+      "isMeditationEvent": true
+    },
+    "createdAt": "2026-10-29T08:19:14.307Z",
+    "updatedAt": "2026-10-29T08:38:37.042Z"
+  }
+]

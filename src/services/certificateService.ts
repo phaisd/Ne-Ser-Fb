@@ -11,33 +11,10 @@ export async function getCertificateTypes(): Promise<any[]> {
 // ----------------- CERTIFICATE REQUESTS -----------------
 
 export async function getCertificateRequests(): Promise<CertificateRequest[]> {
-  const gClient = getSheetsClient();
-  if (gClient) {
-    try {
-      const rows = await gClient.getValues('CertificateRequests!A2:L');
-      if (rows && rows.length > 0) {
-        return rows.map((r) => ({
-          id: r[0] || '',
-          createdAt: r[1] || '',
-          studentCode: r[2] || '',
-          fullName: r[3] || '',
-          certType: r[4] || '',
-          degreeLevel: r[5] || '',
-          major: r[6] || '',
-          requestPurpose: r[7] || '',
-          status: (r[8] as any) || 'PENDING',
-          docNo: r[9] || '',
-          email: r[10] || '',
-          phone: r[11] || '',
-        }));
-      }
-    } catch (err) {
-      console.warn('Google Sheets read error for CertRequests, falling back to local file:', err);
-    }
-  }
-
   const rawRequests = readLocalJson<any[]>('certificate_requests.json', []);
-  return rawRequests.map((r) => {
+  const localMap = new Map<string, CertificateRequest>();
+
+  const parsedLocalList: CertificateRequest[] = rawRequests.map((r) => {
     let noteObj: any = {};
     if (typeof r.note === 'string') {
       try { noteObj = JSON.parse(r.note); } catch (e) {}
@@ -48,7 +25,7 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
     const nationality = r.nationality || noteObj.nationality || '';
     const isThai = nationality === 'Thai' || nationality === 'ไทย';
 
-    return {
+    const item: CertificateRequest = {
       id: r.id,
       createdAt: r.createdAt || new Date().toISOString(),
       studentCode: r.studentCode || noteObj.studentCode || '',
@@ -59,9 +36,14 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
       requestPurpose: r.requestPurpose || noteObj.requestPurpose || '',
       status: r.status || 'PENDING',
       docNo: r.docNo || noteObj.docNo || '',
+      docNoPrefix: r.docNoPrefix || noteObj.docNoPrefix || (r.docNo && r.docNo.includes('8002.1') ? '8002.1' : '8002'),
       email: r.email || noteObj.email || '',
       phone: r.phone || noteObj.phone || '',
       targetAudience: r.targetAudience || (isThai ? 'THAI' : 'INTERNATIONAL'),
+      applicantType: r.applicantType || noteObj.applicantType || (r.targetAudience === 'STAFF' ? 'STAFF' : 'STUDENT'),
+      position: r.position || noteObj.position || '',
+      department: r.department || noteObj.department || '',
+      candidateAppNo: r.candidateAppNo || noteObj.candidateAppNo || '',
       age: r.age || noteObj.age || '',
       gender: r.gender || noteObj.sex || '',
       nationality: nationality,
@@ -87,8 +69,101 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
       signerTitleEn: r.signerTitleEn || noteObj.signerTitleEn || '',
       coordinatorNameTh: r.coordinatorNameTh || noteObj.coordinatorNameTh || '',
       coordinatorPhoneTh: r.coordinatorPhoneTh || noteObj.coordinatorPhoneTh || '',
+      customBodyText: r.customBodyText || noteObj.customBodyText || '',
+      enrollmentSlipUrl: r.enrollmentSlipUrl || noteObj.registrationPdfUrl || '',
+      passportCopyUrl: r.passportCopyUrl || noteObj.passportCopyUrl || '',
+      rejectReason: r.rejectReason || r.reason || '',
     };
+    localMap.set(r.id, item);
+    return item;
   });
+
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const rows = await gClient.getValues('CertificateRequests!A2:L');
+      if (rows && rows.length > 0) {
+        return rows.map((r) => {
+          const id = r[0] || '';
+          const local = localMap.get(id) || ({} as Partial<CertificateRequest>);
+          return {
+            ...local,
+            id,
+            createdAt: r[1] || local.createdAt || new Date().toISOString(),
+            studentCode: r[2] || local.studentCode || '',
+            fullName: r[3] || local.fullName || '',
+            certType: r[4] || local.certType || 'หนังสือรับรอง',
+            degreeLevel: r[5] || local.degreeLevel || '',
+            major: r[6] || local.major || '',
+            requestPurpose: r[7] || local.requestPurpose || '',
+            status: (r[8] as any) || local.status || 'PENDING',
+            docNo: r[9] || local.docNo || '',
+            docNoPrefix: local.docNoPrefix || (r[9] && r[9].includes('8002.1') ? '8002.1' : '8002'),
+            email: r[10] || local.email || '',
+            phone: r[11] || local.phone || '',
+          } as CertificateRequest;
+        });
+      }
+    } catch (err) {
+      console.warn('Google Sheets read error for CertRequests, falling back to local file:', err);
+    }
+  }
+
+  return parsedLocalList;
+}
+
+export async function syncCertificateRequestsToSheets(items?: any[]): Promise<{ success: boolean; count: number; error?: string }> {
+  const gClient = getSheetsClient();
+  if (!gClient) {
+    return { success: false, count: 0, error: 'ยังไม่ได้ตั้งค่า Google Sheets API' };
+  }
+
+  const rawList = items || readLocalJson<any[]>('certificate_requests.json', []);
+
+  try {
+    // Clear existing rows A2:Z1000
+    try {
+      await gClient.clearValues('CertificateRequests!A2:Z1000');
+    } catch (e) {
+      console.warn('Could not clear range:', e);
+    }
+
+    const headers = [
+      'ID คำร้อง',
+      'วันที่ยื่นคำร้อง',
+      'รหัสนิสิต/บุคลากร',
+      'ชื่อ-สกุล',
+      'ประเภทหนังสือรับรอง',
+      'ระดับการศึกษา',
+      'สาขาวิชา',
+      'วัตถุประสงค์',
+      'สถานะ',
+      'เลขที่หนังสือ อว',
+      'อีเมล',
+      'เบอร์โทรศัพท์',
+    ];
+
+    const rows = rawList.map((r: any) => [
+      r.id || '',
+      r.createdAt || '',
+      r.studentCode || '',
+      r.fullName || (r.user ? r.user.name : ''),
+      r.certType || r.certificateType?.name || '',
+      r.degreeLevel || '',
+      r.major || '',
+      r.requestPurpose || '',
+      r.status || 'PENDING',
+      r.docNo || '',
+      r.email || '',
+      r.phone || '',
+    ]);
+
+    await gClient.updateValues('CertificateRequests!A1', [headers, ...rows]);
+    return { success: true, count: rows.length };
+  } catch (err: any) {
+    console.warn('syncCertificateRequestsToSheets error:', err.message);
+    return { success: false, count: 0, error: err.message };
+  }
 }
 
 export async function createCertificateRequest(data: Omit<CertificateRequest, 'id' | 'createdAt'>): Promise<CertificateRequest> {
@@ -138,11 +213,79 @@ export async function updateCertificateRequest(id: string, updates: Partial<Cert
     ...updates,
     status: updates.status || localList[idx].status,
     docNo: updates.docNo !== undefined ? updates.docNo : localList[idx].docNo,
+    docNoPrefix: updates.docNoPrefix !== undefined ? updates.docNoPrefix : localList[idx].docNoPrefix,
     updatedAt: new Date().toISOString(),
   };
 
   writeLocalJson('certificate_requests.json', localList);
+
+  // Sync to sheets in background
+  const gClient = getSheetsClient();
+  if (gClient) {
+    syncCertificateRequestsToSheets(localList).catch((e) => console.warn('Sync on update error:', e));
+  }
+
   return localList[idx];
+}
+
+export async function deleteCertificateRequest(id: string): Promise<boolean> {
+  const localList = readLocalJson<any[]>('certificate_requests.json', []);
+  const nextList = localList.filter((r) => r.id !== id);
+  if (nextList.length === localList.length) {
+    // Check if it's only in sheets
+    const gClient = getSheetsClient();
+    if (gClient) {
+      try {
+        await syncCertificateRequestsToSheets(nextList);
+        return true;
+      } catch (e) {}
+    }
+    return false;
+  }
+
+  writeLocalJson('certificate_requests.json', nextList);
+
+  // Sync to sheets
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      await syncCertificateRequestsToSheets(nextList);
+    } catch (err) {
+      console.warn('Google Sheets sync on delete error:', err);
+    }
+  }
+
+  return true;
+}
+
+export async function clearMockApprovedRequests(): Promise<{ deletedCount: number; remainingCount: number }> {
+  const localList = readLocalJson<any[]>('certificate_requests.json', []);
+  // Backup before clearing
+  writeLocalJson('certificate_requests.backup.json', localList);
+
+  // Filter out legacy mock approved items (e.g. uuid-format ids, or items created as mock approved)
+  const remainingList = localList.filter((r) => {
+    const isLegacyMock = r.status === 'APPROVED' && (
+      r.user?.name === 'ผู้ดูแลระบบ คณะพุทธศาสตร์' ||
+      (typeof r.id === 'string' && r.id.length > 20 && !r.id.startsWith('req-'))
+    );
+    return !isLegacyMock;
+  });
+
+  const deletedCount = localList.length - remainingList.length;
+  writeLocalJson('certificate_requests.json', remainingList);
+
+  // Sync to sheets
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      await syncCertificateRequestsToSheets(remainingList);
+    } catch (err) {
+      console.warn('Google Sheets sync after clear error:', err);
+    }
+  }
+
+  return { deletedCount, remainingCount: remainingList.length };
 }
 
 // ----------------- SYSTEM SETTINGS & BRANDING -----------------
@@ -168,20 +311,26 @@ export const DEFAULT_SIGNATORIES: SignatoryItem[] = [
     title: 'รองคณบดีฝ่ายกิจการนิสิต คณะพุทธศาสตร์',
   },
   {
+    id: 'SECRETARY',
+    label: '4. เลขานุการสำนักงานคณบดีคณะพุทธศาสตร์',
+    name: '',
+    title: 'เลขานุการสำนักงานคณบดีคณะพุทธศาสตร์',
+  },
+  {
     id: 'ACTING_DEAN',
-    label: '4. ผู้รักษาราชการแทนคณบดีคณะพุทธศาสตร์',
+    label: '5. ผู้รักษาราชการแทนคณบดีคณะพุทธศาสตร์',
     name: '',
     title: 'รักษาราชการแทนคณบดีคณะพุทธศาสตร์',
   },
   {
     id: 'REGISTRAR',
-    label: '5. ผู้อำนวยการส่วนทะเบียนและวัดผล (นายทะเบียน)',
+    label: '6. ผู้อำนวยการส่วนทะเบียนและวัดผล (นายทะเบียน)',
     name: 'พระมหาสุริยัน ปญฺญาวชิโร, ผศ.ดร.',
     title: 'ผู้อำนวยการส่วนทะเบียนและวัดผล',
   },
   {
     id: 'BLANK',
-    label: '6. เว้นว่างไว้สำหรับลงนามสดด้วยลายมือปากกา (Handwritten)',
+    label: '7. เว้นว่างไว้สำหรับลงนามสดด้วยลายมือปากกา (Handwritten)',
     name: '',
     title: 'คณบดีคณะพุทธศาสตร์',
   },
@@ -215,6 +364,24 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   accuracyAlertTitle: 'กรุณากรอกข้อมูลให้ครบถ้วน มิฉะนั้นเอกสารจะไม่สมบูรณ์และจะยกเลิกการขอหนังสือ',
   accuracyAlertDesc: '* ตรวจสอบตัวสะกดชื่อ-นามสกุลภาษาอังกฤษและเลขพาสปอร์ตให้ตรงกับเล่มจริง',
   accuracyAlertEnabled: true,
+  forcePasswordChangeOnFirstLogin: true,
+  heroWildEnabled: true,
+  heroLeftWord: 'WI',
+  heroRightWord: 'LD',
+  heroCapsuleImage: '/images/wild-capsule-island.jpg',
+  heroCapsuleAlt: 'Floating Island Nature Capsule - MotionSites AI Wild Pil',
+  heroBadgeText: 'Creative Designer & Faculty of Buddhism • MCU',
+  heroHeadingTh: 'ระบบบริการนิสิตและวิชาการออนไลน์ คณะพุทธศาสตร์',
+  heroDescription:
+    'Embark on an inspiring academic journey around the Buddhist wisdom and student services portal. Discover seamless certificate issuance, real-time class timetables, and academic excellence on your unforgettable path.',
+  heroDropCapLetter: 'E',
+  heroPrimaryBtnText: "Let's Get Wild",
+  heroPrimaryBtnUrl: '/certificates',
+  heroSecondaryBtnText: 'ตารางเรียนและวิชาการ',
+  heroSecondaryBtnUrl: '/courses',
+  heroBgStyle: 'wavy-contours',
+  themePreset: 'pink',
+  themeMourningRibbon: false,
 };
 
 export function convertGoogleDriveUrl(url?: string): string {

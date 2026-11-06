@@ -42,4 +42,26 @@ export interface Student {
   programType?: ProgramType;
   remarks?: string;
   isActive?: boolean;
+  password?: string;
+  hasChangedPassword?: boolean;
 }
+
+export interface ArchivedStudent extends Student {
+  archivedAt: string;
+  deletedAt: string;
+  deletedBy?: string;
+  deletionReason?: string;
+}
+
+export interface CourseEnrollment {
+  id?: string;
+  courseCode: string;
+  courseName?: string;
+  studentCode: string;
+  studentName?: string;
+  enrollmentType?: 'TRANSFER' | 'CROSS_ENROLL' | 'AUDIT' | 'SPECIAL' | string;
+  enrolledAt: string;
+  enrolledBy?: string;
+  notes?: string;
+}
+

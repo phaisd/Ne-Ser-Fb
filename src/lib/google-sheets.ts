@@ -134,6 +134,17 @@ export class GoogleSheetsClient {
   }
 
   /**
+   * Clear values in range (e.g. 'CertificateRequests!A2:Z1000')
+   */
+  async clearValues(range: string) {
+    const endpoint = `/values/${encodeURIComponent(range)}:clear`;
+    return this.fetchSheets(endpoint, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  /**
    * Test connection and retrieve sheet metadata
    */
   async testConnection(): Promise<{ title: string; sheets: string[] }> {

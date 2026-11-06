@@ -62,7 +62,7 @@ export async function getCourses(): Promise<Course[]> {
 
   const seenLocal = new Set<string>();
   return localList.filter((c) => {
-    const key = c.id || `${c.courseCode}_${c.section || '1'}_${c.term || ''}`;
+    const key = `${c.courseCode || ''}_${c.section || '1'}_${c.academicYear || ''}_${c.semester || ''}_${c.programType || ''}`;
     if (seenLocal.has(key)) return false;
     seenLocal.add(key);
     return true;
@@ -124,6 +124,29 @@ export async function updateCourse(idOrCode: string, updates: Partial<Course>): 
 
   localList[idx] = updated;
   writeLocalJson('courses.json', localList);
+
+  // If instructor was updated, cascade update to timetables.json for consistent schedule & teaching slips
+  if (updates.instructor !== undefined && updates.instructor !== current.instructor) {
+    try {
+      const timetables = readLocalJson<any[]>('timetables.json', []);
+      let ttChanged = false;
+      timetables.forEach((tt) => {
+        if (Array.isArray(tt.scheduleData)) {
+          tt.scheduleData.forEach((s: any) => {
+            if (s.courseCode === current.courseCode || s.courseCode === updated.courseCode) {
+              s.instructor = updates.instructor;
+              ttChanged = true;
+            }
+          });
+        }
+      });
+      if (ttChanged) {
+        writeLocalJson('timetables.json', timetables);
+      }
+    } catch (err) {
+      console.warn('Failed to cascade instructor update to timetables:', err);
+    }
+  }
 
   const gClient = getSheetsClient();
   if (gClient) {
@@ -252,54 +275,147 @@ export async function importCoursesBatch(
 
 // ----------------- TIMETABLES -----------------
 
+function formatTimeSlotString(val: string): string {
+  const clean = String(val || '').trim();
+  if (!clean) return '';
+  // Normalize e.g. "9" -> "09.00", "11.3" -> "11.30", "12.3" -> "12.30", "15.1" -> "15.10", "13:00" -> "13.00"
+  const norm = clean.replace(':', '.');
+  if (/^\d{1,2}$/.test(norm)) {
+    return `${norm.padStart(2, '0')}.00`;
+  }
+  const m = norm.match(/^(\d{1,2})\.(\d{1,2})$/);
+  if (m) {
+    return `${m[1].padStart(2, '0')}.${m[2].padEnd(2, '0')}`;
+  }
+  return norm;
+}
+
 export async function getTimetables(): Promise<TimetableItem[]> {
+  const rawTimetables = readLocalJson<any[]>('timetables.json', []);
+  const seenLocal = new Set<string>();
+  const flattenedLocal: TimetableItem[] = [];
+  const localSlotMap = new Map<string, TimetableItem>();
+
+  for (const t of rawTimetables) {
+    const schedules = Array.isArray(t.scheduleData) ? t.scheduleData : [];
+    for (const s of schedules) {
+      const startNorm = formatTimeSlotString(s.startTime || '');
+      const endNorm = formatTimeSlotString(s.endTime || '');
+      const dayNum = typeof s.dayOfWeek === 'number' ? s.dayOfWeek : parseInt(String(s.dayOfWeek || '1'), 10) || 1;
+      const item: TimetableItem = {
+        academicYear: String(t.academicYear || '2569').trim(),
+        semester: Number(t.semester) || 1,
+        yearLevel: Number(t.yearLevel) || 1,
+        timetableTitle: (t.titleTh || '').trim(),
+        courseCode: (s.courseCode || '').trim(),
+        courseName: (s.courseName || '').trim(),
+        dayOfWeek: dayNum,
+        startTime: startNorm,
+        endTime: endNorm,
+        room: (s.room || t.room || '').trim(),
+        instructor: (s.instructor || '').trim(),
+        periodLabel: (s.periodLabel || '').trim(),
+      };
+
+      const slotKey = `${item.timetableTitle}_${item.courseCode}_${item.dayOfWeek}_${startNorm}`;
+      localSlotMap.set(slotKey, item);
+      localSlotMap.set(`${item.timetableTitle}_${item.courseCode}_${item.dayOfWeek}`, item);
+
+      const dedupKey = `${item.timetableTitle}_${item.courseCode}_${item.dayOfWeek}_${startNorm}_${item.room}`;
+      if (!seenLocal.has(dedupKey)) {
+        seenLocal.add(dedupKey);
+        flattenedLocal.push(item);
+      }
+    }
+  }
+
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Timetables!A2:L');
+      const rows = await gClient.getValues('Timetables!A2:Z');
       if (rows && rows.length > 0) {
-        return rows.map((r) => ({
-          academicYear: r[0] || '',
-          semester: r[1] ? parseInt(r[1], 10) : 1,
-          yearLevel: r[2] ? parseInt(r[2], 10) : 1,
-          timetableTitle: r[3] || '',
-          courseCode: r[4] || '',
-          courseName: r[5] || '',
-          dayOfWeek: r[6] ? parseInt(r[6], 10) : 1,
-          startTime: r[7] || '',
-          endTime: r[8] || '',
-          room: r[9] || '',
-          instructor: r[10] || '',
-          periodLabel: r[11] || '',
-        }));
+        const seen = new Set<string>();
+        const list: TimetableItem[] = [];
+        const validPeriodRegex = /^(เช้า|บ่าย|บ่าย\s*1|บ่าย\s*2|ค่ำ|Morning|Afternoon|Late Afternoon)$/i;
+
+        for (const r of rows) {
+          const title = (r[3] || '').trim();
+          const code = (r[4] || '').trim();
+          if (!code) continue;
+          const dayNum = r[6] ? parseInt(r[6], 10) : 1;
+          const startNorm = formatTimeSlotString(r[7] || '');
+          const endNorm = formatTimeSlotString(r[8] || '');
+
+          // Reconstruct room, instructor, and periodLabel in case unquoted commas shifted columns 9..Z
+          const tail = r
+            .slice(9)
+            .map((cell: any) => String(cell ?? '').trim())
+            .filter((cell: string) => cell.length > 0);
+
+          let room = '';
+          let instructor = '';
+          let periodLabel = '';
+
+          if (tail.length > 0 && validPeriodRegex.test(tail[tail.length - 1])) {
+            periodLabel = tail.pop()!;
+          }
+
+          if (tail.length === 1) {
+            room = tail[0];
+          } else if (tail.length >= 2) {
+            // Check if tail[1] is a room number fragment split by comma, e.g., "ห้อง D 323" + "220/2"
+            if (/^\d{3}(\/\d+)?$/.test(tail[1])) {
+              room = `${tail[0]}, ${tail[1]}`;
+              instructor = tail.slice(2).join(', ');
+            } else {
+              room = tail[0];
+              instructor = tail.slice(1).join(', ');
+            }
+          }
+
+          // Cross-reference with local timetables.json only if Google Sheets cell is empty
+          const localMatch =
+            localSlotMap.get(`${title}_${code}_${dayNum}_${startNorm}`) ||
+            localSlotMap.get(`${title}_${code}_${dayNum}`);
+          if (localMatch) {
+            if (!instructor) {
+              instructor = localMatch.instructor || '';
+            }
+            if (!room) {
+              room = localMatch.room || '';
+            }
+            if (!periodLabel && localMatch.periodLabel) {
+              periodLabel = localMatch.periodLabel;
+            }
+          }
+
+          const key = `${title}_${code}_${dayNum}_${startNorm}_${room}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+
+          list.push({
+            academicYear: (r[0] || '2569').trim(),
+            semester: r[1] ? parseInt(r[1], 10) : 1,
+            yearLevel: r[2] ? parseInt(r[2], 10) : 1,
+            timetableTitle: title,
+            courseCode: code,
+            courseName: (r[5] || '').trim(),
+            dayOfWeek: dayNum,
+            startTime: startNorm,
+            endTime: endNorm,
+            room,
+            instructor,
+            periodLabel,
+          });
+        }
+        return list;
       }
     } catch (err) {
       console.warn('Google Sheets read error for Timetables, falling back to local file:', err);
     }
   }
 
-  const rawTimetables = readLocalJson<any[]>('timetables.json', []);
-  const flattened: TimetableItem[] = [];
-  for (const t of rawTimetables) {
-    const schedules = Array.isArray(t.scheduleData) ? t.scheduleData : [];
-    for (const s of schedules) {
-      flattened.push({
-        academicYear: t.academicYear || '2569',
-        semester: t.semester || 1,
-        yearLevel: t.yearLevel || 1,
-        timetableTitle: t.titleTh || '',
-        courseCode: s.courseCode || '',
-        courseName: s.courseName || '',
-        dayOfWeek: typeof s.dayOfWeek === 'number' ? s.dayOfWeek : 1,
-        startTime: s.startTime || '',
-        endTime: s.endTime || '',
-        room: s.room || t.room || '',
-        instructor: s.instructor || '',
-        periodLabel: s.periodLabel || '',
-      });
-    }
-  }
-  return flattened;
+  return flattenedLocal;
 }
 
 export async function getInstructors(): Promise<string[]> {

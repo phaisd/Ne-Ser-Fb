@@ -33,6 +33,7 @@ import {
   Users,
   Tag,
   Plus,
+  UserPlus,
   X,
   Edit3,
   CheckCircle2,
@@ -42,26 +43,20 @@ import {
 
 import { Student, TimetableItem, AttendanceHistoryItem } from '@/types';
 import { getSubstantiveTokens, matchInstructorStrict } from '@/lib/utils';
-import { EligibilityTab, SemesterRoadmapTab } from '@/components/attendance';
-import { getAuthUser, clearAuthSession, saveAuthSession } from '@/lib/auth-client';
-
-
-const DEMO_INSTRUCTORS = [
-  { name: 'พระมหาดวงเด่น ฐิตญาโณ, ผศ.ดร.', email: 'duangden@mcu.ac.th', title: 'ผศ.ดร. (ภาควิชาศาสนาและปรัชญา)' },
-  { name: 'Ven. Dr. Dharma Priya Bhikkhu', email: 'dharmapriya@mcu.ac.th', title: 'Ph.D. (หลักสูตรนานาชาติ EN)' },
-  { name: 'ผศ.ดร.ธนาธิป ฮาดเนาลี', email: 'dhanardhip@mcu.ac.th', title: 'ผศ.ดร. (ภาควิชาศาสนาและปรัชญา)' },
-  { name: 'พระมหายงยุทธ ธีรธมฺโม, ผศ.ดร.', email: 'yongyut@mcu.ac.th', title: 'ผศ.ดร. (ภาควิชาพระพุทธศาสนา)' },
-  { name: 'Assoc. Prof. Dr. Jutamas Vareesangthip', email: 'jutamas@mcu.ac.th', title: 'Assoc. Prof. Dr. (หลักสูตรนานาชาติ)' },
-  { name: 'พระมหาไพศาล (ผู้ดูแลระบบสูงสุด)', email: 'phaisal.dis@mcu.ac.th', title: '👑 ผู้ดูแลระบบ (เห็นทุกวิชา)' },
-];
+import { EligibilityTab, SemesterRoadmapTab, AddStudentToCourseModal, GradeSheetTab, ClassroomQrProjector, groupAndSortByMajor } from '@/components/attendance';
+import { CourseEnrollment } from '@/types';
+import { getAuthUser, isAdminOrOfficer, clearAuthSession, saveAuthSession } from '@/lib/auth-client';
+import { toSafeCsvCell } from '@/lib/security';
 
 export default function AttendancePage() {
-  const [activeMode, setActiveMode] = useState<'ROLL_CALL' | 'ROADMAP' | 'QR_CODE' | 'ELIGIBILITY' | 'HISTORY'>('ROLL_CALL');
+  const [activeMode, setActiveMode] = useState<'ROLL_CALL' | 'ROADMAP' | 'QR_CODE' | 'ELIGIBILITY' | 'GRADE_SHEET' | 'HISTORY'>('ROLL_CALL');
   
   // Data states
   const [timetables, setTimetables] = useState<TimetableItem[]>([]);
   const [instructors, setInstructors] = useState<string[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [customEnrollments, setCustomEnrollments] = useState<CourseEnrollment[]>([]);
+  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [historyRecords, setHistoryRecords] = useState<AttendanceHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,6 +109,8 @@ export default function AttendancePage() {
 
   // Student filter mode
   const [showOnlyTargetYear, setShowOnlyTargetYear] = useState(true);
+  // Student program filter: 'AUTO' (automatic by course) | 'ENGLISH' | 'THAI' | 'ALL'
+  const [studentProgramFilter, setStudentProgramFilter] = useState<'AUTO' | 'ENGLISH' | 'THAI' | 'ALL'>('AUTO');
 
   // ─────────────────────────────────────────────────────────────
   // Exam Eligibility States & Settings
@@ -160,28 +157,6 @@ export default function AttendancePage() {
     setRecordedBy('');
   };
 
-  // Quick switch instructor for testing
-  const handleQuickSwitchInstructor = async (email: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'google', email }),
-      });
-      const data = await res.json();
-      if (data.success && data.user) {
-        setCurrentUser(data.user);
-        setRecordedBy(data.user.name);
-        localStorage.setItem('mcu_current_user', JSON.stringify(data.user));
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Load initial data
   useEffect(() => {
     Promise.all([
@@ -189,8 +164,9 @@ export default function AttendancePage() {
       fetch('/api/timetables?action=instructors').then((res) => res.json()),
       fetch('/api/students').then((res) => res.json()),
       fetch('/api/attendance').then((res) => res.json()),
+      fetch('/api/enrollments').then((res) => res.json()),
     ])
-      .then(([ttRes, instRes, stuRes, attRes]) => {
+      .then(([ttRes, instRes, stuRes, attRes, enrRes]) => {
         if (ttRes.success) {
           const list: TimetableItem[] = ttRes.data;
           setTimetables(list);
@@ -198,35 +174,121 @@ export default function AttendancePage() {
         if (instRes.success) setInstructors(instRes.data);
         if (stuRes.success) setStudents(stuRes.data);
         if (attRes.success) setHistoryRecords(attRes.data);
+        if (enrRes?.success) setCustomEnrollments(enrRes.data);
       })
       .finally(() => setLoading(false));
   }, []);
 
   // Role Checks
-  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
+  const isAdmin = isAdminOrOfficer(currentUser);
   const isTeacher = Boolean(currentUser && !isAdmin);
 
-  // Available courses strictly filtered for teacher
+  // Helper to detect English/Inter course
+  const checkIsEnglishCourse = (c: TimetableItem) => {
+    const tt = c.timetableTitle || '';
+    const cn = c.courseName || '';
+    return (
+      (c as any).programType === 'ENGLISH' ||
+      (c as any).programType === 'INTERNATIONAL' ||
+      /ภาษาอังกฤษ|inter|eng|english|นานาชาติ/i.test(tt) ||
+      /^[A-Za-z0-9\s:,\-\(\)\/\.\*]+$/.test(cn.trim())
+    );
+  };
+
+  // Helper to format dayOfWeek number into readable Thai/English day label
+  const formatDayLabel = (dayOfWeek?: number, isEn?: boolean) => {
+    const mapTh: Record<number, string> = {
+      1: 'จันทร์',
+      2: 'อังคาร',
+      3: 'พุธ',
+      4: 'พฤหัสบดี',
+      5: 'ศุกร์',
+      6: 'เสาร์',
+      7: 'อาทิตย์',
+    };
+    const mapEn: Record<number, string> = {
+      1: 'Mon',
+      2: 'Tue',
+      3: 'Wed',
+      4: 'Thu',
+      5: 'Fri',
+      6: 'Sat',
+      7: 'Sun',
+    };
+    if (!dayOfWeek) return '-';
+    return (isEn ? mapEn[dayOfWeek] : mapTh[dayOfWeek]) || String(dayOfWeek);
+  };
+
+  // Available courses strictly filtered for teacher & deduplicated across shared major timetables
   const availableCourses = useMemo(() => {
-    if (isTeacher) {
-      return timetables.filter((t) => matchInstructorStrict(currentUser, t.instructor));
+    const rawMatched = isTeacher
+      ? timetables.filter((t) => matchInstructorStrict(currentUser, t.instructor))
+      : selectedInstructor === 'ALL'
+      ? timetables
+      : timetables.filter((t) => t.instructor?.toLowerCase().includes(selectedInstructor.toLowerCase()));
+
+    const extractMajorFromTitle = (title?: string): string => {
+      if (!title) return '';
+      if (title.includes('พระพุทธศาสนา')) return 'พระพุทธศาสนา';
+      if (title.includes('วิปัสสนาภาวนา')) return 'วิปัสสนาภาวนา';
+      if (title.includes('ศาสนาและปรัชญา')) return 'ศาสนาและปรัชญา';
+      if (title.includes('บาลีสันสกฤต')) return 'บาลีสันสกฤต';
+      return '';
+    };
+
+    const groupedMap = new Map<
+      string,
+      TimetableItem & { sectionKey: string; sharedMajors: string[] }
+    >();
+
+    for (const item of rawMatched) {
+      const isEn = checkIsEnglishCourse(item);
+      const normCode = (item.courseCode || '').trim().toUpperCase();
+      const normStart = (item.startTime || '').trim();
+      // Distinct Teaching Section Key: courseCode + Program (EN/TH) + YearLevel + DayOfWeek + StartTime
+      const sectionKey = `${normCode}__${isEn ? 'EN' : 'TH'}__Y${item.yearLevel || 1}__D${item.dayOfWeek || 1}__T${normStart}`;
+      const maj = extractMajorFromTitle(item.timetableTitle);
+
+      const existing = groupedMap.get(sectionKey);
+      if (!existing) {
+        groupedMap.set(sectionKey, {
+          ...item,
+          sectionKey,
+          sharedMajors: maj ? [maj] : [],
+        });
+      } else {
+        if (maj && !existing.sharedMajors.includes(maj)) {
+          existing.sharedMajors.push(maj);
+        }
+        // Keep the fuller instructor string if one timetable entry has more complete co-instructor names
+        if ((item.instructor || '').length > (existing.instructor || '').length) {
+          existing.instructor = item.instructor;
+        }
+      }
     }
-    if (selectedInstructor === 'ALL') return timetables;
-    return timetables.filter((t) => t.instructor?.toLowerCase().includes(selectedInstructor.toLowerCase()));
+
+    return Array.from(groupedMap.values());
   }, [timetables, currentUser, isTeacher, selectedInstructor]);
 
-  // Current selected course details
+  // Current selected course details (matches by unique sectionKey first, then falls back to courseCode)
   const currentCourse = useMemo(() => {
-    return availableCourses.find((t) => t.courseCode === selectedCourseCode) || availableCourses[0];
+    return (
+      availableCourses.find(
+        (t) => (t as any).sectionKey === selectedCourseCode || t.courseCode === selectedCourseCode
+      ) || availableCourses[0]
+    );
   }, [availableCourses, selectedCourseCode]);
 
   // Auto-sync selected course when availableCourses changes
   useEffect(() => {
     if (availableCourses.length > 0) {
-      const match = availableCourses.find((c) => c.courseCode === selectedCourseCode);
+      const match = availableCourses.find(
+        (c) => (c as any).sectionKey === selectedCourseCode || c.courseCode === selectedCourseCode
+      );
       if (!match) {
-        setSelectedCourseCode(availableCourses[0].courseCode);
-        setRecordedBy(currentUser ? currentUser.name : (availableCourses[0].instructor || 'อาจารย์ประจำวิชา'));
+        const first = availableCourses[0];
+        setSelectedCourseCode((first as any).sectionKey || first.courseCode);
+        setRecordedBy(currentUser ? currentUser.name : (first.instructor || 'อาจารย์ประจำวิชา'));
       }
     } else {
       setSelectedCourseCode('');
@@ -410,22 +472,180 @@ export default function AttendancePage() {
     }
   }, [currentCourse, currentUser, historyRecords, date]);
 
-  const handleCourseChange = (code: string) => {
-    const found = availableCourses.find((t) => t.courseCode === code);
+  const handleCourseChange = (keyOrCode: string) => {
+    const found = availableCourses.find(
+      (t) => (t as any).sectionKey === keyOrCode || t.courseCode === keyOrCode
+    );
     if (found) {
-      setSelectedCourseCode(found.courseCode);
+      setSelectedCourseCode((found as any).sectionKey || found.courseCode);
       setRecordedBy(currentUser ? currentUser.name : (found.instructor || 'อาจารย์ประจำวิชา'));
+      setStudentProgramFilter('AUTO');
     }
   };
 
-  // Determine students to display: filter by target year if enabled
-  const targetYear = currentCourse?.yearLevel || 1;
-  const targetStudents = useMemo(() => {
+  // Determine if selected course is an International / English Program course
+  const isInterCourse = useMemo(() => {
+    if (!currentCourse) return false;
+    const tt = currentCourse.timetableTitle || '';
+    const cn = currentCourse.courseName || '';
+    const isEnTitle = /ภาษาอังกฤษ|inter|eng|english|นานาชาติ/i.test(tt);
+    const isEnName = /^[A-Za-z0-9\s:,\-\(\)\/\.]+$/.test(cn.trim());
+    return (currentCourse as any).programType === 'ENGLISH' || isEnTitle || isEnName;
+  }, [currentCourse]);
+
+  // Active program filter mode
+  const activeProgramMode = useMemo<'ENGLISH' | 'THAI' | 'ALL'>(() => {
+    if (studentProgramFilter === 'AUTO') {
+      return isInterCourse ? 'ENGLISH' : 'THAI';
+    }
+    return studentProgramFilter;
+  }, [studentProgramFilter, isInterCourse]);
+
+  // Custom enrollments for currently selected course
+  const currentCourseEnrollments = useMemo(() => {
     if (!currentCourse) return [];
-    return showOnlyTargetYear
+    const clean = currentCourse.courseCode.toLowerCase().trim();
+    return customEnrollments.filter((e) => e.courseCode.toLowerCase().trim() === clean);
+  }, [customEnrollments, currentCourse]);
+
+  const customEnrolledCodeSet = useMemo(() => {
+    return new Set(currentCourseEnrollments.map((e) => e.studentCode.toLowerCase().trim()));
+  }, [currentCourseEnrollments]);
+
+  const handleRemoveEnrollment = async (studentCode: string, studentName: string) => {
+    if (!currentCourse) return;
+    const confirmMsg = `ยืนยันการนำนิสิต "${studentName}" (${studentCode}) ออกจากห้องเรียนวิชา ${currentCourse.courseCode} หรือไม่?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch('/api/enrollments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'remove',
+          courseCode: currentCourse.courseCode,
+          studentCode,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCustomEnrollments((prev) =>
+          prev.filter(
+            (e) =>
+              !(
+                e.courseCode.toLowerCase() === currentCourse.courseCode.toLowerCase() &&
+                e.studentCode.toLowerCase() === studentCode.toLowerCase()
+              )
+          )
+        );
+        alert(`นำนิสิตออกจากห้องเรียนวิชา ${currentCourse.courseCode} เรียบร้อยแล้ว`);
+      } else {
+        alert(data.error || 'เกิดข้อผิดพลาดในการนำออก');
+      }
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    }
+  };
+
+  // Determine students to display: filter by target year and program type
+  const targetYear = currentCourse?.yearLevel || 1;
+
+  // Counts for the program filter badges
+  const { yearAllCount, yearEnglishCount, yearThaiCount } = useMemo(() => {
+    if (!currentCourse) return { yearAllCount: 0, yearEnglishCount: 0, yearThaiCount: 0 };
+    const baseList = showOnlyTargetYear
       ? students.filter((s) => s.yearLevel === targetYear)
       : students;
+
+    const engCount = baseList.filter((s) => {
+      const p = (s.programType || '').toUpperCase();
+      const isThaiNat = s.nationality === 'ไทย' || s.nationality === 'Thai';
+      return p === 'ENGLISH' || p === 'INTER' || (!isThaiNat && p !== 'THAI');
+    }).length;
+
+    const thaiCount = baseList.filter((s) => {
+      const p = (s.programType || '').toUpperCase();
+      return p === 'THAI' || p === '' || !s.programType;
+    }).length;
+
+    return {
+      yearAllCount: baseList.length,
+      yearEnglishCount: engCount,
+      yearThaiCount: thaiCount,
+    };
   }, [students, showOnlyTargetYear, targetYear, currentCourse]);
+
+  const { groupedTargetSections, targetStudents } = useMemo(() => {
+    if (!currentCourse) return { groupedTargetSections: [], targetStudents: [] };
+
+    // 1. Year level filter
+    let list = showOnlyTargetYear
+      ? students.filter((s) => s.yearLevel === targetYear)
+      : [...students];
+
+    // 2. Program type filter (แยกนิสิตภาคภาษาไทย และ ภาคภาษาอังกฤษ)
+    if (activeProgramMode === 'ENGLISH') {
+      list = list.filter((s) => {
+        const p = (s.programType || '').toUpperCase();
+        const isThaiNat = s.nationality === 'ไทย' || s.nationality === 'Thai';
+        return p === 'ENGLISH' || p === 'INTER' || (!isThaiNat && p !== 'THAI');
+      });
+    } else if (activeProgramMode === 'THAI') {
+      list = list.filter((s) => {
+        const p = (s.programType || '').toUpperCase();
+        return p === 'THAI' || p === '' || !s.programType;
+      });
+    }
+
+    // 3. Always include custom enrolled students (นิสิตเทียบโอน/เดินเรียนประจำวิชานี้)
+    if (customEnrolledCodeSet.size > 0) {
+      const existingCodes = new Set(list.map((s) => s.studentCode.toLowerCase().trim()));
+      const extraStudents = students.filter((s) => {
+        const code = s.studentCode.toLowerCase().trim();
+        return customEnrolledCodeSet.has(code) && !existingCodes.has(code);
+      });
+      extraStudents.forEach((s) => existingCodes.add(s.studentCode.toLowerCase().trim()));
+
+      // Fallback synthesis if a newly enrolled student is not yet in `students` array
+      const fallbackEnrolledStudents: Student[] = [];
+      if (currentCourse) {
+        customEnrollments
+          .filter(
+            (e) =>
+              e.courseCode.trim().toLowerCase() === currentCourse.courseCode.trim().toLowerCase() &&
+              !existingCodes.has(e.studentCode.toLowerCase().trim())
+          )
+          .forEach((e) => {
+            const majorMatch = (e.notes || '').match(/\[สาขาวิชา:\s*([^\]]+)\]/);
+            const extractedMajor = majorMatch ? majorMatch[1].trim() : 'พระพุทธศาสนา';
+            fallbackEnrolledStudents.push({
+              studentCode: e.studentCode.trim(),
+              title: '',
+              firstName: e.studentName || e.studentCode,
+              lastName: '',
+              fullName: e.studentName || e.studentCode,
+              major: extractedMajor,
+              yearLevel: targetYear || 1,
+              studyStatus: 'STUDYING',
+              email: '',
+              phoneNumber: '',
+              programType: activeProgramMode === 'ENGLISH' ? 'ENGLISH' : 'THAI',
+              nationality: activeProgramMode === 'ENGLISH' ? 'International' : 'ไทย',
+            });
+            existingCodes.add(e.studentCode.toLowerCase().trim());
+          });
+      }
+
+      list = [...list, ...extraStudents, ...fallbackEnrolledStudents];
+    }
+
+    // 4. Group by Major (พระพุทธศาสนา -> วิปัสสนาภาวนา -> ศาสนาและปรัชญา -> บาลีสันสกฤต) & sort by studentCode ascending
+    const { sections, flatSorted } = groupAndSortByMajor(list);
+    return {
+      groupedTargetSections: sections,
+      targetStudents: flatSorted,
+    };
+  }, [students, showOnlyTargetYear, targetYear, currentCourse, activeProgramMode, customEnrolledCodeSet, customEnrollments]);
 
   // Initialize attendance map when student list changes
   useEffect(() => {
@@ -610,9 +830,9 @@ export default function AttendancePage() {
 
     const rows = eligibilityList.map((item, idx) => [
       idx + 1,
-      `="${item.studentCode}"`,
-      `"${item.studentName}"`,
-      `"${item.major || '-'}"`,
+      toSafeCsvCell(item.studentCode),
+      toSafeCsvCell(item.studentName),
+      toSafeCsvCell(item.major || '-'),
       item.yearLevel || 1,
       item.present,
       item.late,
@@ -621,8 +841,8 @@ export default function AttendancePage() {
       item.effectiveAbsences,
       `${item.attendedPercent}%`,
       item.remainingAbsences >= 0 ? item.remainingAbsences : 0,
-      `"${item.statusText}"`,
-      `"${item.reason}"`,
+      toSafeCsvCell(item.statusText),
+      toSafeCsvCell(item.reason),
     ]);
 
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -768,15 +988,15 @@ export default function AttendancePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 print:space-y-2">
       {/* ─────────────────────────────────────────────────────────────
           PRINT ONLY HEADER (OFFICIAL FACULTY REPORT)
          ───────────────────────────────────────────────────────────── */}
-      <div className="hidden print:block text-slate-900 border-b pb-4 mb-6 space-y-1">
-        <div className="text-center font-bold text-lg">คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</div>
-        <div className="text-center font-bold text-base">รายงานสรุปเวลาเรียนและการประเมินสิทธิ์สอบไล่ปลายภาค ภาคการศึกษาที่ 1 ปีการศึกษา 2569</div>
+      <div className="hidden print:block text-slate-900 border-b border-slate-400 pb-2 mb-2 space-y-0.5">
+        <div className="text-center font-bold text-base leading-tight">คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</div>
+        <div className="text-center font-bold text-sm leading-tight">รายงานสรุปเวลาเรียนและการประเมินสิทธิ์สอบไล่ปลายภาค ภาคการศึกษาที่ 1 ปีการศึกษา 2569</div>
         {currentCourse && (
-          <div className="text-xs text-center text-slate-600 pt-1">
+          <div className="text-[11px] text-center text-slate-700 pt-0.5">
             รายวิชา: <strong>{currentCourse.courseCode} {currentCourse.courseName}</strong> (ชั้นปีที่ {currentCourse.yearLevel}) | ผู้สอน: <strong>{currentCourse.instructor}</strong> | เกณฑ์เวลาเรียนขั้นต่ำ: <strong>{minAttendancePercent}%</strong> (ไม่น้อยกว่า {Math.ceil(semesterTotalSessions * (minAttendancePercent/100))} จาก {semesterTotalSessions} คาบ)
           </div>
         )}
@@ -830,6 +1050,17 @@ export default function AttendancePage() {
           >
             <Award className="w-4 h-4" />
             <span>สรุปสิทธิ์สอบ (Exam Eligibility)</span>
+          </button>
+          <button
+            onClick={() => setActiveMode('GRADE_SHEET')}
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+              activeMode === 'GRADE_SHEET'
+                ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                : 'text-indigo-800 hover:text-indigo-950 font-bold bg-indigo-50/80 border border-indigo-200/70'
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>ใบกรอกคะแนนวัดผล (Grade Sheet)</span>
           </button>
           <button
             onClick={() => setActiveMode('QR_CODE')}
@@ -913,24 +1144,6 @@ export default function AttendancePage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <select
-                onChange={(e) => {
-                  if (e.target.value) handleQuickSwitchInstructor(e.target.value);
-                }}
-                value=""
-                className="px-3 py-2 text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl cursor-pointer"
-                title="สลับบัญชีอาจารย์เพื่อทดสอบการแสดงผลเฉพาะรายวิชาของตนเอง"
-              >
-                <option value="" disabled className="text-slate-800">
-                  🔄 สลับทดสอบอาจารย์ท่านอื่น...
-                </option>
-                {DEMO_INSTRUCTORS.map((d, idx) => (
-                  <option key={idx} value={d.email} className="text-slate-800">
-                    {d.name} ({d.title})
-                  </option>
-                ))}
-              </select>
-
               <button
                 onClick={handleLogout}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-200 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl transition cursor-pointer"
@@ -969,30 +1182,6 @@ export default function AttendancePage() {
                 <KeyRound className="w-4 h-4" />
                 <span>เข้าสู่ระบบอาจารย์ผู้สอน</span>
               </Link>
-            </div>
-
-            <div className="pt-4 border-t border-amber-200/60">
-              <div className="text-xs font-bold text-amber-900 mb-2.5 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span>หรือเลือกจำลองเข้าสู่ระบบเป็นอาจารย์ท่านใดท่านหนึ่ง เพื่อทดสอบระบบได้ทันที:</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {DEMO_INSTRUCTORS.map((d, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleQuickSwitchInstructor(d.email)}
-                    className="text-left p-3 rounded-xl bg-white hover:bg-emerald-50 border border-amber-200 hover:border-emerald-300 shadow-sm transition group cursor-pointer"
-                  >
-                    <div className="font-bold text-xs text-slate-800 group-hover:text-emerald-800 truncate">
-                      {d.name}
-                    </div>
-                    <div className="text-[11px] text-slate-400 group-hover:text-emerald-600 truncate">
-                      {d.title}
-                    </div>
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         )}
@@ -1041,6 +1230,27 @@ export default function AttendancePage() {
           setEligibilityStatusFilter={setEligibilityStatusFilter}
           eligibilityList={eligibilityList}
           filteredEligibilityList={filteredEligibilityList}
+        />
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODE: OFFICIAL GRADE & EXAMINATION RESULT SHEET (ใบกรอกคะแนนผลการสอบ)
+         ───────────────────────────────────────────────────────────── */}
+      {activeMode === 'GRADE_SHEET' && (
+        <GradeSheetTab
+          currentUser={currentUser}
+          currentCourse={currentCourse}
+          availableCourses={availableCourses}
+          selectedCourseCode={selectedCourseCode}
+          handleCourseChange={handleCourseChange}
+          studentsList={eligibilityList.map((item) => ({
+            studentCode: item.studentCode,
+            studentName: item.studentName,
+            major: item.major,
+            yearLevel: item.yearLevel,
+            attendedPercent: item.attendedPercent,
+            eligibilityStatus: item.status,
+          }))}
         />
       )}
 
@@ -1177,19 +1387,43 @@ export default function AttendancePage() {
                       </div>
                     ) : (
                       <select
-                        value={selectedCourseCode}
+                        value={(currentCourse as any)?.sectionKey || selectedCourseCode}
                         onChange={(e) => handleCourseChange(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
                       >
-                        {availableCourses.map((c, i) => {
-                          const isEn = /inter|eng|english|นานาชาติ/i.test(c.timetableTitle || '') || /^[A-Za-z0-9\s:,-]+$/.test(c.courseName);
+                        {(() => {
+                          const interCourses = availableCourses.filter((c) => checkIsEnglishCourse(c));
+                          const thaiCourses = availableCourses.filter((c) => !checkIsEnglishCourse(c));
+
                           return (
-                            <option key={i} value={c.courseCode}>
-                              {isEn ? '🌐 [Inter/EN] ' : '🇹🇭 [ภาคไทย] '}
-                              {c.courseCode} — {c.courseName} (ปี {c.yearLevel})
-                            </option>
+                            <>
+                              {interCourses.length > 0 && (
+                                <optgroup label="🌐 หลักสูตรนานาชาติ (Inter / English Program)">
+                                  {interCourses.map((c, i) => {
+                                    const sKey = (c as any).sectionKey || c.courseCode;
+                                    return (
+                                      <option key={`en-${sKey}-${i}`} value={sKey}>
+                                        🌐 [Inter/EN] {c.courseCode} — {c.courseName} (ปี {c.yearLevel})
+                                      </option>
+                                    );
+                                  })}
+                                </optgroup>
+                              )}
+                              {thaiCourses.length > 0 && (
+                                <optgroup label="🇹🇭 หลักสูตรภาษาไทย (Thai Program)">
+                                  {thaiCourses.map((c, i) => {
+                                    const sKey = (c as any).sectionKey || c.courseCode;
+                                    return (
+                                      <option key={`th-${sKey}-${i}`} value={sKey}>
+                                        🇹🇭 [ภาคไทย] {c.courseCode} — {c.courseName} (ปี {c.yearLevel})
+                                      </option>
+                                    );
+                                  })}
+                                </optgroup>
+                              )}
+                            </>
                           );
-                        })}
+                        })()}
                       </select>
                     )}
                   </div>
@@ -1208,6 +1442,110 @@ export default function AttendancePage() {
                     />
                   </div>
                 </div>
+
+                {/* ─────────────────────────────────────────────────────────────
+                    COURSE CARDS GRID (การ์ดรายวิชาที่รับผิดชอบสอน)
+                   ───────────────────────────────────────────────────────────── */}
+                {availableCourses.length > 0 && (
+                  <div className="pt-2 border-t border-slate-100 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                        <BookOpen className="w-4 h-4 text-emerald-600" />
+                        <span>การ์ดรายวิชาที่รับผิดชอบสอน ({availableCourses.length} วิชา) — คลิกการ์ดเพื่อสลับวิชาได้ทันที:</span>
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        แยกสีตามหลักสูตรภาษาไทย (เขียว) และหลักสูตรนานาชาติ Inter/EN (คราม)
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                      {availableCourses.map((c, idx) => {
+                        const sKey = (c as any).sectionKey || c.courseCode;
+                        const currentKey = (currentCourse as any)?.sectionKey || selectedCourseCode;
+                        const isSelected = sKey === currentKey;
+                        const isEn = checkIsEnglishCourse(c);
+                        const sharedMajors: string[] = (c as any).sharedMajors || [];
+
+                        return (
+                          <button
+                            key={`card-${sKey}-${idx}`}
+                            type="button"
+                            onClick={() => handleCourseChange(sKey)}
+                            className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                              isSelected
+                                ? isEn
+                                  ? 'bg-gradient-to-br from-indigo-600 to-blue-700 text-white border-indigo-700 shadow-md ring-2 ring-indigo-400/40'
+                                  : 'bg-gradient-to-br from-emerald-600 to-teal-700 text-white border-emerald-700 shadow-md ring-2 ring-emerald-400/40'
+                                : 'bg-slate-50/70 hover:bg-white text-slate-800 border-slate-200/90 hover:border-emerald-400 hover:shadow-xs'
+                            }`}
+                          >
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between gap-1.5">
+                                <span
+                                  className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-lg ${
+                                    isSelected
+                                      ? 'bg-white/20 text-white'
+                                      : isEn
+                                      ? 'bg-indigo-100 text-indigo-900'
+                                      : 'bg-emerald-100 text-emerald-900'
+                                  }`}
+                                >
+                                  {c.courseCode}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    isSelected
+                                      ? 'bg-white/20 text-white'
+                                      : isEn
+                                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  }`}
+                                >
+                                  {isEn ? '🌐 Inter/EN' : '🇹🇭 ภาคไทย'} • ปี {c.yearLevel || 1}
+                                </span>
+                              </div>
+
+                              <div
+                                className={`font-bold text-xs leading-snug line-clamp-2 ${
+                                  isSelected ? 'text-white' : 'text-slate-900'
+                                }`}
+                              >
+                                {c.courseName}
+                              </div>
+
+                              {sharedMajors.length > 1 && (
+                                <div
+                                  className={`text-[10px] font-semibold truncate ${
+                                    isSelected ? 'text-white/85' : 'text-slate-500'
+                                  }`}
+                                  title={`เรียนรวม ${sharedMajors.length} สาขาวิชา: ${sharedMajors.join(' • ')}`}
+                                >
+                                  👥 เรียนรวม {sharedMajors.length} สาขา ({sharedMajors.join(', ')})
+                                </div>
+                              )}
+                            </div>
+
+                            <div
+                              className={`flex items-center justify-between text-[11px] pt-1.5 border-t ${
+                                isSelected
+                                  ? 'border-white/20 text-white/90'
+                                  : 'border-slate-200/80 text-slate-500'
+                              }`}
+                            >
+                              <span className="truncate">
+                                📅 {formatDayLabel(c.dayOfWeek, isEn)}{' '}
+                                {c.startTime ? `${c.startTime}-${c.endTime}` : ''}
+                              </span>
+                              <span className="font-bold shrink-0 ml-1 truncate max-w-[140px]" title={c.room || '-'}>
+                                🚪 {c.room || '-'}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* ─────────────────────────────────────────────────────────────
                     ENHANCED SESSION BANNER & CUSTOMIZATION CONTROLS
@@ -1272,6 +1610,62 @@ export default function AttendancePage() {
                             <SlidersHorizontal className="w-3.5 h-3.5" />
                             <span>⚙️ ปรับแต่งคาบเรียน (วัน/เวลา/ห้อง/ผู้ช่วยสอน)</span>
                           </button>
+
+                          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={() => setStudentProgramFilter('ENGLISH')}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                                activeProgramMode === 'ENGLISH'
+                                  ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                              }`}
+                              title="แสดงเฉพาะนิสิตหลักสูตรนานาชาติ (Inter / ภาคภาษาอังกฤษ)"
+                            >
+                              <span>🌐 ภาคอินเตอร์</span>
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                activeProgramMode === 'ENGLISH' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                              }`}>
+                                {yearEnglishCount}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setStudentProgramFilter('THAI')}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                                activeProgramMode === 'THAI'
+                                  ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                              }`}
+                              title="แสดงเฉพาะนิสิตหลักสูตรภาษาไทย"
+                            >
+                              <span>🇹🇭 ภาคไทย</span>
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                activeProgramMode === 'THAI' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                              }`}>
+                                {yearThaiCount}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setStudentProgramFilter('ALL')}
+                              className={`px-2 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
+                                activeProgramMode === 'ALL'
+                                  ? 'bg-slate-800 text-white font-bold shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                              }`}
+                              title="แสดงรวมนิสิตทั้ง 2 ภาค (กรณีเรียนร่วมกัน)"
+                            >
+                              <span>👥 ทั้งหมด</span>
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                activeProgramMode === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                              }`}>
+                                {yearAllCount}
+                              </span>
+                            </button>
+                          </div>
 
                           <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 text-xs pl-2 border-l border-slate-200">
                             <input
@@ -1410,21 +1804,47 @@ export default function AttendancePage() {
               {/* Student Roster Table */}
               {currentCourse && (
                 <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                    <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                      <span>บัญชีรายชื่อนิสิต ({targetStudents.length} รูป/คน)</span>
+                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-3">
+                    <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span>บัญชีรายชื่อนิสิต ({targetStudents.length} รูป/คน)</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                          activeProgramMode === 'ENGLISH'
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                            : activeProgramMode === 'THAI'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                        }`}>
+                          {activeProgramMode === 'ENGLISH'
+                            ? '🌐 นิสิตภาคภาษาอังกฤษ (Inter)'
+                            : activeProgramMode === 'THAI'
+                            ? '🇹🇭 นิสิตภาคภาษาไทย'
+                            : '👥 แสดงรวมทั้ง 2 ภาค'}
+                        </span>
+                      </div>
                       <span className="text-xs text-slate-400 font-normal">
                         ({currentCourse.courseCode} — {currentCourse.courseName})
                       </span>
                     </h3>
-                    <button
-                      onClick={handleSave}
-                      disabled={saving || targetStudents.length === 0}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm cursor-pointer"
-                    >
-                      <Save className="w-4 h-4" />
-                      {saving ? 'กำลังบันทึกลง Google Sheets...' : 'บันทึกการเช็คชื่อ'}
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddStudentModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition shadow-2xs cursor-pointer"
+                        title="เพิ่มรหัสนิสิต ชื่อนิสิต และสาขาวิชา สำหรับนิสิตเทียบโอน/เดินเรียน เข้าในบัญชีรายชื่อวิชานี้"
+                      >
+                        <UserPlus className="w-4 h-4 text-amber-700" />
+                        <span>+ เพิ่มนิสิต (เทียบโอน/เดินเรียน)</span>
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={saving || targetStudents.length === 0}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm cursor-pointer"
+                      >
+                        <Save className="w-4 h-4" />
+                        {saving ? 'กำลังบันทึกลง Google Sheets...' : 'บันทึกการเช็คชื่อ'}
+                      </button>
+                    </div>
                   </div>
 
                   {targetStudents.length === 0 ? (
@@ -1444,71 +1864,120 @@ export default function AttendancePage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {targetStudents.map((s, idx) => {
-                            const currentStatus = attendanceMap[s.studentCode] || 'PRESENT';
-                            return (
-                              <tr key={`${s.studentCode}-${idx}`} className="hover:bg-slate-50/80 transition-colors">
-                                <td className="px-6 py-4 text-xs font-mono text-slate-400">{idx + 1}</td>
-                                <td className="px-6 py-4 font-mono font-bold text-emerald-700">
-                                  {s.studentCode}
-                                </td>
-                                <td className="px-6 py-4 font-medium text-slate-900">
-                                  {s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`}
-                                </td>
-                                <td className="px-6 py-4 text-xs text-slate-500">
-                                  {s.major || '-'}
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center justify-center gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleStatusChange(s.studentCode, 'PRESENT')}
-                                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                                        currentStatus === 'PRESENT'
-                                          ? 'bg-emerald-600 text-white shadow-sm'
-                                          : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
-                                      }`}
-                                    >
-                                      มา
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleStatusChange(s.studentCode, 'LATE')}
-                                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                                        currentStatus === 'LATE'
-                                          ? 'bg-yellow-500 text-white shadow-sm'
-                                          : 'bg-slate-100 text-slate-600 hover:bg-yellow-50 hover:text-yellow-700'
-                                      }`}
-                                    >
-                                      สาย
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleStatusChange(s.studentCode, 'ABSENT')}
-                                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                                        currentStatus === 'ABSENT'
-                                          ? 'bg-red-600 text-white shadow-sm'
-                                          : 'bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-700'
-                                      }`}
-                                    >
-                                      ขาด
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleStatusChange(s.studentCode, 'LEAVE')}
-                                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                                        currentStatus === 'LEAVE'
-                                          ? 'bg-blue-600 text-white shadow-sm'
-                                          : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'
-                                      }`}
-                                    >
-                                      ลา
-                                    </button>
+                          {groupedTargetSections.map((sec) => (
+                            <React.Fragment key={sec.groupKey}>
+                              {/* Major Group Header Row */}
+                              <tr className="bg-slate-100/90 border-y border-slate-200">
+                                <td colSpan={5} className="px-6 py-2.5 text-xs font-extrabold text-slate-800">
+                                  <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${sec.meta.badgeColor}`}>
+                                        {activeProgramMode === 'ENGLISH' ? sec.meta.labelEn : sec.meta.labelTh}
+                                      </span>
+                                      <span className="text-slate-500 font-normal text-[11px]">
+                                        ({activeProgramMode === 'ENGLISH' ? sec.meta.labelTh : sec.meta.labelEn})
+                                      </span>
+                                    </div>
+                                    <span className="text-slate-600 font-bold text-[11px]">
+                                      จำนวน {sec.items.length} รูป/คน (ลำดับที่ 1 - {sec.items.length})
+                                    </span>
                                   </div>
                                 </td>
                               </tr>
-                            );
-                          })}
+                              {sec.items.map((s) => {
+                                const currentStatus = attendanceMap[s.studentCode] || 'PRESENT';
+                                return (
+                                  <tr key={`${sec.groupKey}-${s.studentCode}`} className="hover:bg-slate-50/80 transition-colors">
+                                    <td className="px-6 py-4 text-xs font-mono font-bold text-slate-500">{s.indexInMajor}</td>
+                                    <td className="px-6 py-4 font-mono font-bold text-emerald-700">
+                                      {s.studentCode}
+                                    </td>
+                                    <td className="px-6 py-4 font-medium text-slate-900">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span>{s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`}</span>
+                                        {customEnrolledCodeSet.has(s.studentCode.toLowerCase().trim()) && (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs">
+                                            <span>⚡ เทียบโอน/เดินเรียน</span>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRemoveEnrollment(s.studentCode, s.fullName || s.studentCode);
+                                              }}
+                                              className="text-amber-700 hover:text-rose-700 hover:bg-amber-200/80 rounded-full w-3.5 h-3.5 flex items-center justify-center transition cursor-pointer"
+                                              title="นำนิสิตเทียบโอนท่านนี้ออกจากห้องเรียนนี้"
+                                            >
+                                              ✕
+                                            </button>
+                                          </span>
+                                        )}
+                                        {((s.programType || '').toUpperCase() === 'ENGLISH' || (!['ไทย', 'Thai'].includes(s.nationality || '') && s.programType !== 'THAI')) ? (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                            🌐 Inter
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            🇹🇭 ภาคไทย
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-xs text-slate-500">
+                                      {s.major || sec.meta.labelTh.replace(/^สาขาวิชา/, '')}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center justify-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleStatusChange(s.studentCode, 'PRESENT')}
+                                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                                            currentStatus === 'PRESENT'
+                                              ? 'bg-emerald-600 text-white shadow-sm'
+                                              : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                                          }`}
+                                        >
+                                          มา
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleStatusChange(s.studentCode, 'LATE')}
+                                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                                            currentStatus === 'LATE'
+                                              ? 'bg-yellow-500 text-white shadow-sm'
+                                              : 'bg-slate-100 text-slate-600 hover:bg-yellow-50 hover:text-yellow-700'
+                                          }`}
+                                        >
+                                          สาย
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleStatusChange(s.studentCode, 'ABSENT')}
+                                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                                            currentStatus === 'ABSENT'
+                                              ? 'bg-red-600 text-white shadow-sm'
+                                              : 'bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-700'
+                                          }`}
+                                        >
+                                          ขาด
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleStatusChange(s.studentCode, 'LEAVE')}
+                                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                                            currentStatus === 'LEAVE'
+                                              ? 'bg-blue-600 text-white shadow-sm'
+                                              : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'
+                                          }`}
+                                        >
+                                          ลา
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </React.Fragment>
+                          ))}
                         </tbody>
                       </table>
                     </div>
@@ -1538,56 +2007,26 @@ export default function AttendancePage() {
           MODE 2: CLASSROOM QR CODE CHECK-IN (Hidden on Print)
          ───────────────────────────────────────────────────────────── */}
       {activeMode === 'QR_CODE' && (
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm text-center space-y-6 print:hidden">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold">
-            <Sparkles className="w-4 h-4" />
-            โหมดฉายโปรเจกเตอร์ในชั้นเรียน
-          </div>
-
-          {!currentUser ? (
-            <div className="py-8 space-y-3">
-              <Lock className="w-10 h-10 text-amber-600 mx-auto" />
-              <h3 className="font-bold text-slate-800 text-sm">
-                กรุณาเข้าสู่ระบบอาจารย์ผู้สอนเพื่อเปิดจอ QR Code ประจำวิชา
-              </h3>
-            </div>
-          ) : !currentCourse ? (
-            <div className="py-8 space-y-3 text-slate-500 text-sm">
-              <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
-              <p>ไม่พบรายวิชาที่ท่านสอนสำหรับเปิดจอ QR Code</p>
-            </div>
-          ) : (
-            <>
-              <div>
-                <h2 className="text-2xl font-black text-slate-900">
-                  {currentCourse.courseCode} — {currentCourse.courseName}
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  อาจารย์ผู้สอน: <strong>{currentUser ? currentUser.name : recordedBy}</strong> | วันที่: {date}
-                </p>
-              </div>
-
-              {/* Big QR Placeholder & PIN Code */}
-              <div className="p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-300 max-w-sm mx-auto space-y-4">
-                <div className="w-48 h-48 mx-auto bg-white p-4 rounded-xl shadow-inner border flex items-center justify-center">
-                  <QrCode className="w-36 h-36 text-slate-800" />
-                </div>
-                <div>
-                  <div className="text-xs text-slate-400 uppercase font-semibold">รหัสเข้าเรียนประจำคาบ (PIN)</div>
-                  <div className="text-3xl font-mono font-black text-emerald-600 tracking-widest mt-1">
-                    {currentCourse.courseCode.replace(/\s+/g, '') || 'MCU88'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-xs text-slate-500 max-w-md mx-auto">
-                <p>
-                  ให้นิสิตเปิดเบราว์เซอร์ในมือถือ เข้าเมนูเช็คชื่อ หรือสแกน QR Code แล้วกรอกรหัสนิสิตของตนเอง ข้อมูลจะถูกบันทึกส่งตรงเข้า Google Sheets ทันที
-                </p>
-              </div>
-            </>
-          )}
-        </div>
+        <ClassroomQrProjector
+          availableCourses={availableCourses as any}
+          currentCourse={currentCourse as any}
+          onSelectCourse={(code) => setSelectedCourseCode(code)}
+          date={date}
+          onChangeDate={(newDate) => {
+            setDate(newDate);
+            setSessionCustom((prev) => ({ ...prev, date: newDate }));
+          }}
+          sessionNumber={sessionCustom.sessionNumber || 1}
+          onChangeSessionNumber={(num) =>
+            setSessionCustom((prev) => ({ ...prev, sessionNumber: num }))
+          }
+          targetStudents={targetStudents}
+          currentUser={currentUser}
+          recordedBy={recordedBy}
+          onRecordsSynced={(allRecords) => {
+            setHistoryRecords(allRecords as any);
+          }}
+        />
       )}
 
       {/* ─────────────────────────────────────────────────────────────
@@ -1672,6 +2111,41 @@ export default function AttendancePage() {
             </div>
           )}
         </div>
+      )}
+      {/* Modal to Add Transfer / Cross-enroll Student */}
+      {currentCourse && (
+        <AddStudentToCourseModal
+          isOpen={isAddStudentModalOpen}
+          onClose={() => setIsAddStudentModalOpen(false)}
+          courseCode={currentCourse.courseCode}
+          courseName={currentCourse.courseName}
+          allStudents={students}
+          currentEnrolledCodes={new Set(targetStudents.map((s) => s.studentCode))}
+          onEnrolledSuccess={(newEnr, addedOrUpdatedStudent) => {
+            if (addedOrUpdatedStudent) {
+              setStudents((prev) => {
+                const codeKey = addedOrUpdatedStudent.studentCode.trim().toLowerCase();
+                const exists = prev.some((s) => s.studentCode.trim().toLowerCase() === codeKey);
+                if (exists) {
+                  return prev.map((s) =>
+                    s.studentCode.trim().toLowerCase() === codeKey ? { ...s, ...addedOrUpdatedStudent } : s
+                  );
+                }
+                return [...prev, addedOrUpdatedStudent];
+              });
+            }
+            setCustomEnrollments((prev) => [
+              newEnr,
+              ...prev.filter((e) => !(e.courseCode === newEnr.courseCode && e.studentCode === newEnr.studentCode)),
+            ]);
+            setAttendanceMap((prev) => ({
+              ...prev,
+              [newEnr.studentCode]: prev[newEnr.studentCode] || 'PRESENT',
+            }));
+            setIsAddStudentModalOpen(false);
+          }}
+          currentUserName={currentUser?.name}
+        />
       )}
     </div>
   );

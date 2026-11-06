@@ -5,36 +5,36 @@
   "facultyNameEn": "Faculty of Buddhism",
   "logoUrl": "/uploads/logo-1793607763771.jpg",
   "logoEmoji": "☸️",
-  "signerNameTh": "-",
-  "signerTitleTh": "-",
-  "signerNameEn": "-",
-  "signerTitleEn": "-",
+  "signerNameTh": "พระราชอุดมวัชรเมธี, ผศ.ดร.",
+  "signerTitleTh": "คณบดีคณะพุทธศาสตร์",
+  "signerNameEn": "Asst. Prof. Phra Ratcha-udomwatcharamethee, Ph.D.",
+  "signerTitleEn": "Dean, Faculty of Buddhism",
   "contactPhone": "035-247-8000 ต่อ 8323",
   "contactEmail": "buddhism@mcu.ac.th",
   "websiteUrl": "https://fb.mcu.ac.th/",
   "systemServiceUrl": "https://fb-service.mcu.ac.th/",
-  "addressTh": "อาคารเรียนรวม ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170",
+  "addressTh": "อาคารสมเด็จพระพุฒาจารย์ (เกี่ยว อุปเสณมหาเถร) อาคารเรียนรวม ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170",
   "addressEn": "79 Moo 1, Phahonyothin Road, Lamsai, Wangnoi, Phra Nakhon Si Ayutthaya 13170, Thailand",
   "announcementText": "ยินดีต้อนรับสู่งานบริการการศึกษาและทะเบียน คณะพุทธศาสตร์ มจร. วังน้อย",
   "signatories": [
     {
       "id": "DEAN",
-      "label": "1. คณบดีคณะพุทธศาสตร์ (พระครูสุธีกิตติบัณฑิต, รศ.ดร.)",
-      "name": "พระครูสุธีกิตติบัณฑิต, รศ.ดร.",
+      "label": "1. คณบดีคณะพุทธศาสตร์",
+      "name": "พระราชอุดมวัชรเมธี, ผศ.ดร.",
       "title": "คณบดีคณะพุทธศาสตร์",
       "isDefault": true
     },
     {
       "id": "VICE_ACADEMIC",
-      "label": "2. รองคณบดีฝ่ายวิชาการ (ปฏิบัติหน้าที่แทนคณบดี)",
+      "label": "2. รองคณบดีฝ่ายวิชาการ",
       "name": "พระครูสิริรัตนบัณฑิต, ผศ.ดร.",
-      "title": "รองคณบดีฝ่ายวิชาการ ปฏิบัติหน้าที่แทนคณบดีคณะพุทธศาสตร์"
+      "title": "รองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์"
     },
     {
       "id": "VICE_STUDENT",
-      "label": "3. รองคณบดีฝ่ายกิจการนิสิต (รับรองความประพฤติ/กิจกรรม)",
-      "name": "พระมหาบุญเลิศ ช่วยธานี, ศ.ดร.",
-      "title": "รองคณบดีฝ่ายกิจการนิสิต คณะพุทธศาสตร์"
+      "label": "3. รองคณบดีฝ่ายบริหาร",
+      "name": "รศ.ดร.ณัทธีร์ ศรีดี",
+      "title": "รองคณบดีฝ่ายบริหาร คณะพุทธศาสตร์"
     },
     {
       "id": "ACTING_DEAN",
@@ -44,9 +44,9 @@
     },
     {
       "id": "REGISTRAR",
-      "label": "5. ผู้อำนวยการส่วนทะเบียนและวัดผล (นายทะเบียน)",
-      "name": "พระมหาสุริยัน ปญฺญาวชิโร, ผศ.ดร.",
-      "title": "ผู้อำนวยการส่วนทะเบียนและวัดผล"
+      "label": "5. เลขานุการสำนักงานคณบดี คณะพุทธศาสตร์",
+      "name": "พระครูปลัดสมเกียรติ กิตฺติญาโณ",
+      "title": "เลขานุการสำนักงานคณบดี คณะพุทธศาสตร์"
     },
     {
       "id": "BLANK",
@@ -56,9 +56,9 @@
     },
     {
       "id": "TEST_VICE_RESEARCH",
-      "label": "7. รองคณบดีฝ่ายวิจัยและนวัตกรรม",
-      "name": "พระมหาวิศิษฐ์ อภิรโต, ผศ.ดร.",
-      "title": "รองคณบดีฝ่ายวิจัยและนวัตกรรม คณะพุทธศาสตร์"
+      "label": "7. รักษาการแทนรองคณบดีฝ่ายวิชาการ",
+      "name": "",
+      "title": "รักษาการแทนรองคณบดีฝ่ายวิชาการ คณะพุทธศาสตร์"
     }
   ],
   "visaAlertTitle": "สำหรับการต่อวีซ่า ให้ดำเนินการก่อนหนังสือเดินทางหมดอายุ 30 วัน",
@@ -70,7 +70,70 @@
   "accuracyAlertTitle": "กรุณากรอกข้อมูลให้ครบถ้วน มิฉะนั้นเอกสารจะไม่สมบูรณ์และจะยกเลิกการขอหนังสือ",
   "accuracyAlertDesc": "* ตรวจสอบตัวสะกดชื่อ-นามสกุลภาษาอังกฤษและเลขพาสปอร์ตให้ตรงกับเล่มจริง",
   "accuracyAlertEnabled": true,
+  "forcePasswordChangeOnFirstLogin": true,
+  "heroWildEnabled": true,
+  "heroLeftWord": "BUD",
+  "heroRightWord": "DHISM",
+  "heroCapsuleImage": "/uploads/file-1793867472059.jpg",
+  "heroCapsuleAlt": "Floating Island Nature Capsule - MotionSites AI Wild Pil",
+  "heroBadgeText": "Creative Designer & Faculty of Buddhism • MCU",
+  "heroHeadingTh": "ระบบบริการนิสิตและวิชาการออนไลน์ คณะพุทธศาสตร์",
+  "heroDescription": "",
+  "heroDropCapLetter": "",
+  "heroPrimaryBtnText": "Let's Get Wild",
+  "heroPrimaryBtnUrl": "/certificates",
+  "heroSecondaryBtnText": "ตารางเรียนและวิชาการ",
+  "heroSecondaryBtnUrl": "/courses",
+  "heroBgStyle": "wavy-contours",
+  "themePreset": "gold",
+  "themeMourningRibbon": false,
+  "fontSizeScale": "large",
+  "fontCustomPercent": 116,
+  "fontFamilyPreset": "sarabun",
+  "fontWeightBoost": true,
+  "footerTitleTh": "สำนักงานคณบดีคณะพุทธศาสตร์ ชั้น G",
+  "officeHours": "จันทร์ - ศุกร์ 09.00 - 17.00 น. (เว้นวันหยุดราชการ)",
+  "footerCustomNote": "",
+  "devCreditText": "Dev. by สำนักงานคณบดีคณะพุทธศาสตร์",
+  "devCreditEnabled": true,
+  "admissionPeriodOpen": true,
+  "admissionPeriodTitle": "เปิดรับคำร้องหนังสือรับรองสำหรับผู้ผ่านการคัดเลือกเข้าศึกษาใหม่ ประจำปีการศึกษา 2569",
+  "admissionPeriodDates": "1 มีนาคม 2569 - 31 กรกฎาคม 2569",
   "updatedAt": "2026-11-04T08:27:07.500Z",
   "lineNotifyToken": "",
-  "lineChannelAccessToken": ""
+  "lineChannelAccessToken": "",
+  "showEventsMenu": false,
+  "showStudentsSearch": true,
+  "showCoursesMenu": true,
+  "showCertificatesMenu": true,
+  "morningPeriodLabel": "คาบเช้า (09:00 - 11:30 น.)",
+  "morningPeriodSub": "ภาคการศึกษาปกติ",
+  "lunchPeriodLabel": "พักฉัน / พักกลางวัน",
+  "lunchPeriodTime": "11:30 - 12:30",
+  "afternoonPeriodLabel": "คาบบ่าย (12:30 - 15:30 น.)",
+  "afternoonPeriodSub": "ภาคการศึกษาปกติ",
+  "eveningPeriodLabel": "คาบเย็น / ปฏิบัติการ (15:30 - 17:00 น.)",
+  "eveningPeriodSub": "วิชาสัมมนา / กัมมัฏฐาน",
+  "timetableDaysBachelor": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "timetableDaysMaster": [
+    6,
+    7
+  ],
+  "timetableDaysDoctoral": [
+    6,
+    7
+  ],
+  "timetableDaysCertificate": [
+    6,
+    7
+  ],
+  "timetableNotesBachelor": "หมายเหตุ\t๑. วันพระและวันนักขัตฤกษ์เป็นวันหยุดทั่วไป (ตารางเรียนวันใดตรงกับวันพระให้ยกไปเรียนวันศุกร์)\n\t๒. *รายวิชาข้อสอบกลาง",
+  "timetableNotesMaster": "หมายเหตุ\t๑. จัดการเรียนการสอนวันเสาร์ - วันอาทิตย์ ตามตารางที่หลักสูตรกำหนด",
+  "timetableNotesDoctoral": "หมายเหตุ\t๑. จัดการเรียนการสอนวันเสาร์ - วันอาทิตย์ ตามตารางที่หลักสูตรกำหนด",
+  "timetableNotesCertificate": "หมายเหตุ\t๑. จัดการเรียนการสอนตามประกาศตารางเรียนหลักสูตรประกาศนียบัตร"
 }

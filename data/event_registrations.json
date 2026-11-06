@@ -1,0 +1,5772 @@
+[
+  {
+    "id": "a7ca9f68-7a8d-41ab-b5e9-737cdead977c",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T321",
+    "studentName": "สามเณร Panyavara",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "เข้าตรงเวลา",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.258Z",
+    "updatedAt": "2026-11-05T07:08:50.867Z"
+  },
+  {
+    "id": "72b408a5-08d8-448a-8e0c-9e89323efcb6",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T320",
+    "studentName": "สามเณรโชคดี ขุนจันทร์",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.256Z",
+    "updatedAt": "2026-11-05T07:08:50.867Z"
+  },
+  {
+    "id": "fbd49426-ed1b-438d-92d8-688eb2c165d7",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T319",
+    "studentName": "สามเณรยมมะลา อ่อนอินทร์",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.255Z",
+    "updatedAt": "2026-11-05T07:08:50.867Z"
+  },
+  {
+    "id": "8d590573-52c1-4dc7-9e7f-3de6a95989cb",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T318",
+    "studentName": "สามเณรกิตติพัฒน์ พุ่มพวง",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.254Z",
+    "updatedAt": "2026-11-05T07:08:50.867Z"
+  },
+  {
+    "id": "ec1a30db-2b39-4ff9-bd22-82a24a2f1179",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T317",
+    "studentName": "พระควงพันธ์ อภิปุญฺญเตโช",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.253Z",
+    "updatedAt": "2026-11-05T07:08:50.867Z"
+  },
+  {
+    "id": "45d08e47-93a5-4103-98d6-a2fb614bfd53",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T315",
+    "studentName": "พระมหาฐิติพงศ์ สุทฺธิโสภโณ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.252Z",
+    "updatedAt": "2026-11-05T07:08:50.867Z"
+  },
+  {
+    "id": "cef97f95-6d94-49e4-9d3f-776cb72e3850",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T316",
+    "studentName": "พระ Thach Nang",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.252Z",
+    "updatedAt": "2026-11-05T07:08:50.867Z"
+  },
+  {
+    "id": "486e3434-bb16-4837-8638-23ef693720c0",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T314",
+    "studentName": "พระมหาณัฐพนธ์ กตพุทฺธิ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.251Z",
+    "updatedAt": "2026-11-05T07:08:50.867Z"
+  },
+  {
+    "id": "e72433a3-099e-4992-9b80-a571b7d98623",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T313",
+    "studentName": "Ven. Kittiphong Innakhone",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.250Z",
+    "updatedAt": "2026-11-05T07:08:50.867Z"
+  },
+  {
+    "id": "800cc8ac-ee80-409b-9dcf-d3efc5aca64c",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T312",
+    "studentName": "พระมงคล สนฺตมโน",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.249Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "4b869662-1f46-43d8-a954-b58a9b4f7b9d",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T311",
+    "studentName": "พระสุริยกมล ปภาโส",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.248Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "bb03f019-cdf0-44b4-b0a8-a4dd78816a50",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T310",
+    "studentName": "พระมหาศุภัช มหาวีโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.247Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "74874b2a-55bf-4cb2-8dbf-139333147a3e",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T309",
+    "studentName": "พระ Vasava",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.246Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "90d9c215-8335-4cae-863b-9062c6d239dc",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T308",
+    "studentName": "พระ Bounxou Keomeuangxay",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.245Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "9948d089-e7d3-4df1-9c39-166bf8f6e4f4",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T307",
+    "studentName": "พระธนชิต สุจิตฺโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "LEAVE"
+        },
+        "p3": {
+          "status": "LEAVE"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.244Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "283988f2-10a3-41ec-9532-24ee2c2eaa7a",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T306",
+    "studentName": "พระ Zawtika",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.243Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "5e92fda9-2b42-4b93-9544-79f9b4250b34",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T305",
+    "studentName": "พระพันธิ์ศักดิ์ วรสกฺโก",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.242Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "ead74f0d-5b55-47a1-8998-642dfad987e7",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T304",
+    "studentName": "พระมหานราธิป ชินวโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.241Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "21dee73f-fa4c-4675-b9e5-c206ad5d118b",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T303",
+    "studentName": "พระญาณกิตติ์ อตฺถกาโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.240Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "e4594b65-6939-4728-a3a7-b832296f370e",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T302",
+    "studentName": "พระมหาอุเทน อุเทโน",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.238Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "28ff049f-23e3-461d-a303-e0746d188191",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T301",
+    "studentName": "พระพานเงิน มหาปุญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": "",
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.237Z",
+    "updatedAt": "2026-11-05T07:08:50.868Z"
+  },
+  {
+    "id": "09436885-1b32-4687-9883-bc6be7d14d48",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T221",
+    "studentName": "สามเณรนวพล ธิมานิตย์",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.236Z",
+    "updatedAt": "2026-10-29T08:38:37.236Z"
+  },
+  {
+    "id": "70a10169-d704-485d-9e0c-846e5565137e",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T222",
+    "studentName": "สามเณร Kong Vimonchit",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.236Z",
+    "updatedAt": "2026-10-29T08:38:37.236Z"
+  },
+  {
+    "id": "fcb9758a-9b85-43d5-bb4a-ef6236dfa72c",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T220",
+    "studentName": "สามเณรจักรกฤษณ์ เพชรนคร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.235Z",
+    "updatedAt": "2026-10-29T08:38:37.235Z"
+  },
+  {
+    "id": "d96557ce-549b-4b59-aef1-8c64950da7aa",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T219",
+    "studentName": "สามเณรภูบดินทร กาวิจา",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.234Z",
+    "updatedAt": "2026-10-29T08:38:37.234Z"
+  },
+  {
+    "id": "009e85d9-ca29-44ec-9c05-4025792231a9",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T218",
+    "studentName": "สามเณรอภิสร ใสสะอาด",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.233Z",
+    "updatedAt": "2026-10-29T08:38:37.233Z"
+  },
+  {
+    "id": "6dc8f8a2-e0b7-40c4-89e6-043f5add8686",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T217",
+    "studentName": "พระสุพรรณ แฮล",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.232Z",
+    "updatedAt": "2026-10-29T08:38:37.232Z"
+  },
+  {
+    "id": "7fb00605-ade0-4af7-976e-86a3a3efb0d7",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T216",
+    "studentName": "พระมหามนตรี สุตมนตโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.231Z",
+    "updatedAt": "2026-10-29T08:38:37.231Z"
+  },
+  {
+    "id": "dc600d4b-73a9-4776-9bba-89e570ca63b0",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T215",
+    "studentName": "พระกฤษฎา ปญฺญาวโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.230Z",
+    "updatedAt": "2026-10-29T08:38:37.230Z"
+  },
+  {
+    "id": "b930c27f-5e78-4c54-9cf5-4e28ea8c3083",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T214",
+    "studentName": "พระเจษฎา อภิเจโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.229Z",
+    "updatedAt": "2026-10-29T08:38:37.229Z"
+  },
+  {
+    "id": "e0f16e5a-0e19-40de-8147-aac173fec382",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T213",
+    "studentName": "พระวีรวิชญ์ กตฺสาโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.228Z",
+    "updatedAt": "2026-10-29T08:38:37.228Z"
+  },
+  {
+    "id": "ace9a4a1-adfa-4797-a541-bdd11a1233df",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T212",
+    "studentName": "พระจิรวัฒน์ อาภากโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.227Z",
+    "updatedAt": "2026-10-29T08:38:37.227Z"
+  },
+  {
+    "id": "181903f7-8b44-40fc-a014-a837e6de299f",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T211",
+    "studentName": "พระ Tuan Yan",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.226Z",
+    "updatedAt": "2026-10-29T08:38:37.226Z"
+  },
+  {
+    "id": "2a595910-3745-4dd8-8f9d-d63b94f5f892",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T210",
+    "studentName": "พระดรุษกร ธีรปญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.225Z",
+    "updatedAt": "2026-10-29T08:38:37.225Z"
+  },
+  {
+    "id": "f18f7a12-4212-4a42-853b-16190071ee0f",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T209",
+    "studentName": "พระสุทธิพัฒน์ สุทธฺจิตฺโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.224Z",
+    "updatedAt": "2026-10-29T08:38:37.224Z"
+  },
+  {
+    "id": "aab3387e-abbc-4703-8d24-c49b6791016c",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T208",
+    "studentName": "พระ Thach Bach Tra",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "note": "ไม่ได้มาลงชื่อ",
+          "status": "ABSENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.223Z",
+    "updatedAt": "2026-10-29T08:38:37.223Z"
+  },
+  {
+    "id": "87f28572-5902-40da-8c4d-905c8f0a7403",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T207",
+    "studentName": "พระมหาสาลี สีลสาโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.222Z",
+    "updatedAt": "2026-10-29T08:38:37.222Z"
+  },
+  {
+    "id": "cb683f43-5ce4-4240-b899-a2e6128f1343",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T206",
+    "studentName": "พระครูสมุห์รัชกฤช ภทฺทปญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.221Z",
+    "updatedAt": "2026-10-29T08:38:37.221Z"
+  },
+  {
+    "id": "061cc552-a7f2-46ce-a648-3fd01bc7ec97",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T205",
+    "studentName": "พระนพดล จินตามโย",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.220Z",
+    "updatedAt": "2026-10-29T08:38:37.220Z"
+  },
+  {
+    "id": "20cb9e1b-86a1-43c7-b0f8-78c2f1c45c83",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T204",
+    "studentName": "พระจิรทีปต์ อภิชาโน",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.219Z",
+    "updatedAt": "2026-10-29T08:38:37.219Z"
+  },
+  {
+    "id": "25bacc19-a76f-4dc3-8ec6-36435d0052f2",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T203",
+    "studentName": "พระมหากุศล กุสลจิตฺโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.218Z",
+    "updatedAt": "2026-10-29T08:38:37.218Z"
+  },
+  {
+    "id": "ecd958d9-c31c-4085-b054-fc55a486fa99",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T202",
+    "studentName": "พระพิเชษฐ์ เตชปญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.217Z",
+    "updatedAt": "2026-10-29T08:38:37.217Z"
+  },
+  {
+    "id": "416b7d36-8972-4936-9b45-d1db1f4e2cb8",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T201",
+    "studentName": "Bounmy Xaymonty",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.216Z",
+    "updatedAt": "2026-10-29T08:38:37.216Z"
+  },
+  {
+    "id": "2384f6b1-0cea-4afb-a293-0ed1cb4cd782",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T122",
+    "studentName": "สามเณรพัชรพล เจริญเกียรติ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.215Z",
+    "updatedAt": "2026-10-29T08:38:37.215Z"
+  },
+  {
+    "id": "03b0c847-10ab-4842-a8d4-4aa2b94d2937",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T121",
+    "studentName": "สามเณรณรงค์กร แจ้งถิ่นป่า",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.214Z",
+    "updatedAt": "2026-10-29T08:38:37.214Z"
+  },
+  {
+    "id": "40881843-a1f4-4313-a3e4-8f9132ff5f4b",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T120",
+    "studentName": "สามเณรนนทภัทร ผาทา",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.214Z",
+    "updatedAt": "2026-10-29T08:38:37.214Z"
+  },
+  {
+    "id": "c5eec6bb-113e-4f21-8d15-d8e243bdf244",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T119",
+    "studentName": "สามเณรพชร พรมมี",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.213Z",
+    "updatedAt": "2026-10-29T08:38:37.213Z"
+  },
+  {
+    "id": "acd54503-1283-4ccc-8893-4ac684a02b73",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T118",
+    "studentName": "พระสายัน สารโท",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.212Z",
+    "updatedAt": "2026-10-29T08:38:37.212Z"
+  },
+  {
+    "id": "e189db29-5b92-4f45-9145-5a65935a7436",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T123",
+    "studentName": "พระวีระชัย วีรปญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.211Z",
+    "updatedAt": "2026-10-29T08:38:37.211Z"
+  },
+  {
+    "id": "eff1ec1b-f3d0-4ae7-ac58-8b35b43d5f32",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T117",
+    "studentName": "พระบุญธรรม สุขวิชฺโช",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.210Z",
+    "updatedAt": "2026-10-29T08:38:37.210Z"
+  },
+  {
+    "id": "3805f54b-d3de-46b5-a18d-637a2cb40775",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T116",
+    "studentName": "พระทรงสิทธิ์ จิตฺตคุโณ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.209Z",
+    "updatedAt": "2026-10-29T08:38:37.209Z"
+  },
+  {
+    "id": "134a4c1d-6743-4f56-a974-c96a5b1c4b51",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T115",
+    "studentName": "พระ Kusala",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.208Z",
+    "updatedAt": "2026-10-29T08:38:37.208Z"
+  },
+  {
+    "id": "5e134c83-7051-46e1-8e3b-242dd4eaf8b9",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T114",
+    "studentName": "พระ Siha",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.207Z",
+    "updatedAt": "2026-10-29T08:38:37.207Z"
+  },
+  {
+    "id": "b036f01f-c442-4ad2-bed1-2bd9e8238f4a",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T113",
+    "studentName": "พระสมศักดิ์ วํสเวชฺโช",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.206Z",
+    "updatedAt": "2026-10-29T08:38:37.206Z"
+  },
+  {
+    "id": "ba01ccd4-7ea3-44ce-bbb5-0d81550ef895",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T112",
+    "studentName": "พระปิยะวุฒิ ชาตสํวโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.205Z",
+    "updatedAt": "2026-10-29T08:38:37.205Z"
+  },
+  {
+    "id": "26c92dee-1263-4864-800b-7b225f39d949",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T111",
+    "studentName": "พระมหาวชิรวิทย์ ธนวุฑฺโฒ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.204Z",
+    "updatedAt": "2026-10-29T08:38:37.204Z"
+  },
+  {
+    "id": "39f9c451-be6c-4854-8ad6-644849ea640f",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T110",
+    "studentName": "พระ Pandita",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.203Z",
+    "updatedAt": "2026-10-29T08:38:37.203Z"
+  },
+  {
+    "id": "bf1c3e20-7b43-4298-b4d6-86563216fae0",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T109",
+    "studentName": "พระสมชาย ปญฺญาธโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.202Z",
+    "updatedAt": "2026-10-29T08:38:37.202Z"
+  },
+  {
+    "id": "b04e0f5a-c6e9-44e5-b73a-71215b31f1cc",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T108",
+    "studentName": "พระมหาชนุดม อุตฺตมวํโส",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.201Z",
+    "updatedAt": "2026-10-29T08:38:37.201Z"
+  },
+  {
+    "id": "bc53d82d-5b6f-4ec8-8fa2-1756b6b3bdd1",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T107",
+    "studentName": "พระมหาพิพิธธน ครุธมฺโม",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.200Z",
+    "updatedAt": "2026-10-29T08:38:37.200Z"
+  },
+  {
+    "id": "1a46359e-7660-4bc6-a582-67f46a9edbb3",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T106",
+    "studentName": "พระภาสกร ปญฺญาคโม",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.199Z",
+    "updatedAt": "2026-10-29T08:38:37.199Z"
+  },
+  {
+    "id": "92e858a6-21d7-4118-b372-bdbbd6813b9f",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T105",
+    "studentName": "พระดำรงพล กตปุญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "note": "มาสาย 10 นาที",
+          "status": "LATE"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.198Z",
+    "updatedAt": "2026-10-29T08:38:37.198Z"
+  },
+  {
+    "id": "31543d33-4184-49dc-9b47-3b3e278e3c11",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T104",
+    "studentName": "พระมหาอาทิตย์ อภิธมฺโม",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.197Z",
+    "updatedAt": "2026-10-29T08:38:37.197Z"
+  },
+  {
+    "id": "26c9bc33-d1f1-4347-878e-09f9cbc36573",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T103",
+    "studentName": "พระ Savin Sujitto",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.196Z",
+    "updatedAt": "2026-10-29T08:38:37.196Z"
+  },
+  {
+    "id": "4943bc45-e802-48e8-a8e6-a7195b77b444",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T102",
+    "studentName": "พระครูปลัดศรัณย์กร ปยุตฺโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.195Z",
+    "updatedAt": "2026-10-29T08:38:37.195Z"
+  },
+  {
+    "id": "9cd5d41a-59f2-4ef8-ab77-c4cc728e42a3",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "T101",
+    "studentName": "พระสมุห์วิชัย วิชโย",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.193Z",
+    "updatedAt": "2026-10-29T08:38:37.193Z"
+  },
+  {
+    "id": "fdb7af94-42b0-4882-a42d-f0395732a82f",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1216",
+    "studentName": "Mr. Janaka Udayawansa Lanka Purayalage",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.192Z",
+    "updatedAt": "2026-10-29T08:38:37.192Z"
+  },
+  {
+    "id": "6e38f868-4e3a-4836-8509-7438ad46487f",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1215",
+    "studentName": "Mr. Supan Chakma",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.191Z",
+    "updatedAt": "2026-10-29T08:38:37.191Z"
+  },
+  {
+    "id": "1d6f51e0-a02c-4d47-a0de-32ebcbf94069",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1214",
+    "studentName": "Mr. Khun Maung Chan Aung",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.190Z",
+    "updatedAt": "2026-10-29T08:38:37.190Z"
+  },
+  {
+    "id": "183c31c6-e2e6-49d4-9816-ee2e8d6eefc1",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1213",
+    "studentName": "Miss Jesy Chakma",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.189Z",
+    "updatedAt": "2026-10-29T08:38:37.189Z"
+  },
+  {
+    "id": "9f45dd32-b8c1-454b-9528-28879d2bd3ff",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1212",
+    "studentName": "Miss Rupasi Chakma",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.188Z",
+    "updatedAt": "2026-10-29T08:38:37.188Z"
+  },
+  {
+    "id": "a3919f08-59c9-4947-b3a5-999f331ce640",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1211",
+    "studentName": "Bhikkhuni Tran Thi My Hau",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.186Z",
+    "updatedAt": "2026-10-29T08:38:37.186Z"
+  },
+  {
+    "id": "b65b28a7-341c-4c9f-8e39-c86d6913485b",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1210",
+    "studentName": "Bhikkhuni Quach Thi Diu",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.185Z",
+    "updatedAt": "2026-10-29T08:38:37.185Z"
+  },
+  {
+    "id": "94c701ce-b6a3-423e-abd5-0dca4642a353",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1209",
+    "studentName": "Bhikkhuni Nguyen Thi Anh",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "note": "Missed evening session",
+          "status": "ABSENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.183Z",
+    "updatedAt": "2026-10-29T08:38:37.183Z"
+  },
+  {
+    "id": "52b0f53a-cb55-4f2f-9946-1241eb7c1dc7",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1208",
+    "studentName": "Bhikkhuni Le Thi Phuong Nhi",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.182Z",
+    "updatedAt": "2026-10-29T08:38:37.182Z"
+  },
+  {
+    "id": "c62e9a93-478e-486d-bd07-d6c4845eadfe",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1207",
+    "studentName": "Bhikkhuni Kalaganwaththe Padmananda Silmathawa",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.181Z",
+    "updatedAt": "2026-10-29T08:38:37.181Z"
+  },
+  {
+    "id": "a1440024-4ef7-4604-90b1-3db62546acba",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1206",
+    "studentName": "Huynh Xvan Vinh",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.180Z",
+    "updatedAt": "2026-10-29T08:38:37.180Z"
+  },
+  {
+    "id": "57433b30-39a1-49aa-b11d-53e5d2efc316",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1205",
+    "studentName": "Nguyen Tan Dat",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.179Z",
+    "updatedAt": "2026-10-29T08:38:37.179Z"
+  },
+  {
+    "id": "a5e5d83b-b935-4eec-9605-93e7569e4828",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1204",
+    "studentName": "Tran Quang Tu",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.178Z",
+    "updatedAt": "2026-10-29T08:38:37.178Z"
+  },
+  {
+    "id": "e92b3c51-0a16-460b-bd06-237e6f58b1bc",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1203",
+    "studentName": "Nguyen Quoc Trung",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.177Z",
+    "updatedAt": "2026-10-29T08:38:37.177Z"
+  },
+  {
+    "id": "281aa952-8a7a-44f5-abea-5919a1ebd7c2",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1202",
+    "studentName": "Do Tan An",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "note": "Late 5 mins",
+          "status": "LATE"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.174Z",
+    "updatedAt": "2026-10-29T08:38:37.174Z"
+  },
+  {
+    "id": "fe5d97a6-1fed-43cb-95f0-0ceddd6cbf38",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "2a384a4c-2186-481c-a0cd-1238e427d756",
+    "studentCode": "E1201",
+    "studentName": "Vo Le Anh Tuan",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:38:37.155Z",
+    "updatedAt": "2026-10-29T08:38:37.155Z"
+  },
+  {
+    "id": "21fd7334-7055-4807-8cc8-0cb53f8ca620",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T321",
+    "studentName": "สามเณร Panyavara",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.427Z",
+    "updatedAt": "2026-10-29T08:19:14.427Z"
+  },
+  {
+    "id": "4bf3ea2a-b833-4066-988f-0df86dd9bdf7",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T320",
+    "studentName": "สามเณรโชคดี ขุนจันทร์",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.426Z",
+    "updatedAt": "2026-10-29T08:19:14.426Z"
+  },
+  {
+    "id": "5b1ba460-6f74-48ec-a2b9-b1a53c45826c",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T319",
+    "studentName": "สามเณรยมมะลา อ่อนอินทร์",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.425Z",
+    "updatedAt": "2026-10-29T08:19:14.425Z"
+  },
+  {
+    "id": "ec653e1c-5807-40bd-bdeb-70981bad6f61",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T318",
+    "studentName": "สามเณรกิตติพัฒน์ พุ่มพวง",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.424Z",
+    "updatedAt": "2026-10-29T08:19:14.424Z"
+  },
+  {
+    "id": "00dfe393-661d-43a6-b88c-ce4a2077b1be",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T317",
+    "studentName": "พระควงพันธ์ อภิปุญฺญเตโช",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.423Z",
+    "updatedAt": "2026-10-29T08:19:14.423Z"
+  },
+  {
+    "id": "daaba6f2-fcb9-459a-8035-4169f197c980",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T316",
+    "studentName": "พระ Thach Nang",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.422Z",
+    "updatedAt": "2026-10-29T08:19:14.422Z"
+  },
+  {
+    "id": "580c5bc2-969f-405f-af0d-a22d5aaf34c6",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T315",
+    "studentName": "พระมหาฐิติพงศ์ สุทฺธิโสภโณ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.421Z",
+    "updatedAt": "2026-10-29T08:19:14.421Z"
+  },
+  {
+    "id": "2141b5fa-0c46-4ed0-a008-1d69123041cf",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T314",
+    "studentName": "พระมหาณัฐพนธ์ กตพุทฺธิ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.420Z",
+    "updatedAt": "2026-10-29T08:19:14.420Z"
+  },
+  {
+    "id": "c6a87e2d-9531-44a2-a151-d186128f200e",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T313",
+    "studentName": "Ven. Kittiphong Innakhone",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.419Z",
+    "updatedAt": "2026-10-29T08:19:14.419Z"
+  },
+  {
+    "id": "a6e8d6fd-0e3b-45c8-87c5-02d4f9254130",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T312",
+    "studentName": "พระมงคล สนฺตมโน",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.418Z",
+    "updatedAt": "2026-10-29T08:19:14.418Z"
+  },
+  {
+    "id": "503c4e00-4af6-452f-86a5-5d9d1b0cbaf4",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T311",
+    "studentName": "พระสุริยกมล ปภาโส",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.417Z",
+    "updatedAt": "2026-10-29T08:19:14.417Z"
+  },
+  {
+    "id": "e80ea555-1f52-4571-9e06-4941bc874cd6",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T310",
+    "studentName": "พระมหาศุภัช มหาวีโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.416Z",
+    "updatedAt": "2026-10-29T08:19:14.416Z"
+  },
+  {
+    "id": "38cfa5ba-3107-42c8-a4fd-1175ad1393d9",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T308",
+    "studentName": "พระ Bounxou Keomeuangxay",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.415Z",
+    "updatedAt": "2026-10-29T08:19:14.415Z"
+  },
+  {
+    "id": "4dd33322-7f7e-4e99-afc3-3d751edf2474",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T309",
+    "studentName": "พระ Vasava",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.415Z",
+    "updatedAt": "2026-10-29T08:19:14.415Z"
+  },
+  {
+    "id": "006df72d-45bb-48a7-975e-a9c2d98b2ac6",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T307",
+    "studentName": "พระธนชิต สุจิตฺโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "note": "ปวดศีรษะ พักห้องพยาบาล",
+          "status": "LEAVE"
+        },
+        "p3": {
+          "note": "ปวดศีรษะ",
+          "status": "LEAVE"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.414Z",
+    "updatedAt": "2026-10-29T08:19:14.414Z"
+  },
+  {
+    "id": "798c286e-54d8-4322-b194-f6a8731dd7bb",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T306",
+    "studentName": "พระ Zawtika",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.413Z",
+    "updatedAt": "2026-10-29T08:19:14.413Z"
+  },
+  {
+    "id": "05744250-e958-406e-bbdb-5a877ece2213",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T305",
+    "studentName": "พระพันธิ์ศักดิ์ วรสกฺโก",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.412Z",
+    "updatedAt": "2026-10-29T08:19:14.412Z"
+  },
+  {
+    "id": "33bae3b1-943d-4413-af1c-378a0d38c630",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T304",
+    "studentName": "พระมหานราธิป ชินวโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.411Z",
+    "updatedAt": "2026-10-29T08:19:14.411Z"
+  },
+  {
+    "id": "666adc45-30bf-4b5a-bba0-1fea9f485170",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T303",
+    "studentName": "พระญาณกิตติ์ อตฺถกาโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.410Z",
+    "updatedAt": "2026-10-29T08:19:14.410Z"
+  },
+  {
+    "id": "b50635d8-ad02-4faa-b0f0-ceee8ccdc5e5",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T302",
+    "studentName": "พระมหาอุเทน อุเทโน",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.409Z",
+    "updatedAt": "2026-10-29T08:19:14.409Z"
+  },
+  {
+    "id": "23d6aa0c-7c8f-42d1-8f8d-69e34b334af0",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T301",
+    "studentName": "พระพานเงิน มหาปุญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 3,
+    "groupName": "กลุ่มที่ 3",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.408Z",
+    "updatedAt": "2026-10-29T08:19:14.408Z"
+  },
+  {
+    "id": "74312a3d-e2e4-47b9-9959-cec5ecaafc91",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T222",
+    "studentName": "สามเณร Kong Vimonchit",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.406Z",
+    "updatedAt": "2026-10-29T08:19:14.406Z"
+  },
+  {
+    "id": "ff9197e8-bba4-4022-b7a7-8f1d767a035b",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T221",
+    "studentName": "สามเณรนวพล ธิมานิตย์",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.405Z",
+    "updatedAt": "2026-10-29T08:19:14.405Z"
+  },
+  {
+    "id": "bf8f008b-d97a-47f1-adb2-90b5344d96af",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T220",
+    "studentName": "สามเณรจักรกฤษณ์ เพชรนคร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.404Z",
+    "updatedAt": "2026-10-29T08:19:14.404Z"
+  },
+  {
+    "id": "e9c813fc-345f-43c0-8b60-0cb5d761c1a6",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T219",
+    "studentName": "สามเณรภูบดินทร กาวิจา",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.403Z",
+    "updatedAt": "2026-10-29T08:19:14.403Z"
+  },
+  {
+    "id": "a8946d01-3576-4fcd-b832-fe3f6be9b328",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T218",
+    "studentName": "สามเณรอภิสร ใสสะอาด",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.402Z",
+    "updatedAt": "2026-10-29T08:19:14.402Z"
+  },
+  {
+    "id": "1016987c-b033-4a97-904e-817104672f75",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T217",
+    "studentName": "พระสุพรรณ แฮล",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.401Z",
+    "updatedAt": "2026-10-29T08:19:14.401Z"
+  },
+  {
+    "id": "3de47ce8-a84c-4b20-b0e1-f1f673eed73d",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T216",
+    "studentName": "พระมหามนตรี สุตมนตโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.400Z",
+    "updatedAt": "2026-10-29T08:19:14.400Z"
+  },
+  {
+    "id": "7cc9c26f-5ed7-40b7-a177-fff461d63f71",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T215",
+    "studentName": "พระกฤษฎา ปญฺญาวโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.399Z",
+    "updatedAt": "2026-10-29T08:19:14.399Z"
+  },
+  {
+    "id": "da6ef919-6c6b-403d-bc13-b4cd4558af4a",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T214",
+    "studentName": "พระเจษฎา อภิเจโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.398Z",
+    "updatedAt": "2026-10-29T08:19:14.398Z"
+  },
+  {
+    "id": "4fa4d0ff-f333-4898-a294-46dfde12553e",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T213",
+    "studentName": "พระวีรวิชญ์ กตฺสาโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.397Z",
+    "updatedAt": "2026-10-29T08:19:14.397Z"
+  },
+  {
+    "id": "21c3ab50-75c5-49f4-83a8-05db19042b43",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T212",
+    "studentName": "พระจิรวัฒน์ อาภากโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.396Z",
+    "updatedAt": "2026-10-29T08:19:14.396Z"
+  },
+  {
+    "id": "e0d3829f-0287-448b-9dbd-a299df3d9766",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T211",
+    "studentName": "พระ Tuan Yan",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.395Z",
+    "updatedAt": "2026-10-29T08:19:14.395Z"
+  },
+  {
+    "id": "f75d8b45-a8c8-4cdb-91cc-287dcf797e72",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T210",
+    "studentName": "พระดรุษกร ธีรปญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.394Z",
+    "updatedAt": "2026-10-29T08:19:14.394Z"
+  },
+  {
+    "id": "ace62098-6b69-469f-8065-f3b81b3633ef",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T209",
+    "studentName": "พระสุทธิพัฒน์ สุทธฺจิตฺโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.393Z",
+    "updatedAt": "2026-10-29T08:19:14.393Z"
+  },
+  {
+    "id": "657d5d8c-221e-4654-9eba-05658ea2a20b",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T208",
+    "studentName": "พระ Thach Bach Tra",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "note": "ไม่ได้มาลงชื่อ",
+          "status": "ABSENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.392Z",
+    "updatedAt": "2026-10-29T08:19:14.392Z"
+  },
+  {
+    "id": "f3a51c09-a60b-4e65-b3c8-6ba1d8ead4f0",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T207",
+    "studentName": "พระมหาสาลี สีลสาโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.391Z",
+    "updatedAt": "2026-10-29T08:19:14.391Z"
+  },
+  {
+    "id": "4214e059-b4c9-4a05-8f8d-8316025aaacc",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T206",
+    "studentName": "พระครูสมุห์รัชกฤช ภทฺทปญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.390Z",
+    "updatedAt": "2026-10-29T08:19:14.390Z"
+  },
+  {
+    "id": "e9906e52-8aba-4130-bb0c-7e27692d2de3",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T205",
+    "studentName": "พระนพดล จินตามโย",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.389Z",
+    "updatedAt": "2026-10-29T08:19:14.389Z"
+  },
+  {
+    "id": "ec3d422a-4b08-4a7c-9b57-b8ca73fc2237",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T204",
+    "studentName": "พระจิรทีปต์ อภิชาโน",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.388Z",
+    "updatedAt": "2026-10-29T08:19:14.388Z"
+  },
+  {
+    "id": "a480d9ba-5e24-4b07-8509-fce156b0224a",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T203",
+    "studentName": "พระมหากุศล กุสลจิตฺโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.387Z",
+    "updatedAt": "2026-10-29T08:19:14.387Z"
+  },
+  {
+    "id": "7bbf1a3a-317a-4882-a618-15362c03dc13",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T202",
+    "studentName": "พระพิเชษฐ์ เตชปญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.386Z",
+    "updatedAt": "2026-10-29T08:19:14.386Z"
+  },
+  {
+    "id": "381aa05c-61ad-45c1-aba3-5687548f461b",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T201",
+    "studentName": "Bounmy Xaymonty",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "ศาสนาและปรัชญา",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 2,
+    "groupName": "กลุ่มที่ 2",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.385Z",
+    "updatedAt": "2026-10-29T08:19:14.385Z"
+  },
+  {
+    "id": "c54bdcbc-7876-4e84-a7a1-b96053ce4c97",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T122",
+    "studentName": "สามเณรพัชรพล เจริญเกียรติ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.384Z",
+    "updatedAt": "2026-10-29T08:19:14.384Z"
+  },
+  {
+    "id": "d1c6a134-53ad-4e50-ab89-8f8476d58e22",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T121",
+    "studentName": "สามเณรณรงค์กร แจ้งถิ่นป่า",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.383Z",
+    "updatedAt": "2026-10-29T08:19:14.383Z"
+  },
+  {
+    "id": "c9a35f33-7f85-4645-bb96-ee3333eb1b26",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T120",
+    "studentName": "สามเณรนนทภัทร ผาทา",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.382Z",
+    "updatedAt": "2026-10-29T08:19:14.382Z"
+  },
+  {
+    "id": "28c42736-251c-4467-a264-2803c1b86794",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T119",
+    "studentName": "สามเณรพชร พรมมี",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.381Z",
+    "updatedAt": "2026-10-29T08:19:14.381Z"
+  },
+  {
+    "id": "f0ab8a6c-c14b-4b92-95af-aff0aeba72c1",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T118",
+    "studentName": "พระสายัน สารโท",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.380Z",
+    "updatedAt": "2026-10-29T08:19:14.380Z"
+  },
+  {
+    "id": "3435a5aa-9520-41f3-a620-1fb0c7c002c0",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T123",
+    "studentName": "พระวีระชัย วีรปญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.379Z",
+    "updatedAt": "2026-10-29T08:19:14.379Z"
+  },
+  {
+    "id": "b658ec9a-6b93-4f8d-94ff-a8e7c8d01565",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T117",
+    "studentName": "พระบุญธรรม สุขวิชฺโช",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.378Z",
+    "updatedAt": "2026-10-29T08:19:14.378Z"
+  },
+  {
+    "id": "acee60f9-4cb8-4627-a3b7-8f869cc03d0e",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T116",
+    "studentName": "พระทรงสิทธิ์ จิตฺตคุโณ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.377Z",
+    "updatedAt": "2026-10-29T08:19:14.377Z"
+  },
+  {
+    "id": "59151026-a69e-4a8b-b23b-745f4fe8c537",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T115",
+    "studentName": "พระ Kusala",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.376Z",
+    "updatedAt": "2026-10-29T08:19:14.376Z"
+  },
+  {
+    "id": "d1dcdb1e-e71c-44a9-9519-c42b9a871a0a",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T114",
+    "studentName": "พระ Siha",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.375Z",
+    "updatedAt": "2026-10-29T08:19:14.375Z"
+  },
+  {
+    "id": "f0b1b817-4843-44d6-8345-c1db6effc71b",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T113",
+    "studentName": "พระสมศักดิ์ วํสเวชฺโช",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.374Z",
+    "updatedAt": "2026-10-29T08:19:14.374Z"
+  },
+  {
+    "id": "7381188a-836e-4ba8-abbe-c930366d7146",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T112",
+    "studentName": "พระปิยะวุฒิ ชาตสํวโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.373Z",
+    "updatedAt": "2026-10-29T08:19:14.373Z"
+  },
+  {
+    "id": "15860918-b269-4c17-95bf-7d9310b3cc67",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T111",
+    "studentName": "พระมหาวชิรวิทย์ ธนวุฑฺโฒ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.372Z",
+    "updatedAt": "2026-10-29T08:19:14.372Z"
+  },
+  {
+    "id": "e6cc7b0f-2119-4c7f-8cd5-da77686e2c6b",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T110",
+    "studentName": "พระ Pandita",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.371Z",
+    "updatedAt": "2026-10-29T08:19:14.371Z"
+  },
+  {
+    "id": "4aac0dcb-1b9c-48c4-8bf0-d87a3ea922d4",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T109",
+    "studentName": "พระสมชาย ปญฺญาธโร",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.370Z",
+    "updatedAt": "2026-10-29T08:19:14.370Z"
+  },
+  {
+    "id": "81b6fafb-9ee3-42c1-9328-d27f190612ec",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T108",
+    "studentName": "พระมหาชนุดม อุตฺตมวํโส",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.368Z",
+    "updatedAt": "2026-10-29T08:19:14.368Z"
+  },
+  {
+    "id": "68a44b00-6f8b-48a6-ba1d-4f16c25bd991",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T107",
+    "studentName": "พระมหาพิพิธธน ครุธมฺโม",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.367Z",
+    "updatedAt": "2026-10-29T08:19:14.367Z"
+  },
+  {
+    "id": "6c8f94a6-cf14-4332-989f-b1f492eb4c47",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T106",
+    "studentName": "พระภาสกร ปญฺญาคโม",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.366Z",
+    "updatedAt": "2026-10-29T08:19:14.366Z"
+  },
+  {
+    "id": "9f146b92-7ff0-4785-a41d-c0a636b391c7",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T105",
+    "studentName": "พระดำรงพล กตปุญฺโญ",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "note": "มาสาย 10 นาที",
+          "status": "LATE"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.365Z",
+    "updatedAt": "2026-10-29T08:19:14.365Z"
+  },
+  {
+    "id": "b509ee1c-0c55-4552-b95c-d2825ca5387c",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T104",
+    "studentName": "พระมหาอาทิตย์ อภิธมฺโม",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.364Z",
+    "updatedAt": "2026-10-29T08:19:14.364Z"
+  },
+  {
+    "id": "5dc558a3-0b5e-413e-b6d8-15a611c059df",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T103",
+    "studentName": "พระ Savin Sujitto",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.363Z",
+    "updatedAt": "2026-10-29T08:19:14.363Z"
+  },
+  {
+    "id": "9c4f0b22-2305-49d2-ba9e-4940aacd2e72",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T102",
+    "studentName": "พระครูปลัดศรัณย์กร ปยุตฺโต",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.360Z",
+    "updatedAt": "2026-10-29T08:19:14.360Z"
+  },
+  {
+    "id": "0aa6de16-4be1-44e9-953a-da9924fa72f7",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "T101",
+    "studentName": "พระสมุห์วิชัย วิชโย",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "พุทธศาสน์",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 1,
+    "groupName": "กลุ่มที่ 1",
+    "program": "THAI",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.359Z",
+    "updatedAt": "2026-10-29T08:19:14.359Z"
+  },
+  {
+    "id": "b92a6b6e-221a-4564-970c-2130dce854e4",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1216",
+    "studentName": "Mr. Janaka Udayawansa Lanka Purayalage",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.358Z",
+    "updatedAt": "2026-10-29T08:19:14.358Z"
+  },
+  {
+    "id": "42f0e0e6-c172-452e-89bb-f46f5abc6f4b",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1215",
+    "studentName": "Mr. Supan Chakma",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 4,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.357Z",
+    "updatedAt": "2026-10-29T08:19:14.357Z"
+  },
+  {
+    "id": "5d4b4ec1-1e62-49d4-8fd7-21a5b15014c4",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1214",
+    "studentName": "Mr. Khun Maung Chan Aung",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 3,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.356Z",
+    "updatedAt": "2026-10-29T08:19:14.356Z"
+  },
+  {
+    "id": "1ec20d0b-ad4e-4f3f-b881-5f90c2e93e47",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1213",
+    "studentName": "Miss Jesy Chakma",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.354Z",
+    "updatedAt": "2026-10-29T08:19:14.354Z"
+  },
+  {
+    "id": "dc2a482d-bd01-41f9-a72b-0657161e8e2a",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1212",
+    "studentName": "Miss Rupasi Chakma",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 2,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.353Z",
+    "updatedAt": "2026-10-29T08:19:14.353Z"
+  },
+  {
+    "id": "464c538f-9a78-4156-85db-acff8b33558c",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1211",
+    "studentName": "Bhikkhuni Tran Thi My Hau",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.352Z",
+    "updatedAt": "2026-10-29T08:19:14.352Z"
+  },
+  {
+    "id": "4b87b5f7-7c4a-4cbb-bf3a-6a7b2f23ab4e",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1210",
+    "studentName": "Bhikkhuni Quach Thi Diu",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.351Z",
+    "updatedAt": "2026-10-29T08:19:14.351Z"
+  },
+  {
+    "id": "aca63ae3-10d5-4a37-957a-ce3de63c5a2c",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1209",
+    "studentName": "Bhikkhuni Nguyen Thi Anh",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 4,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "note": "Missed evening session",
+          "status": "ABSENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.350Z",
+    "updatedAt": "2026-10-29T08:19:14.350Z"
+  },
+  {
+    "id": "a7c7f782-f1b5-49e0-a5bf-5f43c2496540",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1208",
+    "studentName": "Bhikkhuni Le Thi Phuong Nhi",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.349Z",
+    "updatedAt": "2026-10-29T08:19:14.349Z"
+  },
+  {
+    "id": "55021eae-8266-4b57-840b-1a3951915f6d",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1207",
+    "studentName": "Bhikkhuni Kalaganwaththe Padmananda Silmathawa",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.348Z",
+    "updatedAt": "2026-10-29T08:19:14.348Z"
+  },
+  {
+    "id": "e0a7ff2f-c9e4-4e5a-8c97-d58c6bce0a56",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1206",
+    "studentName": "Huynh Xvan Vinh",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 3,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.346Z",
+    "updatedAt": "2026-10-29T08:19:14.346Z"
+  },
+  {
+    "id": "b8e571ec-9048-4c59-9e9a-47210541d726",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1205",
+    "studentName": "Nguyen Tan Dat",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.345Z",
+    "updatedAt": "2026-10-29T08:19:14.345Z"
+  },
+  {
+    "id": "b7e2ae4c-de38-4e2d-98eb-0c4c7775526e",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1204",
+    "studentName": "Tran Quang Tu",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.343Z",
+    "updatedAt": "2026-10-29T08:19:14.343Z"
+  },
+  {
+    "id": "717d57e4-2690-414d-8329-3d39ea30c7ff",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1203",
+    "studentName": "Nguyen Quoc Trung",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 2,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.342Z",
+    "updatedAt": "2026-10-29T08:19:14.342Z"
+  },
+  {
+    "id": "ca2791be-af93-46b5-9fca-a1695672d2dd",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1202",
+    "studentName": "Do Tan An",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "RePhi",
+    "yearLevel": 1,
+    "department": "ภาควิชาศาสนาและปรัชญา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "note": "Late 5 mins",
+          "status": "LATE"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.340Z",
+    "updatedAt": "2026-10-29T08:19:14.340Z"
+  },
+  {
+    "id": "0edb60ad-7839-47c8-9151-4ae8f4b18fb5",
+    "tenantId": "7a9bdc2b-f9c9-421c-9c3e-dbfb0ef5dfab",
+    "eventId": "0a4c5a0d-d985-443d-93a2-9277523eddfb",
+    "studentCode": "E1201",
+    "studentName": "Vo Le Anh Tuan",
+    "status": "ATTENDED",
+    "role": "STUDENT",
+    "major": "Bud.",
+    "yearLevel": 1,
+    "department": "ภาควิชาพระพุทธศาสนา (อินเตอร์)",
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": 12,
+    "groupName": "Group : 12",
+    "program": "ENGLISH",
+    "dailyAttendance": {
+      "day_1": {
+        "p1": {
+          "status": "PRESENT"
+        },
+        "p2": {
+          "status": "PRESENT"
+        },
+        "p3": {
+          "status": "PRESENT"
+        },
+        "p4": {
+          "status": "PRESENT"
+        }
+      }
+    },
+    "createdAt": "2026-10-29T08:19:14.337Z",
+    "updatedAt": "2026-10-29T08:19:14.337Z"
+  },
+  {
+    "id": "fea7ce8d-d4e4-445c-b5d9-7682042c831c",
+    "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
+    "eventId": "89eedf2f-a74a-49b1-8145-6337503ad069",
+    "studentCode": "660001",
+    "studentName": "นาย สมชาย ใจดี",
+    "status": "REGISTERED",
+    "role": "STUDENT",
+    "major": null,
+    "yearLevel": null,
+    "department": null,
+    "remarks": null,
+    "attendedAt": null,
+    "groupNumber": null,
+    "groupName": null,
+    "program": "THAI",
+    "dailyAttendance": {},
+    "createdAt": "2026-10-13T19:43:29.282Z",
+    "updatedAt": "2026-10-13T19:43:29.282Z"
+  }
+]

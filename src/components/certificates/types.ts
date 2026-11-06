@@ -1,0 +1,92 @@
+export interface CertificateRequest {
+  id: string;
+  createdAt: string;
+  studentCode: string;
+  fullName: string;
+  certType: string;
+  degreeLevel?: string;
+  major?: string;
+  requestPurpose?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
+  docNo?: string;
+  docNoPrefix?: string;
+  email?: string;
+  phone?: string;
+  targetAudience?: 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE' | 'ALL';
+  applicantType?: 'STUDENT' | 'STAFF' | 'CANDIDATE';
+  position?: string;
+  department?: string;
+  candidateAppNo?: string;
+  age?: number | string;
+  vassa?: number | string;
+  gender?: string;
+  nationality?: string;
+  country?: string;
+  passportNo?: string;
+  passportExpireDate?: string;
+  visaType?: string;
+  visaExpireDate?: string;
+  gpa?: number | string;
+  address?: string;
+  subdistrict?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+  bankTargetTh?: string;
+  bankActionTh?: string;
+  issueDateTh?: string;
+  issueDateEn?: string;
+  docTemplate?: string;
+  signerNameTh?: string;
+  signerTitleTh?: string;
+  signerNameEn?: string;
+  signerTitleEn?: string;
+  coordinatorNameTh?: string;
+  coordinatorPhoneTh?: string;
+  rejectReason?: string;
+  note?: string;
+  enrollmentSlipUrl?: string;
+  passportCopyUrl?: string;
+  photoUrl?: string;
+  attachmentUrl?: string;
+}
+
+export interface CertTypeItem {
+  id: string;
+  code?: string;
+  name: string;
+  targetAudience: 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE' | 'ALL';
+  badge?: string;
+  category?: string;
+  iconName?: string;
+  description?: string;
+  templateType?: string;
+}
+
+export interface StudentLookupItem {
+  studentCode: string;
+  fullName?: string;
+  title?: string;
+  firstName: string;
+  lastName: string;
+  major?: string;
+  degree?: string;
+  department?: string;
+  phoneNumber?: string;
+  email?: string;
+  nationality?: string;
+  country?: string;
+  passportNo?: string;
+  passportExpireDate?: string;
+  visaType?: string;
+  visaExpireDate?: string;
+  gpa?: number | string;
+  gender?: string;
+  age?: number | string;
+  vassa?: number | string;
+  address?: string;
+  subdistrict?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+}

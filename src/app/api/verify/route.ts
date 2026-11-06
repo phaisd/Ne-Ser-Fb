@@ -22,6 +22,12 @@ export async function GET(request: Request) {
 
     const verification = await verifyCertificateDocument(docNo);
 
+    // If passportNo exists, mask it for PDPA compliance unless authorized
+    if (verification.passportNo) {
+      const raw = String(verification.passportNo).trim();
+      verification.passportNo = raw.length > 4 ? `${raw.slice(0, 2)}••••${raw.slice(-2)}` : '••••';
+    }
+
     // Generate dynamic QR code data URL for this document
     let qrDataUrl = '';
     try {

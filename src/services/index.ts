@@ -4,3 +4,6 @@ export * from './courseService';
 export * from './attendanceService';
 export * from './instructorService';
 export * from './certificateService';
+export * from './eventService';
+export * from './courseEnrollmentService';
+

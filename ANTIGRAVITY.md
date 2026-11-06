@@ -26,6 +26,8 @@ Google Spreadsheet เชื่อมต่อผ่าน Google Sheets API v4 
 | `Timetables` | `academicYear`, `semester`, `yearLevel`, `timetableTitle`, `courseCode`, `courseName`, `dayOfWeek`, `startTime`, `endTime`, `room`, `instructor`, `periodLabel` | ตารางสอนรายสัปดาห์ |
 | `CertificateRequests` | `requestId`, `createdAt`, `studentCode`, `fullName`, `certType`, `degreeLevel`, `major`, `requestPurpose`, `status`, `docNo`, `email`, `phone` | ประวัติและรายการคำร้อง |
 | `Attendance` | `recordId`, `courseCode`, `date`, `studentCode`, `studentName`, `status`, `recordedBy`, `createdAt` | บันทึกการเข้าเรียนรายคาบ |
+| `Events` | `id`, `title`, `eventType`, `startDate`, `endDate`, `location`, `academicYear`, `semester`, `maxParticipants`, `status` | โครงการ/กิจกรรมนิสิต |
+| `EventRegistrations` | `id`, `eventId`, `studentCode`, `studentName`, `status`, `role`, `major`, `yearLevel`, `department`, `groupName`, `createdAt` | การลงทะเบียนและบันทึกการเข้าร่วมกิจกรรม |
 
 > **หมายเหตุ:** ในโฟลเดอร์ `data/` ได้จัดเตรียมไฟล์ CSV (UTF-8 BOM) และ JSON ของทั้ง 5 ส่วนไว้ครบถ้วน สามารถกด Import เข้า Google Sheets ด้วยตนเอง หรือกดปุ่ม "ซิงค์ข้อมูลเริ่มต้นเข้าสู่ Google Sheets" ในหน้า `/settings` ได้ทันที
 

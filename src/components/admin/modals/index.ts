@@ -6,4 +6,12 @@ export * from './AddUserModal';
 export * from './CertRejectModal';
 export * from './ArchiveSummaryModal';
 export * from './BulkPromotionModal';
+export * from './VipassanaAttendanceSheetModal';
+export * from './StudentImportModal';
+export * from './CourseImportModal';
+export * from './BatchTeachingSlipsModal';
+export * from './ArchivedStudentsModal';
+export * from './ArchivedInstructorsModal';
+export * from './AdminCertificatePreviewModal';
+
 

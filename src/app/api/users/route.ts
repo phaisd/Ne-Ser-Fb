@@ -8,6 +8,10 @@ import {
   createUserAccount,
   updateUserProfile,
   toggleUserSuspension,
+  archiveInstructors,
+  getArchivedInstructors,
+  restoreInstructor,
+  deleteInstructorPermanent,
 } from '@/lib/data-store';
 
 export async function GET(request: Request) {
@@ -15,6 +19,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');
     const query = searchParams.get('q')?.toLowerCase() || '';
+    const archived = searchParams.get('archived') === 'true';
+
+    if (archived) {
+      const archivedList = await getArchivedInstructors();
+      const safeArchived = archivedList.map(({ password, ...safe }) => safe);
+      return NextResponse.json({ success: true, count: safeArchived.length, data: safeArchived });
+    }
 
     let accounts = await getInstructorAccounts();
 
@@ -116,6 +127,63 @@ export async function POST(request: Request) {
         success: true,
         message: `สร้างบัญชีอาจารย์ใหม่สำเร็จ ${result.createdCount} ท่าน และผูกชื่อเข้ากับบัญชีเดิม ${result.linkedCount} รายการ`,
         ...result,
+      });
+    }
+
+    // 8. Archive Instructor (ย้ายเข้าแฟ้มประวัติ เกษียณ/ลาออก/จำหน่าย)
+    if (action === 'archive-user' || action === 'delete-user') {
+      const ids: string[] = Array.isArray(body.userIds)
+        ? body.userIds
+        : userId
+        ? [userId]
+        : [];
+
+      if (ids.length === 0) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุรหัสผู้ใช้งานที่ต้องการย้ายเข้าแฟ้มประวัติ' }, { status: 400 });
+      }
+
+      const archiveReason = reason || body.archiveReason || 'เกษียณอายุ/ลาออก/จำหน่ายออกจากระบบ';
+      const archivedBy = body.archivedBy || 'ผู้ดูแลระบบ (Admin)';
+      const result = await archiveInstructors(ids, archiveReason, archivedBy);
+
+      return NextResponse.json({
+        success: result.archivedCount > 0,
+        message: result.message,
+        ...result,
+      });
+    }
+
+    // 9. Restore Instructor (กู้คืนบัญชีอาจารย์จากแฟ้มประวัติ)
+    if (action === 'restore-user') {
+      const targetId = userId || body.id;
+      if (!targetId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุรหัสอาจารย์ที่ต้องการกู้คืน' }, { status: 400 });
+      }
+
+      const restored = await restoreInstructor(targetId);
+      if (!restored) {
+        return NextResponse.json({ success: false, error: 'ไม่พบข้อมูลอาจารย์ในแฟ้มประวัติ' }, { status: 404 });
+      }
+
+      const { password, ...safe } = restored;
+      return NextResponse.json({
+        success: true,
+        data: safe,
+        message: `กู้คืนบัญชี ${restored.name} กลับสู่ระบบผู้ใช้งานปกติเรียบร้อยแล้ว`,
+      });
+    }
+
+    // 10. Permanent Delete from Archive
+    if (action === 'permanent-delete') {
+      const targetId = userId || body.id;
+      if (!targetId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุรหัสอาจารย์ที่ต้องการลบถาวร' }, { status: 400 });
+      }
+
+      const ok = await deleteInstructorPermanent(targetId);
+      return NextResponse.json({
+        success: ok,
+        message: ok ? 'ลบข้อมูลออกจากแฟ้มประวัติถาวรเรียบร้อยแล้ว' : 'ไม่พบข้อมูลอาจารย์ในแฟ้มประวัติ',
       });
     }
 

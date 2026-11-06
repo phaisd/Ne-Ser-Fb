@@ -17,6 +17,15 @@
 # environment variables (DO NOT COMMIT SECRETS)
 .env*.local
 .env.local.bak
+.env
+*.pem
+credentials.json
+service-account*.json
+
+# Data directory runtime overrides (Sensitive Live DB)
+# Uncomment or keep tracked only template/mock files if needed
+# data/students.json
+# data/instructors.json
 
 # debug logs
 npm-debug.log*

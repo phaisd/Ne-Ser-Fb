@@ -11,6 +11,7 @@ export interface CertificateRequest {
   requestPurpose?: string;
   status: CertRequestStatus;
   docNo?: string;
+  docNoPrefix?: string; // เช่น '8002' (คณบดี) หรือ '8002.1' (เลขานุการ)
   email?: string;
   phone?: string;
   note?: string;
@@ -19,8 +20,13 @@ export interface CertificateRequest {
   passportCopyUrl?: string;
   photoUrl?: string;
   attachmentUrl?: string;
-  targetAudience?: 'THAI' | 'INTERNATIONAL' | 'ALL';
+  targetAudience?: 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE' | 'ALL';
+  applicantType?: 'STUDENT' | 'STAFF' | 'CANDIDATE';
+  position?: string;
+  department?: string;
+  candidateAppNo?: string;
   age?: number | string;
+  vassa?: number | string; // พรรษา (สำหรับบรรพชิต พระภิกษุ-สามเณร)
   gender?: string;
   nationality?: string;
   country?: string;
@@ -47,6 +53,7 @@ export interface CertificateRequest {
   signerTitleEn?: string;
   coordinatorNameTh?: string;
   coordinatorPhoneTh?: string;
+  customBodyText?: string;
 }
 
 export interface CertTypeItem {
@@ -55,7 +62,7 @@ export interface CertTypeItem {
   titleEn: string;
   descriptionTh: string;
   descriptionEn: string;
-  targetAudience: 'THAI' | 'INTERNATIONAL' | 'ALL';
+  targetAudience: 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE' | 'ALL';
   fee: number;
   processingDays: number;
 }

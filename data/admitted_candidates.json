@@ -1,0 +1,41 @@
+[
+  {
+    "applicationNo": "APP-69001",
+    "fullName": "พระสมชาย สุชาโต (ใจดี)",
+    "idCardOrPassport": "1103701234567",
+    "degreeLevel": "ปริญญาตรี",
+    "major": "สาขาวิชาพระพุทธศาสนา",
+    "nationality": "ไทย",
+    "country": "Thailand",
+    "phone": "081-234-5678",
+    "email": "somchai.candidate@gmail.com",
+    "status": "ADMITTED",
+    "academicYear": "2569"
+  },
+  {
+    "applicationNo": "APP-69002",
+    "fullName": "Ven. Ashin Nandiya",
+    "idCardOrPassport": "MF8899112",
+    "degreeLevel": "ปริญญาตรี (ภาคภาษาอังกฤษ)",
+    "major": "สาขาวิชาพระพุทธศาสนา (English Program)",
+    "nationality": "Myanmar",
+    "country": "Myanmar",
+    "phone": "+95912345678",
+    "email": "nandiya.mcu@gmail.com",
+    "status": "ADMITTED",
+    "academicYear": "2569"
+  },
+  {
+    "applicationNo": "APP-69003",
+    "fullName": "Ven. Shanti Barua",
+    "idCardOrPassport": "B00987654",
+    "degreeLevel": "ปริญญาโท",
+    "major": "สาขาวิชาพุทธนวัตกรรมและการพัฒนา",
+    "nationality": "Bangladeshi",
+    "country": "Bangladesh",
+    "phone": "+880171234567",
+    "email": "shanti.barua@gmail.com",
+    "status": "ADMITTED",
+    "academicYear": "2569"
+  }
+]

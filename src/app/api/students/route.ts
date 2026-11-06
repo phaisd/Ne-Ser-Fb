@@ -1,5 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getStudents, updateStudent, batchUpdateStudents, deleteStudents } from '@/lib/data-store';
+import {
+  getStudents,
+  updateStudent,
+  batchUpdateStudents,
+  deleteStudents,
+  getArchivedStudents,
+  restoreStudent,
+} from '@/lib/data-store';
+import {
+  getAuthenticatedUserFromRequest,
+  isServerAdminOrOfficer,
+  maskSensitiveStudentData,
+} from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
   try {
@@ -9,6 +21,29 @@ export async function GET(request: Request) {
     const major = searchParams.get('major');
     const program = searchParams.get('program');
     const status = searchParams.get('status');
+    const isArchived = searchParams.get('archived') === 'true';
+
+    // If requested archived/deleted students
+    if (isArchived) {
+      let archiveList = await getArchivedStudents();
+      if (query) {
+        archiveList = archiveList.filter(
+          (s) =>
+            s.studentCode?.toLowerCase().includes(query) ||
+            s.firstName?.toLowerCase().includes(query) ||
+            s.lastName?.toLowerCase().includes(query) ||
+            s.fullName?.toLowerCase().includes(query) ||
+            s.major?.toLowerCase().includes(query) ||
+            s.deletionReason?.toLowerCase().includes(query)
+        );
+      }
+      return NextResponse.json({
+        success: true,
+        count: archiveList.length,
+        isArchived: true,
+        data: archiveList,
+      });
+    }
 
     let list = await getStudents();
 
@@ -42,7 +77,13 @@ export async function GET(request: Request) {
       list = list.filter((s) => s.studyStatus === status);
     }
 
-    return NextResponse.json({ success: true, count: list.length, data: list });
+    // Check authorization: Admin / Officer see full data; other users get PDPA-masked data
+    const authUser = getAuthenticatedUserFromRequest(request);
+    const isAdmin = isServerAdminOrOfficer(authUser);
+
+    const safeList = isAdmin ? list : list.map((s) => maskSensitiveStudentData(s));
+
+    return NextResponse.json({ success: true, count: safeList.length, data: safeList });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
@@ -50,6 +91,14 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const authUser = getAuthenticatedUserFromRequest(request);
+    if (!isServerAdminOrOfficer(authUser)) {
+      return NextResponse.json(
+        { success: false, error: 'สงวนสิทธิ์เฉพาะผู้ดูแลระบบและเจ้าหน้าที่เท่านั้น (Unauthorized)' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const studentCode = body.studentCode || body.updates?.studentCode;
 
@@ -75,8 +124,40 @@ export async function PATCH(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const authUser = getAuthenticatedUserFromRequest(request);
+    // Allow Admin, Officer, or verified Teachers (who add cross-enroll students to course)
+    if (!authUser || authUser.role === 'GUEST') {
+      return NextResponse.json(
+        { success: false, error: 'กรุณาเข้าสู่ระบบก่อนทำรายการ (Unauthorized)' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { action, items, mode, updates } = body;
+
+    // Handle Restore Student from Archive
+    if (action === 'restore') {
+      const studentCode = body.studentCode;
+      if (!studentCode) {
+        return NextResponse.json(
+          { success: false, error: 'กรุณาระบุรหัสนิสิตที่ต้องการกู้คืน (studentCode)' },
+          { status: 400 }
+        );
+      }
+      const restored = await restoreStudent(studentCode);
+      if (!restored) {
+        return NextResponse.json(
+          { success: false, error: `ไม่พบรหัสนิสิต ${studentCode} ในแฟ้มประวัตินิสิตที่ถูกลบ` },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({
+        success: true,
+        message: `กู้คืนข้อมูลนิสิต ${restored.fullName || restored.studentCode} กลับเข้าสู่ทะเบียนสำเร็จแล้ว`,
+        data: restored,
+      });
+    }
 
     const listToUpdate: any[] = Array.isArray(items) 
       ? items 
@@ -107,7 +188,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const body = await request.json();
-    const { studentCode, studentCodes } = body;
+    const { studentCode, studentCodes, deletedBy, reason } = body;
 
     const codesToDelete: string[] = Array.isArray(studentCodes)
       ? studentCodes.map((c) => String(c).trim()).filter(Boolean)
@@ -122,13 +203,14 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const result = await deleteStudents(codesToDelete);
+    const result = await deleteStudents(codesToDelete, deletedBy, reason);
     return NextResponse.json({
       success: true,
-      message: `ลบข้อมูลนิสิตเรียบร้อยแล้ว จำนวน ${result.deletedCount} รูป/คน`,
+      message: `ย้ายข้อมูลนิสิตเข้าสู่แฟ้มประวัติที่ถูกลบ (Students_Archive บน Google Sheets) เรียบร้อยแล้ว จำนวน ${result.deletedCount} รูป/คน`,
       deletedCount: result.deletedCount,
       deletedCodes: result.deletedCodes,
       remainingCount: result.remainingCount,
+      archivedCount: result.archivedCount,
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
