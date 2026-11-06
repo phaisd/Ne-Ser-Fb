@@ -16,6 +16,11 @@ import {
   revokeUserSession,
   getUserLoginHistory,
 } from '@/lib/session-manager';
+import {
+  requestPasswordReset,
+  verifyResetTokenOrOtp,
+  completePasswordReset,
+} from '@/lib/password-reset';
 
 export async function POST(request: Request) {
   try {
@@ -69,7 +74,65 @@ export async function POST(request: Request) {
       resp.cookies.set('mcu_auth_user', JSON.stringify(u), getAuthCookieOptions(false));
     };
 
-    // 0.1 Forgot Password & Self-Service Reset Handler
+    // 0.1 Request Password Reset (Sends Token & 6-digit OTP to User's Actual Email)
+    if (action === 'request-password-reset' || (action === 'forgot-password' && !body.newPassword && !body.token && !body.otp)) {
+      const { identifier } = body;
+      const originUrl = request.headers.get('origin') || undefined;
+      const res = await requestPasswordReset(identifier, originUrl);
+      if (!res.success) {
+        return NextResponse.json({ success: false, error: res.error }, { status: 400 });
+      }
+      return NextResponse.json({
+        success: true,
+        message: 'ระบบได้จัดส่งลิงก์และรหัสยืนยันไปยังอีเมลจริงของท่านเรียบร้อยแล้ว',
+        name: res.name,
+        userType: res.userType,
+        maskedPrimaryEmail: res.maskedPrimaryEmail,
+        maskedBackupEmail: res.maskedBackupEmail,
+        expiresMinutes: res.expiresMinutes,
+        sentEmail: res.sentEmail,
+      });
+    }
+
+    // 0.2 Verify Reset Token or OTP
+    if (action === 'verify-reset-token') {
+      const { token, otp } = body;
+      const target = token || otp;
+      const res = await verifyResetTokenOrOtp(target);
+      if (!res.valid || !res.record) {
+        return NextResponse.json({ success: false, error: res.error }, { status: 400 });
+      }
+      return NextResponse.json({
+        success: true,
+        name: res.record.name,
+        userType: res.record.userType,
+        maskedPrimaryEmail: res.record.primaryEmail ? `${res.record.primaryEmail.slice(0, 2)}***@${res.record.primaryEmail.split('@')[1] || ''}` : '',
+        maskedBackupEmail: res.record.backupEmail ? `${res.record.backupEmail.slice(0, 2)}***@${res.record.backupEmail.split('@')[1] || ''}` : '',
+      });
+    }
+
+    // 0.3 Complete Password Reset (via Token or OTP)
+    if (action === 'complete-password-reset' || (action === 'forgot-password' && (body.token || body.otp))) {
+      const { token, otp, tokenOrOtp, newPassword, confirmPassword } = body;
+      const key = tokenOrOtp || token || otp;
+      if (!key) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุรหัสยืนยัน (OTP) หรือลิงก์รีเซ็ต' }, { status: 400 });
+      }
+      if (!newPassword || newPassword.length < 6) {
+        return NextResponse.json({ success: false, error: 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร' }, { status: 400 });
+      }
+      if (confirmPassword && newPassword !== confirmPassword) {
+        return NextResponse.json({ success: false, error: 'รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน' }, { status: 400 });
+      }
+
+      const res = await completePasswordReset(key, newPassword);
+      if (!res.success) {
+        return NextResponse.json({ success: false, error: res.error }, { status: 400 });
+      }
+      return NextResponse.json({ success: true, message: res.message });
+    }
+
+    // 0.4 Legacy Self-Service Reset Handler (Backward Compatibility with verified backup Gmail)
     if (action === 'forgot-password' || action === 'self-reset-password') {
       const { identifier, verifyEmail, newPassword, confirmPassword } = body;
       if (!identifier || !verifyEmail || !newPassword) {
