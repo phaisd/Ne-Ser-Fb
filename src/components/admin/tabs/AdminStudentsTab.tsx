@@ -406,13 +406,13 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredStudents.slice(0, 100).map((s) => {
+                filteredStudents.slice(0, 100).map((s, idx) => {
                   const isEnglish = s.programType === 'ENGLISH' || (s.nationality !== 'ไทย' && s.nationality !== 'Thai' && Boolean(s.passportNo));
                   const isSelected = adminSelectedStudentCodes.has(s.studentCode);
 
                   return (
                     <tr
-                      key={s.studentCode || s.id}
+                      key={`${s.studentCode || s.id || 'stu'}-${idx}`}
                       className={`hover:bg-slate-50/80 transition-colors ${
                         isSelected ? 'bg-rose-50/40' : ''
                       }`}
@@ -425,7 +425,7 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
                           className="rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-3.5 font-mono font-bold text-orange-700">
+                      <td className="px-4 py-3.5 font-mono font-extrabold text-sm text-orange-700 tracking-tight whitespace-nowrap">
                         {s.studentCode}
                       </td>
                       <td className="px-4 py-3.5 font-medium text-slate-900">

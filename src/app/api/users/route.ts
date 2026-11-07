@@ -3,6 +3,7 @@ import {
   getInstructorAccounts,
   scanTimetableInstructors,
   batchProvisionInstructors,
+  batchImportInstructors,
   updateUserRole,
   resetUserPassword,
   updateInstructorPassword,
@@ -183,6 +184,21 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         message: `สร้างบัญชีอาจารย์ใหม่สำเร็จ ${result.createdCount} ท่าน และผูกชื่อเข้ากับบัญชีเดิม ${result.linkedCount} รายการ`,
+        ...result,
+      });
+    }
+
+    // 7.1 Batch Import & Bulk Update Instructors (นำเข้าและอัปเดตอาจารย์เป็นชุด)
+    if (action === 'batch-import-instructors') {
+      const { instructors: items } = body;
+      if (!Array.isArray(items) || items.length === 0) {
+        return NextResponse.json({ success: false, error: 'กรุณาส่งรายการข้อมูลอาจารย์ที่ต้องการนำเข้า' }, { status: 400 });
+      }
+
+      const result = await batchImportInstructors(items);
+      return NextResponse.json({
+        success: true,
+        message: `ประมวลผลสำเร็จ: เพิ่มอาจารย์ใหม่ ${result.createdCount} ท่าน, อัปเดตข้อมูลอาจารย์เดิม ${result.updatedCount} ท่าน`,
         ...result,
       });
     }

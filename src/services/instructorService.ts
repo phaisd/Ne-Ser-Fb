@@ -1,8 +1,9 @@
-import { InstructorAccount, Student, ArchivedInstructor } from '@/types';
+import { InstructorAccount, Student, ArchivedInstructor, UserRole } from '@/types';
 import { readLocalJson, writeLocalJson, getSheetsClient } from './storageHelper';
 import { getTimetables } from './courseService';
 import { getStudents } from './studentService';
 import { verifyPassword, hashPassword } from '@/lib/auth-security';
+import { stripLeadingTitles } from '@/lib/utils/name-matcher';
 
 // ----------------- INSTRUCTORS & AUTH -----------------
 
@@ -798,6 +799,132 @@ export async function batchProvisionInstructors(
   }
 
   return { createdCount, linkedCount };
+}
+
+// ----------------- BATCH IMPORT & BULK UPDATE INSTRUCTORS -----------------
+
+export interface BatchImportInstructorItem {
+  name: string;
+  nameEn?: string;
+  email?: string;
+  gmail?: string;
+  department?: string;
+  instructorType?: string; // 'อาจารย์ประจำ' | 'อาจารย์พิเศษ' | 'ผู้ช่วยสอน (TA)'
+  role?: UserRole;
+  password?: string;
+}
+
+export async function batchImportInstructors(
+  items: BatchImportInstructorItem[]
+): Promise<{
+  createdCount: number;
+  updatedCount: number;
+  errors: string[];
+  processed: Array<{ name: string; email: string; action: 'CREATED' | 'UPDATED' }>;
+}> {
+  const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
+  let createdCount = 0;
+  let updatedCount = 0;
+  const errors: string[] = [];
+  const processed: Array<{ name: string; email: string; action: 'CREATED' | 'UPDATED' }> = [];
+
+  for (const item of items) {
+    if (!item.name || !item.name.trim()) {
+      errors.push('พบข้อมูลที่ไม่มีชื่ออาจารย์');
+      continue;
+    }
+
+    const cleanName = item.name.trim();
+    const cleanEmail = item.email ? item.email.trim().toLowerCase() : '';
+    const strippedName = stripLeadingTitles(cleanName);
+
+    // 1. Try to find existing instructor by email OR name
+    const found = list.find((u) => {
+      if (cleanEmail && ((u.email || '').toLowerCase() === cleanEmail || (u.gmail || '').toLowerCase() === cleanEmail)) {
+        return true;
+      }
+      if (u.name.trim() === cleanName) return true;
+      if (u.aliases && u.aliases.some((al) => al.trim() === cleanName || al.trim() === strippedName)) return true;
+      if (stripLeadingTitles(u.name || '') === strippedName && strippedName.length >= 3) return true;
+      return false;
+    });
+
+    if (found) {
+      // UPDATE existing instructor
+      if (item.department && item.department.trim()) {
+        found.department = item.department.trim();
+      }
+      if (item.instructorType && item.instructorType.trim()) {
+        found.instructorType = item.instructorType.trim();
+      }
+      if (item.nameEn && item.nameEn.trim()) {
+        found.nameEn = item.nameEn.trim();
+      }
+      if (cleanEmail && !found.email) {
+        found.email = cleanEmail;
+      }
+      if (item.gmail && item.gmail.trim()) {
+        found.gmail = item.gmail.trim().toLowerCase();
+      }
+      if (item.role) {
+        found.role = item.role;
+      }
+      if (!found.aliases) found.aliases = [found.name];
+      if (!found.aliases.includes(cleanName)) {
+        found.aliases.push(cleanName);
+      }
+      found.updatedAt = new Date().toISOString();
+      updatedCount++;
+      processed.push({ name: cleanName, email: found.email, action: 'UPDATED' });
+    } else {
+      // CREATE new instructor
+      const newId = 'inst-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+      let assignedEmail = cleanEmail;
+      if (!assignedEmail) {
+        const randomNum = Math.floor(100 + Math.random() * 900);
+        assignedEmail = `teacher${randomNum}@mcu.ac.th`;
+      }
+
+      // Check if assignedEmail is already used by another account, if so add random salt
+      while (list.some((u) => (u.email || '').toLowerCase() === assignedEmail.toLowerCase())) {
+        const salt = Math.floor(1000 + Math.random() * 9000);
+        assignedEmail = `teacher${salt}@mcu.ac.th`;
+      }
+
+      const newAcc: InstructorAccount = {
+        id: newId,
+        name: cleanName,
+        nameEn: item.nameEn ? item.nameEn.trim() : undefined,
+        email: assignedEmail,
+        gmail: item.gmail ? item.gmail.trim().toLowerCase() : `${assignedEmail.split('@')[0]}@gmail.com`,
+        password: item.password || 'mcu123456',
+        defaultPassword: 'mcu123456',
+        department: item.department ? item.department.trim() : 'คณะพุทธศาสตร์ มจร',
+        instructorType: item.instructorType ? item.instructorType.trim() : 'อาจารย์ประจำ',
+        role: item.role || 'INSTRUCTOR',
+        coursesCount: 0,
+        isActive: true,
+        aliases: [cleanName],
+        createdAt: new Date().toISOString(),
+      };
+
+      list.unshift(newAcc);
+      createdCount++;
+      processed.push({ name: cleanName, email: assignedEmail, action: 'CREATED' });
+    }
+  }
+
+  writeLocalJson('instructors.json', list);
+
+  // Sync to sheets in background for new or updated
+  for (const p of processed) {
+    const acc = list.find((u) => u.email === p.email);
+    if (acc) {
+      syncInstructorToSheet(acc).catch(() => {});
+    }
+  }
+
+  return { createdCount, updatedCount, errors, processed };
 }
 
 // ----------------- ARCHIVE & RESTORE INSTRUCTORS -----------------

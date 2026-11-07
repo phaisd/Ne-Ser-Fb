@@ -287,7 +287,7 @@ export function ClassroomQrProjector({
             <select
               value={(currentCourse as any).sectionKey || currentCourse.courseCode}
               onChange={(e) => onSelectCourse(e.target.value)}
-              className="bg-transparent text-white font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent text-white font-bold focus:outline-none cursor-pointer max-w-[160px] sm:max-w-xs md:max-w-none truncate"
             >
               {availableCourses.map((c, idx) => (
                 <option

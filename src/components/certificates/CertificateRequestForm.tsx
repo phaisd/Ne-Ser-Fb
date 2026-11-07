@@ -18,7 +18,8 @@ import {
   Briefcase,
   AlertTriangle,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  ArrowLeft
 } from 'lucide-react';
 import { CertificateRequest, CertTypeItem, StudentLookupItem } from './types';
 
@@ -32,6 +33,7 @@ export interface CertificateRequestFormProps {
   students: StudentLookupItem[];
   settings: any;
   onSuccess: (newReq: CertificateRequest, msg: string) => void;
+  onBackToSelect?: () => void;
 }
 
 export function CertificateRequestForm({
@@ -44,6 +46,7 @@ export function CertificateRequestForm({
   students,
   settings,
   onSuccess,
+  onBackToSelect,
 }: CertificateRequestFormProps) {
   const isStaffUser = useMemo(() => {
     if (!currentUser) return false;
@@ -366,26 +369,40 @@ export function CertificateRequestForm({
 
   return (
     <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
-      <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
-        <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-black">
-          2
-        </span>
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">
-            {selectedCert?.targetAudience === 'STAFF'
-              ? 'กรอกข้อมูลอาจารย์ / บุคลากรผู้ขอหนังสือรับรอง'
-              : selectedCert?.targetAudience === 'CANDIDATE' || selectedCert?.category === 'ADMISSION'
-              ? 'ข้อมูลสำหรับผู้ผ่านการคัดเลือกเข้าศึกษาใหม่ (Candidate Verification)'
-              : 'กรอกข้อมูลนิสิตผู้ยื่นคำร้อง'}
-          </h2>
-          <p className="text-xs text-slate-500">
-            {selectedCert?.targetAudience === 'STAFF'
-              ? 'ข้อมูลชื่อ ตำแหน่ง และสังกัดจะดึงมาจากบัญชีของท่านโดยอัตโนมัติ'
-              : selectedCert?.targetAudience === 'CANDIDATE' || selectedCert?.category === 'ADMISSION'
-              ? 'กรุณาตรวจสอบสิทธิ์ด้วยเลขที่ใบสมัครและเลขประจำตัว เพื่อออกหนังสือรับรองเข้าศึกษา/ขอ Visa'
-              : 'เมื่อพิมพ์รหัสนิสิต ระบบจะดึงข้อมูลจากทะเบียนนิสิต (อายุ, สัญชาติ, หนังสือเดินทาง, วีซ่า, ที่อยู่) มาใส่ให้อัตโนมัติ'}
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <span className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-black shadow-xs shrink-0">
+            2
+          </span>
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-800">
+              {selectedCert?.targetAudience === 'STAFF'
+                ? 'กรอกข้อมูลอาจารย์ / บุคลากรผู้ขอหนังสือรับรอง'
+                : selectedCert?.targetAudience === 'CANDIDATE' || selectedCert?.category === 'ADMISSION'
+                ? 'ข้อมูลสำหรับผู้ผ่านการคัดเลือกเข้าศึกษาใหม่ (Candidate Verification)'
+                : 'กรอกข้อมูลนิสิตผู้ยื่นคำร้อง'}
+            </h2>
+            <p className="text-xs text-slate-500">
+              {selectedCert?.targetAudience === 'STAFF'
+                ? 'ข้อมูลชื่อ ตำแหน่ง และสังกัดจะดึงมาจากบัญชีของท่านโดยอัตโนมัติ'
+                : selectedCert?.targetAudience === 'CANDIDATE' || selectedCert?.category === 'ADMISSION'
+                ? 'กรุณาตรวจสอบสิทธิ์ด้วยเลขที่ใบสมัครและเลขประจำตัว เพื่อออกหนังสือรับรองเข้าศึกษา/ขอ Visa'
+                : 'เมื่อพิมพ์รหัสนิสิต ระบบจะดึงข้อมูลจากทะเบียนนิสิต (อายุ, สัญชาติ, หนังสือเดินทาง, วีซ่า, ที่อยู่) มาใส่ให้อัตโนมัติ'}
+            </p>
+          </div>
         </div>
+
+        {onBackToSelect && (
+          <button
+            type="button"
+            onClick={onBackToSelect}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold text-xs transition border border-slate-200 hover:border-purple-200 shrink-0 cursor-pointer self-start sm:self-auto"
+            title="ย้อนกลับไปขั้นตอนที่ 1 เพื่อเลือกประเภทหนังสือรับรองอื่น"
+          >
+            <ArrowLeft className="w-4 h-4 text-purple-600" />
+            <span>เปลี่ยนประเภทหนังสือ</span>
+          </button>
+        )}
       </div>
 
       {/* Access Control Gate: If user is not logged in and not viewing candidate section */}

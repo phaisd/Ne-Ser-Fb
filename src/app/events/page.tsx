@@ -220,13 +220,13 @@ export default function EventsPage() {
           </p>
         </div>
 
-        {/* Tab switch */}
-        <div className="flex p-1 bg-slate-200/80 rounded-xl self-start sm:self-auto text-sm font-semibold">
+        {/* Tab switch (Responsive Touch-Friendly) */}
+        <div className="w-full sm:w-auto flex items-center p-1 bg-slate-200/80 rounded-2xl overflow-x-auto no-scrollbar scroll-smooth text-xs sm:text-sm font-semibold">
           <button
             onClick={() => setActiveTab('EVENTS')}
-            className={`px-3.5 py-2 rounded-lg transition ${
+            className={`flex-1 sm:flex-initial whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer text-center ${
               activeTab === 'EVENTS'
-                ? 'bg-white text-amber-700 shadow-sm'
+                ? 'bg-white text-amber-700 shadow-sm font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -234,9 +234,9 @@ export default function EventsPage() {
           </button>
           <button
             onClick={() => setActiveTab('STUDENT_TRANSCRIPT')}
-            className={`px-3.5 py-2 rounded-lg transition ${
+            className={`flex-1 sm:flex-initial whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer text-center ${
               activeTab === 'STUDENT_TRANSCRIPT'
-                ? 'bg-white text-amber-700 shadow-sm'
+                ? 'bg-white text-amber-700 shadow-sm font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -245,9 +245,9 @@ export default function EventsPage() {
           {canManageCheckin && (
             <button
               onClick={() => setActiveTab('CHECKIN')}
-              className={`px-3.5 py-2 rounded-lg transition cursor-pointer ${
+              className={`flex-1 sm:flex-initial whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer text-center ${
                 activeTab === 'CHECKIN'
-                  ? 'bg-white text-amber-700 shadow-sm'
+                  ? 'bg-white text-amber-700 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >

@@ -183,10 +183,57 @@ export async function updateCourse(idOrCode: string, updates: Partial<Course>): 
 export async function deleteCourse(idOrCode: string): Promise<boolean> {
   const localList = readLocalJson<Course[]>('courses.json', []);
   const initialLen = localList.length;
-  const filtered = localList.filter((c) => c.id !== idOrCode && c.courseCode !== idOrCode);
+
+  const target = localList.find((c) => c.id === idOrCode) || localList.find((c) => c.courseCode === idOrCode);
+  if (!target) return false;
+
+  const targetId = target.id;
+  const targetCode = target.courseCode;
+
+  // Filter out: prioritize matching by ID if targetId is defined, otherwise by courseCode
+  const filtered = localList.filter((c) => (targetId ? c.id !== targetId : c.courseCode !== targetCode));
   if (filtered.length === initialLen) return false;
 
   writeLocalJson('courses.json', filtered);
+
+  // Cascade delete from timetables if schedule item matches
+  try {
+    const timetables = readLocalJson<any[]>('timetables.json', []);
+    let ttChanged = false;
+    timetables.forEach((tt) => {
+      if (Array.isArray(tt.scheduleData)) {
+        const prevLen = tt.scheduleData.length;
+        tt.scheduleData = tt.scheduleData.filter((s: any) => s.courseCode !== targetCode && s.id !== targetId);
+        if (tt.scheduleData.length !== prevLen) {
+          ttChanged = true;
+          tt.updatedAt = new Date().toISOString();
+        }
+      }
+    });
+    if (ttChanged) {
+      writeLocalJson('timetables.json', timetables);
+    }
+  } catch (err) {
+    console.warn('Failed to cascade delete from timetables:', err);
+  }
+
+  // Google Sheets sync
+  const gClient = getSheetsClient();
+  if (gClient && targetCode) {
+    try {
+      const rows = await gClient.getValues('Courses!A2:A');
+      if (rows && rows.length > 0) {
+        const rowIndex = rows.findIndex((r) => r[0] === targetCode);
+        if (rowIndex !== -1) {
+          const sheetRowNum = rowIndex + 2;
+          await gClient.clearValues(`Courses!A${sheetRowNum}:L${sheetRowNum}`);
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets delete course failed:', err);
+    }
+  }
+
   return true;
 }
 
@@ -290,6 +337,49 @@ function formatTimeSlotString(val: string): string {
   return norm;
 }
 
+export function parseTimetableMetadata(titleTh = '', titleEn = ''): {
+  degreeLevel: string;
+  programType: 'THAI' | 'ENGLISH';
+  major: string;
+} {
+  const fullText = (titleTh + ' ' + titleEn).trim();
+
+  // 1. ระดับหลักสูตร (Degree Level)
+  let degreeLevel = 'ปริญญาตรี';
+  if (/ดุษฎีบัณฑิต|Ph\.?D/i.test(fullText)) {
+    degreeLevel = 'ปริญญาเอก';
+  } else if (/มหาบัณฑิต|Master/i.test(fullText)) {
+    degreeLevel = 'ปริญญาโท';
+  } else if (/บัณฑิต|Bachelor/i.test(fullText)) {
+    degreeLevel = 'ปริญญาตรี';
+  }
+
+  // 2. หลักสูตรภาษาไทยหรือภาษาอังกฤษ (Program Type)
+  let programType: 'THAI' | 'ENGLISH' = 'THAI';
+  if (/ภาษาอังกฤษ|english|inter|นานาชาติ/i.test(fullText)) {
+    programType = 'ENGLISH';
+  }
+
+  // 3. สาขาวิชา (Major)
+  let major = '';
+  const majorMatch = titleTh.match(/สาขาวิชา([^(]+)/);
+  if (majorMatch && majorMatch[1]) {
+    major = majorMatch[1].trim();
+  } else if (/พระพุทธศาสนา|buddhism/i.test(fullText)) {
+    major = 'พระพุทธศาสนา';
+  } else if (/ศาสนาและปรัชญา|philosophy/i.test(fullText)) {
+    major = 'ศาสนาและปรัชญา';
+  } else if (/วิปัสสนาภาวนา|meditation/i.test(fullText)) {
+    major = 'วิปัสสนาภาวนา';
+  } else if (/บาลี|pali/i.test(fullText)) {
+    major = 'บาลีสันสกฤต';
+  } else {
+    major = 'ทั่วไป';
+  }
+
+  return { degreeLevel, programType, major };
+}
+
 export async function getTimetables(): Promise<TimetableItem[]> {
   const rawTimetables = readLocalJson<any[]>('timetables.json', []);
   const seenLocal = new Set<string>();
@@ -297,6 +387,7 @@ export async function getTimetables(): Promise<TimetableItem[]> {
   const localSlotMap = new Map<string, TimetableItem>();
 
   for (const t of rawTimetables) {
+    const meta = parseTimetableMetadata(t.titleTh || '', t.titleEn || '');
     const schedules = Array.isArray(t.scheduleData) ? t.scheduleData : [];
     for (const s of schedules) {
       const startNorm = formatTimeSlotString(s.startTime || '');
@@ -315,6 +406,9 @@ export async function getTimetables(): Promise<TimetableItem[]> {
         room: (s.room || t.room || '').trim(),
         instructor: (s.instructor || '').trim(),
         periodLabel: (s.periodLabel || '').trim(),
+        degreeLevel: meta.degreeLevel,
+        programType: meta.programType,
+        major: meta.major,
       };
 
       const slotKey = `${item.timetableTitle}_${item.courseCode}_${item.dayOfWeek}_${startNorm}`;
@@ -393,6 +487,7 @@ export async function getTimetables(): Promise<TimetableItem[]> {
           if (seen.has(key)) continue;
           seen.add(key);
 
+          const meta = parseTimetableMetadata(title);
           list.push({
             academicYear: (r[0] || '2569').trim(),
             semester: r[1] ? parseInt(r[1], 10) : 1,
@@ -406,6 +501,9 @@ export async function getTimetables(): Promise<TimetableItem[]> {
             room,
             instructor,
             periodLabel,
+            degreeLevel: meta.degreeLevel,
+            programType: meta.programType,
+            major: meta.major,
           });
         }
         return list;

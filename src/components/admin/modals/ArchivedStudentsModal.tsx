@@ -209,8 +209,8 @@ export const ArchivedStudentsModal: React.FC<ArchivedStudentsModalProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((s) => (
-                  <tr key={s.studentCode} className="hover:bg-slate-50/80 transition-colors">
+                {filtered.map((s, idx) => (
+                  <tr key={`${s.studentCode || 'arch'}-${idx}`} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-4 py-3">
                       <div className="font-bold text-slate-900">{s.fullName || `${s.firstName || ''} ${s.lastName || ''}`.trim()}</div>
                       <div className="font-mono text-slate-400 text-[10px]">{s.studentCode}</div>

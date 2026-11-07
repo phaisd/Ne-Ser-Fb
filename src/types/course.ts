@@ -43,4 +43,7 @@ export interface TimetableItem {
   room: string;
   instructor?: string;
   periodLabel?: string;
+  degreeLevel?: string;
+  programType?: 'THAI' | 'ENGLISH';
+  major?: string;
 }

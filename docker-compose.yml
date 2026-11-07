@@ -1,0 +1,58 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcu-faculty-app
+    restart: unless-stopped
+    ports:
+      # Bind only to localhost so public access MUST go through Nginx reverse proxy
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      # Persistent storage volume for atomic JSON store
+      - ./data:/app/data
+    security_opt:
+      # Prevents privilege escalation even if child process is compromised
+      - "no-new-privileges:true"
+    deploy:
+      resources:
+        limits:
+          # Hard limit to prevent Crypto Miners from consuming host CPU & RAM
+          cpus: '2.00'
+          memory: 2048M
+        reservations:
+          cpus: '0.50'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/courses"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - mcu-network
+
+  proxy:
+    image: nginx:alpine
+    container_name: mcu-nginx-proxy
+    restart: unless-stopped
+    ports:
+      # Only standard HTTP (80) and HTTPS (443) exposed to the Internet
+      # Port 445 (SMB/WannaCry) is completely blocked and unreachable
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - mcu-network
+
+networks:
+  mcu-network:
+    driver: bridge

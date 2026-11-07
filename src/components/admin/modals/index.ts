@@ -13,5 +13,6 @@ export * from './BatchTeachingSlipsModal';
 export * from './ArchivedStudentsModal';
 export * from './ArchivedInstructorsModal';
 export * from './AdminCertificatePreviewModal';
+export * from './InstructorImportModal';
 
 

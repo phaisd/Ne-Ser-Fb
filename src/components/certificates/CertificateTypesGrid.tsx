@@ -30,6 +30,7 @@ interface CertificateTypesGridProps {
   isStaffUser: boolean;
   selectedCert: CertTypeItem | null;
   onCardSelect: (card: CertTypeItem) => void;
+  onProceedToForm?: () => void;
 }
 
 export const renderCertIcon = (iconName?: string, target?: string) => {
@@ -79,6 +80,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
   isStaffUser,
   selectedCert,
   onCardSelect,
+  onProceedToForm,
 }) => {
   return (
     <>
@@ -168,12 +170,12 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
             </p>
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl text-xs font-bold self-start sm:self-auto">
+          {/* Category Filter Pills (Touch-Friendly & Scrollable) */}
+          <div className="w-full sm:w-auto flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl overflow-x-auto no-scrollbar scroll-smooth text-xs font-bold">
             <button
               type="button"
               onClick={() => setCardAudienceFilter('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+              className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition cursor-pointer whitespace-nowrap ${
                 cardAudienceFilter === 'ALL'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -184,7 +186,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
             <button
               type="button"
               onClick={() => setCardAudienceFilter('THAI')}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+              className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 cardAudienceFilter === 'THAI'
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'text-blue-700 hover:bg-blue-50'
@@ -195,7 +197,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
             <button
               type="button"
               onClick={() => setCardAudienceFilter('INTERNATIONAL')}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+              className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 cardAudienceFilter === 'INTERNATIONAL'
                   ? 'bg-purple-600 text-white shadow-sm'
                   : 'text-purple-700 hover:bg-purple-50'
@@ -204,16 +206,12 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
               <span>🌐 นิสิตต่างชาติ</span>
             </button>
 
-            {/* Staff Filter Button: ONLY visible if isStaffUser is TRUE */}
-            {isStaffUser && (
+            {/* Staff Filter Button: visible if isStaffUser is TRUE or admin enables showStaffCertificatesInPortal */}
+            {(isStaffUser || settings?.showStaffCertificatesInPortal === true) && (
               <button
                 type="button"
-                onClick={() => {
-                  setCardAudienceFilter('STAFF');
-                  const firstStaff = certTypes.find((c) => c.targetAudience === 'STAFF');
-                  if (firstStaff) onCardSelect(firstStaff);
-                }}
-                className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+                onClick={() => setCardAudienceFilter('STAFF')}
+                className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                   cardAudienceFilter === 'STAFF'
                     ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-500/20'
                     : 'text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300'
@@ -226,12 +224,8 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
             {/* Candidate Filter Button */}
             <button
               type="button"
-              onClick={() => {
-                setCardAudienceFilter('CANDIDATE');
-                const firstCand = certTypes.find((c) => c.targetAudience === 'CANDIDATE' || c.category === 'ADMISSION');
-                if (firstCand) onCardSelect(firstCand);
-              }}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+              onClick={() => setCardAudienceFilter('CANDIDATE')}
+              className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 cardAudienceFilter === 'CANDIDATE'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-emerald-700 hover:bg-emerald-50'
@@ -330,7 +324,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                 <div className="mt-4 pt-3 border-t border-slate-100/80 flex items-center justify-between text-[11px]">
                   <span className="font-mono text-slate-400 font-semibold">{card.code || 'CERT'}</span>
                   <span
-                    className={`font-semibold ${
+                    className={`font-semibold flex items-center gap-1 ${
                       isSelected
                         ? isStaff
                           ? 'text-amber-800'
@@ -339,10 +333,11 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                           : isThai
                           ? 'text-blue-700'
                           : 'text-purple-700'
-                        : 'text-slate-400'
+                        : 'text-slate-400 group-hover:text-purple-600'
                     }`}
                   >
-                    {isSelected ? '✓ เลือกประเภทนี้แล้ว' : 'กดเพื่อเลือก'}
+                    <span>{isSelected ? '✓ เลือกแล้ว (คลิกเพื่อไปกรอกแบบฟอร์ม)' : 'คลิกเลือกการ์ดนี้เพื่อไปข้อ 2'}</span>
+                    <span className="text-xs">➔</span>
                   </span>
                 </div>
               </div>
@@ -352,20 +347,20 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
 
         {selectedCert && (
           <div
-            className={`p-4 rounded-xl border flex items-center justify-between gap-4 text-xs ${
+            className={`p-4 sm:p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs shadow-xs animate-in fade-in duration-200 ${
               selectedCert.targetAudience === 'STAFF'
-                ? 'bg-amber-50 border-amber-300 text-amber-950 shadow-sm'
+                ? 'bg-amber-50/90 border-amber-300 text-amber-950'
                 : selectedCert.targetAudience === 'CANDIDATE' || selectedCert.category === 'ADMISSION'
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-sm'
+                ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
                 : selectedCert.targetAudience === 'THAI'
-                ? 'bg-blue-50 border-blue-200 text-blue-900'
-                : 'bg-purple-50 border-purple-200 text-purple-900'
+                ? 'bg-blue-50/90 border-blue-200 text-blue-900'
+                : 'bg-purple-50/90 border-purple-200 text-purple-900'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="font-bold">ประเภทที่เลือกขณะนี้:</div>
-              <div className="font-semibold underline text-sm">{selectedCert.name}</div>
-              <span className="px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-white border border-current shadow-xs">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <span className="font-bold text-slate-600">ประเภทที่เลือกไว้:</span>
+              <span className="font-black text-sm sm:text-base underline">{selectedCert.name}</span>
+              <span className="px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-white border border-current shadow-2xs">
                 {selectedCert.targetAudience === 'STAFF'
                   ? 'สำหรับอาจารย์และเจ้าหน้าที่'
                   : selectedCert.targetAudience === 'CANDIDATE' || selectedCert.category === 'ADMISSION'
@@ -375,6 +370,17 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                   : 'สำหรับนิสิตต่างประเทศ'}
               </span>
             </div>
+
+            {onProceedToForm && (
+              <button
+                type="button"
+                onClick={onProceedToForm}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs shadow-md shadow-purple-600/30 flex items-center justify-center gap-2 transition cursor-pointer shrink-0"
+              >
+                <span>ดำเนินการต่อ: กรอกแบบฟอร์มคำร้อง (ไปข้อ 2)</span>
+                <span>➔</span>
+              </button>
+            )}
           </div>
         )}
       </div>

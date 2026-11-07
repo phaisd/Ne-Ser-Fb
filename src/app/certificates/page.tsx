@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAuthUser, isAdminOrOfficer, saveAuthSession } from '@/lib/auth-client';
-import { FileText, CheckCircle } from 'lucide-react';
+import { FileText, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import {
   CertificateRequest,
   CertTypeItem,
@@ -12,6 +12,7 @@ import {
   CertificateTypesGrid,
   CertificateAdminTab,
   CertificateRequestForm,
+  renderCertIcon,
 } from '@/components/certificates';
 
 export default function CertificatesPage() {
@@ -36,6 +37,7 @@ export default function CertificatesPage() {
   // Filter for Certificate Type Cards (ALL | THAI | INTERNATIONAL | STAFF | CANDIDATE)
   const [cardAudienceFilter, setCardAudienceFilter] = useState<'ALL' | 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE'>('ALL');
   const [selectedCert, setSelectedCert] = useState<CertTypeItem | null>(null);
+  const [requestStep, setRequestStep] = useState<1 | 2>(1);
 
   // Submit banner status
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -153,11 +155,30 @@ export default function CertificatesPage() {
   }, []);
 
   // Filtered Cards
+  const canSeeStaffCards = isStaffUser || settings?.showStaffCertificatesInPortal === true;
+
+  // Auto-switch filter to STAFF when an instructor or staff user logs in
+  const staffInitializedRef = React.useRef(false);
+  useEffect(() => {
+    if (isStaffUser) {
+      if (!staffInitializedRef.current && certTypes.length > 0) {
+        staffInitializedRef.current = true;
+        setCardAudienceFilter('STAFF');
+        const firstStaffCert = certTypes.find((c) => c.targetAudience === 'STAFF');
+        if (firstStaffCert) {
+          setSelectedCert(firstStaffCert);
+        }
+      }
+    } else {
+      staffInitializedRef.current = false;
+    }
+  }, [isStaffUser, certTypes]);
+
   const visibleCards = useMemo(() => {
     return certTypes.filter((c) => {
-      // 1. Staff cards: ONLY visible if currentUser is staff
+      // 1. Staff cards: visible if currentUser is staff OR admin enables showStaffCertificatesInPortal
       if (c.targetAudience === 'STAFF') {
-        if (!isStaffUser) return false;
+        if (!canSeeStaffCards) return false;
         if (cardAudienceFilter === 'STAFF') return true;
         if (cardAudienceFilter === 'ALL') return true;
         return false;
@@ -178,16 +199,37 @@ export default function CertificatesPage() {
       if (cardAudienceFilter === 'ALL') return true;
       return c.targetAudience === cardAudienceFilter || c.targetAudience === 'ALL';
     });
-  }, [certTypes, isStaffUser, cardAudienceFilter]);
+  }, [certTypes, canSeeStaffCards, cardAudienceFilter]);
 
   const handleCardSelect = (item: CertTypeItem) => {
     setSelectedCert(item);
+    setRequestStep(2);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleProceedToForm = () => {
+    if (selectedCert) {
+      setRequestStep(2);
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleBackToSelect = () => {
+    setRequestStep(1);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleRequestSuccess = (newReq: CertificateRequest, msg: string) => {
     setSubmitSuccess(msg);
     setRequests((prev) => [newReq, ...prev]);
     setPreviewRequest(newReq);
+    setRequestStep(1);
   };
 
   return (
@@ -204,13 +246,13 @@ export default function CertificatesPage() {
           </p>
         </div>
 
-        {/* Tab switcher */}
-        <div className="flex p-1 bg-slate-200/80 rounded-xl self-start sm:self-auto text-sm font-semibold">
+        {/* Tab switcher (Responsive Touch-Friendly) */}
+        <div className="w-full sm:w-auto flex items-center p-1 bg-slate-200/80 rounded-2xl overflow-x-auto no-scrollbar scroll-smooth text-xs sm:text-sm font-semibold">
           <button
             onClick={() => setActiveTab('REQUEST')}
-            className={`px-3.5 py-2 rounded-lg transition cursor-pointer ${
+            className={`flex-1 sm:flex-initial text-center whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
               activeTab === 'REQUEST'
-                ? 'bg-white text-purple-700 shadow-sm'
+                ? 'bg-white text-purple-700 shadow-sm font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -218,9 +260,9 @@ export default function CertificatesPage() {
           </button>
           <button
             onClick={() => setActiveTab('TRACK')}
-            className={`px-3.5 py-2 rounded-lg transition cursor-pointer ${
+            className={`flex-1 sm:flex-initial text-center whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
               activeTab === 'TRACK'
-                ? 'bg-white text-purple-700 shadow-sm'
+                ? 'bg-white text-purple-700 shadow-sm font-bold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -229,9 +271,9 @@ export default function CertificatesPage() {
           {canManageCertificates && (
             <button
               onClick={() => setActiveTab('ADMIN')}
-              className={`px-3.5 py-2 rounded-lg transition cursor-pointer ${
+              className={`flex-1 sm:flex-initial text-center whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
                 activeTab === 'ADMIN'
-                  ? 'bg-white text-purple-700 shadow-sm'
+                  ? 'bg-white text-purple-700 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -256,30 +298,135 @@ export default function CertificatesPage() {
       {/* ----------------- 1. REQUEST FORM TAB ----------------- */}
       {activeTab === 'REQUEST' && (
         <div className="space-y-6">
-          {/* Section A: Notices and Certificate Types Selector */}
-          <CertificateTypesGrid
-            settings={settings}
-            certTypes={certTypes}
-            visibleCards={visibleCards}
-            cardAudienceFilter={cardAudienceFilter}
-            setCardAudienceFilter={setCardAudienceFilter}
-            isStaffUser={isStaffUser}
-            selectedCert={selectedCert}
-            onCardSelect={handleCardSelect}
-          />
+          {/* Stepper Progress Bar (Step 1 -> Step 2) */}
+          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between gap-2 sm:gap-4">
+            <button
+              type="button"
+              onClick={handleBackToSelect}
+              className={`flex-1 flex items-center justify-center sm:justify-start gap-2.5 p-2.5 rounded-xl transition cursor-pointer ${
+                requestStep === 1
+                  ? 'bg-purple-50 text-purple-900 border border-purple-200 font-extrabold shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-bold'
+              }`}
+            >
+              <span
+                className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                  requestStep === 1 ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-700'
+                }`}
+              >
+                1
+              </span>
+              <div className="text-left hidden xs:block">
+                <div className="text-xs sm:text-sm font-bold">1. เลือกประเภทหนังสือรับรอง</div>
+                <div className="text-[10px] text-slate-400 font-normal hidden md:block">
+                  เลือกการ์ดประเภทคำร้องที่ต้องการ
+                </div>
+              </div>
+              <span className="xs:hidden text-xs font-bold">1. เลือกการ์ด</span>
+            </button>
 
-          {/* Section B: Information Form with Access Control */}
-          <CertificateRequestForm
-            currentUser={currentUser}
-            selectedCert={selectedCert}
-            setSelectedCert={setSelectedCert}
-            certTypes={certTypes}
-            cardAudienceFilter={cardAudienceFilter}
-            setCardAudienceFilter={setCardAudienceFilter}
-            students={students}
-            settings={settings}
-            onSuccess={handleRequestSuccess}
-          />
+            <span className="text-slate-300 font-bold">➔</span>
+
+            <button
+              type="button"
+              onClick={handleProceedToForm}
+              disabled={!selectedCert}
+              className={`flex-1 flex items-center justify-center sm:justify-start gap-2.5 p-2.5 rounded-xl transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                requestStep === 2
+                  ? 'bg-purple-50 text-purple-900 border border-purple-200 font-extrabold shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-bold'
+              }`}
+            >
+              <span
+                className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                  requestStep === 2 ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-700'
+                }`}
+              >
+                2
+              </span>
+              <div className="text-left hidden xs:block">
+                <div className="text-xs sm:text-sm font-bold">2. กรอกแบบฟอร์มคำร้อง</div>
+                <div className="text-[10px] text-slate-400 font-normal hidden md:block truncate max-w-[200px]">
+                  {selectedCert ? selectedCert.name : 'กรอกรายละเอียดและแนบเอกสาร'}
+                </div>
+              </div>
+              <span className="xs:hidden text-xs font-bold">2. กรอกแบบฟอร์ม</span>
+            </button>
+          </div>
+
+          {/* Step 1 View: Selection Grid */}
+          {requestStep === 1 && (
+            <div className="animate-in fade-in duration-200 space-y-6">
+              <CertificateTypesGrid
+                settings={settings}
+                certTypes={certTypes}
+                visibleCards={visibleCards}
+                cardAudienceFilter={cardAudienceFilter}
+                setCardAudienceFilter={setCardAudienceFilter}
+                isStaffUser={isStaffUser}
+                selectedCert={selectedCert}
+                onCardSelect={handleCardSelect}
+                onProceedToForm={handleProceedToForm}
+              />
+            </div>
+          )}
+
+          {/* Step 2 View: Selected Cert Banner & Application Form */}
+          {requestStep === 2 && (
+            <div className="animate-in fade-in duration-200 space-y-6">
+              {/* Selected Certificate Summary Header */}
+              {selectedCert && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white border border-purple-800/40 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center shrink-0">
+                      {renderCertIcon(selectedCert.iconName, selectedCert.targetAudience)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/30">
+                          ประเภทหนังสือที่เลือก
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-white">
+                          รหัส: {selectedCert.code || 'CERT'}
+                        </span>
+                      </div>
+                      <h2 className="text-base sm:text-lg font-black text-white mt-1">
+                        {selectedCert.name}
+                      </h2>
+                      {selectedCert.description && (
+                        <p className="text-xs text-purple-200/80 italic line-clamp-2">
+                          {selectedCert.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleBackToSelect}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 text-xs font-bold transition shrink-0 cursor-pointer self-stretch sm:self-auto justify-center"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-purple-300" />
+                    <span>เปลี่ยนประเภทหนังสือ (เลือกใหม่)</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Information Form */}
+              <CertificateRequestForm
+                currentUser={currentUser}
+                selectedCert={selectedCert}
+                setSelectedCert={setSelectedCert}
+                certTypes={certTypes}
+                cardAudienceFilter={cardAudienceFilter}
+                setCardAudienceFilter={setCardAudienceFilter}
+                students={students}
+                settings={settings}
+                onSuccess={handleRequestSuccess}
+                onBackToSelect={handleBackToSelect}
+              />
+            </div>
+          )}
         </div>
       )}
 

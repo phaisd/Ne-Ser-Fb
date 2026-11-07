@@ -151,4 +151,43 @@ describe('instructorService & Authentication', () => {
     expect(accounts[0].instructorType).toBe('อาจารย์ประจำ');
     expect(accounts[0].role).toBe('INSTRUCTOR');
   });
+
+  it('should batch import new instructors and update existing ones', async () => {
+    const localStore = [
+      {
+        id: 'inst-existing',
+        name: 'ผศ.ดร.สมชาย ใจดี',
+        email: 'somchai.jai@mcu.ac.th',
+        department: 'ภาควิชาเดิม',
+        instructorType: 'อาจารย์ประจำ',
+        role: 'INSTRUCTOR' as const,
+        aliases: ['ผศ.ดร.สมชาย ใจดี'],
+        isActive: true,
+      },
+    ];
+
+    vi.mocked(storageHelper.readLocalJson).mockReturnValue(localStore as any);
+    const writeSpy = vi.mocked(storageHelper.writeLocalJson);
+
+    const result = await instructorService.batchImportInstructors([
+      // 1. Existing instructor to update
+      {
+        name: 'ผศ.ดร.สมชาย ใจดี',
+        department: 'ภาควิชาปรัชญาใหม่',
+        instructorType: 'อาจารย์พิเศษ',
+      },
+      // 2. Brand new instructor
+      {
+        name: 'พระมหาดวงเด่น ฐิตญาโณ',
+        email: 'duangden@mcu.ac.th',
+        department: 'ภาควิชาพระพุทธศาสนา',
+        instructorType: 'อาจารย์ประจำ',
+      },
+    ]);
+
+    expect(result.createdCount).toBe(1);
+    expect(result.updatedCount).toBe(1);
+    expect(result.processed).toHaveLength(2);
+    expect(writeSpy).toHaveBeenCalled();
+  });
 });

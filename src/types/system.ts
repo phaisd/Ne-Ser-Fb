@@ -42,6 +42,7 @@ export interface SystemSettings {
   showStudentsSearch?: boolean; // เปิด/ปิด ระบบค้นหาทะเบียนนิสิต (/students)
   showCoursesMenu?: boolean; // เปิด/ปิด ระบบตารางเรียนและรายวิชา (/courses)
   showCertificatesMenu?: boolean; // เปิด/ปิด ระบบขอหนังสือรับรอง (/certificates)
+  showStaffCertificatesInPortal?: boolean; // เปิด/ปิด แถบหนังสือรับรองสำหรับอาจารย์และเจ้าหน้าที่ในหน้าขอหนังสือรับรองสาธารณะ
 
   // Timetable Period Time Configuration (กำหนดเวลาคาบเรียนในตารางสอน)
   morningPeriodLabel?: string; // เช่น "คาบเช้า (09:00 - 11:30 น.)"

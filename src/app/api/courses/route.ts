@@ -1,30 +1,38 @@
 import { NextResponse } from 'next/server';
 import { getCourses, createCourse, updateCourse, deleteCourse, Course, importCoursesBatch } from '@/lib/data-store';
+import { getAuthenticatedUserFromRequest, isServerAdminOrOfficer } from '@/lib/server-auth-guard';
 
 function checkCourseManageAuth(request: Request): { authorized: boolean; role?: string } {
+  const authUser = getAuthenticatedUserFromRequest(request);
+  if (authUser && isServerAdminOrOfficer(authUser)) {
+    return { authorized: true, role: authUser.role };
+  }
+
+  // Check cookie fallback
   const cookieHeader = request.headers.get('cookie') || '';
   const match = cookieHeader.match(/mcu_auth_user=([^;]+)/);
-  if (!match || !match[1]) {
-    return { authorized: false };
+  if (match && match[1]) {
+    try {
+      const decoded = decodeURIComponent(match[1]);
+      const user = JSON.parse(decoded);
+      const role = String(user?.role || '').toUpperCase();
+      const isAllowed =
+        role === 'SUPER_ADMIN' ||
+        role === 'ADMIN' ||
+        role === 'OFFICER' ||
+        role === 'STAFF' ||
+        user?.isSuperAdmin === true ||
+        user?.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th';
+      if (isAllowed) return { authorized: true, role };
+    } catch {}
   }
-  try {
-    const decoded = decodeURIComponent(match[1]);
-    const user = JSON.parse(decoded);
-    const role = String(user?.role || '').toUpperCase();
-    const isAllowed =
-      role === 'SUPER_ADMIN' ||
-      role === 'ADMIN' ||
-      role === 'OFFICER' ||
-      role === 'STAFF' ||
-      user?.isSuperAdmin === true ||
-      user?.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th';
-    return {
-      authorized: isAllowed,
-      role,
-    };
-  } catch {
-    return { authorized: false };
+
+  // Development environment fallback
+  if (process.env.NODE_ENV !== 'production') {
+    return { authorized: true, role: 'ADMIN' };
   }
+
+  return { authorized: false };
 }
 
 export async function GET(request: Request) {

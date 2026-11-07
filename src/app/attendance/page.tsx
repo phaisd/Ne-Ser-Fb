@@ -43,7 +43,8 @@ import {
 
 import { Student, TimetableItem, AttendanceHistoryItem } from '@/types';
 import { getSubstantiveTokens, matchInstructorStrict } from '@/lib/utils';
-import { EligibilityTab, SemesterRoadmapTab, AddStudentToCourseModal, GradeSheetTab, ClassroomQrProjector, groupAndSortByMajor } from '@/components/attendance';
+import { calculateMaxAllowedAbsences } from '@/lib/attendance/attendanceEvaluator';
+import { EligibilityTab, SemesterRoadmapTab, AddStudentToCourseModal, GradeSheetTab, ClassroomQrProjector, groupAndSortByMajor, RollCallTab, AttendanceHistoryTab, SessionCustomModal } from '@/components/attendance';
 import { CourseEnrollment } from '@/types';
 import { getAuthUser, isAdminOrOfficer, clearAuthSession, saveAuthSession } from '@/lib/auth-client';
 import { toSafeCsvCell } from '@/lib/security';
@@ -711,7 +712,7 @@ export default function AttendancePage() {
     const sessionsRecorded = uniqueDates.length;
 
     // University regulation: Maximum allowed absences based on percentage requirement (e.g. 16 * 20% = 3 absences)
-    const maxAbsences = Math.max(1, Math.floor(semesterTotalSessions * (1 - minAttendancePercent / 100)));
+    const maxAbsences = calculateMaxAllowedAbsences(semesterTotalSessions, minAttendancePercent);
 
     const list = targetStudents.map((s) => {
       const sRecords = courseRecords.filter((r) => r.studentCode === s.studentCode);
@@ -1005,7 +1006,7 @@ export default function AttendancePage() {
       </div>
 
       {/* Page Header (Hidden on Print) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 flex items-center gap-3">
             <CheckSquare className="w-8 h-8 text-emerald-600" />
@@ -1016,74 +1017,90 @@ export default function AttendancePage() {
           </p>
         </div>
 
-        {/* Mode switcher tabs */}
-        <div className="flex flex-wrap p-1 bg-slate-200/80 rounded-xl self-start sm:self-auto text-xs sm:text-sm font-semibold gap-1">
-          <button
-            onClick={() => setActiveMode('ROLL_CALL')}
-            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer ${
-              activeMode === 'ROLL_CALL'
-                ? 'bg-white text-emerald-700 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            อาจารย์เช็คชื่อ (Roll-Call)
-          </button>
-          <button
-            onClick={() => setActiveMode('ROADMAP')}
-            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-              activeMode === 'ROADMAP'
-                ? 'bg-emerald-600 text-white shadow-sm font-bold'
-                : 'text-slate-700 hover:text-emerald-700 font-bold bg-white/70'
-            }`}
-          >
-            <Calendar className="w-4 h-4 text-emerald-500" />
-            <span>แผนผัง 16 คาบ (Roadmap)</span>
-            {nextUpcomingSession && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping ml-0.5" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveMode('ELIGIBILITY')}
-            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-              activeMode === 'ELIGIBILITY'
-                ? 'bg-emerald-600 text-white shadow-sm font-bold'
-                : 'text-slate-700 hover:text-emerald-700 font-bold bg-emerald-50/50'
-            }`}
-          >
-            <Award className="w-4 h-4" />
-            <span>สรุปสิทธิ์สอบ (Exam Eligibility)</span>
-          </button>
-          <button
-            onClick={() => setActiveMode('GRADE_SHEET')}
-            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-              activeMode === 'GRADE_SHEET'
-                ? 'bg-indigo-600 text-white shadow-sm font-bold'
-                : 'text-indigo-800 hover:text-indigo-950 font-bold bg-indigo-50/80 border border-indigo-200/70'
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>ใบกรอกคะแนนวัดผล (Grade Sheet)</span>
-          </button>
-          <button
-            onClick={() => setActiveMode('QR_CODE')}
-            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer ${
-              activeMode === 'QR_CODE'
-                ? 'bg-white text-emerald-700 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            เปิดจอ QR ห้องเรียน
-          </button>
-          <button
-            onClick={() => setActiveMode('HISTORY')}
-            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition cursor-pointer ${
-              activeMode === 'HISTORY'
-                ? 'bg-white text-emerald-700 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            ประวัติการเช็คชื่อ ({visibleHistoryRecords.length})
-          </button>
+        {/* Mode switcher tabs (2 แถว / 2 Rows Layout: แสดงครบทุกแท็บ ไม่ต้องเลื่อนสกอร์บาร์) */}
+        <div className="w-full xl:w-auto flex flex-col gap-1.5 p-1.5 bg-slate-200/80 rounded-2xl text-xs sm:text-sm font-semibold shadow-2xs">
+          {/* แถวที่ 1 (3 แท็บ): เช็คชื่อ, แผนผัง, สรุปสิทธิ์สอบ */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setActiveMode('ROLL_CALL')}
+              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+                activeMode === 'ROLL_CALL'
+                  ? 'bg-white text-emerald-700 shadow-sm font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>อาจารย์เช็คชื่อ (Roll-Call)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMode('ROADMAP')}
+              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+                activeMode === 'ROADMAP'
+                  ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                  : 'text-slate-700 hover:text-emerald-700 font-bold bg-white/70'
+              }`}
+            >
+              <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span>แผนผัง 16 คาบ (Roadmap)</span>
+              {nextUpcomingSession && (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping ml-0.5 shrink-0" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMode('ELIGIBILITY')}
+              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+                activeMode === 'ELIGIBILITY'
+                  ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                  : 'text-slate-700 hover:text-emerald-700 font-bold bg-emerald-50/50 hover:bg-white/50'
+              }`}
+            >
+              <Award className="w-4 h-4 shrink-0" />
+              <span>สรุปสิทธิ์สอบ (Exam Eligibility)</span>
+            </button>
+          </div>
+
+          {/* แถวที่ 2 (3 แท็บ): ใบกรอกคะแนน, QR ห้องเรียน, ประวัติ */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setActiveMode('GRADE_SHEET')}
+              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+                activeMode === 'GRADE_SHEET'
+                  ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                  : 'text-indigo-800 hover:text-indigo-950 font-bold bg-indigo-50/80 border border-indigo-200/70 hover:bg-indigo-100/60'
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <span>ใบกรอกคะแนนวัดผล (Grade Sheet)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMode('QR_CODE')}
+              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+                activeMode === 'QR_CODE'
+                  ? 'bg-white text-emerald-700 shadow-sm font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <QrCode className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>เปิดจอ QR ห้องเรียน</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMode('HISTORY')}
+              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+                activeMode === 'HISTORY'
+                  ? 'bg-white text-emerald-700 shadow-sm font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <History className="w-4 h-4 text-slate-500 shrink-0" />
+              <span>ประวัติการเช็คชื่อ ({visibleHistoryRecords.length})</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1269,748 +1286,56 @@ export default function AttendancePage() {
           MODE 1: ROLL CALL (Hidden on Print)
          ───────────────────────────────────────────────────────────── */}
       {activeMode === 'ROLL_CALL' && (
-        <div className="space-y-6 print:hidden">
-          {!currentUser ? (
-            <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-4">
-              <div className="w-16 h-16 rounded-3xl bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
-                <Lock className="w-8 h-8 text-slate-400" />
-              </div>
-              <h3 className="font-extrabold text-slate-800 text-base">
-                เข้าสู่ระบบอาจารย์ผู้สอนเพื่อเริ่มต้นเช็คชื่อ
-              </h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                เพื่อความปลอดภัยของข้อมูลและการประกันคุณภาพการศึกษา ระบบจะแสดงเฉพาะรายวิชาและบัญชีรายชื่อนิสิตตามรายวิชาที่ท่านรับผิดชอบบรรยายเท่านั้น
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* ─────────────────────────────────────────────────────────────
-                  FAST ACTION BAR: 16-WEEK PROGRESS & 1-CLICK NEXT SESSION
-                 ───────────────────────────────────────────────────────────── */}
-              {currentCourse && (
-                <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-emerald-700/40 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-emerald-200 text-xs font-semibold">
-                      <Calendar className="w-4 h-4 text-emerald-300" />
-                      <span>แผนผังการเรียนการสอนภาคเรียนที่ 1/2569 (เป้าหมาย {semesterTotalSessions} คาบ)</span>
-                    </div>
-                    <div className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                      <span className="font-mono text-emerald-300">{currentCourse.courseCode}</span>
-                      <span>{currentCourse.courseName}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-300 pt-1">
-                      <span>
-                        สอนแล้ว <strong className="text-white font-bold">{completedSessionsCount}</strong> / {semesterTotalSessions} คาบ ({Math.round((completedSessionsCount / semesterTotalSessions) * 100)}%)
-                      </span>
-                      <div className="w-28 sm:w-36 bg-slate-700 rounded-full h-2 overflow-hidden border border-slate-600">
-                        <div
-                          className="bg-emerald-400 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min(100, (completedSessionsCount / semesterTotalSessions) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                    {nextUpcomingSession ? (
-                      <button
-                        type="button"
-                        onClick={() => handleFastOpenSession(nextUpcomingSession)}
-                        className="px-4 py-2.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 rounded-xl text-xs font-extrabold shadow-lg shadow-emerald-900/40 flex items-center gap-2 transition transform hover:scale-[1.02] cursor-pointer"
-                        title="คลิกเพื่อเปิดเช็คชื่อคาบถัดไปทันทีโดยไม่ต้องเลือกวันเอง"
-                      >
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-950 animate-ping" />
-                        <span>🚀 เปิดเช็คชื่อคาบถัดไป (คาบที่ {nextUpcomingSession.sessionNumber} — {nextUpcomingSession.dateFormattedTh})</span>
-                      </button>
-                    ) : (
-                      <div className="px-3.5 py-2 bg-emerald-900/60 text-emerald-200 rounded-xl text-xs font-bold border border-emerald-700/50 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>สอนครบตามเกณฑ์ 16 คาบแล้ว</span>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => setActiveMode('ROADMAP')}
-                      className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/20 flex items-center gap-1.5 transition cursor-pointer"
-                    >
-                      <Calendar className="w-4 h-4 text-emerald-300" />
-                      <span>ดูแผนผัง 16 คาบ</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Filter Panel: Lecturer & Course Selector */}
-              <div id="roll-call-section" className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* 1. อาจารย์ผู้สอน */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-emerald-600" />
-                      อาจารย์ผู้รับผิดชอบบรรยาย:
-                    </label>
-                    {isTeacher ? (
-                      <div className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-950 font-bold text-xs sm:text-sm flex items-center justify-between">
-                        <div className="flex items-center gap-2 truncate">
-                          <UserCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-                          <span className="truncate">{currentUser.name}</span>
-                        </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-200/90 text-emerald-800 font-extrabold shrink-0 border border-emerald-300">
-                          🔒 ล็อคเฉพาะวิชาที่ตนสอน
-                        </span>
-                      </div>
-                    ) : (
-                      <select
-                        value={selectedInstructor}
-                        onChange={(e) => {
-                          const inst = e.target.value;
-                          setSelectedInstructor(inst);
-                          const matched = timetables.filter((t) => inst === 'ALL' || t.instructor?.includes(inst));
-                          if (matched.length > 0) {
-                            setSelectedCourseCode(matched[0].courseCode);
-                            if (matched[0].instructor) setRecordedBy(matched[0].instructor);
-                          }
-                        }}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
-                      >
-                        <option value="ALL">-- อาจารย์ทุกท่าน ({instructors.length} ท่าน) --</option>
-                        {instructors.map((inst, i) => (
-                          <option key={i} value={inst}>
-                            {inst}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-
-                  {/* 2. รายวิชาที่สอน */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
-                      รายวิชาที่รับผิดชอบสอน ({availableCourses.length} วิชา):
-                    </label>
-                    {availableCourses.length === 0 ? (
-                      <div className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-800 text-xs font-bold flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
-                        <span>ไม่พบรายวิชาที่สอนในภาคเรียนนี้</span>
-                      </div>
-                    ) : (
-                      <select
-                        value={(currentCourse as any)?.sectionKey || selectedCourseCode}
-                        onChange={(e) => handleCourseChange(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
-                      >
-                        {(() => {
-                          const interCourses = availableCourses.filter((c) => checkIsEnglishCourse(c));
-                          const thaiCourses = availableCourses.filter((c) => !checkIsEnglishCourse(c));
-
-                          return (
-                            <>
-                              {interCourses.length > 0 && (
-                                <optgroup label="🌐 หลักสูตรนานาชาติ (Inter / English Program)">
-                                  {interCourses.map((c, i) => {
-                                    const sKey = (c as any).sectionKey || c.courseCode;
-                                    return (
-                                      <option key={`en-${sKey}-${i}`} value={sKey}>
-                                        🌐 [Inter/EN] {c.courseCode} — {c.courseName} (ปี {c.yearLevel})
-                                      </option>
-                                    );
-                                  })}
-                                </optgroup>
-                              )}
-                              {thaiCourses.length > 0 && (
-                                <optgroup label="🇹🇭 หลักสูตรภาษาไทย (Thai Program)">
-                                  {thaiCourses.map((c, i) => {
-                                    const sKey = (c as any).sectionKey || c.courseCode;
-                                    return (
-                                      <option key={`th-${sKey}-${i}`} value={sKey}>
-                                        🇹🇭 [ภาคไทย] {c.courseCode} — {c.courseName} (ปี {c.yearLevel})
-                                      </option>
-                                    );
-                                  })}
-                                </optgroup>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </select>
-                    )}
-                  </div>
-
-                  {/* 3. วันที่เช็คชื่อ */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                      วันที่สอน / เช็คชื่อ:
-                    </label>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
-                    />
-                  </div>
-                </div>
-
-                {/* ─────────────────────────────────────────────────────────────
-                    COURSE CARDS GRID (การ์ดรายวิชาที่รับผิดชอบสอน)
-                   ───────────────────────────────────────────────────────────── */}
-                {availableCourses.length > 0 && (
-                  <div className="pt-2 border-t border-slate-100 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                        <BookOpen className="w-4 h-4 text-emerald-600" />
-                        <span>การ์ดรายวิชาที่รับผิดชอบสอน ({availableCourses.length} วิชา) — คลิกการ์ดเพื่อสลับวิชาได้ทันที:</span>
-                      </span>
-                      <span className="text-[11px] text-slate-400">
-                        แยกสีตามหลักสูตรภาษาไทย (เขียว) และหลักสูตรนานาชาติ Inter/EN (คราม)
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                      {availableCourses.map((c, idx) => {
-                        const sKey = (c as any).sectionKey || c.courseCode;
-                        const currentKey = (currentCourse as any)?.sectionKey || selectedCourseCode;
-                        const isSelected = sKey === currentKey;
-                        const isEn = checkIsEnglishCourse(c);
-                        const sharedMajors: string[] = (c as any).sharedMajors || [];
-
-                        return (
-                          <button
-                            key={`card-${sKey}-${idx}`}
-                            type="button"
-                            onClick={() => handleCourseChange(sKey)}
-                            className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                              isSelected
-                                ? isEn
-                                  ? 'bg-gradient-to-br from-indigo-600 to-blue-700 text-white border-indigo-700 shadow-md ring-2 ring-indigo-400/40'
-                                  : 'bg-gradient-to-br from-emerald-600 to-teal-700 text-white border-emerald-700 shadow-md ring-2 ring-emerald-400/40'
-                                : 'bg-slate-50/70 hover:bg-white text-slate-800 border-slate-200/90 hover:border-emerald-400 hover:shadow-xs'
-                            }`}
-                          >
-                            <div className="space-y-1.5">
-                              <div className="flex items-center justify-between gap-1.5">
-                                <span
-                                  className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-lg ${
-                                    isSelected
-                                      ? 'bg-white/20 text-white'
-                                      : isEn
-                                      ? 'bg-indigo-100 text-indigo-900'
-                                      : 'bg-emerald-100 text-emerald-900'
-                                  }`}
-                                >
-                                  {c.courseCode}
-                                </span>
-                                <span
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                    isSelected
-                                      ? 'bg-white/20 text-white'
-                                      : isEn
-                                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  }`}
-                                >
-                                  {isEn ? '🌐 Inter/EN' : '🇹🇭 ภาคไทย'} • ปี {c.yearLevel || 1}
-                                </span>
-                              </div>
-
-                              <div
-                                className={`font-bold text-xs leading-snug line-clamp-2 ${
-                                  isSelected ? 'text-white' : 'text-slate-900'
-                                }`}
-                              >
-                                {c.courseName}
-                              </div>
-
-                              {sharedMajors.length > 1 && (
-                                <div
-                                  className={`text-[10px] font-semibold truncate ${
-                                    isSelected ? 'text-white/85' : 'text-slate-500'
-                                  }`}
-                                  title={`เรียนรวม ${sharedMajors.length} สาขาวิชา: ${sharedMajors.join(' • ')}`}
-                                >
-                                  👥 เรียนรวม {sharedMajors.length} สาขา ({sharedMajors.join(', ')})
-                                </div>
-                              )}
-                            </div>
-
-                            <div
-                              className={`flex items-center justify-between text-[11px] pt-1.5 border-t ${
-                                isSelected
-                                  ? 'border-white/20 text-white/90'
-                                  : 'border-slate-200/80 text-slate-500'
-                              }`}
-                            >
-                              <span className="truncate">
-                                📅 {formatDayLabel(c.dayOfWeek, isEn)}{' '}
-                                {c.startTime ? `${c.startTime}-${c.endTime}` : ''}
-                              </span>
-                              <span className="font-bold shrink-0 ml-1 truncate max-w-[140px]" title={c.room || '-'}>
-                                🚪 {c.room || '-'}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────────
-                    ENHANCED SESSION BANNER & CUSTOMIZATION CONTROLS
-                   ───────────────────────────────────────────────────────────── */}
-                {currentCourse && (() => {
-                  const isEn = /inter|eng|english|นานาชาติ/i.test(currentCourse.timetableTitle || '') || /^[A-Za-z0-9\s:,-]+$/.test(currentCourse.courseName);
-                  const allCo = [
-                    ...sessionCustom.coInstructors,
-                    ...(sessionCustom.customCoInstructorText ? sessionCustom.customCoInstructorText.split(',').map((s) => s.trim()) : [])
-                  ].filter(Boolean);
-
-                  const sessionTypeConfig = {
-                    NORMAL: { label: 'คาบเรียนปกติ', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-                    MAKEUP: { label: 'คาบสอนชดเชย', color: 'bg-amber-100 text-amber-800 border-amber-300' },
-                    SPECIAL: { label: 'บรรยายพิเศษ', color: 'bg-purple-100 text-purple-800 border-purple-300' },
-                    EXAM: { label: 'สอบย่อย/เก็บคะแนน', color: 'bg-rose-100 text-rose-800 border-rose-300' },
-                  }[sessionCustom.sessionType] || { label: 'คาบเรียนปกติ', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
-
-                  return (
-                    <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-emerald-50/20 p-4 shadow-sm space-y-3">
-                      {/* Top Header Row */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-slate-200/70">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${isEn ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
-                            {isEn ? '🌐 หลักสูตรนานาชาติ (Inter/EN)' : '🇹🇭 หลักสูตรภาษาไทย (Thai)'}
-                          </span>
-                          <span className="font-mono font-bold text-slate-900 text-sm">
-                            {currentCourse.courseCode}
-                          </span>
-                          <span className="font-bold text-slate-800 text-sm">
-                            {currentCourse.courseName}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold">
-                            ปี {currentCourse.yearLevel}
-                          </span>
-
-                          {/* Session Number & Type Badge */}
-                          <div className="flex items-center gap-1.5 ml-1">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-slate-900 text-white shadow-xs">
-                              คาบที่ {sessionCustom.sessionNumber}
-                            </span>
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${sessionTypeConfig.color}`}>
-                              {sessionTypeConfig.label}
-                            </span>
-                            {sessionCustom.isCustomized && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-xs">
-                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                                ปรับแต่งแล้ว
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Button to Open Session Customization Modal */}
-                        <div className="flex items-center gap-2 ml-auto">
-                          <button
-                            type="button"
-                            onClick={() => setShowSessionModal(true)}
-                            className="px-3.5 py-1.5 bg-white hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
-                            title="ปรับแต่ง วันที่ / เวลา / ห้องเรียน / เลือกอาจารย์ผู้สอนร่วม-ผู้ช่วยสอน"
-                          >
-                            <SlidersHorizontal className="w-3.5 h-3.5" />
-                            <span>⚙️ ปรับแต่งคาบเรียน (วัน/เวลา/ห้อง/ผู้ช่วยสอน)</span>
-                          </button>
-
-                          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
-                            <button
-                              type="button"
-                              onClick={() => setStudentProgramFilter('ENGLISH')}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                                activeProgramMode === 'ENGLISH'
-                                  ? 'bg-indigo-600 text-white font-bold shadow-xs'
-                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                              }`}
-                              title="แสดงเฉพาะนิสิตหลักสูตรนานาชาติ (Inter / ภาคภาษาอังกฤษ)"
-                            >
-                              <span>🌐 ภาคอินเตอร์</span>
-                              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                                activeProgramMode === 'ENGLISH' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                              }`}>
-                                {yearEnglishCount}
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setStudentProgramFilter('THAI')}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                                activeProgramMode === 'THAI'
-                                  ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                              }`}
-                              title="แสดงเฉพาะนิสิตหลักสูตรภาษาไทย"
-                            >
-                              <span>🇹🇭 ภาคไทย</span>
-                              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                                activeProgramMode === 'THAI' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                              }`}>
-                                {yearThaiCount}
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => setStudentProgramFilter('ALL')}
-                              className={`px-2 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
-                                activeProgramMode === 'ALL'
-                                  ? 'bg-slate-800 text-white font-bold shadow-xs'
-                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                              }`}
-                              title="แสดงรวมนิสิตทั้ง 2 ภาค (กรณีเรียนร่วมกัน)"
-                            >
-                              <span>👥 ทั้งหมด</span>
-                              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                                activeProgramMode === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-                              }`}>
-                                {yearAllCount}
-                              </span>
-                            </button>
-                          </div>
-
-                          <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 text-xs pl-2 border-l border-slate-200">
-                            <input
-                              type="checkbox"
-                              checked={showOnlyTargetYear}
-                              onChange={(e) => setShowOnlyTargetYear(e.target.checked)}
-                              className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                            />
-                            <span>เฉพาะปี {currentCourse.yearLevel}</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Session Parameters Display */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                        <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
-                          <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <div>
-                            <div className="text-[10px] text-slate-400 font-semibold">วันที่สอนจริง:</div>
-                            <div className="font-bold text-slate-800">{sessionCustom.date || date}</div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
-                          <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <div>
-                            <div className="text-[10px] text-slate-400 font-semibold">เวลาเรียน:</div>
-                            <div className="font-bold text-slate-800">
-                              {sessionCustom.startTime} - {sessionCustom.endTime} น.
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
-                          <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <div>
-                            <div className="text-[10px] text-slate-400 font-semibold">ห้องเรียน / สถานที่:</div>
-                            <div className="font-bold text-slate-800 truncate">{sessionCustom.room}</div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
-                          <User className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <div className="truncate">
-                            <div className="text-[10px] text-slate-400 font-semibold">อาจารย์ผู้สอนหลัก:</div>
-                            <div className="font-bold text-slate-800 truncate">
-                              {sessionCustom.leadInstructor || currentCourse.instructor || 'อาจารย์ประจำวิชา'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Co-instructors / Teaching Assistants Banner if present */}
-                      {allCo.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 text-xs">
-                          <span className="font-bold text-indigo-900 flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5 text-indigo-600" />
-                            อาจารย์ผู้สอนร่วม / ผู้ช่วยสอน (TAs) ในคาบนี้ ({allCo.length} ท่าน):
-                          </span>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {allCo.map((inst, idx) => (
-                              <span
-                                key={idx}
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 text-[11px] font-semibold"
-                              >
-                                <span>👨‍🏫 {inst}</span>
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Session Topic / Note if entered */}
-                      {(sessionCustom.sessionTopic || sessionCustom.note) && (
-                        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200/60 text-xs text-slate-600">
-                          {sessionCustom.sessionTopic && (
-                            <div>
-                              <span className="font-bold text-slate-700">📖 หัวข้อการสอน:</span>{' '}
-                              <span className="text-slate-900 font-medium">{sessionCustom.sessionTopic}</span>
-                            </div>
-                          )}
-                          {sessionCustom.note && (
-                            <div>
-                              <span className="font-bold text-slate-700">📝 บันทึกคาบ:</span>{' '}
-                              <span className="text-slate-600">{sessionCustom.note}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* Live Stats Bar */}
-                {currentCourse && (
-                  <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                      <span className="text-slate-500 mr-1">นิสิตทั้งหมด: {total} คน</span>
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
-                        มา: {present}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800">
-                        สาย: {late}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-800">
-                        ขาด: {absent}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
-                        ลา: {leave}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-full bg-slate-800 text-white font-mono">
-                        เข้าเรียน {percent}%
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setAllStatus('PRESENT')}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition cursor-pointer"
-                      >
-                        ✓ มาทุกคน
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAllStatus('ABSENT')}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition cursor-pointer"
-                      >
-                        ✕ ขาดทุกคน
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Student Roster Table */}
-              {currentCourse && (
-                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-3">
-                    <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span>บัญชีรายชื่อนิสิต ({targetStudents.length} รูป/คน)</span>
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                          activeProgramMode === 'ENGLISH'
-                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                            : activeProgramMode === 'THAI'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-slate-100 text-slate-700 border-slate-200'
-                        }`}>
-                          {activeProgramMode === 'ENGLISH'
-                            ? '🌐 นิสิตภาคภาษาอังกฤษ (Inter)'
-                            : activeProgramMode === 'THAI'
-                            ? '🇹🇭 นิสิตภาคภาษาไทย'
-                            : '👥 แสดงรวมทั้ง 2 ภาค'}
-                        </span>
-                      </div>
-                      <span className="text-xs text-slate-400 font-normal">
-                        ({currentCourse.courseCode} — {currentCourse.courseName})
-                      </span>
-                    </h3>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => setIsAddStudentModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition shadow-2xs cursor-pointer"
-                        title="เพิ่มรหัสนิสิต ชื่อนิสิต และสาขาวิชา สำหรับนิสิตเทียบโอน/เดินเรียน เข้าในบัญชีรายชื่อวิชานี้"
-                      >
-                        <UserPlus className="w-4 h-4 text-amber-700" />
-                        <span>+ เพิ่มนิสิต (เทียบโอน/เดินเรียน)</span>
-                      </button>
-                      <button
-                        onClick={handleSave}
-                        disabled={saving || targetStudents.length === 0}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm cursor-pointer"
-                      >
-                        <Save className="w-4 h-4" />
-                        {saving ? 'กำลังบันทึกลง Google Sheets...' : 'บันทึกการเช็คชื่อ'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {targetStudents.length === 0 ? (
-                    <div className="p-12 text-center text-slate-400 text-sm">
-                      ไม่พบนิสิตในกลุ่มเรียนที่เลือก
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm text-slate-600">
-                        <thead className="bg-slate-50/50 text-xs uppercase font-semibold text-slate-400 border-b">
-                          <tr>
-                            <th className="px-6 py-3.5 w-16">ลำดับ</th>
-                            <th className="px-6 py-3.5 w-32">รหัสนิสิต</th>
-                            <th className="px-6 py-3.5">ชื่อ - นามสกุล</th>
-                            <th className="px-6 py-3.5">สาขาวิชา</th>
-                            <th className="px-6 py-3.5 text-center w-64">สถานะการเข้าเรียน</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {groupedTargetSections.map((sec) => (
-                            <React.Fragment key={sec.groupKey}>
-                              {/* Major Group Header Row */}
-                              <tr className="bg-slate-100/90 border-y border-slate-200">
-                                <td colSpan={5} className="px-6 py-2.5 text-xs font-extrabold text-slate-800">
-                                  <div className="flex items-center justify-between flex-wrap gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${sec.meta.badgeColor}`}>
-                                        {activeProgramMode === 'ENGLISH' ? sec.meta.labelEn : sec.meta.labelTh}
-                                      </span>
-                                      <span className="text-slate-500 font-normal text-[11px]">
-                                        ({activeProgramMode === 'ENGLISH' ? sec.meta.labelTh : sec.meta.labelEn})
-                                      </span>
-                                    </div>
-                                    <span className="text-slate-600 font-bold text-[11px]">
-                                      จำนวน {sec.items.length} รูป/คน (ลำดับที่ 1 - {sec.items.length})
-                                    </span>
-                                  </div>
-                                </td>
-                              </tr>
-                              {sec.items.map((s) => {
-                                const currentStatus = attendanceMap[s.studentCode] || 'PRESENT';
-                                return (
-                                  <tr key={`${sec.groupKey}-${s.studentCode}`} className="hover:bg-slate-50/80 transition-colors">
-                                    <td className="px-6 py-4 text-xs font-mono font-bold text-slate-500">{s.indexInMajor}</td>
-                                    <td className="px-6 py-4 font-mono font-bold text-emerald-700">
-                                      {s.studentCode}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-slate-900">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span>{s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`}</span>
-                                        {customEnrolledCodeSet.has(s.studentCode.toLowerCase().trim()) && (
-                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs">
-                                            <span>⚡ เทียบโอน/เดินเรียน</span>
-                                            <button
-                                              type="button"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleRemoveEnrollment(s.studentCode, s.fullName || s.studentCode);
-                                              }}
-                                              className="text-amber-700 hover:text-rose-700 hover:bg-amber-200/80 rounded-full w-3.5 h-3.5 flex items-center justify-center transition cursor-pointer"
-                                              title="นำนิสิตเทียบโอนท่านนี้ออกจากห้องเรียนนี้"
-                                            >
-                                              ✕
-                                            </button>
-                                          </span>
-                                        )}
-                                        {((s.programType || '').toUpperCase() === 'ENGLISH' || (!['ไทย', 'Thai'].includes(s.nationality || '') && s.programType !== 'THAI')) ? (
-                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                            🌐 Inter
-                                          </span>
-                                        ) : (
-                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                            🇹🇭 ภาคไทย
-                                          </span>
-                                        )}
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-xs text-slate-500">
-                                      {s.major || sec.meta.labelTh.replace(/^สาขาวิชา/, '')}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                      <div className="flex items-center justify-center gap-1">
-                                        <button
-                                          type="button"
-                                          onClick={() => handleStatusChange(s.studentCode, 'PRESENT')}
-                                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                                            currentStatus === 'PRESENT'
-                                              ? 'bg-emerald-600 text-white shadow-sm'
-                                              : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
-                                          }`}
-                                        >
-                                          มา
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleStatusChange(s.studentCode, 'LATE')}
-                                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                                            currentStatus === 'LATE'
-                                              ? 'bg-yellow-500 text-white shadow-sm'
-                                              : 'bg-slate-100 text-slate-600 hover:bg-yellow-50 hover:text-yellow-700'
-                                          }`}
-                                        >
-                                          สาย
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleStatusChange(s.studentCode, 'ABSENT')}
-                                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                                            currentStatus === 'ABSENT'
-                                              ? 'bg-red-600 text-white shadow-sm'
-                                              : 'bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-700'
-                                          }`}
-                                        >
-                                          ขาด
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleStatusChange(s.studentCode, 'LEAVE')}
-                                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                                            currentStatus === 'LEAVE'
-                                              ? 'bg-blue-600 text-white shadow-sm'
-                                              : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'
-                                          }`}
-                                        >
-                                          ลา
-                                        </button>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </React.Fragment>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <span className="text-xs text-slate-500">
-                      อาจารย์ผู้บันทึก: <strong className="text-slate-800">{currentUser ? currentUser.name : recordedBy}</strong>
-                    </span>
-                    <button
-                      onClick={handleSave}
-                      disabled={saving || targetStudents.length === 0}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 transition shadow-md shadow-emerald-600/20 cursor-pointer"
-                    >
-                      <Save className="w-4 h-4" />
-                      {saving ? 'กำลังบันทึกลง Google Sheets...' : 'บันทึกการเช็คชื่อ'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <RollCallTab
+          currentUser={currentUser}
+          currentCourse={currentCourse}
+          availableCourses={availableCourses}
+          selectedCourseCode={selectedCourseCode}
+          handleCourseChange={handleCourseChange}
+          date={date}
+          setDate={setDate}
+          recordedBy={recordedBy}
+          isTeacher={isTeacher}
+          instructors={instructors}
+          selectedInstructor={selectedInstructor}
+          setSelectedInstructor={setSelectedInstructor}
+          timetables={timetables}
+          setSelectedCourseCode={setSelectedCourseCode}
+          setRecordedBy={setRecordedBy}
+          showOnlyTargetYear={showOnlyTargetYear}
+          setShowOnlyTargetYear={setShowOnlyTargetYear}
+          studentProgramFilter={studentProgramFilter}
+          setStudentProgramFilter={setStudentProgramFilter}
+          activeProgramMode={activeProgramMode}
+          yearAllCount={yearAllCount}
+          yearEnglishCount={yearEnglishCount}
+          yearThaiCount={yearThaiCount}
+          sessionCustom={sessionCustom}
+          setShowSessionModal={setShowSessionModal}
+          semesterTotalSessions={semesterTotalSessions}
+          completedSessionsCount={completedSessionsCount}
+          nextUpcomingSession={nextUpcomingSession}
+          handleFastOpenSession={handleFastOpenSession}
+          setActiveMode={setActiveMode}
+          targetStudents={targetStudents}
+          groupedTargetSections={groupedTargetSections}
+          attendanceMap={attendanceMap}
+          handleStatusChange={handleStatusChange}
+          setAllStatus={setAllStatus}
+          total={total}
+          present={present}
+          late={late}
+          absent={absent}
+          leave={leave}
+          percent={percent}
+          customEnrolledCodeSet={customEnrolledCodeSet}
+          handleRemoveEnrollment={handleRemoveEnrollment}
+          setIsAddStudentModalOpen={setIsAddStudentModalOpen}
+          saving={saving}
+          handleSave={handleSave}
+          checkIsEnglishCourse={checkIsEnglishCourse}
+          formatDayLabel={formatDayLabel}
+        />
       )}
 
       {/* ─────────────────────────────────────────────────────────────
@@ -2043,86 +1368,13 @@ export default function AttendancePage() {
           MODE 3: ATTENDANCE HISTORY (Hidden on Print)
          ───────────────────────────────────────────────────────────── */}
       {activeMode === 'HISTORY' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden print:hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                <History className="w-4 h-4 text-emerald-600" />
-                <span>ประวัติการบันทึกการเข้าเรียน ({visibleHistoryRecords.length} แถว)</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {isTeacher
-                  ? `แสดงเฉพาะประวัติการเช็คชื่อในรายวิชาที่ท่านรับผิดชอบสอน (${availableCourses.map((c) => c.courseCode).join(', ')})`
-                  : 'แสดงประวัติการเช็คชื่อของอาจารย์ทุกท่าน (Admin Mode)'}
-              </p>
-            </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
-              ซิงค์ตรงกับ Google Sheets (แท็บ Attendance)
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b">
-                <tr>
-                  <th className="px-6 py-4">วันที่</th>
-                  <th className="px-6 py-4">รหัสวิชา</th>
-                  <th className="px-6 py-4">รหัสนิสิต</th>
-                  <th className="px-6 py-4">ชื่อนิสิต</th>
-                  <th className="px-6 py-4 text-center">สถานะ</th>
-                  <th className="px-6 py-4">ผู้บันทึก</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {visibleHistoryRecords.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10 text-slate-400 text-xs">
-                      ไม่พบประวัติการเช็คชื่อในรายวิชาที่ท่านรับผิดชอบ
-                    </td>
-                  </tr>
-                ) : (
-                  visibleHistoryRecords.slice(0, 50).map((h, i) => (
-                    <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-6 py-4 text-xs font-mono text-slate-500">{h.date}</td>
-                      <td className="px-6 py-4 font-mono font-bold text-blue-600">{h.courseCode || '-'}</td>
-                      <td className="px-6 py-4 font-mono text-slate-700">{h.studentCode}</td>
-                      <td className="px-6 py-4 font-medium text-slate-900">{h.studentName}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            h.status === 'PRESENT'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : h.status === 'LATE'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : h.status === 'LEAVE'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {h.status === 'PRESENT'
-                            ? 'มา'
-                            : h.status === 'LATE'
-                            ? 'สาย'
-                            : h.status === 'LEAVE'
-                            ? 'ลา'
-                            : 'ขาด'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-xs text-slate-500">{h.recordedBy || '-'}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          {visibleHistoryRecords.length > 50 && (
-            <div className="p-4 bg-slate-50 border-t text-center text-xs text-slate-500">
-              แสดง 50 รายการล่าสุด
-            </div>
-          )}
-        </div>
+        <AttendanceHistoryTab
+          visibleHistoryRecords={visibleHistoryRecords}
+          isTeacher={isTeacher}
+          availableCourses={availableCourses}
+        />
       )}
-      {/* Modal to Add Transfer / Cross-enroll Student */}
+{/* Modal to Add Transfer / Cross-enroll Student */}
       {currentCourse && (
         <AddStudentToCourseModal
           isOpen={isAddStudentModalOpen}
@@ -2158,7 +1410,17 @@ export default function AttendancePage() {
         />
       )}
 
-      {/* User Profile & Password Modal */}
+            {/* Session Customizer Modal */}
+      <SessionCustomModal
+        isOpen={showSessionModal}
+        onClose={() => setShowSessionModal(false)}
+        sessionCustom={sessionCustom}
+        setSessionCustom={setSessionCustom}
+        instructors={instructors}
+        currentUser={currentUser}
+      />
+
+{/* User Profile & Password Modal */}
       <UserProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}

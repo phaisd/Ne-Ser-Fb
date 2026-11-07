@@ -12,6 +12,7 @@ const cspHeader = `
 `;
 
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   poweredByHeader: false, // Prevents X-Powered-By: Next.js fingerprinting
   async headers() {

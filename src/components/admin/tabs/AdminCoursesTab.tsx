@@ -26,6 +26,8 @@ import {
   Download,
   ChevronDown,
   FileSpreadsheet,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Course, UserAccount } from '@/types';
 import { CourseImportModal } from '../modals';
@@ -133,6 +135,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
   };
 
   // Form states
+  const [formCourseCode, setFormCourseCode] = useState('');
   const [formCourseName, setFormCourseName] = useState('');
   const [formCourseNameEn, setFormCourseNameEn] = useState('');
   const [formCredits, setFormCredits] = useState<number>(3);
@@ -144,6 +147,10 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
   const [formDayOfWeek, setFormDayOfWeek] = useState<number>(1);
   const [formStartTime, setFormStartTime] = useState('09.00');
   const [formEndTime, setFormEndTime] = useState('11.30');
+
+  // Deletion state
+  const [deletingCourse, setDeletingCourse] = useState<Course | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Instructor assignment states
   const [primaryTeacher, setPrimaryTeacher] = useState('');
@@ -176,6 +183,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
   // Open Edit Modal
   const handleOpenEdit = (course: Course) => {
     setEditingCourse(course);
+    setFormCourseCode(course.courseCode || '');
     setFormCourseName(course.courseName || '');
     setFormCourseNameEn(course.courseNameEn || '');
     setFormCredits(course.credits || 3);
@@ -245,6 +253,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
         id: editingCourse.id || editingCourse.courseCode,
         courseCode: editingCourse.courseCode,
         updates: {
+          courseCode: formCourseCode.trim(),
           courseName: formCourseName.trim(),
           courseNameEn: formCourseNameEn.trim(),
           credits: Number(formCredits),
@@ -286,6 +295,37 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
       setSaveErrorMsg(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Delete course via DELETE /api/courses
+  const handleConfirmDelete = async () => {
+    if (!deletingCourse) return;
+    const target = deletingCourse;
+    // Close confirmation dialog and edit modal immediately
+    setDeletingCourse(null);
+    if (editingCourse?.id === target.id || editingCourse?.courseCode === target.courseCode) {
+      setEditingCourse(null);
+    }
+
+    setIsDeleting(true);
+    try {
+      const idOrCode = target.id || target.courseCode;
+      const res = await fetch(`/api/courses?id=${encodeURIComponent(idOrCode)}&courseCode=${encodeURIComponent(target.courseCode)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'ลบรายวิชาไม่สำเร็จ');
+      }
+
+      if (onRefreshCourses) {
+        onRefreshCourses();
+      }
+    } catch (err: any) {
+      alert(err.message || 'เกิดข้อผิดพลาดในการลบรายวิชา');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -610,6 +650,13 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Link>
+                          <button
+                            onClick={() => setDeletingCourse(c)}
+                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition inline-flex items-center cursor-pointer"
+                            title="ลบรายวิชานี้"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -785,6 +832,20 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="sm:col-span-2">
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  รหัสวิชา (Course Code)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formCourseCode}
+                  onChange={(e) => setFormCourseCode(e.target.value)}
+                  placeholder="เช่น 000 101 หรือ 101 322"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
                   ชื่อรายวิชา (ภาษาไทย)
                 </label>
                 <input
@@ -894,11 +955,17 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-between pt-4 border-t">
-              <span className="text-[11px] text-slate-400">
-                * ข้อมูลที่แก้ไขจะถูกบันทึกและซิงค์เชื่อมต่อไปยังตารางเรียนตารางสอนโดยตรง
-              </span>
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between pt-4 border-t flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setDeletingCourse(editingCourse)}
+                className="px-3 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>ลบรายวิชานี้</span>
+              </button>
+
+              <div className="flex items-center gap-2 ml-auto">
                 <button
                   type="button"
                   onClick={() => setEditingCourse(null)}
@@ -925,6 +992,97 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL: ยืนยันการลบรายวิชา (Delete Confirmation Dialog)
+         ───────────────────────────────────────────────────────────── */}
+      {deletingCourse && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isDeleting) setDeletingCourse(null);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+        >
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 relative">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-slate-900">
+                    ยืนยันการลบรายวิชา?
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">
+                    คุณต้องการลบรายวิชานี้ออกจากคลังหลักสูตรใช่หรือไม่?
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeletingCourse(null)}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center cursor-pointer transition shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 font-medium">รหัสวิชา:</span>
+                <span className="font-mono font-bold text-emerald-800">{deletingCourse.courseCode}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 font-medium">ชื่อวิชา:</span>
+                <span className="font-bold text-slate-900">{deletingCourse.courseName}</span>
+              </div>
+              {deletingCourse.courseNameEn && (
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 font-medium">En:</span>
+                  <span className="text-slate-600">{deletingCourse.courseNameEn}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 font-medium">หน่วยกิต:</span>
+                <span className="font-medium text-slate-700">{deletingCourse.credits || 3} หน่วยกิต</span>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-100">
+              ⚠️ การลบรายวิชานี้จะนำวิชาออกจากระบบคลังรายวิชาและตารางเรียนโดยสมบูรณ์
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingCourse(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold transition cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>กำลังลบ...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>ยืนยันลบรายวิชา</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

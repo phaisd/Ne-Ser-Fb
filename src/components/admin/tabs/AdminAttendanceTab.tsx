@@ -225,7 +225,7 @@ export const AdminAttendanceTab: React.FC<AdminAttendanceTabProps> = ({
           currentCourse={currentCourse}
           availableCourses={timetablesList}
           selectedCourseCode={currentCourse?.courseCode || selectedCourseCode}
-          handleCourseChange={(code) => setSelectedCourseCode(code)}
+          handleCourseChange={(code: string) => setSelectedCourseCode(code)}
           studentsList={courseStudentsForGradeSheet}
           logoUrl={logoUrl}
         />

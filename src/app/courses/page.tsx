@@ -492,41 +492,41 @@ export default function CoursesPage() {
         </div>
 
         {/* Tab switcher & Actions (Add, Import, Export) */}
-        <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto">
-          {/* Tab buttons */}
-          <div className="flex p-1 bg-slate-100 rounded-xl text-sm font-semibold border border-slate-200">
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Tab buttons (Responsive Touch Scroll) */}
+          <div className="w-full sm:w-auto flex items-center p-1 bg-slate-100 rounded-2xl overflow-x-auto no-scrollbar scroll-smooth text-xs sm:text-sm font-semibold border border-slate-200">
             <button
               onClick={() => setActiveTab('CATALOG')}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer ${
+              className={`flex-1 sm:flex-initial whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === 'CATALOG'
-                  ? 'bg-white text-blue-700 shadow-sm'
+                  ? 'bg-white text-blue-700 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <BookOpen className="w-4 h-4" />
+              <BookOpen className="w-4 h-4 text-blue-600" />
               <span>ทะเบียนวิชา ({courses.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('TIMETABLE')}
-              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer ${
+              className={`flex-1 sm:flex-initial whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 activeTab === 'TIMETABLE'
-                  ? 'bg-white text-blue-700 shadow-sm'
+                  ? 'bg-white text-blue-700 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4 text-emerald-600" />
               <span>ตารางเรียน</span>
             </button>
             {canManage && (
               <button
                 onClick={() => setActiveTab('FACULTY')}
-                className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer ${
+                className={`flex-1 sm:flex-initial whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'FACULTY'
-                    ? 'bg-white text-blue-700 shadow-sm'
+                    ? 'bg-white text-blue-700 shadow-sm font-bold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <User className="w-4 h-4" />
+                <User className="w-4 h-4 text-purple-600" />
                 <span>ภาระงานสอน</span>
               </button>
             )}

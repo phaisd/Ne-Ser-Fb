@@ -754,10 +754,10 @@ export function EligibilityTab({
                         <td className="px-4 py-2.5 text-center font-mono font-bold text-slate-500">
                           {row.indexInMajor}
                         </td>
-                        <td className="px-4 py-2.5 font-mono font-bold text-slate-800">
+                        <td className="px-4 py-2.5 font-mono font-extrabold text-sm sm:text-base text-slate-800 tracking-tight whitespace-nowrap">
                           {row.studentCode}
                         </td>
-                        <td className="px-4 py-2.5 font-medium text-slate-900">
+                        <td className="px-4 py-2.5 font-medium text-sm sm:text-base text-slate-900">
                           <div>{row.studentName}</div>
                           {row.major && (
                             <div className="text-[10px] text-slate-400 print:hidden">{row.major}</div>

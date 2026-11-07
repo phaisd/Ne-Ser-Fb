@@ -23,9 +23,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Archive,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { UserAccount, Student } from '@/types';
-import { ArchivedInstructorsModal } from '../modals';
+import { ArchivedInstructorsModal, InstructorImportModal } from '../modals';
 import { RolePermissionsMatrixView } from './RolePermissionsMatrixView';
 
 interface AdminUsersTabProps {
@@ -54,6 +55,7 @@ interface AdminUsersTabProps {
   onOpenBatchTeachingSlips?: () => void;
   isOfficer?: boolean;
   isSuperAdmin?: boolean;
+  onRefresh?: () => void;
 }
 
 export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
@@ -82,6 +84,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
   onOpenBatchTeachingSlips,
   isOfficer = false,
   isSuperAdmin = false,
+  onRefresh,
 }) => {
   // Sub-tab State: 'DIRECTORY' (รายชื่อผู้ใช้งาน) vs 'ROLES_MATRIX' (บทบาทและสิทธิ์การเข้าถึง)
   const [usersSubTab, setUsersSubTab] = useState<'DIRECTORY' | 'ROLES_MATRIX'>('DIRECTORY');
@@ -90,6 +93,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [isBatchImportOpen, setIsBatchImportOpen] = useState(false);
   const [archivingId, setArchivingId] = useState<string | null>(null);
 
   const handleArchiveInstructor = async (u: UserAccount) => {
@@ -369,6 +373,17 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
           >
             <Archive className="w-3.5 h-3.5" />
             <span>📁 แฟ้มประวัติอาจารย์ (เกษียณ/จำหน่าย)</span>
+          </button>
+
+          {/* Batch Import Instructors Modal Button */}
+          <button
+            type="button"
+            onClick={() => setIsBatchImportOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+            title="นำเข้าและอัปเดตข้อมูลอาจารย์หลายท่านพร้อมกันเป็นชุดด้วย Excel / CSV หรือคัดลอกมาวาง"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>📥 นำเข้าและอัปเดตอาจารย์เป็นชุด (Batch Import)</span>
           </button>
 
           <button
@@ -894,6 +909,17 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
         onClose={() => setIsArchiveModalOpen(false)}
         onInstructorRestored={() => {
           window.location.reload();
+        }}
+      />
+
+      {/* Batch Import Instructors Modal */}
+      <InstructorImportModal
+        isOpen={isBatchImportOpen}
+        onClose={() => setIsBatchImportOpen(false)}
+        existingUsers={users}
+        onSuccess={() => {
+          if (onRefresh) onRefresh();
+          else if (typeof window !== 'undefined') window.location.reload();
         }}
       />
     </div>
