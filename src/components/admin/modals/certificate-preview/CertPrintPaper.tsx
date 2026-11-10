@@ -29,6 +29,7 @@ interface CertPrintPaperProps {
   setCustomStudentDots: (val: string) => void;
   showQrCode: boolean;
   qrCodeDataUrl: string;
+  qrScale?: number;
   showSignerOrg: boolean;
   signerOrgCustomText: string;
   useThaiNumerals: boolean;
@@ -71,6 +72,7 @@ export function CertPrintPaper({
   setCustomStudentDots,
   showQrCode,
   qrCodeDataUrl,
+  qrScale = 1.3,
   showSignerOrg,
   signerOrgCustomText,
   useThaiNumerals,
@@ -225,7 +227,15 @@ export function CertPrintPaper({
                   ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
                 </div>
                 {showQrCode && qrCodeDataUrl && (
-                  <img src={qrCodeDataUrl} alt="Verify" className="w-14 h-14 object-contain" />
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="Verify"
+                    style={{
+                      width: `${Math.round(56 * (qrScale || 1.3))}px`,
+                      height: `${Math.round(56 * (qrScale || 1.3))}px`,
+                    }}
+                    className="object-contain"
+                  />
                 )}
               </div>
             </div>
@@ -427,7 +437,15 @@ export function CertPrintPaper({
                   ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'Academic Officer'}</span>
                 </div>
                 {showQrCode && qrCodeDataUrl && (
-                  <img src={qrCodeDataUrl} alt="QR" className="w-14 h-14 object-contain" />
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="QR"
+                    style={{
+                      width: `${Math.round(56 * (qrScale || 1.3))}px`,
+                      height: `${Math.round(56 * (qrScale || 1.3))}px`,
+                    }}
+                    className="object-contain"
+                  />
                 )}
               </div>
             </div>
@@ -558,7 +576,15 @@ export function CertPrintPaper({
                   ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
                 </div>
                 {showQrCode && qrCodeDataUrl && (
-                  <img src={qrCodeDataUrl} alt="QR Code" className="w-14 h-14 object-contain" />
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="QR Code"
+                    style={{
+                      width: `${Math.round(56 * (qrScale || 1.3))}px`,
+                      height: `${Math.round(56 * (qrScale || 1.3))}px`,
+                    }}
+                    className="object-contain"
+                  />
                 )}
               </div>
             </div>
@@ -792,7 +818,15 @@ export function CertPrintPaper({
                   ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
                 </div>
                 {showQrCode && qrCodeDataUrl && (
-                  <img src={qrCodeDataUrl} alt="QR Code" className="w-14 h-14 object-contain" />
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="QR Code"
+                    style={{
+                      width: `${Math.round(56 * (qrScale || 1.3))}px`,
+                      height: `${Math.round(56 * (qrScale || 1.3))}px`,
+                    }}
+                    className="object-contain"
+                  />
                 )}
               </div>
             </div>

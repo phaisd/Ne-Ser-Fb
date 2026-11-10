@@ -80,6 +80,8 @@ interface CertCustomizerToolbarProps {
   setSignerOrgCustomText: (val: string) => void;
   showQrCode: boolean;
   setShowQrCode: (val: boolean) => void;
+  qrScale?: number;
+  setQrScale?: (val: number) => void;
   setPreviewTab: (val: 'DOCUMENT' | 'ATTACHMENTS') => void;
   handleOpenRejectModal: (req: CertificateRequest) => void;
 }
@@ -149,6 +151,8 @@ export function CertCustomizerToolbar({
   setSignerOrgCustomText,
   showQrCode,
   setShowQrCode,
+  qrScale = 1.3,
+  setQrScale,
   setPreviewTab,
   handleOpenRejectModal,
 }: CertCustomizerToolbarProps) {
@@ -917,6 +921,30 @@ export function CertCustomizerToolbar({
               />
               <span>QR Code</span>
             </label>
+            {showQrCode && setQrScale && (
+              <div className="inline-flex items-center gap-1 ml-1 pl-2 border-l border-slate-300">
+                <span className="text-[10px] text-slate-500 font-semibold">ขนาด:</span>
+                {[
+                  { scale: 1, label: '1x' },
+                  { scale: 1.3, label: '1.3x' },
+                  { scale: 1.5, label: '1.5x' },
+                  { scale: 2, label: '2x' },
+                ].map((s) => (
+                  <button
+                    key={s.scale}
+                    type="button"
+                    onClick={() => setQrScale(s.scale)}
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                      (qrScale || 1.3) === s.scale
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

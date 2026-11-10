@@ -61,6 +61,7 @@ export function AdminCertificatePreviewModal({
   const [customStudentSignName, setCustomStudentSignName] = useState<string>('');
   const [customStudentDots, setCustomStudentDots] = useState<string>('');
   const [showQrCode, setShowQrCode] = useState<boolean>(true);
+  const [qrScale, setQrScale] = useState<number>(1.3);
   const [pdfDownloading, setPdfDownloading] = useState<boolean>(false);
   const [docTitleFontSize, setDocTitleFontSize] = useState<number>(18);
   const [docTitleFontWeight, setDocTitleFontWeight] = useState<
@@ -146,7 +147,7 @@ export function AdminCertificatePreviewModal({
       const effectiveDoc = docNoInputModal || previewRequest.docNo || previewRequest.id;
       const verifyUrl = `${origin}/verify?docNo=${encodeURIComponent(effectiveDoc)}`;
       QRCode.toDataURL(verifyUrl, {
-        width: 180,
+        width: 360,
         margin: 1,
         color: { dark: '#0f172a', light: '#ffffff' },
       })
@@ -440,6 +441,8 @@ export function AdminCertificatePreviewModal({
               setSignerOrgCustomText={setSignerOrgCustomText}
               showQrCode={showQrCode}
               setShowQrCode={setShowQrCode}
+              qrScale={qrScale}
+              setQrScale={setQrScale}
               setPreviewTab={setPreviewTab}
               handleOpenRejectModal={handleOpenRejectModal}
             />
@@ -487,6 +490,7 @@ export function AdminCertificatePreviewModal({
               setCustomStudentDots={setCustomStudentDots}
               showQrCode={showQrCode}
               qrCodeDataUrl={qrCodeDataUrl}
+              qrScale={qrScale}
               showSignerOrg={showSignerOrg}
               signerOrgCustomText={signerOrgCustomText}
               useThaiNumerals={useThaiNumerals}

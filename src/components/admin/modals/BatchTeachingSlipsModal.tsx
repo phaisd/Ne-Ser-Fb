@@ -18,6 +18,7 @@ import {
   Key,
   X,
   Sparkles,
+  QrCode,
 } from 'lucide-react';
 import { UserAccount } from '@/types';
 
@@ -53,14 +54,21 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
   const [onlyWithCourses, setOnlyWithCourses] = useState<boolean>(true);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+  const [qrScale, setQrScale] = useState<number>(1.5);
   const [signMode, setSignMode] = useState<'OFFICER' | 'DEAN' | 'NONE'>('OFFICER');
 
-  // Generate Attendance QR Code
+  // Generate Attendance QR Code with dynamic domain and high resolution
   useEffect(() => {
     let active = true;
-    QRCode.toDataURL('http://localhost:3020/attendance', {
-      width: 120,
+    const targetUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/attendance`
+        : 'https://ne-ser-fb.vercel.app/attendance';
+
+    QRCode.toDataURL(targetUrl, {
+      width: 400,
       margin: 1,
+      color: { dark: '#022c22', light: '#ffffff' },
     })
       .then((url) => {
         if (active) setQrCodeDataUrl(url);
@@ -311,6 +319,41 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
             </div>
           </div>
 
+          {/* QR Code Scaling Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-slate-200">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
+                <QrCode className="w-4 h-4 text-emerald-600" />
+                <span>ขนาด QR Code บนกระดาษ A4:</span>
+              </span>
+              <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-lg">
+                {[
+                  { scale: 1, label: '1x (ขนาดเดิม)' },
+                  { scale: 1.3, label: '1.3x' },
+                  { scale: 1.5, label: '1.5x (แนะนำ)' },
+                  { scale: 2, label: '2x (ใหญ่ 2 เท่า)' },
+                ].map((item) => (
+                  <button
+                    key={item.scale}
+                    type="button"
+                    onClick={() => setQrScale(item.scale)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-bold transition cursor-pointer ${
+                      qrScale === item.scale
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="text-[11px] text-slate-500 flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>ปรับขยายขนาด QR Code ได้ตามต้องการ เพื่อให้กล้องมือถือสแกนได้สะดวกและคมชัด</span>
+            </div>
+          </div>
+
           {/* Filters: Year, Semester, Department, OnlyWithCourses */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2.5">
@@ -483,6 +526,7 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
                         semesterText={semesterText}
                         deanName={deanName}
                         adminName={adminName}
+                        qrScale={qrScale}
                       />
                     ))}
                   </div>
@@ -507,6 +551,7 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
                           semesterText={semesterText}
                           deanName={deanName}
                           adminName={adminName}
+                          qrScale={qrScale}
                         />
                       </div>
                     ))}
@@ -531,6 +576,7 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
                           academicYearText={academicYearText}
                           semesterText={semesterText}
                           adminName={adminName}
+                          qrScale={qrScale}
                         />
                       </div>
                     ))}
@@ -554,6 +600,7 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
                           academicYearText={academicYearText}
                           semesterText={semesterText}
                           adminName={adminName}
+                          qrScale={qrScale}
                         />
                       </div>
                     ))}
@@ -578,6 +625,7 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
                           academicYearText={academicYearText}
                           semesterText={semesterText}
                           adminName={adminName}
+                          qrScale={qrScale}
                         />
                       </div>
                     ))}
@@ -595,7 +643,9 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
 /* -------------------------------------------------------------
    CARD VARIANT 1: 1:1 Full Sheet A4
    ------------------------------------------------------------- */
-function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, deanName, adminName }: any) {
+function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, deanName, adminName, qrScale = 1.5 }: any) {
+  const attendanceUrl = typeof window !== 'undefined' ? `${window.location.origin}/attendance` : 'https://ne-ser-fb.vercel.app/attendance';
+
   return (
     <div className="space-y-4 text-xs text-slate-800">
       <div className="text-center space-y-1 border-b border-slate-200 pb-3">
@@ -674,7 +724,7 @@ function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
 
       <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between gap-3 text-xs">
         <div>
-          <div className="font-bold text-emerald-950">ข้อมูลเข้าระบบ: http://localhost:3020/attendance</div>
+          <div className="font-bold text-emerald-950">ข้อมูลเข้าระบบ: {attendanceUrl}</div>
           <div className="text-slate-600 text-[11px]">
             เข้าสู่ระบบด้วย Username ด้านบน หรือกด &quot;เข้าสู่ระบบด้วย Google / บัญชี มจร.&quot;
           </div>
@@ -682,7 +732,20 @@ function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
             ผู้ออกเข้าระบบ โดย <strong className="text-slate-900">{adminName || 'ผู้ดูแลระบบ'}</strong>
           </div>
         </div>
-        {qrCodeDataUrl && <img src={qrCodeDataUrl} alt="QR" className="w-16 h-16" />}
+        {qrCodeDataUrl && (
+          <div className="text-center shrink-0">
+            <img
+              src={qrCodeDataUrl}
+              alt="QR"
+              style={{
+                width: `${Math.round(64 * qrScale)}px`,
+                height: `${Math.round(64 * qrScale)}px`,
+              }}
+              className="border border-emerald-300 rounded-lg bg-white p-1 object-contain shadow-xs inline-block"
+            />
+            <div className="text-[9px] text-slate-500 font-bold mt-0.5">สแกนเข้าสู่ระบบ</div>
+          </div>
+        )}
       </div>
 
       <div className="pt-4 grid grid-cols-2 gap-8 text-center text-xs">
@@ -702,7 +765,9 @@ function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
 /* -------------------------------------------------------------
    CARD VARIANT 2: 2:1 Half Sheet A5
    ------------------------------------------------------------- */
-function HalfCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName }: any) {
+function HalfCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, deanName, adminName, qrScale = 1.5 }: any) {
+  const attendanceUrl = typeof window !== 'undefined' ? `${window.location.host}/attendance` : 'ระบบเช็คชื่อ';
+
   return (
     <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2.5 text-xs text-slate-800 shadow-xs">
       <div className="flex items-center justify-between border-b pb-2">
@@ -772,13 +837,29 @@ function HalfCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
         </table>
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1 border-t text-[10px] text-slate-500">
-        <div>
-          <span>เข้าเช็คชื่อนิสิต: </span>
-          <strong className="font-mono text-purple-700">http://localhost:3020/attendance</strong>
-          <span className="ml-2 text-slate-600">ผู้ออกเข้าระบบ โดย <strong className="text-slate-800">{adminName || 'ผู้ดูแลระบบ'}</strong></span>
+      <div className="flex items-center justify-between gap-3 pt-2 border-t text-[10px] text-slate-500">
+        <div className="space-y-0.5 min-w-0">
+          <div>
+            <span>เข้าเช็คชื่อนิสิต: </span>
+            <strong className="font-mono text-purple-700">{attendanceUrl}</strong>
+          </div>
+          <div className="text-slate-600">ผู้ออกเข้าระบบ โดย <strong className="text-slate-800">{adminName || 'ผู้ดูแลระบบ'}</strong></div>
+          <div className="text-slate-700 font-medium pt-0.5">ลงชื่อผู้รับทราบ: .......................................</div>
         </div>
-        <div className="text-right font-medium">ลงชื่อผู้รับทราบ: .......................................</div>
+        {qrCodeDataUrl && (
+          <div className="text-center shrink-0">
+            <img
+              src={qrCodeDataUrl}
+              alt="QR"
+              style={{
+                width: `${Math.round(48 * qrScale)}px`,
+                height: `${Math.round(48 * qrScale)}px`,
+              }}
+              className="border border-emerald-300 rounded bg-white p-0.5 object-contain shadow-xs inline-block"
+            />
+            <div className="text-[8px] text-slate-500 font-bold mt-0.5">สแกนเข้า</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -787,7 +868,7 @@ function HalfCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
 /* -------------------------------------------------------------
    CARD VARIANT 3: 4:1 Quarter Card (การ์ดตัดแจก 4 ส่วน - แนะนำ)
    ------------------------------------------------------------- */
-function QuarterCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName }: any) {
+function QuarterCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: any) {
   return (
     <div className="h-full flex flex-col justify-between p-3 bg-white border border-slate-300 rounded-xl text-slate-800 shadow-xs relative overflow-hidden">
       {/* Top Banner */}
@@ -883,7 +964,15 @@ function QuarterCard({ user, courses, qrCodeDataUrl, academicYearText, semesterT
 
         {qrCodeDataUrl && (
           <div className="text-center shrink-0">
-            <img src={qrCodeDataUrl} alt="QR" className="w-11 h-11 border border-emerald-300 rounded bg-white p-0.5" />
+            <img
+              src={qrCodeDataUrl}
+              alt="QR"
+              style={{
+                width: `${Math.round(44 * qrScale)}px`,
+                height: `${Math.round(44 * qrScale)}px`,
+              }}
+              className="border border-emerald-300 rounded bg-white p-0.5 object-contain shadow-xs inline-block"
+            />
             <div className="text-[8px] text-slate-500 font-bold mt-0.5">สแกนเข้า</div>
           </div>
         )}
@@ -895,7 +984,7 @@ function QuarterCard({ user, courses, qrCodeDataUrl, academicYearText, semesterT
 /* -------------------------------------------------------------
    CARD VARIANT 4: 6:1 Mini Slip (สลิปย่อ 6 ช่อง สำหรับแนบซอง/แจก)
    ------------------------------------------------------------- */
-function MiniSlipCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName }: any) {
+function MiniSlipCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: any) {
   return (
     <div className="h-full flex flex-col justify-between p-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 shadow-xs relative overflow-hidden text-[10px]">
       <div>
@@ -938,7 +1027,18 @@ function MiniSlipCard({ user, courses, qrCodeDataUrl, academicYearText, semester
           </div>
         </div>
         {qrCodeDataUrl && (
-          <img src={qrCodeDataUrl} alt="QR" className="w-8 h-8 rounded border bg-white shrink-0" />
+          <div className="text-center shrink-0">
+            <img
+              src={qrCodeDataUrl}
+              alt="QR"
+              style={{
+                width: `${Math.round(36 * qrScale)}px`,
+                height: `${Math.round(36 * qrScale)}px`,
+              }}
+              className="rounded border border-emerald-300 bg-white p-0.5 object-contain shadow-xs inline-block"
+            />
+            <div className="text-[7.5px] text-slate-500 font-bold leading-none mt-0.5">สแกน</div>
+          </div>
         )}
       </div>
     </div>
@@ -948,7 +1048,7 @@ function MiniSlipCard({ user, courses, qrCodeDataUrl, academicYearText, semester
 /* -------------------------------------------------------------
    CARD VARIANT 5: 8:1 Mini Slip (สลิปย่อ 8 ช่อง พิมพ์ 8 ใบต่อแผ่น A4 • ประหยัดสุด)
    ------------------------------------------------------------- */
-function EightCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName }: any) {
+function EightCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: any) {
   return (
     <div className="h-full flex flex-col justify-between p-2 bg-white border border-slate-300 rounded-lg text-slate-800 shadow-xs relative overflow-hidden text-[9px] leading-tight">
       <div>
@@ -1004,7 +1104,15 @@ function EightCard({ user, courses, qrCodeDataUrl, academicYearText, semesterTex
 
         {qrCodeDataUrl && (
           <div className="text-center shrink-0">
-            <img src={qrCodeDataUrl} alt="QR" className="w-7 h-7 border border-emerald-300 rounded bg-white p-0.5" />
+            <img
+              src={qrCodeDataUrl}
+              alt="QR"
+              style={{
+                width: `${Math.round(30 * qrScale)}px`,
+                height: `${Math.round(30 * qrScale)}px`,
+              }}
+              className="border border-emerald-300 rounded bg-white p-0.5 object-contain shadow-xs inline-block"
+            />
             <div className="text-[6.5px] text-slate-500 font-bold leading-none mt-0.5">สแกนเข้า</div>
           </div>
         )}

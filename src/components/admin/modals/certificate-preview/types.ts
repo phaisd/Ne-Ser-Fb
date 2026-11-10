@@ -58,6 +58,8 @@ export interface DocCustomizerSettings {
   setCustomStudentDots: (val: string) => void;
   showQrCode: boolean;
   setShowQrCode: (val: boolean) => void;
+  qrScale?: number;
+  setQrScale?: (val: number) => void;
   docTitleFontSize: number;
   setDocTitleFontSize: (val: number) => void;
   docTitleFontWeight: 'font-normal' | 'font-semibold' | 'font-bold' | 'font-black';
