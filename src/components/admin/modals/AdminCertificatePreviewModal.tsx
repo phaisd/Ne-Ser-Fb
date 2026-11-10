@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
+import { calculateNextDocNo } from '@/lib/utils';
 import {
   AdminCertificatePreviewModalProps,
   CertTemplateType,
@@ -132,41 +133,11 @@ export function AdminCertificatePreviewModal({
   };
 
   const computeNextDocNo = (): string => {
-    const currentYear = new Date().getFullYear() + 543;
-    let maxSeq = 0;
-
-    requests.forEach((r) => {
-      const raw = r.docNo || '';
-      const cleaned = raw.replace(/^8002\s*\/\s*/i, '');
-      const match = cleaned.match(/^(\d+)/);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (!isNaN(num) && num > maxSeq && num < 10000) {
-          maxSeq = num;
-        }
-      }
-    });
-
-    const nextNum = maxSeq > 0 ? maxSeq + 1 : requests.filter((r) => r.status === 'APPROVED').length + 1;
-    const seqStr = String(nextNum).padStart(3, '0');
-    return `${seqStr}/${currentYear}`;
+    return calculateNextDocNo(requests).docNoWithYear;
   };
 
   const computeNextSeqOnly = (): string => {
-    let maxSeq = 0;
-    requests.forEach((r) => {
-      const raw = r.docNo || '';
-      const cleaned = raw.replace(/^8002\s*\/\s*/i, '');
-      const match = cleaned.match(/^(\d+)/);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (!isNaN(num) && num > maxSeq && num < 10000) {
-          maxSeq = num;
-        }
-      }
-    });
-    const nextNum = maxSeq > 0 ? maxSeq + 1 : requests.filter((r) => r.status === 'APPROVED').length + 1;
-    return String(nextNum).padStart(3, '0');
+    return calculateNextDocNo(requests).seqOnly;
   };
 
   useEffect(() => {
@@ -208,7 +179,7 @@ export function AdminCertificatePreviewModal({
         (previewRequest.docNo && previewRequest.docNo.includes('8002.1'));
       setDocNoPrefix(isSec ? '8002.1' : '8002');
       if (previewRequest.docNo) {
-        setDocNoInputModal(previewRequest.docNo.replace(/^(8002\.1|8002)\s*\/\s*/i, ''));
+        setDocNoInputModal(previewRequest.docNo.replace(/^(ที่\s*)?(อว\s*)?(8002\.1|8002)\s*[\/.]?\s*/i, ''));
       } else {
         setDocNoInputModal(computeNextDocNo());
       }

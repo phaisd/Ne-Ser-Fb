@@ -75,3 +75,68 @@ export function formatPhoneNumber(phone?: string | null): string {
   }
   return phone;
 }
+
+/**
+ * Extracts the running sequence integer from any certificate document number string.
+ * Supports prefixes like:
+ * - "8002/ 10", "8002.1/ 11"
+ * - "อว 8002/ 10", "อว 8002.1/ 11"
+ * - "8002.1/010", "8002/010"
+ * - "010/2569", "10/2569", "50", "051"
+ */
+export function extractDocSeqNumber(docNo?: string | null): number | null {
+  if (!docNo) return null;
+  const raw = String(docNo).trim();
+  if (!raw) return null;
+
+  // 1. Strip out prefixes like 'ที่', 'อว', '8002', '8002.1', 'MCU No.', and slashes/dots
+  let cleaned = raw
+    .replace(/^(ที่\s*)?(อว\s*)?(MCU\s*No\.?\s*)?(8002\.1|8002)\s*[\/.]?\s*/i, '')
+    .trim();
+
+  // 2. If it contains a slash (e.g. '010/2569' or '10/2569'), extract the sequence before slash
+  if (cleaned.includes('/')) {
+    cleaned = cleaned.split('/')[0].trim();
+  }
+
+  // 3. Match leading sequence digits
+  const match = cleaned.match(/^(\d+)/);
+  if (!match) return null;
+
+  const num = parseInt(match[1], 10);
+  if (isNaN(num)) return null;
+
+  // Safety filter: ignore Buddhist calendar years if accidentally isolated (e.g. 2560 - 2600)
+  if (num >= 2560 && num <= 2600) return null;
+  if (num <= 0 || num >= 100000) return null;
+
+  return num;
+}
+
+/**
+ * Calculates the next continuous certificate sequence number across both 8002 and 8002.1.
+ */
+export function calculateNextDocNo(
+  requests: Array<{ docNo?: string | null; status?: string; createdAt?: string }>,
+  targetYear?: number
+): { docNoWithYear: string; seqOnly: string; nextNum: number } {
+  const currentYear = targetYear || new Date().getFullYear() + 543;
+  let maxSeq = 0;
+
+  for (const r of requests) {
+    const seq = extractDocSeqNumber(r.docNo);
+    if (seq !== null && seq > maxSeq) {
+      maxSeq = seq;
+    }
+  }
+
+  const approvedCount = requests.filter((r) => r.status === 'APPROVED').length;
+  const nextNum = maxSeq > 0 ? maxSeq + 1 : approvedCount + 1;
+  const seqStr = String(nextNum).padStart(3, '0');
+
+  return {
+    docNoWithYear: `${seqStr}/${currentYear}`,
+    seqOnly: seqStr,
+    nextNum,
+  };
+}

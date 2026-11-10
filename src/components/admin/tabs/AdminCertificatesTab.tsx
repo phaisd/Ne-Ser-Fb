@@ -20,6 +20,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { CertificateRequest } from '@/types';
+import { calculateNextDocNo } from '@/lib/utils';
 
 interface AdminCertificatesTabProps {
   requests: CertificateRequest[];
@@ -506,7 +507,7 @@ export function AdminCertificatesTab({
                             </select>
                             <input
                               type="text"
-                              placeholder="001/2569"
+                              placeholder={calculateNextDocNo(requests).docNoWithYear}
                               value={docNoInput}
                               onChange={(e) => setDocNoInput(e.target.value)}
                               className="w-24 px-2 py-1 text-xs border border-purple-300 rounded font-mono"

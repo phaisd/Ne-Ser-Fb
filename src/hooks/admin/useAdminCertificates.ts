@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { CertificateRequest } from '@/types';
+import { calculateNextDocNo } from '@/lib/utils';
 
 interface UseAdminCertificatesOptions {
   loadData: () => Promise<void> | void;
@@ -78,14 +79,7 @@ export function useAdminCertificates({
       ? new Date(targetReq.createdAt).getFullYear() + 543
       : new Date().getFullYear() + 543;
 
-    const approvedThisYear = requests.filter((r) => {
-      if (r.status !== 'APPROVED') return false;
-      const y = r.createdAt ? new Date(r.createdAt).getFullYear() + 543 : null;
-      return y === targetYear;
-    }).length;
-
-    const nextSeq = String(approvedThisYear + 1).padStart(3, '0');
-    const autoDocNo = `${nextSeq}/${targetYear}`;
+    const autoDocNo = calculateNextDocNo(requests, targetYear).docNoWithYear;
     const finalDocNo = docNoInput.trim() || defaultDocNo || autoDocNo;
     const finalPrefix = prefix || (targetReq as any)?.docNoPrefix || '8002';
 
