@@ -63,6 +63,7 @@ export function isServerAdminOrOfficer(user?: ServerAuthUser | null): boolean {
     role === 'ADMIN' ||
     role === 'OFFICER' ||
     role === 'STAFF' ||
+    role === 'EDITOR' ||
     user.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th'
   );
 }

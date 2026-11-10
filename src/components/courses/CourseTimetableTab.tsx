@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { Course, TimetableItem, DAYS_OF_WEEK } from './types';
 
+const normCode = (s?: string) => String(s || '').replace(/\s+/g, '').toUpperCase();
+
 export interface CourseTimetableTabProps {
   courses: Course[];
   timetables: TimetableItem[];
@@ -55,6 +57,11 @@ export function CourseTimetableTab({
   // Print Landscape & Margin Settings (A4 Landscape 1-Page Fit)
   const [printMargin, setPrintMargin] = useState<'NARROW' | 'NORMAL' | 'WIDE'>('NARROW');
   const [showPrintMarginMenu, setShowPrintMarginMenu] = useState(false);
+
+  const findCourseForItem = (item: TimetableItem) => {
+    const target = normCode(item.courseCode);
+    return courses.find((c) => normCode(c.courseCode) === target);
+  };
 
   const handlePrintTimetable = () => {
     setShowPrintMarginMenu(false);
@@ -599,9 +606,9 @@ export function CourseTimetableTab({
                         ) : (
                           <div className="space-y-2 print:space-y-0.5">
                             {morningItems.map((item, idx) => {
-                              const course = courses.find((c) => c.courseCode === item.courseCode);
+                              const course = findCourseForItem(item);
                               const credits = course?.credits || 3;
-                              const inst = item.instructor || course?.instructor || 'ยังไม่ระบุอาจารย์';
+                              const inst = course?.instructor || item.instructor || 'ยังไม่ระบุอาจารย์';
                               const isCoord = inst.includes('*');
                               const isTeam = inst.includes('/');
 
@@ -666,9 +673,9 @@ export function CourseTimetableTab({
                         ) : (
                           <div className="space-y-2 print:space-y-0.5">
                             {afternoonItems.map((item, idx) => {
-                              const course = courses.find((c) => c.courseCode === item.courseCode);
+                              const course = findCourseForItem(item);
                               const credits = course?.credits || 3;
-                              const inst = item.instructor || course?.instructor || 'ยังไม่ระบุอาจารย์';
+                              const inst = course?.instructor || item.instructor || 'ยังไม่ระบุอาจารย์';
                               const isCoord = inst.includes('*');
                               const isTeam = inst.includes('/');
 
@@ -725,9 +732,9 @@ export function CourseTimetableTab({
                         ) : (
                           <div className="space-y-2 print:space-y-0.5">
                             {eveningItems.map((item, idx) => {
-                              const course = courses.find((c) => c.courseCode === item.courseCode);
+                              const course = findCourseForItem(item);
                               const credits = course?.credits || 3;
-                              const inst = item.instructor || course?.instructor || 'ยังไม่ระบุอาจารย์';
+                              const inst = course?.instructor || item.instructor || 'ยังไม่ระบุอาจารย์';
 
                               return (
                                 <div
@@ -784,9 +791,9 @@ export function CourseTimetableTab({
                 {filteredTimetableItems.map((item, idx) => {
                   const dayObj =
                     DAYS_OF_WEEK.find((d) => d.id === item.dayOfWeek) || DAYS_OF_WEEK[0];
-                  const course = courses.find((c) => c.courseCode === item.courseCode);
+                  const course = findCourseForItem(item);
                   const credits = course?.credits || 3;
-                  const inst = item.instructor || course?.instructor || 'ยังไม่ระบุอาจารย์';
+                  const inst = course?.instructor || item.instructor || 'ยังไม่ระบุอาจารย์';
                   const isCoord = inst.includes('*');
                   const isTeam = inst.includes('/');
 

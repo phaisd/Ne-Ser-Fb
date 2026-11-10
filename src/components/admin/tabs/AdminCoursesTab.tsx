@@ -252,6 +252,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
       const payload = {
         id: editingCourse.id || editingCourse.courseCode,
         courseCode: editingCourse.courseCode,
+        section: editingCourse.section || '1',
         updates: {
           courseCode: formCourseCode.trim(),
           courseName: formCourseName.trim(),
@@ -266,6 +267,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
           dayOfWeek: Number(formDayOfWeek),
           startTime: formStartTime,
           endTime: formEndTime,
+          section: editingCourse.section || '1',
           instructor: finalInstructor,
           primaryTeacherName: primaryTeacher || finalInstructor.replace(/\*/g, '').split('/')[0]?.trim(),
         },

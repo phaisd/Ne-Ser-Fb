@@ -21,6 +21,7 @@ function checkCourseManageAuth(request: Request): { authorized: boolean; role?: 
         role === 'ADMIN' ||
         role === 'OFFICER' ||
         role === 'STAFF' ||
+        role === 'EDITOR' ||
         user?.isSuperAdmin === true ||
         user?.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th';
       if (isAllowed) return { authorized: true, role };
@@ -171,7 +172,7 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const idOrCode = body.id || body.courseCode;
 
-    if (!idOrCode) {
+    if (!idOrCode && !body.courseCode) {
       return NextResponse.json(
         { success: false, error: 'กรุณาระบุ id หรือรหัสวิชา (courseCode)' },
         { status: 400 }
@@ -180,6 +181,12 @@ export async function PATCH(request: Request) {
 
     const updates = body.updates && typeof body.updates === 'object' ? { ...body.updates } : { ...body };
     delete updates.id;
+    if (body.courseCode && !updates.courseCode) {
+      updates.courseCode = body.courseCode;
+    }
+    if (body.section && !updates.section) {
+      updates.section = body.section;
+    }
 
     const updated = await updateCourse(idOrCode, updates);
     if (!updated) {

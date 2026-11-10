@@ -4,11 +4,14 @@ import { readLocalJson, writeLocalJson, getSheetsClient } from './storageHelper'
 // ----------------- COURSES -----------------
 
 export async function getCourses(): Promise<Course[]> {
+  const norm = (s?: string) => String(s || '').replace(/\s+/g, '').toUpperCase();
   const localList = readLocalJson<Course[]>('courses.json', []);
   const localMap = new Map<string, Course>();
   localList.forEach((c) => {
     localMap.set(`${c.courseCode}_${c.section || '1'}`, c);
+    localMap.set(`${norm(c.courseCode)}_${c.section || '1'}`, c);
     if (!localMap.has(c.courseCode)) localMap.set(c.courseCode, c);
+    if (!localMap.has(norm(c.courseCode))) localMap.set(norm(c.courseCode), c);
   });
 
   const gClient = getSheetsClient();
@@ -28,7 +31,11 @@ export async function getCourses(): Promise<Course[]> {
           if (seen.has(dedupKey)) continue;
           seen.add(dedupKey);
 
-          const local = localMap.get(`${code}_${sec}`) || localMap.get(code);
+          const local =
+            localMap.get(`${code}_${sec}`) ||
+            localMap.get(code) ||
+            localMap.get(`${norm(code)}_${sec}`) ||
+            localMap.get(norm(code));
           const isEn = sec === 'EN' || (r[2] && r[2] === r[1]) || /^[A-Za-z0-9\s:,-]+$/.test(r[1] || '');
 
           uniqueCourses.push({
@@ -111,8 +118,69 @@ export async function createCourse(data: Omit<Course, 'id' | 'createdAt' | 'upda
 
 export async function updateCourse(idOrCode: string, updates: Partial<Course>): Promise<Course | null> {
   const localList = readLocalJson<Course[]>('courses.json', []);
-  const idx = localList.findIndex((c) => c.id === idOrCode || c.courseCode === idOrCode);
-  if (idx === -1) return null;
+  const norm = (s?: string) => String(s || '').replace(/\s+/g, '').toUpperCase();
+
+  const cleanId = String(idOrCode || '').trim();
+  const targetCode = String(updates.courseCode || '').trim();
+  const targetSec = String(updates.section || '').trim();
+  const targetName = String(updates.courseName || '').trim();
+
+  // 1. Exact ID match
+  let idx = localList.findIndex((c) => c.id && c.id === cleanId);
+
+  // 2. Match by courseCode + section
+  if (idx === -1 && (targetCode || cleanId)) {
+    const codeToSearch = targetCode || cleanId;
+    if (targetSec) {
+      idx = localList.findIndex(
+        (c) => norm(c.courseCode) === norm(codeToSearch) && String(c.section || '1') === targetSec
+      );
+    }
+    if (idx === -1) {
+      idx = localList.findIndex((c) => norm(c.courseCode) === norm(codeToSearch));
+    }
+  }
+
+  // 3. Match if cleanId starts with crs- and contains normalized courseCode
+  if (idx === -1 && cleanId.startsWith('crs-')) {
+    idx = localList.findIndex((c) => norm(cleanId).includes(norm(c.courseCode)));
+  }
+
+  // 4. Match by courseName
+  if (idx === -1 && targetName) {
+    idx = localList.findIndex(
+      (c) => c.courseName?.trim() === targetName || (c.courseNameEn && c.courseNameEn.trim() === targetName)
+    );
+  }
+
+  // 5. If not found in localList (e.g. came from Google Sheets only), create it!
+  if (idx === -1) {
+    const newCourse: Course = {
+      id: cleanId.startsWith('crs-') ? cleanId : `crs-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      courseCode: targetCode || cleanId,
+      courseName: targetName || 'รายวิชาใหม่',
+      credits: Number(updates.credits) || 3,
+      section: targetSec || '1',
+      term: updates.term || `${updates.semester || 1}/${updates.academicYear || '2569'}`,
+      academicYear: updates.academicYear || '2569',
+      semester: Number(updates.semester) || 1,
+      room: updates.room || '',
+      dayOfWeek: Number(updates.dayOfWeek) || 1,
+      startTime: updates.startTime || '09.00',
+      endTime: updates.endTime || '11.30',
+      instructor: updates.instructor || '',
+      primaryTeacherName: updates.primaryTeacherName || updates.instructor || '',
+      degreeLevel: updates.degreeLevel || 'ปริญญาตรี',
+      programType: updates.programType || 'THAI',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...updates,
+    };
+    localList.unshift(newCourse);
+    writeLocalJson('courses.json', localList);
+    idx = 0;
+  }
 
   const current = localList[idx];
   const updated: Course = {
@@ -125,35 +193,63 @@ export async function updateCourse(idOrCode: string, updates: Partial<Course>): 
   localList[idx] = updated;
   writeLocalJson('courses.json', localList);
 
-  // If instructor was updated, cascade update to timetables.json for consistent schedule & teaching slips
-  if (updates.instructor !== undefined && updates.instructor !== current.instructor) {
-    try {
-      const timetables = readLocalJson<any[]>('timetables.json', []);
-      let ttChanged = false;
-      timetables.forEach((tt) => {
-        if (Array.isArray(tt.scheduleData)) {
-          tt.scheduleData.forEach((s: any) => {
-            if (s.courseCode === current.courseCode || s.courseCode === updated.courseCode) {
+  // Cascade update to timetables.json for consistent schedule & teaching slips across the entire system
+  try {
+    const timetables = readLocalJson<any[]>('timetables.json', []);
+    let ttChanged = false;
+    const curNorm = norm(current.courseCode);
+    const updNorm = norm(updated.courseCode);
+
+    timetables.forEach((tt) => {
+      if (Array.isArray(tt.scheduleData)) {
+        tt.scheduleData.forEach((s: any) => {
+          const sNorm = norm(s.courseCode);
+          const isCodeMatch = sNorm === curNorm || sNorm === updNorm;
+          const isNameMatch =
+            s.courseName &&
+            (s.courseName.trim() === current.courseName?.trim() ||
+              s.courseName.trim() === updated.courseName?.trim());
+
+          if (isCodeMatch || isNameMatch) {
+            if (updates.instructor !== undefined) {
               s.instructor = updates.instructor;
-              ttChanged = true;
             }
-          });
-        }
-      });
-      if (ttChanged) {
-        writeLocalJson('timetables.json', timetables);
+            if (updates.room !== undefined) {
+              s.room = updates.room;
+            }
+            if (updates.dayOfWeek !== undefined) {
+              s.dayOfWeek = Number(updates.dayOfWeek);
+            }
+            if (updates.startTime !== undefined) {
+              s.startTime = updates.startTime;
+            }
+            if (updates.endTime !== undefined) {
+              s.endTime = updates.endTime;
+            }
+            if (updates.courseName !== undefined) {
+              s.courseName = updates.courseName;
+            }
+            ttChanged = true;
+          }
+        });
       }
-    } catch (err) {
-      console.warn('Failed to cascade instructor update to timetables:', err);
+    });
+
+    if (ttChanged) {
+      writeLocalJson('timetables.json', timetables);
     }
+  } catch (err) {
+    console.warn('Failed to cascade update to timetables:', err);
   }
 
   const gClient = getSheetsClient();
   if (gClient) {
+    // 1. Update Courses sheet
     try {
       const rows = await gClient.getValues('Courses!A2:A');
       if (rows && rows.length > 0) {
-        const rowIndex = rows.findIndex((r) => r[0] === current.courseCode);
+        const curNorm = norm(current.courseCode);
+        const rowIndex = rows.findIndex((r) => norm(r[0]) === curNorm);
         if (rowIndex !== -1) {
           const sheetRowNum = rowIndex + 2;
           await gClient.updateValues(`Courses!A${sheetRowNum}:L${sheetRowNum}`, [[
@@ -174,6 +270,30 @@ export async function updateCourse(idOrCode: string, updates: Partial<Course>): 
       }
     } catch (err) {
       console.warn('Google Sheets update course failed:', err);
+    }
+
+    // 2. Cascade update to Timetables sheet in Google Sheets
+    try {
+      if (updates.instructor !== undefined || updates.room !== undefined) {
+        const ttRows = await gClient.getValues('Timetables!A2:K');
+        if (ttRows && ttRows.length > 0) {
+          const curNorm = norm(current.courseCode);
+          for (let i = 0; i < ttRows.length; i++) {
+            const rCode = norm(ttRows[i][4]); // Column E is courseCode
+            if (rCode === curNorm) {
+              const rowNum = i + 2;
+              if (updates.instructor !== undefined) {
+                await gClient.updateValues(`Timetables!K${rowNum}`, [[updates.instructor]]);
+              }
+              if (updates.room !== undefined) {
+                await gClient.updateValues(`Timetables!J${rowNum}`, [[updates.room]]);
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets update timetables failed:', err);
     }
   }
 
@@ -381,7 +501,16 @@ export function parseTimetableMetadata(titleTh = '', titleEn = ''): {
 }
 
 export async function getTimetables(): Promise<TimetableItem[]> {
+  const norm = (s?: string) => String(s || '').replace(/\s+/g, '').toUpperCase();
   const rawTimetables = readLocalJson<any[]>('timetables.json', []);
+  const localCourses = readLocalJson<Course[]>('courses.json', []);
+  const courseInstructorMap = new Map<string, string>();
+  for (const c of localCourses) {
+    if (c.courseCode && c.instructor) {
+      courseInstructorMap.set(norm(c.courseCode), c.instructor.trim());
+    }
+  }
+
   const seenLocal = new Set<string>();
   const flattenedLocal: TimetableItem[] = [];
   const localSlotMap = new Map<string, TimetableItem>();
@@ -393,6 +522,8 @@ export async function getTimetables(): Promise<TimetableItem[]> {
       const startNorm = formatTimeSlotString(s.startTime || '');
       const endNorm = formatTimeSlotString(s.endTime || '');
       const dayNum = typeof s.dayOfWeek === 'number' ? s.dayOfWeek : parseInt(String(s.dayOfWeek || '1'), 10) || 1;
+      const codeNorm = norm(s.courseCode);
+      const instructor = (s.instructor || courseInstructorMap.get(codeNorm) || '').trim();
       const item: TimetableItem = {
         academicYear: String(t.academicYear || '2569').trim(),
         semester: Number(t.semester) || 1,
@@ -404,7 +535,7 @@ export async function getTimetables(): Promise<TimetableItem[]> {
         startTime: startNorm,
         endTime: endNorm,
         room: (s.room || t.room || '').trim(),
-        instructor: (s.instructor || '').trim(),
+        instructor,
         periodLabel: (s.periodLabel || '').trim(),
         degreeLevel: meta.degreeLevel,
         programType: meta.programType,
@@ -414,6 +545,10 @@ export async function getTimetables(): Promise<TimetableItem[]> {
       const slotKey = `${item.timetableTitle}_${item.courseCode}_${item.dayOfWeek}_${startNorm}`;
       localSlotMap.set(slotKey, item);
       localSlotMap.set(`${item.timetableTitle}_${item.courseCode}_${item.dayOfWeek}`, item);
+      localSlotMap.set(`${item.timetableTitle}_${codeNorm}_${item.dayOfWeek}_${startNorm}`, item);
+      localSlotMap.set(`${item.timetableTitle}_${codeNorm}_${item.dayOfWeek}`, item);
+      localSlotMap.set(`${codeNorm}_${item.dayOfWeek}_${startNorm}`, item);
+      localSlotMap.set(codeNorm, item);
 
       const dedupKey = `${item.timetableTitle}_${item.courseCode}_${item.dayOfWeek}_${startNorm}_${item.room}`;
       if (!seenLocal.has(dedupKey)) {
@@ -467,20 +602,31 @@ export async function getTimetables(): Promise<TimetableItem[]> {
             }
           }
 
-          // Cross-reference with local timetables.json only if Google Sheets cell is empty
+          // Cross-reference with local timetables.json or courses.json
+          const codeNorm = norm(code);
           const localMatch =
             localSlotMap.get(`${title}_${code}_${dayNum}_${startNorm}`) ||
-            localSlotMap.get(`${title}_${code}_${dayNum}`);
+            localSlotMap.get(`${title}_${code}_${dayNum}`) ||
+            localSlotMap.get(`${title}_${codeNorm}_${dayNum}_${startNorm}`) ||
+            localSlotMap.get(`${title}_${codeNorm}_${dayNum}`) ||
+            localSlotMap.get(`${codeNorm}_${dayNum}_${startNorm}`) ||
+            localSlotMap.get(codeNorm);
+
           if (localMatch) {
-            if (!instructor) {
-              instructor = localMatch.instructor || '';
+            if (localMatch.instructor) {
+              instructor = localMatch.instructor;
             }
-            if (!room) {
-              room = localMatch.room || '';
+            if (!room && localMatch.room) {
+              room = localMatch.room;
             }
             if (!periodLabel && localMatch.periodLabel) {
               periodLabel = localMatch.periodLabel;
             }
+          }
+
+          // If courses.json has an instructor for this course, ensure it stays in sync
+          if (courseInstructorMap.has(codeNorm) && courseInstructorMap.get(codeNorm)) {
+            instructor = courseInstructorMap.get(codeNorm)!;
           }
 
           const key = `${title}_${code}_${dayNum}_${startNorm}_${room}`;
