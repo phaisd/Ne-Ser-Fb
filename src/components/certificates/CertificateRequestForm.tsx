@@ -323,7 +323,7 @@ export function CertificateRequestForm({
         major,
         requestPurpose: requestPurpose || selectedCert.name,
         email,
-        phone,
+        phone: isStaffCert ? phone : undefined,
         age,
         gender,
         nationality: nationality || (selectedCert.targetAudience === 'THAI' ? 'ไทย' : 'International'),
@@ -1028,11 +1028,11 @@ export function CertificateRequestForm({
                 )}
               </div>
 
-              {/* 2. อีเมล และเบอร์โทรติดต่อ */}
-              <div className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-200/90 space-y-2.5">
+              {/* 2. อีเมลสำหรับรับแจ้งเตือนผลคำร้อง */}
+              <div className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-200/90 space-y-2">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">
-                    อีเมลติดต่อ (Email):
+                    อีเมลติดต่อ (Email for Notifications):
                   </label>
                   <input
                     type="email"
@@ -1041,19 +1041,9 @@ export function CertificateRequestForm({
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                   />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    เบอร์โทรศัพท์ติดต่อ (Phone):
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="08x-xxx-xxxx"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    สำหรับรับการแจ้งเตือนความคืบหน้าและผลการอนุมัติคำร้อง
+                  </p>
                 </div>
               </div>
             </div>
