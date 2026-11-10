@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   MapPin,
   Phone,
@@ -20,6 +21,9 @@ import {
 import { SystemSettings } from '@/types';
 
 export default function Footer() {
+  const pathname = usePathname();
+  const isHome = pathname === '/';
+
   const [settings, setSettings] = useState<Partial<SystemSettings>>({
     universityNameTh: 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย',
     facultyNameTh: 'คณะพุทธศาสตร์',
@@ -49,13 +53,44 @@ export default function Footer() {
   return (
     <div className="w-full mt-auto border-t border-slate-200/90 bg-white print:hidden">
       {/* Top Gradient Line Accent (Royal Purple to Amber Gold) */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-purple-700 via-indigo-600 to-amber-500"></div>
+      <div className="h-1 sm:h-1.5 w-full bg-gradient-to-r from-purple-700 via-indigo-600 to-amber-500"></div>
 
-      <footer className="bg-gradient-to-b from-white via-slate-50/60 to-slate-100/80 text-slate-600 pt-10 pb-8 px-4 sm:px-6 lg:px-8">
+      {/* Mini Footer for Mobile on Non-Home Pages (เช่น /attendance, /certificates) */}
+      {!isHome && (
+        <div className="block sm:hidden py-3 px-4 text-center bg-gradient-to-b from-white to-slate-50 border-b border-slate-200/70">
+          <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-800">
+            <span>{settings.logoEmoji || '☸️'}</span>
+            <span>{settings.facultyNameTh || 'คณะพุทธศาสตร์'}</span>
+            <span className="text-purple-700 font-semibold">• มจร</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 font-mono font-bold border border-purple-200/70">
+              v2.69
+            </span>
+          </div>
+          <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-center gap-2 font-medium">
+            <Link href="/" className="hover:text-purple-700 transition">
+              หน้าแรก
+            </Link>
+            <span className="text-slate-300">•</span>
+            <Link href="/verify" className="hover:text-purple-700 transition">
+              ตรวจเอกสาร
+            </Link>
+            <span className="text-slate-300">•</span>
+            <span className="text-slate-400">© 2026 MCU</span>
+          </div>
+        </div>
+      )}
+
+      {/* Standard Full Footer: Always on Desktop; On Mobile only shown on Home page */}
+      <footer
+        className={`${
+          isHome
+            ? 'pt-8 sm:pt-10 pb-8 px-4 sm:px-6 lg:px-8'
+            : 'hidden sm:block pt-8 sm:pt-10 pb-8 px-4 sm:px-6 lg:px-8'
+        } bg-gradient-to-b from-white via-slate-50/60 to-slate-100/80 text-slate-600`}
+      >
         <div className="max-w-7xl mx-auto">
           {/* Main 4-Column Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-10 border-b border-slate-200/80 text-xs">
-
             {/* Col 1: Identity & About */}
             <div className="space-y-3.5">
               <div className="flex items-center gap-3">
@@ -228,7 +263,6 @@ export default function Footer() {
                 )}
               </div>
             </div>
-
           </div>
 
           {/* Bottom Bar: Copyright, Dev Credit & PDPA Links */}

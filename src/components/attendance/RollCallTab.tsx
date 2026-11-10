@@ -480,9 +480,9 @@ export function RollCallTab({
             };
 
             return (
-              <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-emerald-50/20 p-4 shadow-sm space-y-3">
+              <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-emerald-50/20 p-3.5 sm:p-4 shadow-sm space-y-3 overflow-hidden">
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-slate-200/70">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <span
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
                         isEn
@@ -502,7 +502,7 @@ export function RollCallTab({
                       ปี {currentCourse.yearLevel}
                     </span>
 
-                    <div className="flex items-center gap-1.5 ml-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-slate-900 text-white shadow-xs">
                         คาบที่ {sessionCustom.sessionNumber}
                       </span>
@@ -520,94 +520,96 @@ export function RollCallTab({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-auto">
+                  <div className="w-full xl:w-auto flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 xl:ml-auto">
                     <button
                       type="button"
                       onClick={() => setShowSessionModal(true)}
-                      className="px-3.5 py-1.5 bg-white hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                      className="w-full sm:w-auto px-3.5 py-2 sm:py-1.5 bg-white hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer shrink-0"
                       title="ปรับแต่ง วันที่ / เวลา / ห้องเรียน / เลือกอาจารย์ผู้สอนร่วม-ผู้ช่วยสอน"
                     >
-                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                      <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
                       <span>⚙️ ปรับแต่งคาบเรียน (วัน/เวลา/ห้อง/ผู้ช่วยสอน)</span>
                     </button>
 
-                    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
-                      <button
-                        type="button"
-                        onClick={() => setStudentProgramFilter('ENGLISH')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                          activeProgramMode === 'ENGLISH'
-                            ? 'bg-indigo-600 text-white font-bold shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        }`}
-                        title="แสดงเฉพาะนิสิตหลักสูตรนานาชาติ (Inter / ภาคภาษาอังกฤษ)"
-                      >
-                        <span>🌐 ภาคอินเตอร์</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    <div className="w-full sm:w-auto flex flex-col xs:flex-row items-stretch xs:items-center gap-2">
+                      <div className="grid grid-cols-3 sm:flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => setStudentProgramFilter('ENGLISH')}
+                          className={`px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 ${
                             activeProgramMode === 'ENGLISH'
-                              ? 'bg-white/20 text-white'
-                              : 'bg-slate-200 text-slate-700'
+                              ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
+                          title="แสดงเฉพาะนิสิตหลักสูตรนานาชาติ (Inter / ภาคภาษาอังกฤษ)"
                         >
-                          {yearEnglishCount}
-                        </span>
-                      </button>
+                          <span className="truncate">🌐 ภาคอินเตอร์</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold shrink-0 ${
+                              activeProgramMode === 'ENGLISH'
+                                ? 'bg-white/20 text-white'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {yearEnglishCount}
+                          </span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setStudentProgramFilter('THAI')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                          activeProgramMode === 'THAI'
-                            ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        }`}
-                        title="แสดงเฉพาะนิสิตหลักสูตรภาษาไทย"
-                      >
-                        <span>🇹🇭 ภาคไทย</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        <button
+                          type="button"
+                          onClick={() => setStudentProgramFilter('THAI')}
+                          className={`px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 ${
                             activeProgramMode === 'THAI'
-                              ? 'bg-white/20 text-white'
-                              : 'bg-slate-200 text-slate-700'
+                              ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
+                          title="แสดงเฉพาะนิสิตหลักสูตรภาษาไทย"
                         >
-                          {yearThaiCount}
-                        </span>
-                      </button>
+                          <span className="truncate">🇹🇭 ภาคไทย</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold shrink-0 ${
+                              activeProgramMode === 'THAI'
+                                ? 'bg-white/20 text-white'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {yearThaiCount}
+                          </span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setStudentProgramFilter('ALL')}
-                        className={`px-2 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
-                          activeProgramMode === 'ALL'
-                            ? 'bg-slate-800 text-white font-bold shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        }`}
-                        title="แสดงรวมนิสิตทั้ง 2 ภาค (กรณีเรียนร่วมกัน)"
-                      >
-                        <span>👥 ทั้งหมด</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        <button
+                          type="button"
+                          onClick={() => setStudentProgramFilter('ALL')}
+                          className={`px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 ${
                             activeProgramMode === 'ALL'
-                              ? 'bg-white/20 text-white'
-                              : 'bg-slate-200 text-slate-700'
+                              ? 'bg-slate-800 text-white font-bold shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
+                          title="แสดงรวมนิสิตทั้ง 2 ภาค (กรณีเรียนร่วมกัน)"
                         >
-                          {yearAllCount}
-                        </span>
-                      </button>
-                    </div>
+                          <span className="truncate">👥 ทั้งหมด</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold shrink-0 ${
+                              activeProgramMode === 'ALL'
+                                ? 'bg-white/20 text-white'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {yearAllCount}
+                          </span>
+                        </button>
+                      </div>
 
-                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 text-xs pl-2 border-l border-slate-200">
-                      <input
-                        type="checkbox"
-                        checked={showOnlyTargetYear}
-                        onChange={(e) => setShowOnlyTargetYear(e.target.checked)}
-                        className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                      />
-                      <span>เฉพาะปี {currentCourse.yearLevel}</span>
-                    </label>
+                      <label className="flex items-center justify-center xs:justify-start gap-1.5 cursor-pointer text-slate-600 text-xs py-1 xs:py-0 xs:pl-2 xs:border-l xs:border-slate-200 shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={showOnlyTargetYear}
+                          onChange={(e) => setShowOnlyTargetYear(e.target.checked)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        />
+                        <span className="whitespace-nowrap">เฉพาะปี {currentCourse.yearLevel}</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
 

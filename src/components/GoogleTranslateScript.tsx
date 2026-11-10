@@ -12,28 +12,20 @@ declare global {
 
 export function GoogleTranslateScript() {
   useEffect(() => {
-    // Ensure googleTranslateElementInit is defined on window
     const initTranslate = () => {
-      if (window.google && window.google.translate) {
+      if (window.google?.translate?.TranslateElement) {
         try {
           new window.google.translate.TranslateElement(
-            {
-              pageLanguage: 'th',
-              includedLanguages: 'en,th,my,vi,km,zh-CN,ja,lo,si,fr',
-              autoDisplay: false,
-            },
+            { pageLanguage: 'th' },
             'google_translate_element'
           );
-        } catch (e) {
-          // Ignore re-init errors
-        }
+        } catch (e) {}
       }
     };
 
     window.googleTranslateElementInit = initTranslate;
 
-    // If script was already loaded and combo is missing, trigger init manually
-    if (window.google?.translate && !document.querySelector('.goog-te-combo')) {
+    if (window.google?.translate?.TranslateElement && !document.querySelector('.goog-te-combo')) {
       initTranslate();
     }
   }, []);
@@ -59,11 +51,7 @@ export function GoogleTranslateScript() {
           window.googleTranslateElementInit = function() {
             if (window.google && window.google.translate) {
               try {
-                new window.google.translate.TranslateElement({
-                  pageLanguage: 'th',
-                  includedLanguages: 'en,th,my,vi,km,zh-CN,ja,lo,si,fr',
-                  autoDisplay: false,
-                }, 'google_translate_element');
+                new window.google.translate.TranslateElement({ pageLanguage: 'th' }, 'google_translate_element');
               } catch (e) {}
             }
           };

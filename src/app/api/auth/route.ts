@@ -242,7 +242,7 @@ export async function POST(request: Request) {
       }
       if (newPassword === 'mcu123456') {
         return NextResponse.json(
-          { success: false, error: 'ไม่สามารถใช้รหัสผ่านเริ่มต้น (mcu123456) ได้ กรุณาตั้งรหัสผ่านใหม่ที่ปลอดภัย' },
+          { success: false, error: 'ไม่สามารถใช้รหัสผ่านเริ่มต้นของระบบได้ กรุณาตั้งรหัสผ่านใหม่ที่ปลอดภัย' },
           { status: 400 }
         );
       }
@@ -357,8 +357,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            'รหัสนิสิต/อีเมล หรือรหัสผ่านไม่ถูกต้อง (รหัสผ่านเริ่มต้น: mcu123456 หรือรหัสนิสิต)',
+          error: 'รหัสนิสิต อีเมล หรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบและลองใหม่อีกครั้ง',
         },
         { status: 401 }
       );

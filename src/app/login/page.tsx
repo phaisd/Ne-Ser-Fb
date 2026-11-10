@@ -208,7 +208,7 @@ function LoginForm() {
       return;
     }
     if (newPassword === 'mcu123456') {
-      setChangePasswordError('ไม่สามารถใช้รหัสผ่านเริ่มต้น (mcu123456) ได้ กรุณาตั้งรหัสผ่านใหม่ที่มีความปลอดภัย');
+      setChangePasswordError('ไม่สามารถใช้รหัสผ่านเริ่มต้นของระบบได้ กรุณาตั้งรหัสผ่านใหม่ที่มีความปลอดภัย');
       return;
     }
     if (newPassword !== confirmPassword) {

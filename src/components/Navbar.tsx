@@ -178,11 +178,24 @@ export default function Navbar() {
       document.cookie = `googtrans=/auto/${targetLang}; path=/;`;
 
       const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
-      if (combo) {
+      if (combo && combo.options && combo.options.length > 0) {
         combo.value = targetLang;
         combo.dispatchEvent(new Event('change'));
       } else {
-        window.location.reload();
+        // Wait up to 1.5s for combo options to populate, otherwise reload
+        let retries = 0;
+        const interval = setInterval(() => {
+          retries++;
+          const liveCombo = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+          if (liveCombo && liveCombo.options && liveCombo.options.length > 0) {
+            clearInterval(interval);
+            liveCombo.value = targetLang;
+            liveCombo.dispatchEvent(new Event('change'));
+          } else if (retries >= 15) {
+            clearInterval(interval);
+            window.location.reload();
+          }
+        }, 100);
       }
     }
   };
