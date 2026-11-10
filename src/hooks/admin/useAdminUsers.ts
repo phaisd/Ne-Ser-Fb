@@ -270,51 +270,125 @@ export function useAdminUsers({
     }
   };
 
+  const normalizeTimeSlot = (val?: string): string => {
+    if (!val) return '';
+    let str = String(val).trim().replace(':', '.');
+    if (/^\d{1,2}\.\d$/.test(str)) str += '0';
+    if (/^\d{1,2}$/.test(str)) str += '.00';
+    if (/^\d\./.test(str)) str = '0' + str;
+    return str;
+  };
+
+  const getDayLabelThai = (day?: number | string): string => {
+    const d = Number(day);
+    switch (d) {
+      case 1: return 'วันจันทร์';
+      case 2: return 'วันอังคาร';
+      case 3: return 'วันพุธ';
+      case 4: return 'วันพฤหัสบดี';
+      case 5: return 'วันศุกร์';
+      case 6: return 'วันเสาร์';
+      case 7: return 'วันอาทิตย์';
+      default: return '';
+    }
+  };
+
+  const getDayShortThai = (day?: number | string): string => {
+    const d = Number(day);
+    switch (d) {
+      case 1: return 'จ.';
+      case 2: return 'อ.';
+      case 3: return 'พ.';
+      case 4: return 'พฤ.';
+      case 5: return 'ศ.';
+      case 6: return 'ส.';
+      case 7: return 'อา.';
+      default: return '';
+    }
+  };
+
   const getCoursesForInstructor = (user: any, filterYear: string = 'ALL', filterSemester: string = 'ALL') => {
     if (!user) return [];
 
+    const normCode = (s?: string) => String(s || '').replace(/\s+/g, '').toUpperCase();
+
     const matchedTimetables = timetablesList.filter((t) => {
-      if (filterYear !== 'ALL' && t.academicYear && String(t.academicYear) !== String(filterYear)) return false;
-      if (filterSemester !== 'ALL' && t.semester && String(t.semester) !== String(filterSemester)) return false;
+      if (filterYear !== 'ALL' && t.academicYear && String(t.academicYear).trim() !== String(filterYear).trim()) return false;
+      if (filterSemester !== 'ALL' && t.semester && String(t.semester).trim() !== String(filterSemester).trim()) return false;
       return matchInstructorStrict(user, t.instructor);
     });
 
     const matchedCourses = coursesList.filter((c) => {
-      if (filterYear !== 'ALL' && c.academicYear && String(c.academicYear) !== String(filterYear)) return false;
-      if (filterSemester !== 'ALL' && c.semester && String(c.semester) !== String(filterSemester)) return false;
+      if (filterYear !== 'ALL' && c.academicYear && String(c.academicYear).trim() !== String(filterYear).trim()) return false;
+      if (filterSemester !== 'ALL' && c.semester && String(c.semester).trim() !== String(filterSemester).trim()) return false;
       return matchInstructorStrict(user, c.instructor);
     });
 
     const unique: any[] = [];
-    const seen = new Set<string>();
+    const seenSlot = new Set<string>();
+    const scheduledCourseKeys = new Set<string>();
 
     matchedTimetables.forEach((c) => {
-      const key = `${c.courseCode}-${c.academicYear || ''}-${c.semester || ''}-${c.dayOfWeek || ''}-${c.startTime || ''}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        unique.push(c);
+      const code = normCode(c.courseCode);
+      const yr = String(c.academicYear || '2569').trim();
+      const sem = String(c.semester || 1).trim();
+      const day = String(c.dayOfWeek || 1).trim();
+      const st = normalizeTimeSlot(c.startTime || '');
+      const slotKey = `${code}-${yr}-${sem}-${day}-${st}`;
+      if (!seenSlot.has(slotKey)) {
+        seenSlot.add(slotKey);
+        unique.push({
+          ...c,
+          academicYear: yr,
+          semester: Number(sem) || 1,
+          dayOfWeek: Number(day) || 1,
+          startTime: normalizeTimeSlot(c.startTime || ''),
+          endTime: normalizeTimeSlot(c.endTime || ''),
+          dayLabel: getDayLabelThai(day),
+          dayShort: getDayShortThai(day),
+        });
+        scheduledCourseKeys.add(`${code}-${yr}-${sem}`);
       }
     });
 
+    // Fallback: only add from matchedCourses if NOT already scheduled in timetables
     matchedCourses.forEach((c) => {
-      const key = `${c.courseCode}-${c.academicYear || ''}-${c.semester || ''}-${c.dayOfWeek || ''}-${c.startTime || ''}`;
-      if (!seen.has(key)) {
-        seen.add(key);
+      const code = normCode(c.courseCode);
+      const yr = String(c.academicYear || '2569').trim();
+      const sem = String(c.semester || 1).trim();
+      const courseKey = `${code}-${yr}-${sem}`;
+      if (scheduledCourseKeys.has(courseKey)) return;
+
+      const day = String(c.dayOfWeek || 1).trim();
+      const st = normalizeTimeSlot(c.startTime || '');
+      const slotKey = `${code}-${yr}-${sem}-${day}-${st}`;
+      if (!seenSlot.has(slotKey)) {
+        seenSlot.add(slotKey);
         unique.push({
-          academicYear: c.academicYear || '2569',
-          semester: c.semester || 1,
+          academicYear: yr,
+          semester: Number(sem) || 1,
           yearLevel: c.yearLevel || 1,
           timetableTitle: c.programType === 'ENGLISH' ? 'หลักสูตรนานาชาติ' : 'ภาคภาษาไทย',
           courseCode: c.courseCode,
           courseName: c.courseName,
-          dayOfWeek: c.dayOfWeek || 1,
-          startTime: c.startTime || '',
-          endTime: c.endTime || '',
+          dayOfWeek: Number(day) || 1,
+          startTime: normalizeTimeSlot(c.startTime || ''),
+          endTime: normalizeTimeSlot(c.endTime || ''),
           room: c.room || '',
           instructor: c.instructor || user.name,
           periodLabel: '',
+          dayLabel: getDayLabelThai(day),
+          dayShort: getDayShortThai(day),
         });
+        scheduledCourseKeys.add(courseKey);
       }
+    });
+
+    // Sort in consistent logical order: semester asc, dayOfWeek asc, startTime asc, courseCode asc
+    unique.sort((a, b) => {
+      if ((a.semester || 1) !== (b.semester || 1)) return (a.semester || 1) - (b.semester || 1);
+      if ((a.dayOfWeek || 1) !== (b.dayOfWeek || 1)) return (a.dayOfWeek || 1) - (b.dayOfWeek || 1);
+      return String(a.startTime || '').localeCompare(String(b.startTime || ''));
     });
 
     return unique;
@@ -323,8 +397,12 @@ export function useAdminUsers({
   const handleOpenTeachingSlip = async (user: any) => {
     setTeachingSlipUser(user);
     try {
-      const qrDataUrl = await QRCode.toDataURL('http://localhost:3020/attendance', {
-        width: 160,
+      const targetUrl =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/attendance`
+          : 'https://ne-ser-fb.vercel.app/attendance';
+      const qrDataUrl = await QRCode.toDataURL(targetUrl, {
+        width: 180,
         margin: 1,
       });
       setTeachingSlipQr(qrDataUrl);
@@ -336,13 +414,24 @@ export function useAdminUsers({
   const generateInstructorLineMessage = (user: any, selectedYear?: string, selectedSemester?: string) => {
     const yearToUse = selectedYear && selectedYear !== 'ALL' ? selectedYear : (availableAcademicYears[0] || '2569');
     const semToUse = selectedSemester && selectedSemester !== 'ALL' ? `ภาคการศึกษาที่ ${selectedSemester} ` : '';
-    const courses = getCoursesForInstructor(user, selectedYear, selectedSemester);
+    const courses = getCoursesForInstructor(user, yearToUse, selectedSemester);
+
+    const targetUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/attendance`
+        : 'https://ne-ser-fb.vercel.app/attendance';
+
     const coursesText = courses.length > 0
       ? courses
-          .map(
-            (c, i) =>
-              `${i + 1}. [${c.courseCode}] ${c.courseName} (ชั้นปีที่ ${c.yearLevel || 1}, ห้อง ${c.room || '-'}, เวลา ${c.startTime || '-'}-${c.endTime || '-'} น.)`
-          )
+          .map((c, i) => {
+            const semLabel = !selectedSemester || selectedSemester === 'ALL' ? `[ภาค ${c.semester || 1}] ` : '';
+            const dayLabel = c.dayLabel ? `${c.dayLabel} ` : (c.dayOfWeek ? `${getDayLabelThai(c.dayOfWeek)} ` : '');
+            const timeLabel = c.startTime ? `เวลา ${c.startTime}-${c.endTime || ''} น.` : 'เวลาตามตารางสอน';
+            const roomLabel = c.room ? `ห้อง ${c.room}` : 'ห้องเรียนตามตาราง';
+            const programTag = /inter|eng|english|นานาชาติ/i.test(c.timetableTitle || '') ? ' (หลักสูตรนานาชาติ)' : '';
+
+            return `${i + 1}. ${semLabel}[${c.courseCode}] ${c.courseName}${programTag} (ชั้นปีที่ ${c.yearLevel || 1}, ${dayLabel}${timeLabel}, ${roomLabel})`;
+          })
           .join('\n')
       : '• (ไม่พบรายวิชาที่ระบุในตารางสอน หรืออยู่ระหว่างจัดตารางสอน)';
 
@@ -355,8 +444,8 @@ export function useAdminUsers({
 ${coursesText}
 
 🔑 ข้อมูลเข้าสู่ระบบตรวจเช็คชื่อนิสิต (Attendance System):
-• ลิงก์เข้าใช้งาน: http://localhost:3020/attendance
-• อีเมลเข้าสู่ระบบ (Username): ${user.email}
+• ลิงก์เข้าใช้งาน: ${targetUrl}
+• อีเมลเข้าสู่ระบบ (Username): ${user.email || user.gmail}
 • รหัสผ่านเริ่มต้น (Default Password): ${user.defaultPassword || 'mcu123456'}
 (หรือสามารถกดปุ่ม "เข้าสู่ระบบด้วย Google / บัญชี มจร." ได้โดยตรงทันที)
 

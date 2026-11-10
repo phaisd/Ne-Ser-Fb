@@ -710,8 +710,12 @@ function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
                   <td className="px-2 py-1.5 text-center text-slate-400">{i + 1}</td>
                   <td className="px-2 py-1.5 font-mono font-bold text-indigo-700">{c.courseCode}</td>
                   <td className="px-2 py-1.5 font-medium">{c.courseName}</td>
-                  <td className="px-2 py-1.5 text-center">ปี {c.yearLevel || 1}</td>
+                  <td className="px-2 py-1.5 text-center">
+                    ปี {c.yearLevel || 1}
+                    {c.semester ? ` (ภาค ${c.semester})` : ''}
+                  </td>
                   <td className="px-2 py-1.5 text-center font-mono text-[11px]">
+                    {c.dayShort ? `${c.dayShort} ` : ''}
                     {c.startTime || '-'}-{c.endTime || '-'} น.
                   </td>
                   <td className="px-2 py-1.5 text-center font-bold">{c.room || '-'}</td>
@@ -826,8 +830,12 @@ function HalfCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
             {courses.slice(0, 4).map((c: any, i: number) => (
               <tr key={i}>
                 <td className="p-1 font-mono font-bold text-indigo-700">{c.courseCode}</td>
-                <td className="p-1 truncate max-w-[180px]">{c.courseName}</td>
+                <td className="p-1 truncate max-w-[180px]">
+                  {c.courseName}
+                  {c.semester ? ` (ภาค ${c.semester})` : ''}
+                </td>
                 <td className="p-1 text-center font-mono text-[10px]">
+                  {c.dayShort ? `${c.dayShort} ` : ''}
                   {c.startTime || '-'}-{c.endTime || '-'}
                 </td>
                 <td className="p-1 text-center font-semibold">{c.room || '-'}</td>
@@ -928,6 +936,7 @@ function QuarterCard({ user, courses, qrCodeDataUrl, academicYearText, semesterT
                       <td className="px-1.5 py-0.5 font-mono font-bold text-indigo-700">{c.courseCode}</td>
                       <td className="px-1.5 py-0.5 truncate max-w-[130px] font-medium" title={c.courseName}>
                         {c.courseName}
+                        {c.dayShort ? ` (${c.dayShort})` : ''}
                       </td>
                       <td className="px-1.5 py-0.5 text-center font-bold text-slate-700">{c.room || '-'}</td>
                     </tr>

@@ -2,13 +2,28 @@
  * Shared Name & Instructor Matching Utilities
  */
 
-export const INSTRUCTOR_TITLE_REGEX = /\b(phra|phramaha|ven|dr|ph\.?d|asst|assoc|prof|mr|mrs|ms|พระ|พระมหา|พระครู|ผศ|รศ|ศ|ดร|อ\.ดร|อ)\b/gi;
-export const INSTRUCTOR_THAI_TITLE_PREFIX = /^(ดร\.|ผศ\.|รศ\.|ศ\.|อ\.ดร\.|อ\.|พระมหา|พระครู|พระ|อาจารย์)/;
+export const INSTRUCTOR_TITLE_REGEX = /\b(phra|phramaha|ven|dr|ph\.?d|asst|assoc|prof|mr|mrs|ms|พระ|พระมหา|พระครู|ผศ|รศ|ศ|ดร|อ\.ดร|อ|วิ)\b/gi;
+export const INSTRUCTOR_THAI_TITLE_PREFIX = /^(ดร\.|ผศ\.|รศ\.|ศ\.|อ\.ดร\.|อ\.|พระมหา|พระครู|พระ|อาจารย์|วิ\.|ven\.|dr\.|ph\.?d\.|asst\.|assoc\.|prof\.|mr\.|mrs\.|ms\.)/i;
 
-const STOP_WORDS = new Set([
+export const STOP_WORDS = new Set([
   'phra', 'พระ', 'ดร', 'dr', 'ven', 'asst', 'assoc', 'prof', 'ผศ', 'รศ', 'ศ', 'อาจารย์', 'อ', 'mr', 'mrs', 'ms',
-  'phd', 'ph.d', 'ph.d.', 'ดร.', 'ผศ.', 'รศ.', 'ศ.', 'อ.', 'อ.ดร.', 'อ.ดร', 'พิเศษ', 'specail', 'special'
+  'phd', 'ph.d', 'ph.d.', 'ดร.', 'ผศ.', 'รศ.', 'ศ.', 'อ.', 'อ.ดร.', 'อ.ดร', 'พิเศษ', 'specail', 'special',
+  'ผศ.ดร', 'ผศ.ดร.', 'ผศดร', 'ผศ. ดร.', 'ผศ. ดร', 'ผศ ดร',
+  'รศ.ดร', 'รศ.ดร.', 'รศดร', 'รศ. ดร.', 'รศ. ดร', 'รศ ดร',
+  'ศ.ดร', 'ศ.ดร.', 'ศดร', 'ศ. ดร.', 'ศ. ดร', 'ศ ดร',
+  'asst. prof', 'asst. prof.', 'asst prof', 'assoc. prof', 'assoc. prof.', 'assoc prof',
+  'prof. dr', 'prof. dr.', 'prof dr',
+  'พระมหา', 'พระครู', 'แม่ชี', 'nun', 'bhikkhu', 'phramaha', 'phrakhru',
+  'อาจารย์ประจำ', 'อาจารย์พิเศษ', 'ผู้สอน', 'บรรยาย', 'วิ.', 'วิ',
+  'pha'
 ]);
+
+export function isTitleOrStopWord(str: string): boolean {
+  if (!str) return true;
+  const clean = str.trim().toLowerCase().replace(/^[.\s]+|[.\s]+$/g, '');
+  const bare = clean.replace(/[\.\s]/g, '');
+  return STOP_WORDS.has(clean) || STOP_WORDS.has(bare);
+}
 
 /**
  * Strips all leading academic and monastic titles repeatedly (e.g. ผศ.ดร.สมชาย -> สมชาย)
@@ -18,7 +33,10 @@ export function stripLeadingTitles(raw: string): string {
   let prev = '';
   while (prev !== text) {
     prev = text;
-    text = text.replace(/^(ผศ\.|รศ\.|ศ\.|ดร\.|อ\.ดร\.|อ\.|พระมหา|พระครู|พระ|อาจารย์|\.)\s*/i, '').trim();
+    text = text
+      .replace(/^(ผศ\.|รศ\.|ศ\.|ดร\.|อ\.ดร\.|อ\.|พระมหา|พระครู|พระ|อาจารย์|วิ\.|ven\.|dr\.|ph\.?d\.|asst\.|assoc\.|prof\.|mr\.|mrs\.|ms\.|\.)\s*/i, '')
+      .replace(/^(ผศ|รศ|ศ|ดร|อ|พระ|ven|dr|asst|assoc|prof)\b\s*/i, '')
+      .trim();
   }
   return text;
 }
@@ -30,33 +48,46 @@ export function getSubstantiveTokens(user?: { name?: string; nameEn?: string; al
   if (!user) return [];
   const substantive = new Set<string>();
 
-  // 1. Process custom aliases if present
-  if (Array.isArray(user.aliases)) {
-    user.aliases.forEach((al) => {
-      let clean = al.trim().toLowerCase();
-      clean = clean.replace(/^[.\s]+|[.\s]+$/g, '');
-      const bare = clean.replace(/[\.\s]/g, '');
-      if (clean && clean.length >= 3 && !STOP_WORDS.has(clean) && !STOP_WORDS.has(bare)) {
-        substantive.add(clean);
-      }
-    });
-  }
+  const processText = (text?: string) => {
+    if (!text) return;
+    if (isTitleOrStopWord(text)) return;
 
-  // 2. Process Thai & English names
-  const names = [user.name || '', user.nameEn || ''];
-  names.forEach((n) => {
-    const cleanStr = n.replace(/[,*\/]/g, ' ');
+    const clean = text.trim().toLowerCase().replace(/^[.\s]+|[.\s]+$/g, '');
+    const bare = clean.replace(/[\.\s]/g, '');
+    if (isTitleOrStopWord(clean) || isTitleOrStopWord(bare)) return;
+
+    // Split words
+    const cleanStr = text.replace(/[,*\/]/g, ' ');
     cleanStr.split(/\s+/).forEach((part: string) => {
       let token = part.trim().toLowerCase();
       token = token.replace(/^[.\s]+|[.\s]+$/g, '');
       token = stripLeadingTitles(token);
-      token = token.replace(INSTRUCTOR_TITLE_REGEX, '');
-      token = token.trim();
-      if (token.length >= 3 && !STOP_WORDS.has(token)) {
+      token = token.replace(INSTRUCTOR_TITLE_REGEX, '').trim();
+      const bareToken = token.replace(/[\.\s]/g, '');
+      if (token.length >= 3 && !isTitleOrStopWord(token) && !isTitleOrStopWord(bareToken)) {
         substantive.add(token);
       }
     });
-  });
+
+    let strippedFull = stripLeadingTitles(clean);
+    strippedFull = strippedFull.replace(INSTRUCTOR_TITLE_REGEX, '').replace(/^[.\s,*\/]+|[.\s,*\/]+$/g, '').trim();
+    strippedFull = strippedFull.replace(/[\.,*\/]/g, ' ').replace(/\s+/g, ' ').trim();
+    const bareFull = strippedFull.replace(/[\.\s]/g, '');
+    if (
+      strippedFull.length >= 4 &&
+      !isTitleOrStopWord(strippedFull) &&
+      !isTitleOrStopWord(bareFull) &&
+      !strippedFull.includes('@')
+    ) {
+      substantive.add(strippedFull);
+    }
+  };
+
+  if (Array.isArray(user.aliases)) {
+    user.aliases.forEach(processText);
+  }
+  processText(user.name);
+  processText(user.nameEn);
 
   return Array.from(substantive);
 }

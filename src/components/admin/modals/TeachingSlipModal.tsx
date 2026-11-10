@@ -280,6 +280,7 @@ export const TeachingSlipModal: React.FC<TeachingSlipModalProps> = ({
                           </td>
                           <td className="px-3 py-2 text-center font-semibold">ปี {c.yearLevel || 1}</td>
                           <td className="px-3 py-2 text-center font-mono text-[11px]">
+                            {c.dayShort ? `${c.dayShort} ` : c.dayLabel ? `${c.dayLabel} ` : ''}
                             {c.startTime || '-'}-{c.endTime || '-'} น.
                           </td>
                           <td className="px-3 py-2 text-center font-bold text-slate-700">{c.room || '-'}</td>
@@ -301,7 +302,12 @@ export const TeachingSlipModal: React.FC<TeachingSlipModalProps> = ({
               </div>
               <div className="space-y-1 text-slate-700">
                 <div>
-                  • ลิงก์เข้าใช้งาน: <strong className="font-mono text-purple-700">http://localhost:3020/attendance</strong>
+                  • ลิงก์เข้าใช้งาน:{' '}
+                  <strong className="font-mono text-purple-700">
+                    {typeof window !== 'undefined'
+                      ? `${window.location.origin}/attendance`
+                      : 'https://ne-ser-fb.vercel.app/attendance'}
+                  </strong>
                 </div>
                 <div>
                   • ชื่อผู้ใช้ (Username): <strong className="font-mono text-slate-900">{user.email || user.gmail}</strong>

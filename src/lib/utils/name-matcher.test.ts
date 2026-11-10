@@ -24,6 +24,54 @@ describe('name-matcher utility', () => {
     expect(tokens).not.toContain('ven');
   });
 
+  it('does not extract compound academic titles from aliases (preventing false matches)', () => {
+    const user = {
+      name: 'พระมหายงยุทธ ธีรธมฺโม, ผศ.ดร.',
+      nameEn: 'Asst. Prof. Phramaha Yongyut Dhiradhammo, Ph.D.',
+      aliases: ['ยงยุทธ', 'ธีรธมฺโม', 'ผศ.ดร.', 'รศ.ดร.'],
+    };
+
+    const tokens = getSubstantiveTokens(user);
+    expect(tokens).not.toContain('ผศ.ดร');
+    expect(tokens).not.toContain('ผศ.ดร.');
+    expect(tokens).not.toContain('รศ.ดร');
+    expect(tokens).toContain('ยงยุทธ');
+    expect(tokens).toContain('ธีรธมฺโม');
+
+    // Should not match other professors who only share the title ผศ.ดร.
+    expect(matchInstructorStrict(user, 'ผศ.ดร.สมชาย ใจดี')).toBe(false);
+    expect(matchInstructorStrict(user, 'พระจาตุรงค์ อาจารสุโภ, ผศ.ดร.')).toBe(false);
+    // Should match his own name
+    expect(matchInstructorStrict(user, 'พระมหายงยุทธ ธีรธมฺโม, ผศ.ดร.')).toBe(true);
+    expect(matchInstructorStrict(user, 'Asst. Prof. Phramaha Yongyut Dhiradhammo, Ph.D.')).toBe(true);
+  });
+
+  it('correctly isolates Phramaha Mongkolkarn and Ven. Dr. Suvinaya without false matches', () => {
+    const mongkolkarn = {
+      name: 'พระมหามงคลกานต์ ฐิตธมฺโม, รศ.ดร.',
+      nameEn: 'Assoc. Prof. Phramaha Mongkolkarn Thitadhammo, Ph.D.',
+      aliases: ['มงคลกานต์', 'ฐิตธมฺโม', 'Mongkolkarn', 'Thitadhammo'],
+    };
+
+    // Should match his own subjects
+    expect(matchInstructorStrict(mongkolkarn, 'พระมหามงคลกานต์ ฐิตธมฺโม, รศ. ดร.*/อ.ดร.คงชิต ชินสิญจ์')).toBe(true);
+    // Should NOT match other รศ.ดร. courses (e.g. Gamification or Ai)
+    expect(matchInstructorStrict(mongkolkarn, 'รศ.ดร.วิลาวัลย์ / รศ.ดร.วราพร')).toBe(false);
+    expect(matchInstructorStrict(mongkolkarn, 'รศ.ดร.บัญญพน สวัสดี/ดร.วิศาล มายัง')).toBe(false);
+
+    const suvinaya = {
+      name: 'Ven. Dr. Suvinaya Bhikkhu',
+      nameEn: 'Ven. Dr. Suvinaya Bhikkhu',
+      aliases: ['Suvinaya', 'สุวินัย'],
+    };
+
+    // Should match his own subjects
+    expect(matchInstructorStrict(suvinaya, 'Ven. Dr. Suvinaya Bhikkhu*')).toBe(true);
+    // Should NOT match other Bhikkhu instructors
+    expect(matchInstructorStrict(suvinaya, 'Ven. Dharma Priya Bhikkhu, Ph.D.')).toBe(false);
+    expect(matchInstructorStrict(suvinaya, 'Ven. Dr. Subinoy Bhikku*')).toBe(false);
+  });
+
   it('matches instructor string strictly based on substantive tokens', () => {
     const user = {
       name: 'ผศ.ดร.สมชาย ใจดี',

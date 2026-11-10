@@ -67,16 +67,6 @@
         "periodLabel": "บ่าย 2"
       },
       {
-        "id": "phil-y1-6",
-        "endTime": "11.30",
-        "dayOfWeek": 3,
-        "startTime": "09.00",
-        "courseCode": "999 999",
-        "courseName": "Ai เบื้องต้น",
-        "instructor": "รศ.ดร.บัญญพน สวัสดี/ดร.วิศาล มายัง",
-        "periodLabel": "เช้า"
-      },
-      {
         "id": "phil-y1-7",
         "endTime": "15.10",
         "dayOfWeek": 3,
@@ -352,16 +342,6 @@
         "periodLabel": "บ่าย 2"
       },
       {
-        "id": "phil-y1-6",
-        "endTime": "11.30",
-        "dayOfWeek": 3,
-        "startTime": "09.00",
-        "courseCode": "999 999",
-        "courseName": "Ai เบื้องต้น",
-        "instructor": "รศ.ดร.บัญญพน สวัสดี/ดร.วิศาล มายัง",
-        "periodLabel": "เช้า"
-      },
-      {
         "id": "phil-y1-7",
         "endTime": "15.10",
         "dayOfWeek": 3,
@@ -565,16 +545,6 @@
         "periodLabel": "บ่าย 1"
       },
       {
-        "id": "phil-y2-7",
-        "endTime": "17.00",
-        "dayOfWeek": 3,
-        "startTime": "15.10",
-        "courseCode": "888 888",
-        "courseName": "Gamification",
-        "instructor": "รศ.ดร.วิลาวัลย์ / รศ.ดร.วราพร",
-        "periodLabel": "บ่าย 2"
-      },
-      {
         "id": "phil-y2-8",
         "endTime": "11.30",
         "dayOfWeek": 4,
@@ -665,16 +635,6 @@
         "courseName": "พุทธปรัชญา (เรียนห้อง D 220/2)",
         "instructor": "พระมหามงคลกานต์ ฐิตธมฺโม, รศ. ดร.*/ดร.ไชยา เสนแสนยา",
         "periodLabel": "บ่าย 1"
-      },
-      {
-        "id": "phil-y2-7",
-        "endTime": "17.00",
-        "dayOfWeek": 3,
-        "startTime": "15.10",
-        "courseCode": "888 888",
-        "courseName": "Gamification",
-        "instructor": "รศ.ดร.วิลาวัลย์ / รศ.ดร.วราพร",
-        "periodLabel": "บ่าย 2"
       },
       {
         "id": "phil-y2-8",

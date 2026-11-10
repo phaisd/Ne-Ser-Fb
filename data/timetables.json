@@ -361,16 +361,6 @@
         "periodLabel": "บ่าย 1"
       },
       {
-        "id": "phil-y2-7",
-        "endTime": "17.00",
-        "dayOfWeek": 3,
-        "startTime": "15.10",
-        "courseCode": "888 888",
-        "courseName": "Gamification",
-        "instructor": "รศ.ดร.วิลาวัลย์ / รศ.ดร.วราพร",
-        "periodLabel": "บ่าย 2"
-      },
-      {
         "id": "phil-y2-8",
         "endTime": "11.30",
         "dayOfWeek": 4,

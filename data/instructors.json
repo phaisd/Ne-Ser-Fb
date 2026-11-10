@@ -9,7 +9,7 @@
     "department": "คณะพุทธศาสตร์ มจร",
     "instructorType": "อาจารย์พิเศษ",
     "role": "INSTRUCTOR",
-    "coursesCount": 0,
+    "coursesCount": 2,
     "isActive": true,
     "aliases": [
       "Phramaha Khunpon Samacitto  Ph.D."
@@ -26,7 +26,7 @@
     "department": "คณะพุทธศาสตร์ มจร",
     "instructorType": "อาจารย์พิเศษ",
     "role": "INSTRUCTOR",
-    "coursesCount": 0,
+    "coursesCount": 5,
     "isActive": true,
     "aliases": [
       "Asst. Prof.(Specail) Dr. Supapan Permpool"
@@ -43,7 +43,7 @@
     "department": "คณะพุทธศาสตร์ มจร",
     "instructorType": "อาจารย์พิเศษ",
     "role": "INSTRUCTOR",
-    "coursesCount": 0,
+    "coursesCount": 4,
     "isActive": true,
     "aliases": [
       "Assoc. Prof. Pha Dhammavajirapanyacarya  Ph.D."
@@ -93,7 +93,6 @@
       "Duangden",
       "Thitanyano",
       "พระมหาดวงเด่น ฐิตญาโณ",
-      "ผศ.ดร.",
       "Asst. Prof. Dr. Phramaha Duangden Thitanyano",
       "duangden@mcu.ac.th",
       "duangden.mcu@gmail.com",
@@ -105,7 +104,7 @@
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-07T06:38:34.852Z",
     "instructorType": "อาจารย์ประจำ",
-    "coursesCount": 27
+    "coursesCount": 4
   },
   {
     "id": "inst-dharmapriya",
@@ -135,7 +134,7 @@
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-07T06:38:34.854Z",
     "instructorType": "อาจารย์พิเศษ",
-    "coursesCount": 4
+    "coursesCount": 3
   },
   {
     "id": "inst-dhanardhip",
@@ -187,7 +186,6 @@
       "Yongyut",
       "Dhiradhammo",
       "พระมหายงยุทธ ธีรธมฺโม",
-      "ผศ.ดร.",
       "Asst. Prof. Phramaha Yongyut Dhiradhammo",
       "yongyut.dhi@mcu.ac.th",
       "yongyut.mcu@gmail.com",
@@ -204,7 +202,7 @@
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-07T06:38:34.853Z",
     "instructorType": "อาจารย์ประจำ",
-    "coursesCount": 31
+    "coursesCount": 6
   },
   {
     "id": "inst-jaroon",
@@ -293,7 +291,6 @@
       "Mongkolkarn",
       "Thitadhammo",
       "พระมหามงคลกานต์ ฐิตธมฺโม",
-      "รศ.ดร.",
       "Assoc. Prof. Dr. Phramaha Mongkolkarn Thitadhammo",
       "mongkolkarn.thi@mcu.ac.th",
       "mongkolkarn.mcu@gmail.com",
@@ -305,7 +302,7 @@
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-07T06:38:34.853Z",
     "instructorType": "อาจารย์ประจำ",
-    "coursesCount": 26
+    "coursesCount": 5
   },
   {
     "id": "inst-suvinaya",
@@ -333,7 +330,7 @@
     "createdAt": "2026-11-02T06:57:57.005Z",
     "updatedAt": "2026-11-05T08:54:59.255Z",
     "instructorType": "อาจารย์พิเศษ",
-    "coursesCount": 4
+    "coursesCount": 1
   },
   {
     "id": "inst-sukheesom",
@@ -763,14 +760,13 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 24,
+    "coursesCount": 5,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.004Z",
     "aliases": [
       "พระมหาจีรวัฒน์",
       "กนฺตวณฺโณ",
       "พระมหาจีรวัฒน์ กนฺตวณฺโณ",
-      "รศ.ดร.",
       "Assoc. Prof. Dr. Phramaha Jeerawat Kantavanno",
       "teacher1@mcu.ac.th",
       "teacher1.mcu@gmail.com"
@@ -793,14 +789,13 @@
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 27,
+    "coursesCount": 5,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระจาตุรงค์",
       "อาจารสุโภ",
       "พระจาตุรงค์ อาจารสุโภ",
-      "ผศ.ดร.",
       "Asst. Prof. Dr. Phra Jaturong Ajarasubho",
       "teacher2@mcu.ac.th",
       "teacher2.mcu@gmail.com",
@@ -855,7 +850,7 @@
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาพระพุทธศาสนา",
     "role": "INSTRUCTOR",
-    "coursesCount": 25,
+    "coursesCount": 4,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -865,7 +860,6 @@
       "Yutthana",
       "Narajettho",
       "พระมหายุทธนา นรเชฏฺโฐ",
-      "รศ.ดร.",
       "Assoc. Prof. Phramaha Yutthana Narajettho",
       "yutthana.nar@mcu.ac.th",
       "yutthana.mcu@gmail.com",
@@ -918,7 +912,7 @@
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 3,
+    "coursesCount": 4,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -945,12 +939,11 @@
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาพระพุทธศาสนา",
     "role": "INSTRUCTOR",
-    "coursesCount": 27,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระครูสิริรัตนบัณฑิต",
-      "ผศ.ดร.",
       "Asst. Prof. Dr. Phrakhru Siriratanabundit",
       "teacher12@mcu.ac.th",
       "teacher12.mcu@gmail.com",
@@ -973,7 +966,7 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์ มจร",
     "role": "INSTRUCTOR",
-    "coursesCount": 27,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -982,7 +975,6 @@
       "Sitthivajara",
       "Phra Sitthivajarabundit",
       "พระสิทธิวัชรบัณฑิต",
-      "ผศ.ดร.",
       "Asst. Prof. Phra Sitthivajarabundit",
       "sitthivajarabundit@mcu.ac.th",
       "sitthivajarabundit.mcu@gmail.com",
@@ -1036,7 +1028,7 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 21,
+    "coursesCount": 6,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -1324,7 +1316,7 @@
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาพระพุทธศาสนา",
     "role": "INSTRUCTOR",
-    "coursesCount": 20,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -1414,12 +1406,11 @@
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาพระพุทธศาสนา",
     "role": "INSTRUCTOR",
-    "coursesCount": 24,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระครูภาวนาวัฒนบัณฑิต",
-      "รศ.ดร.",
       "พระครูภาวนาวัฒนบัณฑิต วิ.",
       "Assoc. Prof. Dr. Phrakhru Bhavanavattana-bundit",
       "teacher44@mcu.ac.th",
@@ -1515,14 +1506,13 @@
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 24,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระมหาขวัญชัย",
       "กิตฺติเมธี",
       "พระมหาขวัญชัย กิตฺติเมธี",
-      "รศ.ดร.",
       "Assoc. Prof. Dr. Phramaha Khwanchai Kittimedhi",
       "teacher48@mcu.ac.th",
       "teacher48.mcu@gmail.com",
@@ -1545,7 +1535,7 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 18,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -1602,7 +1592,7 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 2,
+    "coursesCount": 3,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -1773,12 +1763,11 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 27,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระราชอุดมวัชรเมธี",
-      "ผศ.ดร.",
       "Asst. Prof. Phra Raj-udomvajiramedhi",
       "teacher71@mcu.ac.th",
       "teacher71.mcu@gmail.com"
@@ -1858,12 +1847,11 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 27,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระราชญาณวชิรเวที",
-      "ผศ.ดร.",
       "Asst. Prof. Phra Raj-nyanavajiravedi",
       "teacher74@mcu.ac.th",
       "teacher74.mcu@gmail.com"
@@ -1997,13 +1985,12 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
-    "coursesCount": 24,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
       "พระพรหมวชิรวิมลมุนี",
       "พระพรหมวชิรวิมลมุนี วิ.",
-      "รศ.ดร.",
       "Assoc. Prof. Phra Brahmavajiravimalmuni",
       "teacher83@mcu.ac.th",
       "teacher83.mcu@gmail.com"
@@ -2140,7 +2127,7 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์ มจร",
     "role": "INSTRUCTOR",
-    "coursesCount": 29,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -2150,7 +2137,6 @@
       "Khunakaro",
       "Asst. Prof. PM. Somphong Khunakaro",
       "พระมหาสมพงษ์ คุณากโร",
-      "ผศ.ดร.",
       "Asst. Prof. Phramaha Somphong Khunakaro",
       "somphong.khu@mcu.ac.th",
       "somphong.mcu@gmail.com",
@@ -2256,7 +2242,7 @@
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -2319,7 +2305,7 @@
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์ มจร",
     "role": "INSTRUCTOR",
-    "coursesCount": 29,
+    "coursesCount": 2,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -2328,7 +2314,6 @@
       "Pornchai",
       "Sirivaro",
       "พระมหาพรชัย สิริวโร",
-      "ผศ.ดร.",
       "Asst. Prof. Phramaha Pornchai Sirivaro",
       "pornchai.sir@mcu.ac.th",
       "pornchai.mcu@gmail.com",
@@ -2383,7 +2368,7 @@
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาบาลีและสันสกฤต",
     "role": "INSTRUCTOR",
-    "coursesCount": 28,
+    "coursesCount": 6,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -2391,7 +2376,6 @@
       "Dhammavajirapanyacarya",
       "Assoc. Prof. Pha Dhammavajirapanyacarya",
       "พระธรรมวชิรปัญญาจารย์",
-      "รศ.ดร.",
       "พระธรรมวัชรปัญญาจารย์",
       "Assoc. Prof. Phra Dhammavajirapanyacarya",
       "dhammavajirapanya@mcu.ac.th",
@@ -2500,7 +2484,7 @@
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (หลักสูตรภาษาอังกฤษ)",
     "role": "INSTRUCTOR",
-    "coursesCount": 5,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -2556,7 +2540,7 @@
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 4,
+    "coursesCount": 1,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -2584,7 +2568,7 @@
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 1,
+    "coursesCount": 0,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
@@ -2611,7 +2595,7 @@
     "defaultPassword": "mcu123456",
     "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
     "role": "INSTRUCTOR",
-    "coursesCount": 1,
+    "coursesCount": 0,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.005Z",
     "aliases": [
