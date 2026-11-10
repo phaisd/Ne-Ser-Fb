@@ -51,6 +51,8 @@ interface SystemSettings {
   announcementText?: string;
   lineNotifyToken?: string;
   lineChannelAccessToken?: string;
+  lineTargetUserId?: string;
+  lineWebhookUrl?: string;
   contactPhone?: string;
   contactEmail?: string;
   websiteUrl?: string;
@@ -81,6 +83,8 @@ export default function SettingsPage() {
     systemServiceUrl: 'https://fb-service.mcu.ac.th/',
     lineNotifyToken: '',
     lineChannelAccessToken: '',
+    lineTargetUserId: '',
+    lineWebhookUrl: '',
     contactEmail: 'buddhism@mcu.ac.th',
   });
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -810,24 +814,78 @@ export default function SettingsPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          {/* LINE Notify Token */}
-          <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200 space-y-2">
+          {/* LINE Messaging API (LINE Official Account / Bot) */}
+          <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200 space-y-3">
             <label className="font-bold text-emerald-950 flex items-center justify-between">
-              <span>LINE Notify Access Token (แจ้งเตือนเข้ากลุ่มไลน์):</span>
+              <span>LINE OA / Messaging API (แนะนำที่สุด):</span>
               <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-100 px-2 py-0.5 rounded-full">
-                LINE Notify
+                LINE Bot Push
               </span>
             </label>
-            <input
-              type="password"
-              placeholder="ใส่ LINE Notify Token (เช่น ykX8...)"
-              value={settings.lineNotifyToken || ''}
-              onChange={(e) => setSettings({ ...settings, lineNotifyToken: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-            />
+            <div>
+              <span className="text-[11px] font-semibold text-slate-700 block mb-1">Channel Access Token:</span>
+              <input
+                type="password"
+                placeholder="ใส่ Channel Access Token (เช่น eyJhbGciOiJIUzI1Ni...)"
+                value={settings.lineChannelAccessToken || ''}
+                onChange={(e) => setSettings({ ...settings, lineChannelAccessToken: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </div>
+            <div>
+              <span className="text-[11px] font-semibold text-slate-700 block mb-1">Target User ID หรือ Group ID:</span>
+              <input
+                type="text"
+                placeholder="เช่น U8a91bc... หรือ C821948..."
+                value={settings.lineTargetUserId || ''}
+                onChange={(e) => setSettings({ ...settings, lineTargetUserId: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              นำ Token จาก <code>notify-bot.line.me</code> มาใส่ เพื่อให้ระบบส่งข้อความเข้ากลุ่มเจ้าหน้าที่ทันทีที่มีการยื่นคำร้องใหม่หรืออนุมัติเอกสาร
+              นำ Token และ User/Group ID จาก LINE Developers เพื่อให้บอทส่งข้อความแจ้งเตือนคำร้องเข้า LINE ส่วนตัวหรือกลุ่มเจ้าหน้าที่
             </p>
+          </div>
+
+          {/* LINE Notify Token & Webhook */}
+          <div className="space-y-4">
+            <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-200 space-y-2">
+              <label className="font-bold text-sky-950 flex items-center justify-between">
+                <span>LINE Notify Access Token (ทางเลือกเดิม):</span>
+                <span className="text-[10px] text-sky-700 font-semibold bg-sky-100 px-2 py-0.5 rounded-full">
+                  LINE Notify
+                </span>
+              </label>
+              <input
+                type="password"
+                placeholder="ใส่ LINE Notify Token (เช่น ykX8...)"
+                value={settings.lineNotifyToken || ''}
+                onChange={(e) => setSettings({ ...settings, lineNotifyToken: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+              />
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                นำ Token จาก <code>notify-bot.line.me</code> มาใส่
+              </p>
+            </div>
+
+            <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-200 space-y-2">
+              <label className="font-bold text-purple-950 flex items-center justify-between">
+                <span>LINE / Custom Webhook URL:</span>
+                <span className="text-[10px] text-purple-700 font-semibold bg-purple-100 px-2 py-0.5 rounded-full">
+                  Webhook
+                </span>
+              </label>
+              <input
+                type="text"
+                placeholder="https://script.google.com/macros/s/.../exec"
+                value={settings.lineWebhookUrl || ''}
+                onChange={(e) => setSettings({ ...settings, lineWebhookUrl: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              />
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                รองรับ Google Apps Script Webhook, Make หรือ Discord เพื่อส่งต่อเข้ากลุ่มไลน์
+              </p>
+            </div>
           </div>
 
           {/* Email Notification */}

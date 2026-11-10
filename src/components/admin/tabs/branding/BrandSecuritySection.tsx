@@ -1,9 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AlertTriangle,
   ShieldCheck,
+  Bell,
+  Send,
+  CheckCircle2,
+  ExternalLink,
+  MessageSquare,
+  Sparkles,
+  HelpCircle,
 } from 'lucide-react';
 import { SystemSettings } from '@/types';
 
@@ -16,8 +23,246 @@ export function BrandSecuritySection({
   settings,
   setSettings,
 }: BrandSecuritySectionProps) {
+  const [testingNotification, setTestingNotification] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testSuccess, setTestSuccess] = useState<boolean | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
+
+  const handleTestNotification = async () => {
+    setTestingNotification(true);
+    setTestResult(null);
+    setTestSuccess(null);
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentName: 'พระมหาทดสอบ ญาณวโร',
+          studentCode: '6501501001',
+          programLanguage: 'หลักสูตรภาษาไทย (Thai Program)',
+          degreeLevel: 'ปริญญาตรี',
+          major: 'สาขาวิชาพระพุทธศาสนา',
+          certType: 'หนังสือรับรองสถานภาพนิสิต',
+          requestPurpose: 'เพื่อเปิดบัญชีธนาคารและ Mobile Banking',
+          phone: '081-234-5678',
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.result) {
+        setTestSuccess(data.result.lineSuccess);
+        setTestResult(data.result.message || 'ส่งข้อความทดสอบสำเร็จ');
+      } else {
+        setTestSuccess(false);
+        setTestResult(data.error || 'การส่งทดสอบล้มเหลว');
+      }
+    } catch (err: any) {
+      setTestSuccess(false);
+      setTestResult(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } finally {
+      setTestingNotification(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
+      {/* Real-Time LINE Notification for Admin */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <span className="p-1 rounded-lg bg-emerald-100 text-emerald-700">
+                <Bell className="w-4 h-4" />
+              </span>
+              ระบบแจ้งเตือน LINE อัตโนมัติเมื่อมีผู้ยื่นคำร้อง (LINE Real-Time Notifications)
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              ส่งแจ้งเตือนเข้า LINE เจ้าหน้าที่/กลุ่มไลน์ทันทีที่นิสิตยื่นคำร้อง พร้อมระบุรหัสนิสิต, หลักสูตรภาษา, เรื่องที่ขอ และลิงก์อนุมัติ
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowGuide(!showGuide)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
+              <span>{showGuide ? 'ซ่อนคำแนะนำ' : 'วิธีตั้งค่ารับแจ้งเตือน'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleTestNotification}
+              disabled={testingNotification}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50 cursor-pointer"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>{testingNotification ? 'กำลังทดสอบ...' : 'ทดสอบส่งเข้า LINE'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Test Result Banner */}
+        {testResult && (
+          <div
+            className={`p-3.5 rounded-xl text-xs flex items-center justify-between animate-in fade-in ${
+              testSuccess
+                ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+                : 'bg-rose-50 text-rose-900 border border-rose-200'
+            }`}
+          >
+            <div className="flex items-center gap-2 font-medium">
+              <span>{testSuccess ? '✅' : '⚠️'}</span>
+              <span>{testResult}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setTestResult(null)}
+              className="text-slate-400 hover:text-slate-600 text-xs px-2"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Step-by-Step Guide Accordion */}
+        {showGuide && (
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-3 leading-relaxed text-slate-700">
+            <div className="font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
+              คำแนะนำวิธีการตั้งค่ารับแจ้งเตือนเข้า LINE สำหรับเจ้าหน้าที่:
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1.5">
+                <span className="font-bold text-emerald-700 block">แนวทางที่ 1: LINE Bot / OA (แนะนำ)</span>
+                <p className="text-[11px] text-slate-600">
+                  1. ไปที่ <a href="https://developers.line.biz" target="_blank" rel="noreferrer" className="text-emerald-600 underline">LINE Developers</a> สร้าง Messaging API Channel
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  2. คัดลอก <b>Channel Access Token</b> มาใส่ในช่องด้านล่าง
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  3. ใส่ <b>Your User ID</b> (ดูในหน้า Basic Settings) หรือใส่ Group ID ของกลุ่มไลน์
+                </p>
+              </div>
+
+              <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1.5">
+                <span className="font-bold text-sky-700 block">แนวทางที่ 2: LINE Notify Token</span>
+                <p className="text-[11px] text-slate-600">
+                  1. ไปที่ <a href="https://notify-bot.line.me" target="_blank" rel="noreferrer" className="text-sky-600 underline">notify-bot.line.me</a>
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  2. เข้าสู่ระบบแล้วกด <b>Generate token</b> เลือกกลุ่มที่ต้องการให้ส่ง
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  3. คัดลอก Token มาใส่ในช่อง LINE Notify Token ด้านล่าง
+                </p>
+              </div>
+
+              <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1.5">
+                <span className="font-bold text-purple-700 block">แนวทางที่ 3: Webhook (Apps Script/Discord)</span>
+                <p className="text-[11px] text-slate-600">
+                  1. ใช้งาน Google Apps Script Web App หรือ Make.com หรือ Discord Webhook
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  2. นำ URL Webhook มาวางในช่อง Webhook URL
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  3. ระบบจะส่งข้อมูลคำร้องเป็น JSON และ Text เข้า Webhook โดยตรง
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* LINE Configuration Inputs */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* Method 1: LINE Messaging API */}
+          <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                LINE Official Account / Messaging API (แนะนำ)
+              </span>
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                LINE Bot
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-semibold text-slate-700 block">
+                Channel Access Token (Long-lived):
+              </label>
+              <input
+                type="password"
+                placeholder="เช่น eyJhbGciOiJIUzI1Ni..."
+                value={settings.lineChannelAccessToken || ''}
+                onChange={(e) =>
+                  setSettings({ ...settings, lineChannelAccessToken: e.target.value })
+                }
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-semibold text-slate-700 block">
+                Target User ID หรือ Group ID (ผู้รับแจ้งเตือน):
+              </label>
+              <input
+                type="text"
+                placeholder="เช่น U8a91bc... หรือ C821948..."
+                value={settings.lineTargetUserId || ''}
+                onChange={(e) =>
+                  setSettings({ ...settings, lineTargetUserId: e.target.value })
+                }
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </div>
+          </div>
+
+          {/* Method 2 & 3: LINE Notify Token & Webhook */}
+          <div className="space-y-3">
+            {/* LINE Notify Token */}
+            <div className="p-4 rounded-xl border border-sky-200 bg-sky-50/40 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sky-950">LINE Notify Access Token:</span>
+                <span className="text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full">
+                  Notify
+                </span>
+              </div>
+              <input
+                type="password"
+                placeholder="เช่น ykX8f90248..."
+                value={settings.lineNotifyToken || ''}
+                onChange={(e) =>
+                  setSettings({ ...settings, lineNotifyToken: e.target.value })
+                }
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+              />
+            </div>
+
+            {/* Custom Webhook URL */}
+            <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-purple-950">Webhook URL (Apps Script / Discord):</span>
+                <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                  Webhook
+                </span>
+              </div>
+              <input
+                type="text"
+                placeholder="https://script.google.com/macros/s/.../exec หรือ Discord Webhook"
+                value={settings.lineWebhookUrl || ''}
+                onChange={(e) =>
+                  setSettings({ ...settings, lineWebhookUrl: e.target.value })
+                }
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 7. Certificate Notice Banners */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">

@@ -29,6 +29,11 @@ export interface SystemSettings {
   accuracyAlertDesc?: string;
   accuracyAlertEnabled?: boolean;
   forcePasswordChangeOnFirstLogin?: boolean;
+  // LINE & Admin Real-Time Notifications
+  lineNotifyToken?: string;
+  lineChannelAccessToken?: string;
+  lineTargetUserId?: string;
+  lineWebhookUrl?: string;
   admissionPeriodOpen?: boolean;
   admissionPeriodTitle?: string;
   admissionPeriodDates?: string;

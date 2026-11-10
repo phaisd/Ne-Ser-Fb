@@ -69,14 +69,30 @@ export async function POST(request: Request) {
       ...rest,
     });
 
-    // Trigger Notification for new request
+    // Determine Program Language (หลักสูตรภาษาไทย / ภาคอินเตอร์)
+    const isInter =
+      rest.targetAudience === 'INTERNATIONAL' ||
+      rest.nationality === 'International' ||
+      (rest.nationality && !['ไทย', 'Thai', 'th', 'TH'].includes(String(rest.nationality).trim()));
+
+    const programLanguage = isInter
+      ? 'หลักสูตรนานาชาติ / ภาษาอังกฤษ (International Program)'
+      : 'หลักสูตรภาษาไทย (Thai Program)';
+
+    // Trigger Notification for new request with rich details
     sendNotification({
       toEmail: email,
       studentName: fullName,
       studentCode,
       certType,
+      programLanguage,
+      degreeLevel: degreeLevel || '',
+      major: major || '',
+      requestPurpose: requestPurpose || certType,
+      phone: phone || '',
       status: 'PENDING',
-    }).catch((e) => console.error('Notification error:', e));
+      actionUrl: process.env.NEXTAUTH_URL || 'https://ne-ser-fb.vercel.app/admin',
+    }).catch((e) => console.error('Notification error on POST:', e));
 
     return NextResponse.json({ success: true, data: newReq });
   } catch (err: any) {
@@ -105,14 +121,29 @@ export async function PATCH(request: Request) {
 
     // Trigger Notification for status update (Approved / Rejected)
     if (status) {
+      const isInter =
+        (updated as any).targetAudience === 'INTERNATIONAL' ||
+        (updated as any).nationality === 'International' ||
+        ((updated as any).nationality && !['ไทย', 'Thai', 'th', 'TH'].includes(String((updated as any).nationality).trim()));
+
+      const programLanguage = isInter
+        ? 'หลักสูตรนานาชาติ / ภาษาอังกฤษ (International Program)'
+        : 'หลักสูตรภาษาไทย (Thai Program)';
+
       sendNotification({
         toEmail: updated.email,
         studentName: updated.fullName,
         studentCode: updated.studentCode,
         docNo: updated.docNo,
         certType: updated.certType,
+        programLanguage,
+        degreeLevel: (updated as any).degreeLevel || '',
+        major: (updated as any).major || '',
+        requestPurpose: (updated as any).requestPurpose || updated.certType,
+        phone: (updated as any).phone || '',
         status: status as any,
         rejectReason: (rest as any).rejectReason || (rest as any).note,
+        actionUrl: process.env.NEXTAUTH_URL || 'https://ne-ser-fb.vercel.app/admin',
       }).catch((e) => console.error('Notification error on PATCH:', e));
     }
 
