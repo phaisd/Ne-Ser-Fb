@@ -22,6 +22,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { CertificateRequest, CertTypeItem, StudentLookupItem } from './types';
+import { isAdmissionPeriodActive } from '@/lib/utils';
 
 export interface CertificateRequestFormProps {
   currentUser: any;
@@ -284,8 +285,9 @@ export function CertificateRequestForm({
     }
     // 2. Candidate Check: Admission period check + Candidate identity verification
     else if (isCandidateCert) {
-      if (settings.admissionPeriodOpen === false) {
-        alert(`🔒 ขณะนี้อยู่นอกช่วงเวลาการยื่นขอหนังสือรับรองสำหรับผู้ผ่านการคัดเลือก (${settings.admissionPeriodDates || 'ปิดระบบรับคำร้อง'})`);
+      const adm = isAdmissionPeriodActive(settings);
+      if (!adm.isOpen) {
+        alert(`🔒 ขณะนี้อยู่นอกช่วงเวลาการยื่นขอหนังสือรับรองสำหรับผู้ผ่านการคัดเลือก (${adm.reason || adm.periodText || 'ปิดระบบรับคำร้อง'})`);
         return;
       }
       if (!candidateVerified && !currentUser) {

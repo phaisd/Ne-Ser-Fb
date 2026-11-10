@@ -37,6 +37,11 @@ export interface SystemSettings {
   admissionPeriodOpen?: boolean;
   admissionPeriodTitle?: string;
   admissionPeriodDates?: string;
+  admissionMode?: 'AUTO_MONTHS' | 'MANUAL';
+  admissionStartMonth?: number;
+  admissionEndMonth?: number;
+  admissionMonths?: number[];
+  hideCandidateTabWhenClosed?: boolean;
   footerTitleTh?: string;
   officeHours?: string;
   footerCustomNote?: string;

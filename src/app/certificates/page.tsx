@@ -366,6 +366,7 @@ export default function CertificatesPage() {
                 cardAudienceFilter={cardAudienceFilter}
                 setCardAudienceFilter={setCardAudienceFilter}
                 isStaffUser={isStaffUser}
+                currentUser={currentUser}
                 selectedCert={selectedCert}
                 onCardSelect={handleCardSelect}
                 onProceedToForm={handleProceedToForm}

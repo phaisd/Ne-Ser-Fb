@@ -140,3 +140,69 @@ export function calculateNextDocNo(
     nextNum,
   };
 }
+
+export const THAI_MONTH_NAMES = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+];
+
+export const THAI_MONTH_SHORT_NAMES = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+];
+
+/**
+ * Checks if the Candidate Admission Period is currently open based on system settings.
+ */
+export function isAdmissionPeriodActive(settings?: any): {
+  isOpen: boolean;
+  reason?: string;
+  periodText?: string;
+} {
+  if (!settings) return { isOpen: true };
+
+  // 1. Explicit master toggle OFF
+  if (settings.admissionPeriodOpen === false) {
+    return {
+      isOpen: false,
+      reason: 'ระบบปิดรับคำร้องสำหรับผู้ผ่านการคัดเลือกใหม่ชั่วคราว',
+      periodText: settings.admissionPeriodDates || 'ปิดรับคำร้องชั่วคราว',
+    };
+  }
+
+  // 2. Month-based automatic schedule
+  if (settings.admissionStartMonth && settings.admissionEndMonth) {
+    const startM = Number(settings.admissionStartMonth);
+    const endM = Number(settings.admissionEndMonth);
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+
+    let inRange = false;
+    if (startM <= endM) {
+      inRange = currentMonth >= startM && currentMonth <= endM;
+    } else {
+      inRange = currentMonth >= startM || currentMonth <= endM;
+    }
+
+    const startName = THAI_MONTH_NAMES[startM - 1] || '';
+    const endName = THAI_MONTH_NAMES[endM - 1] || '';
+    const periodDisplay = settings.admissionPeriodDates || `ช่วงเดือน ${startName} - ${endName}`;
+
+    if (!inRange) {
+      return {
+        isOpen: false,
+        reason: `เปิดรับเฉพาะช่วงเดือน ${startName} ถึง ${endName}`,
+        periodText: periodDisplay,
+      };
+    }
+
+    return {
+      isOpen: true,
+      periodText: periodDisplay,
+    };
+  }
+
+  return {
+    isOpen: true,
+    periodText: settings.admissionPeriodDates || '',
+  };
+}

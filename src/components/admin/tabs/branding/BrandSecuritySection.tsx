@@ -11,6 +11,8 @@ import {
   MessageSquare,
   Sparkles,
   HelpCircle,
+  Calendar,
+  GraduationCap,
 } from 'lucide-react';
 import { SystemSettings } from '@/types';
 
@@ -419,6 +421,192 @@ export function BrandSecuritySection({
                   className="w-full px-3 py-2 rounded-xl border border-amber-200 bg-white text-xs text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 8. Candidate Admission Period Schedule */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-emerald-600" />
+              กำหนดช่วงเวลาเปิดรับคำร้อง ผู้ผ่านการคัดเลือกเข้าศึกษาใหม่ (Admission Period Schedule)
+            </h3>
+            <p className="text-xs text-slate-500">
+              กำหนดเดือนที่เปิดรับสมัคร เพื่อให้ระบบเปิด-ปิดการยื่นขอหนังสือรับรองสำหรับผู้ผ่านการคัดเลือกใหม่อัตโนมัติ
+            </p>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer font-bold text-emerald-800 text-xs bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 shrink-0">
+            <input
+              type="checkbox"
+              checked={settings.admissionPeriodOpen !== false}
+              onChange={(e) =>
+                setSettings({ ...settings, admissionPeriodOpen: e.target.checked })
+              }
+              className="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+            />
+            <span>เปิดรับคำร้องผู้ผ่านการคัดเลือก</span>
+          </label>
+        </div>
+
+        <div className="space-y-4 text-xs">
+          {/* Mode Selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label
+              className={`p-3.5 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
+                (settings.admissionMode || 'AUTO_MONTHS') === 'AUTO_MONTHS'
+                  ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-400'
+                  : 'bg-white border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <input
+                type="radio"
+                name="admissionMode"
+                value="AUTO_MONTHS"
+                checked={(settings.admissionMode || 'AUTO_MONTHS') === 'AUTO_MONTHS'}
+                onChange={() => setSettings({ ...settings, admissionMode: 'AUTO_MONTHS' })}
+                className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div className="space-y-0.5">
+                <div className="font-bold text-slate-800">เปิดอัตโนมัติตามช่วงเดือนที่กำหนด (แนะนำ)</div>
+                <div className="text-[11px] text-slate-500">
+                  ระบบจะเปิดให้ยื่นเฉพาะในเดือนที่เลือก และปิดอัตโนมัติเมื่อพ้นช่วงเดือน
+                </div>
+              </div>
+            </label>
+
+            <label
+              className={`p-3.5 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
+                settings.admissionMode === 'MANUAL'
+                  ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-400'
+                  : 'bg-white border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <input
+                type="radio"
+                name="admissionMode"
+                value="MANUAL"
+                checked={settings.admissionMode === 'MANUAL'}
+                onChange={() => setSettings({ ...settings, admissionMode: 'MANUAL' })}
+                className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div className="space-y-0.5">
+                <div className="font-bold text-slate-800">เปิดตลอดเวลา (ตามสวิตช์เปิด/ปิดด้านบน)</div>
+                <div className="text-[11px] text-slate-500">
+                  เปิดให้ยื่นได้ตลอดทั้งปีตามการควบคุมของ Admin
+                </div>
+              </div>
+            </label>
+          </div>
+
+          {/* Month Range Pickers (if AUTO_MONTHS) */}
+          <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/30 space-y-3">
+            <div className="font-bold text-emerald-950 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-emerald-600" />
+              กำหนดช่วงเดือนที่เปิดรับสมัคร (Start & End Months)
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  เดือนเริ่มต้นเปิดรับสมัคร:
+                </label>
+                <select
+                  value={settings.admissionStartMonth ?? 3}
+                  onChange={(e) =>
+                    setSettings({ ...settings, admissionStartMonth: Number(e.target.value) })
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                >
+                  <option value={1}>1. มกราคม (January)</option>
+                  <option value={2}>2. กุมภาพันธ์ (February)</option>
+                  <option value={3}>3. มีนาคม (March)</option>
+                  <option value={4}>4. เมษายน (April)</option>
+                  <option value={5}>5. พฤษภาคม (May)</option>
+                  <option value={6}>6. มิถุนายน (June)</option>
+                  <option value={7}>7. กรกฎาคม (July)</option>
+                  <option value={8}>8. สิงหาคม (August)</option>
+                  <option value={9}>9. กันยายน (September)</option>
+                  <option value={10}>10. ตุลาคม (October)</option>
+                  <option value={11}>11. พฤศจิกายน (November)</option>
+                  <option value={12}>12. ธันวาคม (December)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  เดือนสิ้นสุดการเปิดรับสมัคร:
+                </label>
+                <select
+                  value={settings.admissionEndMonth ?? 7}
+                  onChange={(e) =>
+                    setSettings({ ...settings, admissionEndMonth: Number(e.target.value) })
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                >
+                  <option value={1}>1. มกราคม (January)</option>
+                  <option value={2}>2. กุมภาพันธ์ (February)</option>
+                  <option value={3}>3. มีนาคม (March)</option>
+                  <option value={4}>4. เมษายน (April)</option>
+                  <option value={5}>5. พฤษภาคม (May)</option>
+                  <option value={6}>6. มิถุนายน (June)</option>
+                  <option value={7}>7. กรกฎาคม (July)</option>
+                  <option value={8}>8. สิงหาคม (August)</option>
+                  <option value={9}>9. กันยายน (September)</option>
+                  <option value={10}>10. ตุลาคม (October)</option>
+                  <option value={11}>11. พฤศจิกายน (November)</option>
+                  <option value={12}>12. ธันวาคม (December)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  ข้อความระบุช่วงเวลา (แสดงให้นิสิตเห็น):
+                </label>
+                <input
+                  type="text"
+                  placeholder="เช่น 1 มีนาคม 2569 - 31 กรกฎาคม 2569"
+                  value={settings.admissionPeriodDates || ''}
+                  onChange={(e) =>
+                    setSettings({ ...settings, admissionPeriodDates: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  ข้อความหัวข้อประกาศ:
+                </label>
+                <input
+                  type="text"
+                  placeholder="เช่น เปิดรับคำร้องหนังสือรับรองสำหรับผู้ผ่านการคัดเลือกเข้าศึกษาใหม่"
+                  value={settings.admissionPeriodTitle || ''}
+                  onChange={(e) =>
+                    setSettings({ ...settings, admissionPeriodTitle: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-emerald-100 flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={settings.hideCandidateTabWhenClosed === true}
+                  onChange={(e) =>
+                    setSettings({ ...settings, hideCandidateTabWhenClosed: e.target.checked })
+                  }
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                />
+                <span>ซ่อนปุ่มแท็บ "ผู้ผ่านการคัดเลือกใหม่" ทั้งหมดเมื่ออยู่นอกช่วงเวลารับสมัคร</span>
+              </label>
             </div>
           </div>
         </div>

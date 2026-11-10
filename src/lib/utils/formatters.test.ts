@@ -6,6 +6,7 @@ import {
   formatPhoneNumber,
   extractDocSeqNumber,
   calculateNextDocNo,
+  isAdmissionPeriodActive,
 } from './formatters';
 
 describe('formatters utility (Data Protection & Localization)', () => {
@@ -62,5 +63,30 @@ describe('formatters utility (Data Protection & Localization)', () => {
     expect(nextAfter50.nextNum).toBe(51);
     expect(nextAfter50.seqOnly).toBe('051');
     expect(nextAfter50.docNoWithYear).toBe('051/2569');
+  });
+
+  it('evaluates candidate admission period correctly', () => {
+    // Master switch OFF
+    expect(isAdmissionPeriodActive({ admissionPeriodOpen: false }).isOpen).toBe(false);
+
+    // Master switch ON, no month restrictions
+    expect(isAdmissionPeriodActive({ admissionPeriodOpen: true }).isOpen).toBe(true);
+
+    // Check with month range that includes current month
+    const currentMonth = new Date().getMonth() + 1;
+    const activeSetting = {
+      admissionPeriodOpen: true,
+      admissionStartMonth: currentMonth,
+      admissionEndMonth: currentMonth,
+    };
+    expect(isAdmissionPeriodActive(activeSetting).isOpen).toBe(true);
+
+    // Check with month range that excludes current month
+    const inactiveSetting = {
+      admissionPeriodOpen: true,
+      admissionStartMonth: (currentMonth % 12) + 2, // 2 months ahead
+      admissionEndMonth: (currentMonth % 12) + 3,
+    };
+    expect(isAdmissionPeriodActive(inactiveSetting).isOpen).toBe(false);
   });
 });

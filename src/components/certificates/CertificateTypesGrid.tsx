@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/hooks/useLanguage';
 import {
   GraduationCap,
@@ -19,8 +20,13 @@ import {
   AlertTriangle,
   AlertCircle,
   Clock,
+  LogIn,
+  Calendar,
+  Lock,
+  User,
 } from 'lucide-react';
 import { CertTypeItem } from './types';
+import { isAdmissionPeriodActive } from '@/lib/utils';
 
 interface CertificateTypesGridProps {
   settings: any;
@@ -29,6 +35,7 @@ interface CertificateTypesGridProps {
   cardAudienceFilter: 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE' | 'ALL';
   setCardAudienceFilter: (val: 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE' | 'ALL') => void;
   isStaffUser: boolean;
+  currentUser?: any;
   selectedCert: CertTypeItem | null;
   onCardSelect: (card: CertTypeItem) => void;
   onProceedToForm?: () => void;
@@ -79,11 +86,27 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
   cardAudienceFilter,
   setCardAudienceFilter,
   isStaffUser,
+  currentUser,
   selectedCert,
   onCardSelect,
   onProceedToForm,
 }) => {
   const { t, isEn } = useLanguage();
+  const admissionStatus = isAdmissionPeriodActive(settings);
+  const showCandidateButton =
+    admissionStatus.isOpen || settings?.hideCandidateTabWhenClosed !== true;
+
+  const isStudentAudience =
+    cardAudienceFilter === 'ALL' ||
+    cardAudienceFilter === 'THAI' ||
+    cardAudienceFilter === 'INTERNATIONAL';
+
+  const isCandidateAudience = cardAudienceFilter === 'CANDIDATE';
+  const isStaffAudience = cardAudienceFilter === 'STAFF';
+
+  // Auth requirement conditions:
+  const requiresStudentLogin = isStudentAudience && !currentUser;
+  const requiresStaffLogin = isStaffAudience && !isStaffUser;
   return (
     <>
       {/* Important Notices for Students */}
@@ -224,128 +247,254 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
             )}
 
             {/* Candidate Filter Button */}
-            <button
-              type="button"
-              onClick={() => setCardAudienceFilter('CANDIDATE')}
-              className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                cardAudienceFilter === 'CANDIDATE'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-emerald-700 hover:bg-emerald-50'
-              }`}
-            >
-              <span>🎓 {t.certFilterCandidate}</span>
-            </button>
+            {showCandidateButton && (
+              <button
+                type="button"
+                onClick={() => setCardAudienceFilter('CANDIDATE')}
+                className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                  cardAudienceFilter === 'CANDIDATE'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-emerald-700 hover:bg-emerald-50'
+                }`}
+              >
+                <span>🎓 {t.certFilterCandidate}</span>
+                {!admissionStatus.isOpen && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-normal">
+                    ปิดรับ
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visibleCards.map((card) => {
-            const isSelected = selectedCert?.id === card.id;
-            const isThai = card.targetAudience === 'THAI';
-            const isStaff = card.targetAudience === 'STAFF';
-            const isCandidate = card.targetAudience === 'CANDIDATE' || card.category === 'ADMISSION';
+        {/* User Authenticated Badge (if logged in) */}
+        {currentUser && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-3.5 bg-gradient-to-r from-purple-50 via-white to-purple-50/50 border border-purple-200 rounded-2xl text-xs">
+            <div className="flex items-center gap-2.5 text-purple-900">
+              <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                <User className="w-4 h-4" />
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-slate-500">{isEn ? 'Logged in as:' : 'เข้าสู่ระบบในชื่อ:'}</span>
+                <strong className="font-extrabold text-purple-950">{currentUser.name || currentUser.fullName}</strong>
+                {currentUser.studentCode && (
+                  <span className="font-mono px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 font-bold text-[11px]">
+                    {currentUser.studentCode}
+                  </span>
+                )}
+              </div>
+            </div>
+            <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 self-start sm:self-auto shrink-0">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{isEn ? 'Authenticated Account' : 'ยืนยันตัวตนในระบบแล้ว'}</span>
+            </span>
+          </div>
+        )}
 
-            return (
-              <div
-                key={card.id}
-                onClick={() => onCardSelect(card)}
-                className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 text-left flex flex-col justify-between ${
-                  isSelected
-                    ? isStaff
-                      ? 'border-amber-500 bg-amber-50/40 shadow-md ring-2 ring-amber-500/20'
-                      : isCandidate
-                      ? 'border-emerald-600 bg-emerald-50/40 shadow-md ring-2 ring-emerald-500/20'
-                      : isThai
-                      ? 'border-blue-600 bg-blue-50/40 shadow-md ring-2 ring-blue-500/20'
-                      : 'border-purple-600 bg-purple-50/40 shadow-md ring-2 ring-purple-500/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 shadow-sm'
-                }`}
+        {/* Content View: Login Prompt vs Candidate Notice vs Normal Cards Grid */}
+        {requiresStudentLogin ? (
+          /* REPLACE IMAGE 2 WITH LOGIN REQUIRED PROMPT FOR STUDENTS */
+          <div className="p-8 sm:p-12 text-center bg-gradient-to-b from-purple-50/70 via-white to-purple-50/30 rounded-3xl border-2 border-dashed border-purple-300/80 shadow-xs space-y-4 animate-in fade-in">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/25">
+              <LogIn className="w-8 h-8" />
+            </div>
+            <div className="max-w-md mx-auto space-y-2">
+              <h3 className="text-base sm:text-lg font-black text-slate-900">
+                {isEn
+                  ? 'Students please log in to request certificates'
+                  : 'นิสิตกรุณาเข้าระบบสำหรับการขอหนังสือรับรอง'}
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                {isEn
+                  ? 'To ensure accuracy of records and protect student privacy (PDPA), please log in with your student account before requesting.'
+                  : 'เพื่อความถูกต้องของข้อมูลตามระบบทะเบียนและความปลอดภัยของข้อมูลส่วนบุคคล (PDPA) กรุณาเข้าสู่ระบบด้วยบัญชีนิสิตก่อนยื่นคำร้อง'}
+              </p>
+            </div>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href="/login?callbackUrl=/certificates"
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-purple-600/30 flex items-center justify-center gap-2 transition cursor-pointer"
               >
-                <div>
-                  {/* Card Header: Icon & Badge */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-                        isStaff ? 'bg-amber-100' : isCandidate ? 'bg-emerald-100' : isThai ? 'bg-blue-100' : 'bg-purple-100'
-                      }`}
-                    >
-                      {renderCertIcon(card.iconName, card.targetAudience)}
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {isStaff ? (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                          👔 {isEn ? 'Faculty / Staff' : 'อาจารย์/บุคลากร'}
-                        </span>
-                      ) : isCandidate ? (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                          🎓 {isEn ? 'Candidate' : 'ผู้ผ่านการคัดเลือก'}
-                        </span>
-                      ) : isThai ? (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700">
-                          🇹🇭 {isEn ? 'Thai Student' : 'นิสิตไทย'}
-                        </span>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700">
-                          🌐 {isEn ? 'International' : 'ต่างชาติ (Intl)'}
-                        </span>
-                      )}
-
-                      {isSelected && (
-                        <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Card Title & Code */}
-                  <h3
-                    className={`font-bold text-sm leading-snug line-clamp-2 ${
-                      isSelected
-                        ? isStaff
-                          ? 'text-amber-950 font-black'
-                          : isCandidate
-                          ? 'text-emerald-950 font-black'
-                          : isThai
-                          ? 'text-blue-900'
-                          : 'text-purple-900'
-                        : 'text-slate-800'
-                    }`}
-                  >
-                    {isEn ? ((card as any).titleEn || (card as any).nameEn || card.name) : ((card as any).titleTh || card.name)}
-                  </h3>
-
-                  <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">
-                    {isEn ? ((card as any).descriptionEn || card.description) : ((card as any).descriptionTh || card.description)}
-                  </p>
-                </div>
-
-                {/* Bottom Status */}
-                <div className="mt-4 pt-3 border-t border-slate-100/80 flex items-center justify-between text-[11px]">
-                  <span className="font-mono text-slate-400 font-semibold">{card.code || 'CERT'}</span>
-                  <span
-                    className={`font-semibold flex items-center gap-1 ${
-                      isSelected
-                        ? isStaff
-                          ? 'text-amber-800'
-                          : isCandidate
-                          ? 'text-emerald-800'
-                          : isThai
-                          ? 'text-blue-700'
-                          : 'text-purple-700'
-                        : 'text-slate-400 group-hover:text-purple-600'
-                    }`}
-                  >
-                    <span>{isSelected ? (isEn ? 'Selected ✓' : '✓ เลือกแล้ว (คลิกเพื่อไปกรอกแบบฟอร์ม)') : (isEn ? 'Click to select →' : 'คลิกเลือกการ์ดนี้เพื่อไปข้อ 2')}</span>
-                    <span className="text-xs">➔</span>
+                <LogIn className="w-4 h-4" />
+                <span>{isEn ? 'Log in now (Student)' : 'เข้าสู่ระบบ (Login)'}</span>
+              </Link>
+              {showCandidateButton && (
+                <button
+                  type="button"
+                  onClick={() => setCardAudienceFilter('CANDIDATE')}
+                  className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs transition cursor-pointer"
+                >
+                  🎓 {isEn ? 'Newly Admitted Candidates (Click here)' : 'ผู้ผ่านการคัดเลือกเข้าเรียนใหม่ (คลิกที่นี่)'}
+                </button>
+              )}
+            </div>
+          </div>
+        ) : requiresStaffLogin ? (
+          /* STAFF LOGIN REQUIRED PROMPT */
+          <div className="p-8 sm:p-12 text-center bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 rounded-3xl border-2 border-dashed border-amber-300 shadow-xs space-y-4 animate-in fade-in">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-600 text-white flex items-center justify-center shadow-lg shadow-amber-600/25">
+              <Lock className="w-8 h-8" />
+            </div>
+            <div className="max-w-md mx-auto space-y-2">
+              <h3 className="text-base sm:text-lg font-black text-slate-900">
+                เฉพาะอาจารย์และเจ้าหน้าที่คณะพุทธศาสตร์เท่านั้น
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                กรุณาเข้าสู่ระบบด้วยบัญชีอาจารย์หรือบุคลากรเพื่อยื่นคำร้องขอหนังสือรับรองการปฏิบัติงาน/ภาระงานสอน
+              </p>
+            </div>
+            <div className="pt-2 flex justify-center">
+              <Link
+                href="/login?callbackUrl=/certificates"
+                className="px-6 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-amber-600/30 flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>เข้าสู่ระบบอาจารย์/บุคลากร</span>
+              </Link>
+            </div>
+          </div>
+        ) : isCandidateAudience && !admissionStatus.isOpen ? (
+          /* CANDIDATE CLOSED NOTICE */
+          <div className="p-8 sm:p-12 text-center bg-gradient-to-b from-amber-50/80 via-white to-amber-50/30 rounded-3xl border-2 border-dashed border-amber-300 shadow-xs space-y-4 animate-in fade-in">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/25">
+              <Calendar className="w-8 h-8" />
+            </div>
+            <div className="max-w-md mx-auto space-y-2">
+              <h3 className="text-base sm:text-lg font-black text-slate-900">
+                ขณะนี้อยู่นอกช่วงเวลาเปิดรับคำร้องสำหรับผู้ผ่านการคัดเลือกใหม่
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {admissionStatus.reason || 'กรุณาติดตามกำหนดการเปิดรับสมัครและยื่นคำร้องของคณะพุทธศาสตร์'}
+              </p>
+              {admissionStatus.periodText && (
+                <div className="pt-1">
+                  <span className="inline-block px-4 py-1.5 rounded-full bg-amber-100 text-amber-900 font-bold text-xs border border-amber-300 shadow-2xs">
+                    📅 กำหนดการเปิดรับคำร้อง: {admissionStatus.periodText}
                   </span>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setCardAudienceFilter('THAI')}
+                className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs transition cursor-pointer"
+              >
+                ← กลับไปดูหนังสือรับรองสำหรับนิสิต
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Cards Grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {visibleCards.map((card) => {
+              const isSelected = selectedCert?.id === card.id;
+              const isThai = card.targetAudience === 'THAI';
+              const isStaff = card.targetAudience === 'STAFF';
+              const isCandidate = card.targetAudience === 'CANDIDATE' || card.category === 'ADMISSION';
+
+              return (
+                <div
+                  key={card.id}
+                  onClick={() => onCardSelect(card)}
+                  className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 text-left flex flex-col justify-between ${
+                    isSelected
+                      ? isStaff
+                        ? 'border-amber-500 bg-amber-50/40 shadow-md ring-2 ring-amber-500/20'
+                        : isCandidate
+                        ? 'border-emerald-600 bg-emerald-50/40 shadow-md ring-2 ring-emerald-500/20'
+                        : isThai
+                        ? 'border-blue-600 bg-blue-50/40 shadow-md ring-2 ring-blue-500/20'
+                        : 'border-purple-600 bg-purple-50/40 shadow-md ring-2 ring-purple-500/20'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 shadow-sm'
+                  }`}
+                >
+                  <div>
+                    {/* Card Header: Icon & Badge */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                          isStaff ? 'bg-amber-100' : isCandidate ? 'bg-emerald-100' : isThai ? 'bg-blue-100' : 'bg-purple-100'
+                        }`}
+                      >
+                        {renderCertIcon(card.iconName, card.targetAudience)}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {isStaff ? (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            👔 {isEn ? 'Faculty / Staff' : 'อาจารย์/บุคลากร'}
+                          </span>
+                        ) : isCandidate ? (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                            🎓 {isEn ? 'Candidate' : 'ผู้ผ่านการคัดเลือก'}
+                          </span>
+                        ) : isThai ? (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700">
+                            🇹🇭 {isEn ? 'Thai Student' : 'นิสิตไทย'}
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700">
+                            🌐 {isEn ? 'International' : 'ต่างชาติ (Intl)'}
+                          </span>
+                        )}
+
+                        {isSelected && (
+                          <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Card Title & Code */}
+                    <h3
+                      className={`font-bold text-sm leading-snug line-clamp-2 ${
+                        isSelected
+                          ? isStaff
+                            ? 'text-amber-950 font-black'
+                            : isCandidate
+                            ? 'text-emerald-950 font-black'
+                            : isThai
+                            ? 'text-blue-900'
+                            : 'text-purple-900'
+                          : 'text-slate-800'
+                      }`}
+                    >
+                      {isEn ? ((card as any).titleEn || (card as any).nameEn || card.name) : ((card as any).titleTh || card.name)}
+                    </h3>
+
+                    <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">
+                      {isEn ? ((card as any).descriptionEn || card.description) : ((card as any).descriptionTh || card.description)}
+                    </p>
+                  </div>
+
+                  {/* Bottom Status */}
+                  <div className="mt-4 pt-3 border-t border-slate-100/80 flex items-center justify-between text-[11px]">
+                    <span className="font-mono text-slate-400 font-semibold">{card.code || 'CERT'}</span>
+                    <span
+                      className={`font-semibold flex items-center gap-1 ${
+                        isSelected
+                          ? isStaff
+                            ? 'text-amber-800'
+                            : isCandidate
+                            ? 'text-emerald-800'
+                            : isThai
+                            ? 'text-blue-700'
+                            : 'text-purple-700'
+                          : 'text-slate-400 group-hover:text-purple-600'
+                      }`}
+                    >
+                      <span>{isSelected ? (isEn ? 'Selected ✓' : '✓ เลือกแล้ว (คลิกเพื่อไปกรอกแบบฟอร์ม)') : (isEn ? 'Click to select →' : 'คลิกเลือกการ์ดนี้เพื่อไปข้อ 2')}</span>
+                      <span className="text-xs">➔</span>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {selectedCert && (
           <div
