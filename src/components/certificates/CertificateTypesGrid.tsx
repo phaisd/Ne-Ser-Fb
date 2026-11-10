@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import {
   GraduationCap,
   Home,
@@ -82,6 +83,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
   onCardSelect,
   onProceedToForm,
 }) => {
+  const { t, isEn } = useLanguage();
   return (
     <>
       {/* Important Notices for Students */}
@@ -95,12 +97,12 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
               </div>
               <div className="space-y-1">
                 <span className="inline-block px-2.5 py-0.5 rounded-full bg-red-200/90 text-red-900 font-extrabold text-[10px] uppercase tracking-wider">
-                  ⚠️ แจ้งเตือนสำคัญ (Visa Alert)
+                  ⚠️ {t.certVisaAlertTitle}
                 </span>
                 <p className="font-bold text-sm text-red-950 leading-snug">
-                  {settings?.visaAlertTitle || 'สำหรับการต่อวีซ่า ให้ดำเนินการก่อนหนังสือเดินทางหมดอายุ 30 วัน'}
+                  {isEn ? t.certVisaAlertDesc : (settings?.visaAlertTitle || 'สำหรับการต่อวีซ่า ให้ดำเนินการก่อนหนังสือเดินทางหมดอายุ 30 วัน')}
                 </p>
-                {settings?.visaAlertDesc && (
+                {settings?.visaAlertDesc && !isEn && (
                   <p className="text-xs text-red-800 leading-relaxed">
                     {settings.visaAlertDesc}
                   </p>
@@ -117,12 +119,12 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
               </div>
               <div className="space-y-1">
                 <span className="inline-block px-2.5 py-0.5 rounded-full bg-sky-200/90 text-sky-900 font-extrabold text-[10px] uppercase tracking-wider">
-                  ⏱️ ระยะเวลาดำเนินการ (Timeline)
+                  ⏱️ {t.certTimelineAlertTitle}
                 </span>
                 <p className="font-bold text-sm text-sky-950 leading-snug">
-                  {settings?.timelineAlertTitle || 'การดำเนินการ จะเสร็จสิ้น ประมาณ 1-2 วัน ไม่นับวันหยุด หรือ กรุณาตรวจดูเส้นทางการดำเนินการหนังสือว่า "อนุมัติ"'}
+                  {isEn ? t.certTimelineAlertDesc : (settings?.timelineAlertTitle || 'การดำเนินการ จะเสร็จสิ้น ประมาณ 1-2 วัน ไม่นับวันหยุด หรือ กรุณาตรวจดูเส้นทางการดำเนินการหนังสือว่า "อนุมัติ"')}
                 </p>
-                {settings?.timelineAlertDesc && (
+                {settings?.timelineAlertDesc && !isEn && (
                   <p className="text-xs text-sky-800 leading-relaxed">
                     {settings.timelineAlertDesc}
                   </p>
@@ -139,12 +141,12 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
               </div>
               <div className="space-y-1">
                 <span className="inline-block px-2.5 py-0.5 rounded-full bg-amber-200/90 text-amber-900 font-extrabold text-[10px] uppercase tracking-wider">
-                  📋 ความถูกต้องของข้อมูล (Accuracy)
+                  📋 {t.certAccuracyAlertTitle}
                 </span>
                 <p className="font-bold text-sm text-amber-950 leading-snug">
-                  {settings?.accuracyAlertTitle || 'กรุณากรอกข้อมูลให้ครบถ้วน มิฉะนั้นเอกสารจะไม่สมบูรณ์และจะยกเลิกการขอหนังสือ'}
+                  {isEn ? t.certAccuracyAlertDesc : (settings?.accuracyAlertTitle || 'กรุณากรอกข้อมูลให้ครบถ้วน มิฉะนั้นเอกสารจะไม่สมบูรณ์และจะยกเลิกการขอหนังสือ')}
                 </p>
-                {settings?.accuracyAlertDesc && (
+                {settings?.accuracyAlertDesc && !isEn && (
                   <p className="text-xs text-amber-800 leading-relaxed">
                     {settings.accuracyAlertDesc}
                   </p>
@@ -163,10 +165,10 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
               <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-black">
                 1
               </span>
-              เลือกประเภทหนังสือรับรองที่ต้องการ (คลิกที่การ์ด)
+              {t.certStep1Title}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              กรุณาตรวจสอบว่าหนังสือสำหรับคนไทยหรือสำหรับนิสิตต่างชาติ เพื่อให้ออกเอกสารถูกต้องตามระเบียบ
+              {t.certStep1Sub}
             </p>
           </div>
 
@@ -181,7 +183,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              ทั้งหมด ({visibleCards.length})
+              {t.certFilterAll} ({visibleCards.length})
             </button>
             <button
               type="button"
@@ -192,7 +194,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                   : 'text-blue-700 hover:bg-blue-50'
               }`}
             >
-              <span>🇹🇭 สำหรับคนไทย</span>
+              <span>🇹🇭 {t.certFilterThai}</span>
             </button>
             <button
               type="button"
@@ -203,7 +205,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                   : 'text-purple-700 hover:bg-purple-50'
               }`}
             >
-              <span>🌐 นิสิตต่างชาติ</span>
+              <span>🌐 {t.certFilterInter}</span>
             </button>
 
             {/* Staff Filter Button: visible if isStaffUser is TRUE or admin enables showStaffCertificatesInPortal */}
@@ -217,7 +219,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                     : 'text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300'
                 }`}
               >
-                <span>👔 สำหรับอาจารย์และเจ้าหน้าที่</span>
+                <span>👔 {t.certFilterStaff}</span>
               </button>
             )}
 
@@ -231,7 +233,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                   : 'text-emerald-700 hover:bg-emerald-50'
               }`}
             >
-              <span>🎓 ผู้ผ่านการคัดเลือกใหม่</span>
+              <span>🎓 {t.certFilterCandidate}</span>
             </button>
           </div>
         </div>
@@ -274,19 +276,19 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                     <div className="flex items-center gap-1.5">
                       {isStaff ? (
                         <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                          👔 อาจารย์/บุคลากร
+                          👔 {isEn ? 'Faculty / Staff' : 'อาจารย์/บุคลากร'}
                         </span>
                       ) : isCandidate ? (
                         <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                          🎓 ผู้ผ่านการคัดเลือก
+                          🎓 {isEn ? 'Candidate' : 'ผู้ผ่านการคัดเลือก'}
                         </span>
                       ) : isThai ? (
                         <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700">
-                          🇹🇭 นิสิตไทย
+                          🇹🇭 {isEn ? 'Thai Student' : 'นิสิตไทย'}
                         </span>
                       ) : (
                         <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700">
-                          🌐 ต่างชาติ (Intl)
+                          🌐 {isEn ? 'International' : 'ต่างชาติ (Intl)'}
                         </span>
                       )}
 
@@ -312,11 +314,11 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                         : 'text-slate-800'
                     }`}
                   >
-                    {card.name}
+                    {isEn ? ((card as any).titleEn || (card as any).nameEn || card.name) : ((card as any).titleTh || card.name)}
                   </h3>
 
                   <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">
-                    {card.description}
+                    {isEn ? ((card as any).descriptionEn || card.description) : ((card as any).descriptionTh || card.description)}
                   </p>
                 </div>
 
@@ -336,7 +338,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                         : 'text-slate-400 group-hover:text-purple-600'
                     }`}
                   >
-                    <span>{isSelected ? '✓ เลือกแล้ว (คลิกเพื่อไปกรอกแบบฟอร์ม)' : 'คลิกเลือกการ์ดนี้เพื่อไปข้อ 2'}</span>
+                    <span>{isSelected ? (isEn ? 'Selected ✓' : '✓ เลือกแล้ว (คลิกเพื่อไปกรอกแบบฟอร์ม)') : (isEn ? 'Click to select →' : 'คลิกเลือกการ์ดนี้เพื่อไปข้อ 2')}</span>
                     <span className="text-xs">➔</span>
                   </span>
                 </div>

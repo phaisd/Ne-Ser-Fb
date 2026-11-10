@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import {
   Calendar,
   CheckSquare,
@@ -133,6 +134,7 @@ export function RollCallTab({
   checkIsEnglishCourse,
   formatDayLabel,
 }: RollCallTabProps) {
+  const { t, isEn: isLangEn } = useLanguage();
   if (!currentUser) {
     return (
       <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-4 print:hidden">
@@ -528,7 +530,7 @@ export function RollCallTab({
                       title="ปรับแต่ง วันที่ / เวลา / ห้องเรียน / เลือกอาจารย์ผู้สอนร่วม-ผู้ช่วยสอน"
                     >
                       <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
-                      <span>⚙️ ปรับแต่งคาบเรียน (วัน/เวลา/ห้อง/ผู้ช่วยสอน)</span>
+                      <span>⚙️ {t.attCustomizeSessionBtn}</span>
                     </button>
 
                     <div className="w-full sm:w-auto flex flex-col xs:flex-row items-stretch xs:items-center gap-2">
@@ -543,7 +545,7 @@ export function RollCallTab({
                           }`}
                           title="แสดงเฉพาะนิสิตหลักสูตรนานาชาติ (Inter / ภาคภาษาอังกฤษ)"
                         >
-                          <span className="truncate">🌐 ภาคอินเตอร์</span>
+                          <span className="truncate">🌐 {t.attFilterInter}</span>
                           <span
                             className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold shrink-0 ${
                               activeProgramMode === 'ENGLISH'
@@ -565,7 +567,7 @@ export function RollCallTab({
                           }`}
                           title="แสดงเฉพาะนิสิตหลักสูตรภาษาไทย"
                         >
-                          <span className="truncate">🇹🇭 ภาคไทย</span>
+                          <span className="truncate">🇹🇭 {t.attFilterThai}</span>
                           <span
                             className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold shrink-0 ${
                               activeProgramMode === 'THAI'
@@ -587,7 +589,7 @@ export function RollCallTab({
                           }`}
                           title="แสดงรวมนิสิตทั้ง 2 ภาค (กรณีเรียนร่วมกัน)"
                         >
-                          <span className="truncate">👥 ทั้งหมด</span>
+                          <span className="truncate">👥 {t.attFilterAllStudents}</span>
                           <span
                             className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold shrink-0 ${
                               activeProgramMode === 'ALL'
@@ -607,7 +609,7 @@ export function RollCallTab({
                           onChange={(e) => setShowOnlyTargetYear(e.target.checked)}
                           className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                         />
-                        <span className="whitespace-nowrap">เฉพาะปี {currentCourse.yearLevel}</span>
+                        <span className="whitespace-nowrap">{isLangEn ? `Year ${currentCourse.yearLevel} only` : `เฉพาะปี ${currentCourse.yearLevel}`}</span>
                       </label>
                     </div>
                   </div>
@@ -618,7 +620,7 @@ export function RollCallTab({
                   <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
                     <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-slate-400 font-semibold">วันที่สอนจริง:</div>
+                      <div className="text-[10px] text-slate-400 font-semibold">{t.attActualDate}</div>
                       <div className="font-bold text-slate-800">{sessionCustom.date || date}</div>
                     </div>
                   </div>
@@ -626,9 +628,9 @@ export function RollCallTab({
                   <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
                     <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-slate-400 font-semibold">เวลาเรียน:</div>
+                      <div className="text-[10px] text-slate-400 font-semibold">{t.attClassTime}</div>
                       <div className="font-bold text-slate-800">
-                        {sessionCustom.startTime} - {sessionCustom.endTime} น.
+                        {sessionCustom.startTime} - {sessionCustom.endTime} {isLangEn ? '' : 'น.'}
                       </div>
                     </div>
                   </div>
@@ -637,7 +639,7 @@ export function RollCallTab({
                     <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div>
                       <div className="text-[10px] text-slate-400 font-semibold">
-                        ห้องเรียน / สถานที่:
+                        {t.attClassroom}
                       </div>
                       <div className="font-bold text-slate-800 truncate">{sessionCustom.room}</div>
                     </div>
@@ -647,12 +649,12 @@ export function RollCallTab({
                     <User className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div className="truncate">
                       <div className="text-[10px] text-slate-400 font-semibold">
-                        อาจารย์ผู้สอนหลัก:
+                        {t.attLeadInstructor}
                       </div>
                       <div className="font-bold text-slate-800 truncate">
                         {sessionCustom.leadInstructor ||
                           currentCourse.instructor ||
-                          'อาจารย์ประจำวิชา'}
+                          (isLangEn ? 'Course Instructor' : 'อาจารย์ประจำวิชา')}
                       </div>
                     </div>
                   </div>

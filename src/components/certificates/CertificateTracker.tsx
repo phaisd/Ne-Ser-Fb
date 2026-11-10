@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import {
   Search,
   Calendar,
@@ -35,6 +36,7 @@ export const CertificateTracker: React.FC<CertificateTrackerProps> = ({
   filteredRequests,
   onPreviewRequest,
 }) => {
+  const { t, isEn } = useLanguage();
   return (
     <div className="space-y-4">
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm max-w-xl mx-auto space-y-3">
@@ -42,7 +44,7 @@ export const CertificateTracker: React.FC<CertificateTrackerProps> = ({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="กรอกรหัสนิสิต (เช่น 6801501123), ชื่อ หรือเลขที่เอกสาร..."
+            placeholder={isEn ? "Enter Student ID (e.g. 6801501123), Name, or Document No..." : "กรอกรหัสนิสิต (เช่น 6801501123), ชื่อ หรือเลขที่เอกสาร..."}
             value={trackCode}
             onChange={(e) => setTrackCode(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
@@ -52,7 +54,7 @@ export const CertificateTracker: React.FC<CertificateTrackerProps> = ({
         {/* Year Filter Pills for Track Tab */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
           <span className="text-slate-400 font-semibold flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5 text-purple-600" /> กรองตามปี พ.ศ.:
+            <Calendar className="w-3.5 h-3.5 text-purple-600" /> {isEn ? 'Filter Year:' : 'กรองตามปี พ.ศ.:'}
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -63,7 +65,7 @@ export const CertificateTracker: React.FC<CertificateTrackerProps> = ({
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              ทั้งหมด
+              {isEn ? 'All' : 'ทั้งหมด'}
             </button>
             {availableCertYears.map((yr) => (
               <button

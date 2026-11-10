@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAuthUser, isAdminOrOfficer, saveAuthSession } from '@/lib/auth-client';
+import { useLanguage } from '@/hooks/useLanguage';
 import { FileText, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import {
   CertificateRequest,
@@ -16,6 +17,7 @@ import {
 } from '@/components/certificates';
 
 export default function CertificatesPage() {
+  const { t, isEn } = useLanguage();
   const [activeTab, setActiveTab] = useState<'REQUEST' | 'TRACK' | 'ADMIN'>('REQUEST');
   const [certTypes, setCertTypes] = useState<CertTypeItem[]>([]);
   const [requests, setRequests] = useState<CertificateRequest[]>([]);
@@ -239,10 +241,10 @@ export default function CertificatesPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 flex items-center gap-3">
             <FileText className="w-8 h-8 text-purple-600" />
-            ระบบหนังสือรับรองและคำร้อง (Certificates Portal)
+            {t.certPortalTitle}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            เลือกประเภทหนังสือรับรองแบบการ์ด แยกหมวดหมู่นิสิตไทยและนิสิตต่างชาติ พร้อมออกเอกสารและซิงค์ Google Sheets
+            {t.certPortalDesc}
           </p>
         </div>
 
@@ -256,7 +258,7 @@ export default function CertificatesPage() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            แบบฟอร์มยื่นคำร้อง
+            {t.certTabRequest}
           </button>
           <button
             onClick={() => setActiveTab('TRACK')}
@@ -266,7 +268,7 @@ export default function CertificatesPage() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            เช็คสถานะคำร้อง
+            {t.certTabTrack}
           </button>
           {canManageCertificates && (
             <button
@@ -277,7 +279,7 @@ export default function CertificatesPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              รายการทั้งหมด ({requests.length})
+              {t.certTabAdmin} ({requests.length})
             </button>
           )}
         </div>
@@ -317,12 +319,12 @@ export default function CertificatesPage() {
                 1
               </span>
               <div className="text-left hidden xs:block">
-                <div className="text-xs sm:text-sm font-bold">1. เลือกประเภทหนังสือรับรอง</div>
+                <div className="text-xs sm:text-sm font-bold">{t.certStep1}</div>
                 <div className="text-[10px] text-slate-400 font-normal hidden md:block">
-                  เลือกการ์ดประเภทคำร้องที่ต้องการ
+                  {isEn ? 'Select request card' : 'เลือกการ์ดประเภทคำร้องที่ต้องการ'}
                 </div>
               </div>
-              <span className="xs:hidden text-xs font-bold">1. เลือกการ์ด</span>
+              <span className="xs:hidden text-xs font-bold">{t.certStep1}</span>
             </button>
 
             <span className="text-slate-300 font-bold">➔</span>
@@ -345,12 +347,12 @@ export default function CertificatesPage() {
                 2
               </span>
               <div className="text-left hidden xs:block">
-                <div className="text-xs sm:text-sm font-bold">2. กรอกแบบฟอร์มคำร้อง</div>
+                <div className="text-xs sm:text-sm font-bold">{t.certStep2}</div>
                 <div className="text-[10px] text-slate-400 font-normal hidden md:block truncate max-w-[200px]">
-                  {selectedCert ? selectedCert.name : 'กรอกรายละเอียดและแนบเอกสาร'}
+                  {selectedCert ? (isEn && (selectedCert as any).titleEn ? (selectedCert as any).titleEn : selectedCert.name) : (isEn ? 'Fill details and attachments' : 'กรอกรายละเอียดและแนบเอกสาร')}
                 </div>
               </div>
-              <span className="xs:hidden text-xs font-bold">2. กรอกแบบฟอร์ม</span>
+              <span className="xs:hidden text-xs font-bold">{t.certStep2}</span>
             </button>
           </div>
 

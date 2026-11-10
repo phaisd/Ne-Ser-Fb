@@ -47,10 +47,12 @@ import { calculateMaxAllowedAbsences } from '@/lib/attendance/attendanceEvaluato
 import { EligibilityTab, SemesterRoadmapTab, AddStudentToCourseModal, GradeSheetTab, ClassroomQrProjector, groupAndSortByMajor, RollCallTab, AttendanceHistoryTab, SessionCustomModal } from '@/components/attendance';
 import { CourseEnrollment } from '@/types';
 import { getAuthUser, isAdminOrOfficer, clearAuthSession, saveAuthSession } from '@/lib/auth-client';
+import { useLanguage } from '@/hooks/useLanguage';
 import { toSafeCsvCell } from '@/lib/security';
 import UserProfileModal from '@/components/UserProfileModal';
 
 export default function AttendancePage() {
+  const { t, isEn } = useLanguage();
   const [activeMode, setActiveMode] = useState<'ROLL_CALL' | 'ROADMAP' | 'QR_CODE' | 'ELIGIBILITY' | 'GRADE_SHEET' | 'HISTORY'>('ROLL_CALL');
   
   // Data states
@@ -1010,10 +1012,10 @@ export default function AttendancePage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 flex items-center gap-3">
             <CheckSquare className="w-8 h-8 text-emerald-600" />
-            ระบบตรวจเข้าเรียน & สรุปสิทธิ์สอบปลายภาค
+            {t.attTitle}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            เช็คชื่อเข้าชั้นเรียนและประเมินสิทธิ์สอบไล่ตามเกณฑ์เวลาเรียน 80% ตลอดทั้งภาคการศึกษา
+            {t.attDesc}
           </p>
         </div>
 
@@ -1031,7 +1033,7 @@ export default function AttendancePage() {
               }`}
             >
               <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>อาจารย์เช็คชื่อ (Roll-Call)</span>
+              <span>{isEn ? 'Instructor Roll-Call' : 'อาจารย์เช็คชื่อ (Roll-Call)'}</span>
             </button>
             <button
               type="button"
@@ -1043,7 +1045,7 @@ export default function AttendancePage() {
               }`}
             >
               <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span>แผนผัง 16 คาบ (Roadmap)</span>
+              <span>{isEn ? '16-Week Roadmap' : 'แผนผัง 16 คาบ (Roadmap)'}</span>
               {nextUpcomingSession && (
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping ml-0.5 shrink-0" />
               )}
@@ -1058,7 +1060,7 @@ export default function AttendancePage() {
               }`}
             >
               <Award className="w-4 h-4 shrink-0" />
-              <span>สรุปสิทธิ์สอบ (Exam Eligibility)</span>
+              <span>{isEn ? '80% Exam Eligibility' : 'สรุปสิทธิ์สอบ (Exam Eligibility)'}</span>
             </button>
           </div>
 
@@ -1074,7 +1076,7 @@ export default function AttendancePage() {
               }`}
             >
               <FileSpreadsheet className="w-4 h-4 shrink-0" />
-              <span>ใบกรอกคะแนนวัดผล (Grade Sheet)</span>
+              <span>{isEn ? 'Grade Book Sheet' : 'ใบกรอกคะแนนวัดผล (Grade Sheet)'}</span>
             </button>
             <button
               type="button"
@@ -1086,7 +1088,7 @@ export default function AttendancePage() {
               }`}
             >
               <QrCode className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>เปิดจอ QR ห้องเรียน</span>
+              <span>{isEn ? 'Classroom QR Screen' : 'เปิดจอ QR ห้องเรียน'}</span>
             </button>
             <button
               type="button"
@@ -1098,7 +1100,7 @@ export default function AttendancePage() {
               }`}
             >
               <History className="w-4 h-4 text-slate-500 shrink-0" />
-              <span>ประวัติการเช็คชื่อ ({visibleHistoryRecords.length})</span>
+              <span>{isEn ? 'Attendance History' : 'ประวัติการเช็คชื่อ'} ({visibleHistoryRecords.length})</span>
             </button>
           </div>
         </div>

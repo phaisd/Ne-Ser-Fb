@@ -148,6 +148,9 @@ export default function Navbar() {
       window.dispatchEvent(new CustomEvent('mcu_lang_changed', { detail: targetLang }));
     } catch (e) {}
 
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const cookieSuffix = isHttps ? '; SameSite=Lax; Secure' : '; SameSite=Lax';
+
     const domains = [
       '',
       `domain=${window.location.hostname};`,
@@ -157,9 +160,9 @@ export default function Navbar() {
     if (targetLang === 'th') {
       // Clear googtrans cookie across all possible domain paths
       domains.forEach((d) => {
-        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; ${d}`.trim();
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; ${d}${cookieSuffix}`.trim();
       });
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;${cookieSuffix}`;
 
       const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
       if (combo) {
@@ -172,10 +175,10 @@ export default function Navbar() {
     } else {
       const cookieVal = `/th/${targetLang}`;
       domains.forEach((d) => {
-        document.cookie = `googtrans=${cookieVal}; path=/; ${d}`.trim();
+        document.cookie = `googtrans=${cookieVal}; path=/; ${d}${cookieSuffix}`.trim();
       });
-      document.cookie = `googtrans=${cookieVal}; path=/;`;
-      document.cookie = `googtrans=/auto/${targetLang}; path=/;`;
+      document.cookie = `googtrans=${cookieVal}; path=/;${cookieSuffix}`;
+      document.cookie = `googtrans=/auto/${targetLang}; path=/;${cookieSuffix}`;
 
       const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
       if (combo && combo.options && combo.options.length > 0) {
