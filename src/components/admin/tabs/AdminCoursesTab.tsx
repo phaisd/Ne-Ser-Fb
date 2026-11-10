@@ -159,8 +159,10 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
   const [isCustomInstructor, setIsCustomInstructor] = useState(false);
   const [customInstructorText, setCustomInstructorText] = useState('');
 
-  // Degree filter in toolbar
+  // Filter states in toolbar
   const [degreeFilter, setDegreeFilter] = useState('ALL');
+  const [semesterFilter, setSemesterFilter] = useState('ALL');
+  const [yearFilter, setYearFilter] = useState('ALL');
 
   // Extract unique instructor names from prop or from course list
   const availableInstructors = useMemo(() => {
@@ -331,13 +333,31 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
     }
   };
 
-  // Filtered courses including local degree filter
+  // Filtered courses including local degree, semester, and year filters
   const displayedCourses = useMemo(() => {
     return filteredCourses.filter((c) => {
       if (degreeFilter !== 'ALL' && c.degreeLevel !== degreeFilter) return false;
+
+      // Filter by Semester
+      if (semesterFilter !== 'ALL') {
+        const cSem =
+          c.semester !== undefined && c.semester !== null
+            ? String(c.semester)
+            : c.term
+            ? c.term.split('/')[0]?.trim()
+            : undefined;
+        if (cSem !== semesterFilter) return false;
+      }
+
+      // Filter by Year Level
+      if (yearFilter !== 'ALL') {
+        const cYear = c.yearLevel !== undefined && c.yearLevel !== null ? String(c.yearLevel) : '1';
+        if (cYear !== yearFilter) return false;
+      }
+
       return true;
     });
-  }, [filteredCourses, degreeFilter]);
+  }, [filteredCourses, degreeFilter, semesterFilter, yearFilter]);
 
   const dayNames = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
 
@@ -490,6 +510,37 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
             </select>
           </div>
 
+          {/* Semester Filter */}
+          <div className="flex items-center gap-1">
+            <span className="text-slate-400 font-medium text-[11px] hidden sm:inline">ภาคการศึกษา:</span>
+            <select
+              value={semesterFilter}
+              onChange={(e) => setSemesterFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            >
+              <option value="ALL">ภาคการศึกษา: ทั้งหมด</option>
+              <option value="1">ภาคเรียนที่ 1</option>
+              <option value="2">ภาคเรียนที่ 2</option>
+              <option value="3">ภาคฤดูร้อน (3)</option>
+            </select>
+          </div>
+
+          {/* Year Level Filter */}
+          <div className="flex items-center gap-1">
+            <span className="text-slate-400 font-medium text-[11px] hidden sm:inline">ชั้นปี:</span>
+            <select
+              value={yearFilter}
+              onChange={(e) => setYearFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            >
+              <option value="ALL">ชั้นปี: ทั้งหมด</option>
+              <option value="1">ชั้นปีที่ 1</option>
+              <option value="2">ชั้นปีที่ 2</option>
+              <option value="3">ชั้นปีที่ 3</option>
+              <option value="4">ชั้นปีที่ 4</option>
+            </select>
+          </div>
+
           {/* Program Filter */}
           <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl font-bold shrink-0">
             <button
@@ -517,6 +568,24 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
               🌐 Inter (EN)
             </button>
           </div>
+
+          {/* Reset Filters button */}
+          {(degreeFilter !== 'ALL' || semesterFilter !== 'ALL' || yearFilter !== 'ALL' || courseProgramFilter !== 'ALL' || courseSearch.trim()) && (
+            <button
+              onClick={() => {
+                setDegreeFilter('ALL');
+                setSemesterFilter('ALL');
+                setYearFilter('ALL');
+                setCourseProgramFilter('ALL');
+                setCourseSearch('');
+              }}
+              className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition inline-flex items-center gap-1 cursor-pointer shrink-0"
+              title="ล้างตัวกรองทั้งหมด"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>ล้างตัวกรอง</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -580,6 +649,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
                           </span>
                           <span className="text-[11px] text-slate-500">
                             {c.degreeLevel || 'ปริญญาตรี'} • ปี {c.yearLevel || 1}
+                            {c.semester ? ` (เทอม ${c.semester})` : c.term ? ` (เทอม ${c.term.split('/')[0]})` : ''}
                           </span>
                         </div>
                       </td>
