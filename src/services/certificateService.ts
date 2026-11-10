@@ -8,6 +8,54 @@ export async function getCertificateTypes(): Promise<any[]> {
   return readLocalJson<any[]>('certificate_types.json', []);
 }
 
+export async function createCertificateType(data: any): Promise<any> {
+  const types = await getCertificateTypes();
+  const audience = data.targetAudience || 'THAI';
+  const prefix = audience.toLowerCase().slice(0, 4);
+  const id = data.id || `cert-${prefix}-${Date.now().toString(36)}`;
+  
+  const newType = {
+    id,
+    code: data.code || `CERT-${types.length + 1}`,
+    name: data.name || 'หนังสือรับรองใหม่',
+    targetAudience: audience,
+    badge: data.badge || (audience === 'INTERNATIONAL' ? 'นิสิตต่างชาติ' : audience === 'STAFF' ? 'อาจารย์/เจ้าหน้าที่' : audience === 'CANDIDATE' ? 'ผู้ผ่านคัดเลือก' : 'นิสิตไทย'),
+    category: data.category || 'ACADEMIC',
+    iconName: data.iconName || 'FileText',
+    description: data.description || '',
+    templateType: data.templateType || 'GENERAL',
+    isActive: data.isActive !== false,
+  };
+
+  types.push(newType);
+  writeLocalJson('certificate_types.json', types);
+  return newType;
+}
+
+export async function updateCertificateType(id: string, updates: any): Promise<any | null> {
+  const types = await getCertificateTypes();
+  const idx = types.findIndex((t) => t.id === id);
+  if (idx === -1) return null;
+
+  types[idx] = {
+    ...types[idx],
+    ...updates,
+    id, // protect immutable id
+  };
+
+  writeLocalJson('certificate_types.json', types);
+  return types[idx];
+}
+
+export async function deleteCertificateType(id: string): Promise<boolean> {
+  const types = await getCertificateTypes();
+  const filtered = types.filter((t) => t.id !== id);
+  if (filtered.length === types.length) return false;
+
+  writeLocalJson('certificate_types.json', filtered);
+  return true;
+}
+
 // ----------------- CERTIFICATE REQUESTS -----------------
 
 export async function getCertificateRequests(): Promise<CertificateRequest[]> {

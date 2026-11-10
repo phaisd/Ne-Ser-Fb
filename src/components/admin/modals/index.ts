@@ -14,5 +14,6 @@ export * from './ArchivedStudentsModal';
 export * from './ArchivedInstructorsModal';
 export * from './AdminCertificatePreviewModal';
 export * from './InstructorImportModal';
+export * from './CertificateTypesRepoModal';
 
 

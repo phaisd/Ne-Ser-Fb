@@ -18,9 +18,11 @@ import {
   Sparkles,
   AlertTriangle,
   RefreshCw,
+  Layers,
 } from 'lucide-react';
 import { CertificateRequest } from '@/types';
 import { calculateNextDocNo } from '@/lib/utils';
+import { CertificateTypesRepoModal } from '../modals';
 
 interface AdminCertificatesTabProps {
   requests: CertificateRequest[];
@@ -89,6 +91,7 @@ export function AdminCertificatesTab({
   const [isClearingMock, setIsClearingMock] = useState(false);
   const [isSyncingSheets, setIsSyncingSheets] = useState(false);
   const [quickApprovePrefix, setQuickApprovePrefix] = useState<'8002' | '8002.1'>('8002');
+  const [showTypesRepoModal, setShowTypesRepoModal] = useState(false);
 
   // Sync to Google Sheets
   const handleSyncSheets = async () => {
@@ -110,6 +113,119 @@ export function AdminCertificatesTab({
     } finally {
       setIsSyncingSheets(false);
     }
+  };
+
+  // Export to Excel (.xls)
+  const handleExportExcel = () => {
+    if (requests.length === 0) {
+      alert('ไม่มีรายการคำร้องที่จะส่งออก');
+      return;
+    }
+
+    const tableHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>คำร้องขอหนังสือรับรอง</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          th { background-color: #7e22ce; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px 12px; text-align: center; }
+          td { border: 1px solid #e2e8f0; padding: 6px 10px; vertical-align: middle; }
+          .center { text-align: center; }
+          .text-num { mso-number-format:"\\@"; text-align: center; }
+          .status-approved { background-color: #d1fae5; color: #065f46; font-weight: bold; text-align: center; }
+          .status-pending { background-color: #fef3c7; color: #92400e; font-weight: bold; text-align: center; }
+          .status-rejected { background-color: #fee2e2; color: #991b1b; font-weight: bold; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <h3>รายงานคำร้องขอหนังสือรับรอง คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</h3>
+        <p>ส่งออกข้อมูล ณ วันที่: ${new Date().toLocaleString('th-TH')} | จำนวน: ${requests.length} รายการ</p>
+        <table border="1">
+          <thead>
+            <tr>
+              <th>ลำดับ</th>
+              <th>เลขที่หนังสือ อว.</th>
+              <th>วันที่ยื่นคำร้อง</th>
+              <th>รหัสนิสิต / บุคลากร</th>
+              <th>ชื่อ - นามสกุล</th>
+              <th>กลุ่มผู้ขอ</th>
+              <th>สัญชาติ</th>
+              <th>ประเภทหนังสือรับรอง</th>
+              <th>ระดับการศึกษา</th>
+              <th>สาขาวิชา</th>
+              <th>วัตถุประสงค์</th>
+              <th>เลขพาสปอร์ต</th>
+              <th>อีเมล</th>
+              <th>เบอร์โทรศัพท์</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${requests
+              .map(
+                (r, idx) => `
+              <tr>
+                <td class="center">${idx + 1}</td>
+                <td class="text-num">${r.docNo || '-'}</td>
+                <td class="center">${new Date(r.createdAt).toLocaleDateString('th-TH')}</td>
+                <td class="text-num">${r.studentCode || '-'}</td>
+                <td>${r.fullName || '-'}</td>
+                <td class="center">${
+                  r.targetAudience === 'STAFF'
+                    ? 'อาจารย์/บุคลากร'
+                    : r.targetAudience === 'INTERNATIONAL'
+                    ? 'นิสิตต่างชาติ'
+                    : 'นิสิตไทย'
+                }</td>
+                <td class="center">${r.nationality || '-'}</td>
+                <td>${r.certType || '-'}</td>
+                <td>${r.degreeLevel || '-'}</td>
+                <td>${r.major || '-'}</td>
+                <td>${r.requestPurpose || '-'}</td>
+                <td class="text-num">${r.passportNo || '-'}</td>
+                <td>${r.email || '-'}</td>
+                <td class="text-num">${r.phone || '-'}</td>
+                <td class="${
+                  r.status === 'APPROVED'
+                    ? 'status-approved'
+                    : r.status === 'REJECTED'
+                    ? 'status-rejected'
+                    : 'status-pending'
+                }">
+                  ${r.status === 'APPROVED' ? 'อนุมัติแล้ว' : r.status === 'REJECTED' ? 'ปฏิเสธ' : 'รอดำเนินการ'}
+                </td>
+              </tr>
+            `
+              )
+              .join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\uFEFF' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `certificate_requests_${new Date().toISOString().slice(0, 10)}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Export to CSV
@@ -347,9 +463,19 @@ export function AdminCertificatesTab({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() => setShowTypesRepoModal(true)}
+              className="px-3.5 py-1.5 rounded-xl border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="จัดการคลังประเภทหนังสือรับรอง เพิ่ม เติม แก้ไข และลบประเภทหนังสือ"
+            >
+              <Layers className="w-3.5 h-3.5 text-purple-700" />
+              <span>คลังประเภทหนังสือรับรอง</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleSyncSheets}
               disabled={isSyncingSheets}
-              className="px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs disabled:opacity-50"
+              className="px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50"
               title="ซิงค์และสำรองข้อมูลคำร้องทั้งหมดไปยัง Google Sheets"
             >
               {isSyncingSheets ? (
@@ -362,12 +488,22 @@ export function AdminCertificatesTab({
 
             <button
               type="button"
-              onClick={handleExportCsv}
-              className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-              title="ดาวน์โหลดข้อมูลคำร้องทั้งหมดเป็นไฟล์ Excel / CSV"
+              onClick={handleExportExcel}
+              className="px-3.5 py-1.5 rounded-xl border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="ส่งออกรายงานคำร้องทั้งหมดเป็นไฟล์ Excel (.xls) ภาษาไทยสมบูรณ์"
             >
-              <Download className="w-3.5 h-3.5 text-blue-700" />
-              <span>ดาวน์โหลด CSV</span>
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-100" />
+              <span>ส่งออก Excel (.xls)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="ดาวน์โหลดข้อมูลคำร้องทั้งหมดเป็นไฟล์ CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>CSV (.csv)</span>
             </button>
           </div>
 
@@ -689,6 +825,15 @@ export function AdminCertificatesTab({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Certificate Types Repository Modal */}
+      {showTypesRepoModal && (
+        <CertificateTypesRepoModal
+          isOpen={showTypesRepoModal}
+          onClose={() => setShowTypesRepoModal(false)}
+          onSuccessMessage={onSuccessMessage}
+        />
       )}
     </div>
   );

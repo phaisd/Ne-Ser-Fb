@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import {
   getCertificateRequests,
   getCertificateTypes,
+  createCertificateType,
+  updateCertificateType,
+  deleteCertificateType,
   createCertificateRequest,
   updateCertificateRequest,
   deleteCertificateRequest,
@@ -38,12 +41,23 @@ export async function POST(request: Request) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
+    if (action === 'types') {
+      const body = await request.json();
+      const newType = await createCertificateType(body);
+      return NextResponse.json({ success: true, data: newType });
+    }
+
     if (action === 'sync_sheets' || action === 'sync-sheets') {
       const result = await syncCertificateRequestsToSheets();
       return NextResponse.json(result);
     }
 
     const body = await request.json();
+
+    if (body.action === 'types' || body.action === 'create_type') {
+      const newType = await createCertificateType(body);
+      return NextResponse.json({ success: true, data: newType });
+    }
 
     if (body.action === 'sync_sheets' || body.action === 'sync-sheets') {
       const result = await syncCertificateRequestsToSheets();
@@ -102,7 +116,22 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
     const body = await request.json();
+
+    if (action === 'types' || body.action === 'types') {
+      const { id, ...updates } = body;
+      if (!id) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุ id ของประเภทหนังสือรับรอง' }, { status: 400 });
+      }
+      const updated = await updateCertificateType(id, updates);
+      if (!updated) {
+        return NextResponse.json({ success: false, error: 'ไม่พบประเภทหนังสือรับรอง' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, data: updated });
+    }
+
     const { id, status, docNo, ...rest } = body;
 
     if (!id) {
@@ -174,6 +203,17 @@ export async function DELETE(request: Request) {
         deletedCount: result.deletedCount,
         remainingCount: result.remainingCount,
       });
+    }
+
+    if (action === 'types') {
+      if (!id) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุ id ของประเภทหนังสือรับรองที่ต้องการลบ' }, { status: 400 });
+      }
+      const deleted = await deleteCertificateType(id);
+      if (!deleted) {
+        return NextResponse.json({ success: false, error: 'ไม่พบประเภทหนังสือรับรองที่ต้องการลบ' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, message: 'ลบประเภทหนังสือรับรองเรียบร้อยแล้ว', id });
     }
 
     if (!id) {
