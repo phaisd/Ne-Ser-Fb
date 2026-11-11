@@ -435,32 +435,37 @@ export function CollectionScoreSheet({
           <table className="w-full text-left border-collapse text-xs sm:text-sm">
             <thead className="bg-slate-800 text-white">
               <tr>
-                <th className="py-3 px-2.5 text-center w-16 whitespace-nowrap sticky left-0 z-20 bg-slate-800">
-                  ที่ (No.)
+                <th className="py-2.5 px-2 text-center w-[52px] min-w-[52px] sticky left-0 z-20 bg-slate-800 align-top">
+                  <span className="block font-bold leading-tight">ที่</span>
+                  <span className="block text-[10px] text-slate-300 font-normal leading-tight mt-0.5">(No.)</span>
                 </th>
-                <th className="py-3 px-3 w-36 whitespace-nowrap sticky left-16 z-20 bg-slate-800">
-                  รหัสนิสิต (CodeID)
+                <th className="py-2.5 px-2.5 w-[124px] min-w-[124px] sticky left-[52px] z-20 bg-slate-800 shadow-[4px_0_8px_rgba(0,0,0,0.2)] align-top">
+                  <span className="block font-bold leading-tight">รหัสนิสิต</span>
+                  <span className="block text-[10px] text-slate-300 font-normal leading-tight mt-0.5">(CodeID)</span>
                 </th>
-                <th className="py-3 px-3 min-w-[220px] whitespace-nowrap sticky left-52 z-20 bg-slate-800 shadow-[4px_0_8px_rgba(0,0,0,0.2)]">
-                  ชื่อ-ฉายา-นามสกุล (Full Name)
+                <th className="py-2.5 px-3 min-w-[190px] align-top">
+                  <span className="block font-bold leading-tight">ชื่อ-ฉายา-นามสกุล</span>
+                  <span className="block text-[10px] text-slate-300 font-normal leading-tight mt-0.5">(Full Name)</span>
                 </th>
                 {visibleColumns.map((col) => (
-                  <th key={col.id} className="py-3 px-2 text-center min-w-[92px] whitespace-nowrap">
-                    <span className="block truncate max-w-[100px] mx-auto">{col.label}</span>
-                    <span className="block text-[10px] text-amber-300 font-normal">
+                  <th key={col.id} className="py-2.5 px-2 text-center min-w-[80px] align-top">
+                    <span className="block truncate max-w-[92px] mx-auto leading-tight">{col.label}</span>
+                    <span className="block text-[10px] text-amber-300 font-normal leading-tight mt-0.5">
                       (เต็ม {col.maxScore})
                     </span>
                   </th>
                 ))}
-                <th className="py-3 px-2.5 text-center min-w-[96px] whitespace-nowrap bg-slate-900">
-                  รวม (Total)
-                  <span className="block text-[10px] text-slate-300 font-normal">
+                <th className="py-2.5 px-2.5 text-center min-w-[78px] bg-slate-900 align-top">
+                  <span className="block font-bold leading-tight">รวม</span>
+                  <span className="block text-[10px] text-slate-300 font-normal leading-tight mt-0.5">(Total)</span>
+                  <span className="block text-[10px] text-slate-300 font-normal leading-tight mt-0.5">
                     ({totalCollectionMax})
                   </span>
                 </th>
-                <th className="py-3 px-2.5 text-center min-w-[115px] whitespace-nowrap bg-indigo-950">
-                  เทียบสัดส่วน
-                  <span className="block text-[10px] text-amber-300 font-normal">
+                <th className="py-2.5 px-2.5 text-center min-w-[96px] bg-indigo-950 align-top">
+                  <span className="block font-bold leading-tight">เทียบสัดส่วน</span>
+                  <span className="block text-[10px] text-indigo-200 font-normal leading-tight mt-0.5">(Scaled)</span>
+                  <span className="block text-[10px] text-amber-300 font-normal leading-tight mt-0.5">
                     รายงาน ({maxAssignScore})
                   </span>
                 </th>
@@ -504,13 +509,13 @@ export function CollectionScoreSheet({
 
                       return (
                         <tr key={row.studentCode} className="hover:bg-slate-50 transition">
-                          <td className="py-2 px-2.5 text-center font-mono font-bold text-slate-600 sticky left-0 z-10 bg-white">
+                          <td className="py-2 px-2 w-[52px] min-w-[52px] text-center font-mono font-bold text-slate-600 sticky left-0 z-10 bg-white">
                             {row.indexInMajor}
                           </td>
-                          <td className="py-2 px-3 font-mono font-extrabold text-sm text-slate-800 tracking-tight whitespace-nowrap sticky left-16 z-10 bg-white">
+                          <td className="py-2 px-2.5 w-[124px] min-w-[124px] font-mono font-extrabold text-sm text-slate-800 tracking-tight whitespace-nowrap sticky left-[52px] z-10 bg-white shadow-[4px_0_8px_rgba(0,0,0,0.06)]">
                             {row.studentCode}
                           </td>
-                          <td className="py-2 px-3 font-semibold text-sm text-slate-900 sticky left-52 z-10 bg-white shadow-[4px_0_8px_rgba(0,0,0,0.06)]">
+                          <td className="py-2 px-3 font-semibold text-sm text-slate-900">
                             {row.studentName}
                           </td>
                           {visibleColumns.map((col, idx) => (

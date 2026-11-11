@@ -31,14 +31,14 @@ export function GradeSheetMobileCards({
 }: GradeSheetMobileCardsProps) {
   if (groupedSections.length === 0) {
     return (
-      <div className="block sm:hidden bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400 text-sm">
+      <div className="block lg:hidden bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400 text-sm">
         ไม่พบรายชื่อนิสิตในรายวิชานี้
       </div>
     );
   }
 
   return (
-    <div className="block sm:hidden space-y-4">
+    <div className="block lg:hidden space-y-4">
       {groupedSections.map((sec) => (
         <div key={`m-sec-${sec.groupKey}`} className="space-y-3">
           {/* Section Header */}
