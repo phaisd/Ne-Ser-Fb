@@ -1,0 +1,22 @@
+/**
+ * Safely extracts a human-readable error message from an unknown caught value.
+ * Safe for both client and server bundles.
+ */
+export function getErrorMessage(error: unknown, fallback = 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ'): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string' &&
+    (error as { message: string }).message.trim()
+  ) {
+    return (error as { message: string }).message;
+  }
+  return fallback;
+}

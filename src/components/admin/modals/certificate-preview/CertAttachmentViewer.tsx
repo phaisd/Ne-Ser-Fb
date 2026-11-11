@@ -50,6 +50,7 @@ export function CertAttachmentViewer({
     setUploadingAttachment(true);
     try {
       const formData = new FormData();
+      formData.append('scope', 'admin');
       formData.append('file', file);
       const res = await fetch('/api/upload', {
         method: 'POST',

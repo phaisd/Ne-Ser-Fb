@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import {
   getAttendanceRecords,
   saveAttendanceBatch,
   deleteAttendanceRecord,
   clearAttendanceRecords,
 } from '@/lib/data-store';
+import { requireAdminOrOfficer, requireStaffOrInstructor } from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
   try {
@@ -14,13 +16,16 @@ export async function GET(request: Request) {
 
     const list = await getAttendanceRecords(courseCode, date);
     return NextResponse.json({ success: true, count: list.length, data: list });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const auth = requireStaffOrInstructor(request);
+    if (auth.response) return auth.response;
+
     const body = await request.json();
     const { records } = body;
 
@@ -30,8 +35,8 @@ export async function POST(request: Request) {
 
     const savedCount = await saveAttendanceBatch(records);
     return NextResponse.json({ success: true, count: savedCount });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
@@ -42,6 +47,9 @@ export async function DELETE(request: Request) {
     const action = searchParams.get('action');
 
     if (action === 'clear-all') {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
       const deletedCount = await clearAttendanceRecords('all');
       return NextResponse.json({
         success: true,
@@ -51,6 +59,9 @@ export async function DELETE(request: Request) {
     }
 
     if (action === 'clear-invalid') {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
       const deletedCount = await clearAttendanceRecords('invalid');
       return NextResponse.json({
         success: true,
@@ -58,6 +69,9 @@ export async function DELETE(request: Request) {
         message: 'ล้างข้อมูลตัวอย่างที่ไม่สมบูรณ์เรียบร้อยแล้ว',
       });
     }
+
+    const staffAuth = requireStaffOrInstructor(request);
+    if (staffAuth.response) return staffAuth.response;
 
     if (id) {
       await deleteAttendanceRecord(id);
@@ -68,7 +82,7 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: false, error: 'กรุณาระบุ id หรือ action' }, { status: 400 });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

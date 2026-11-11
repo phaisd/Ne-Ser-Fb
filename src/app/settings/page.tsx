@@ -26,7 +26,8 @@ import {
   ArrowLeft,
   Image as ImageIcon
 } from 'lucide-react';
-import { getAuthUser, isAdminOrOfficer } from '@/lib/auth-client';
+import { getAuthUser, isAdminOrOfficer, type AuthUser } from '@/lib/auth-client';
+import type { SystemSettings } from '@/types';
 
 interface SheetStatus {
   configured: boolean;
@@ -41,27 +42,8 @@ interface SheetStatus {
   };
 }
 
-interface SystemSettings {
-  universityNameTh: string;
-  universityNameEn: string;
-  facultyNameTh: string;
-  facultyNameEn: string;
-  logoUrl: string;
-  logoEmoji?: string;
-  announcementText?: string;
-  lineNotifyToken?: string;
-  lineChannelAccessToken?: string;
-  lineTargetUserId?: string;
-  lineWebhookUrl?: string;
-  contactPhone?: string;
-  contactEmail?: string;
-  websiteUrl?: string;
-  systemServiceUrl?: string;
-  forcePasswordChangeOnFirstLogin?: boolean;
-}
-
 export default function SettingsPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
   // Google Sheets state
@@ -78,6 +60,13 @@ export default function SettingsPage() {
     facultyNameEn: 'Faculty of Buddhism',
     logoUrl: '/uploads/logo-1793607295012.png',
     logoEmoji: '☸️',
+    signerNameTh: '',
+    signerTitleTh: '',
+    signerNameEn: '',
+    signerTitleEn: '',
+    addressTh: '',
+    addressEn: '',
+    announcementText: '',
     contactPhone: '035-248-000 ต่อ 8323',
     websiteUrl: 'https://fb.mcu.ac.th/',
     systemServiceUrl: 'https://fb-service.mcu.ac.th/',
@@ -163,6 +152,7 @@ export default function SettingsPage() {
       // Step 1: Upload via FormData
       try {
         const formData = new FormData();
+        formData.append('scope', 'branding');
         formData.append('file', file);
         const res = await fetch('/api/upload', {
           method: 'POST',

@@ -30,10 +30,16 @@ import {
   Mail,
   Layers,
   X,
-  AlertTriangle
+  AlertTriangle,
+  Upload
 } from 'lucide-react';
 import { StudentEvent, EventRegistration, SystemSettings } from '@/types';
-import { VipassanaAttendanceSheetModal } from '../modals';
+import { downloadCsvFile } from '@/lib/utils';
+import {
+  EventFormModal,
+  EventGroupImportModal,
+  VipassanaAttendanceSheetModal,
+} from '../modals';
 
 interface AdminEventsTabProps {
   eventsList: StudentEvent[];
@@ -128,6 +134,9 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
 
   // Modal State for Vipassana 4-Period Daily Attendance Sheet
   const [vipassanaModalEvent, setVipassanaModalEvent] = useState<StudentEvent | null>(null);
+
+  // Modal State for Grouped Student Import / Pull
+  const [groupImportEventId, setGroupImportEventId] = useState<string | null>(null);
 
   // Extract available majors from registrations & students
   const availableMajors = useMemo(() => {
@@ -245,8 +254,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
   };
 
   // Save Event (Create or Update)
-  const handleSaveEvent = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitEventForm = async (openGroupImportAfter = false) => {
     if (!eventForm.title?.trim()) {
       alert('กรุณาระบุชื่อโครงการ/กิจกรรม');
       return;
@@ -267,8 +275,12 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         });
         const data = await res.json();
         if (data.success) {
+          const savedId = editingEventId;
           setIsEventModalOpen(false);
           onRefresh();
+          if (openGroupImportAfter) {
+            setGroupImportEventId(savedId);
+          }
         } else {
           alert('แก้ไขโครงการไม่สำเร็จ: ' + data.error);
         }
@@ -284,8 +296,13 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         });
         const data = await res.json();
         if (data.success) {
+          const createdId = data.data?.id || null;
           setIsEventModalOpen(false);
           onRefresh();
+          if (openGroupImportAfter && createdId) {
+            setSelectedEventId(createdId);
+            setGroupImportEventId(createdId);
+          }
         } else {
           alert('เพิ่มโครงการไม่สำเร็จ: ' + data.error);
         }
@@ -295,6 +312,11 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     } finally {
       setIsSubmittingEvent(false);
     }
+  };
+
+  const handleSaveEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitEventForm(false);
   };
 
   // Confirm Delete Event
@@ -348,27 +370,19 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
 
     const rows = filteredRegistrations.map((r, idx) => [
       idx + 1,
-      `"${r.studentCode}"`,
-      `"${(r.studentName || '').replace(/"/g, '""')}"`,
-      `"${(r.eventTitle || '').replace(/"/g, '""')}"`,
-      `"${r.degreeLevel || 'ปริญญาตรี'}"`,
-      `"${r.programType === 'ENGLISH' ? 'ภาษาอังกฤษ (Inter)' : 'ภาษาไทย'}"`,
-      `"${(r.major || '').replace(/"/g, '""')}"`,
-      `"ปี ${r.yearLevel || 1}"`,
-      `"${(r.groupName || 'ทั่วไป').replace(/"/g, '""')}"`,
-      `"${r.status === 'ATTENDED' ? 'ผ่านการเข้าร่วมแล้ว' : 'รอเช็คชื่อ'}"`,
-      `"${r.attendedAt ? new Date(r.attendedAt).toLocaleDateString('th-TH') : '-'}"`,
+      r.studentCode,
+      r.studentName || '',
+      r.eventTitle || '',
+      r.degreeLevel || 'ปริญญาตรี',
+      r.programType === 'ENGLISH' ? 'ภาษาอังกฤษ (Inter)' : 'ภาษาไทย',
+      r.major || '',
+      `ปี ${r.yearLevel || 1}`,
+      r.groupName || 'ทั่วไป',
+      r.status === 'ATTENDED' ? 'ผ่านการเข้าร่วมแล้ว' : 'รอเช็คชื่อ',
+      r.attendedAt ? new Date(r.attendedAt).toLocaleDateString('th-TH') : '-',
     ]);
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `event_participants_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsvFile(`event_participants_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
   };
 
   // Sync to Google Sheets
@@ -756,6 +770,20 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
 
             <button
               type="button"
+              onClick={() =>
+                setGroupImportEventId(
+                  selectedEventId !== 'ALL' ? selectedEventId : eventsList[0]?.id || ''
+                )
+              }
+              className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+              title="นำเข้าหรือดึงรายชื่อนิสิตแบบจัดกลุ่มพร้อมเลขเฉพาะกลุ่ม"
+            >
+              <Upload className="w-3.5 h-3.5 text-emerald-700" />
+              <span>นำเข้า / ดึงนิสิตเป็นกลุ่ม</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleExportCsv}
               className="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
               title="ดาวน์โหลดรายชื่อผู้เข้าร่วมตามตัวกรองปัจจุบันเป็น Excel / CSV"
@@ -970,416 +998,16 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
       </div>
 
       {/* Modal: Add / Edit Event */}
-      {isEventModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 my-8">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2.5 rounded-2xl bg-amber-100 text-amber-700">
-                  <Award className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-base">
-                    {editingEventId ? 'แก้ไขข้อมูลโครงการ/กิจกรรม' : 'เพิ่มโครงการ/กิจกรรมใหม่'}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    กำหนดวัน เวลา สถานที่ หลักสูตรเป้าหมาย และข้อมูลผู้รับผิดชอบโครงการ
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsEventModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 font-bold transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Form */}
-            <form onSubmit={handleSaveEvent} className="space-y-4 text-xs">
-              {/* Event Title */}
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">
-                  ชื่อโครงการ / กิจกรรม <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="เช่น โครงการปฏิบัติวิปัสสนากัมมัฏฐานประจำปี นิสิตคณะพุทธศาสตร์"
-                  value={eventForm.title || ''}
-                  onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-semibold"
-                />
-              </div>
-
-              {/* Event Type & Activity Hours */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">ประเภทกิจกรรม:</label>
-                  <select
-                    value={eventForm.eventType || 'SPECIAL'}
-                    onChange={(e) => setEventForm({ ...eventForm, eventType: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs bg-white font-medium"
-                  >
-                    <option value="MEDITATION">🧘 วิปัสสนากัมมัฏฐาน</option>
-                    <option value="CEREMONY">🏛️ พิธีการ/วันสำคัญทางพระพุทธศาสนา</option>
-                    <option value="ACADEMIC">📚 วิชาการ / อบรม / เสวนา</option>
-                    <option value="VOLUNTEER">🤝 จิตอาสา / บำเพ็ญสาธารณประโยชน์</option>
-                    <option value="SPECIAL">🌟 กิจกรรมและโครงการทั่วไป</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">จำนวนชั่วโมงกิจกรรม (Activity Hours):</label>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="เช่น 3 หรือ 72"
-                    value={eventForm.activityHours || 3}
-                    onChange={(e) => setEventForm({ ...eventForm, activityHours: parseInt(e.target.value, 10) || 0 })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold text-amber-900"
-                  />
-                </div>
-              </div>
-
-              {/* Date & Time Settings with Duration Presets */}
-              <div className="p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-3">
-                <div className="font-bold text-amber-950 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4 text-amber-600" />
-                    <span>ระยะเวลาและรูปแบบการจัดโครงการ</span>
-                  </div>
-                  <span className="text-[10px] font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full">
-                    3 รูปแบบมาตรฐานคณะพุทธศาสตร์
-                  </span>
-                </div>
-
-                {/* Duration Presets Pills */}
-                <div>
-                  <label className="text-[11px] font-bold text-slate-700 block mb-1.5">
-                    เลือกรูปแบบระยะเวลา (1-Click Preset):
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {/* 1. จบใน 1 วัน */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const start = eventForm.startDate || new Date().toISOString().substring(0, 10);
-                        setEventForm({
-                          ...eventForm,
-                          durationFormat: 'SINGLE_DAY',
-                          totalDays: 1,
-                          startDate: start,
-                          endDate: start,
-                          eventTime: '08:30 - 16:30 น. (เริ่มเช้า เสร็จเย็น)',
-                          activityHours: eventForm.activityHours && eventForm.activityHours <= 8 ? eventForm.activityHours : 6,
-                          attendanceMode: 'SINGLE_SCAN',
-                        });
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col gap-1 ${
-                        eventForm.durationFormat === 'SINGLE_DAY'
-                          ? 'bg-sky-50 border-sky-400 text-sky-900 ring-2 ring-sky-300/40 shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="font-bold flex items-center justify-between text-xs">
-                        <span>☀️ จบใน 1 วัน</span>
-                        {eventForm.durationFormat === 'SINGLE_DAY' && (
-                          <span className="text-[9px] bg-sky-600 text-white px-1.5 py-0.2 rounded font-bold">✓ เลือก</span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-slate-500 leading-tight">เริ่มเช้า - เสร็จเย็นหรือค่ำ (08.30-16.30 น.)</p>
-                    </button>
-
-                    {/* 2. แบบ 2 - 3 วัน เหมาวัน */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const start = eventForm.startDate || new Date().toISOString().substring(0, 10);
-                        const endD = new Date(start);
-                        endD.setDate(endD.getDate() + 2); // 3 days
-                        const endStr = endD.toISOString().substring(0, 10);
-                        setEventForm({
-                          ...eventForm,
-                          durationFormat: 'MULTI_DAY',
-                          totalDays: 3,
-                          startDate: start,
-                          endDate: endStr,
-                          eventTime: 'เหมาวัน (3 วัน 2 คืน / 08:30 - 17:00 น.)',
-                          activityHours: eventForm.activityHours && eventForm.activityHours > 8 && eventForm.activityHours < 40 ? eventForm.activityHours : 18,
-                          attendanceMode: 'DAILY_CHECKIN',
-                        });
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col gap-1 ${
-                        eventForm.durationFormat === 'MULTI_DAY'
-                          ? 'bg-amber-100/70 border-amber-500 text-amber-950 ring-2 ring-amber-400/40 shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="font-bold flex items-center justify-between text-xs">
-                        <span>⛺ 2 - 3 วัน (เหมาวัน)</span>
-                        {eventForm.durationFormat === 'MULTI_DAY' && (
-                          <span className="text-[9px] bg-amber-600 text-white px-1.5 py-0.2 rounded font-bold">✓ เลือก</span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-slate-500 leading-tight">ค่ายอบรม / สัมมนาเชิงปฏิบัติการ (พักค้างคืน)</p>
-                    </button>
-
-                    {/* 3. ปฏิบัติวิปัสสนากัมมัฏฐาน 10 - 12 วัน */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const start = eventForm.startDate || new Date().toISOString().substring(0, 10);
-                        const endD = new Date(start);
-                        endD.setDate(endD.getDate() + 9); // 10 days
-                        const endStr = endD.toISOString().substring(0, 10);
-                        setEventForm({
-                          ...eventForm,
-                          durationFormat: 'LONG_TERM_MEDITATION',
-                          eventType: 'MEDITATION',
-                          totalDays: 10,
-                          meditationDaysRequired: 10,
-                          startDate: start,
-                          endDate: endStr,
-                          eventTime: 'ปฏิบัติวิปัสสนากัมมัฏฐานต่อเนื่อง (10 วัน 10 คืน)',
-                          activityHours: 80,
-                          attendanceMode: 'DAILY_CHECKIN',
-                        });
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col gap-1 ${
-                        eventForm.durationFormat === 'LONG_TERM_MEDITATION'
-                          ? 'bg-purple-50 border-purple-400 text-purple-900 ring-2 ring-purple-300/40 shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="font-bold flex items-center justify-between text-xs">
-                        <span>🧘 วิปัสสนา 10-12 วัน</span>
-                        {eventForm.durationFormat === 'LONG_TERM_MEDITATION' && (
-                          <span className="text-[9px] bg-purple-600 text-white px-1.5 py-0.2 rounded font-bold">✓ เลือก</span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-slate-500 leading-tight">โครงการปฏิบัติธรรมประจำปีของ มจร</p>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">วันที่เริ่ม:</label>
-                    <input
-                      type="date"
-                      value={eventForm.startDate || ''}
-                      onChange={(e) => setEventForm({ ...eventForm, startDate: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">วันที่สิ้นสุด:</label>
-                    <input
-                      type="date"
-                      value={eventForm.endDate || ''}
-                      onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">เวลากิจกรรม:</label>
-                    <input
-                      type="text"
-                      placeholder="เช่น 08:30 - 16:30 น."
-                      value={eventForm.eventTime || '08:30 - 16:30 น.'}
-                      onChange={(e) => setEventForm({ ...eventForm, eventTime: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono"
-                    />
-                  </div>
-                </div>
-
-                {/* Location */}
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">สถานที่จัดกิจกรรม:</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-500" />
-                    <input
-                      type="text"
-                      placeholder="เช่น อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย หรือ อาคารเรียนรวม คณะพุทธศาสตร์ มจร"
-                      value={eventForm.location || ''}
-                      onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-                      className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Target Audience & Eligibility Criteria */}
-              <div className="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-200/80 space-y-3">
-                <div className="font-bold text-blue-950 flex items-center gap-1.5">
-                  <GraduationCap className="w-4 h-4 text-blue-600" />
-                  <span>กลุ่มเป้าหมายผู้เข้าร่วมโครงการ (Eligibility)</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">ระดับหลักสูตร:</label>
-                    <select
-                      value={eventForm.targetDegree || 'ALL'}
-                      onChange={(e) => setEventForm({ ...eventForm, targetDegree: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    >
-                      <option value="ALL">ทุกระดับ (ปริญญาตรี, โท, เอก)</option>
-                      <option value="BACHELOR">เฉพาะปริญญาตรี (B.A.)</option>
-                      <option value="MASTER">เฉพาะปริญญาโท (M.A.)</option>
-                      <option value="DOCTORAL">เฉพาะปริญญาเอก (Ph.D.)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">หลักสูตรภาษา:</label>
-                    <select
-                      value={eventForm.targetProgram || 'ALL'}
-                      onChange={(e) => setEventForm({ ...eventForm, targetProgram: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    >
-                      <option value="ALL">ทุกหลักสูตรภาษา (ไทย + อังกฤษ)</option>
-                      <option value="THAI">เฉพาะภาคภาษาไทย (Thai Program)</option>
-                      <option value="ENGLISH">เฉพาะภาคภาษาอังกฤษ (International Program)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Target Year Levels Checkboxes */}
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1.5">ชั้นปีที่เข้าร่วม:</label>
-                  <div className="flex flex-wrap items-center gap-3">
-                    {[1, 2, 3, 4].map((yr) => {
-                      const isChecked = (eventForm.targetYearLevels || []).includes(yr);
-                      return (
-                        <label key={yr} className="flex items-center gap-1.5 font-medium cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              const curr = eventForm.targetYearLevels || [];
-                              if (e.target.checked) {
-                                setEventForm({ ...eventForm, targetYearLevels: [...curr, yr].sort() });
-                              } else {
-                                setEventForm({ ...eventForm, targetYearLevels: curr.filter((y) => y !== yr) });
-                              }
-                            }}
-                            className="rounded text-blue-600 focus:ring-blue-500"
-                          />
-                          <span>ปี {yr}</span>
-                        </label>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => setEventForm({ ...eventForm, targetYearLevels: [1, 2, 3, 4] })}
-                      className="text-[11px] text-blue-700 hover:underline font-semibold ml-2 cursor-pointer"
-                    >
-                      (เลือกทุกชั้นปี)
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Coordinator Information & Toggle */}
-              <div className="p-3.5 bg-purple-50/60 rounded-2xl border border-purple-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="font-bold text-purple-950 flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-purple-600" />
-                    <span>ข้อมูลผู้รับผิดชอบโครงการ</span>
-                  </div>
-
-                  {/* Switch Toggle: Show/Hide Coordinator */}
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <span className="text-[11px] font-semibold text-purple-900">
-                      {eventForm.showCoordinator !== false ? 'เปิดแสดงผู้รับผิดชอบ' : 'ซ่อนผู้รับผิดชอบ'}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={eventForm.showCoordinator !== false}
-                      onChange={(e) => setEventForm({ ...eventForm, showCoordinator: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600 relative"></div>
-                  </label>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">ชื่อผู้รับผิดชอบโครงการ:</label>
-                    <input
-                      type="text"
-                      placeholder="เช่น พระครูสุธีกิตติบัณฑิต, รศ.ดร. หรือ นายดวงดี โอฐสู"
-                      value={eventForm.coordinatorName || ''}
-                      onChange={(e) => setEventForm({ ...eventForm, coordinatorName: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">ตำแหน่ง / สังกัด:</label>
-                    <input
-                      type="text"
-                      placeholder="เช่น คณบดีคณะพุทธศาสตร์ / นักวิชาการศึกษา"
-                      value={eventForm.coordinatorTitle || ''}
-                      onChange={(e) => setEventForm({ ...eventForm, coordinatorTitle: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">เบอร์โทรศัพท์ติดต่อ:</label>
-                    <input
-                      type="text"
-                      placeholder="เช่น 035-248-000 ต่อ 8323"
-                      value={eventForm.coordinatorPhone || ''}
-                      onChange={(e) => setEventForm({ ...eventForm, coordinatorPhone: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">อีเมลติดต่อ:</label>
-                    <input
-                      type="email"
-                      placeholder="เช่น buddhism@mcu.ac.th"
-                      value={eventForm.coordinatorEmail || ''}
-                      onChange={(e) => setEventForm({ ...eventForm, coordinatorEmail: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Form Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t">
-                <button
-                  type="button"
-                  onClick={() => setIsEventModalOpen(false)}
-                  disabled={isSubmittingEvent}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingEvent}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-                >
-                  {isSubmittingEvent ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  <span>{isSubmittingEvent ? 'กำลังบันทึก...' : editingEventId ? 'บันทึกการแก้ไข' : 'บันทึกโครงการ'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
+      <EventFormModal
+        isOpen={isEventModalOpen}
+        editingEventId={editingEventId}
+        eventForm={eventForm}
+        setEventForm={setEventForm}
+        isSubmittingEvent={isSubmittingEvent}
+        onClose={() => setIsEventModalOpen(false)}
+        onSubmit={handleSaveEvent}
+        onSubmitAndOpenGroupImport={() => submitEventForm(true)}
+      />
       {/* Modal: Confirm Delete Event */}
       {deletingEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
@@ -1438,6 +1066,18 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           event={vipassanaModalEvent}
           registrations={registrationsList.filter((r) => r.eventId === vipassanaModalEvent.id)}
           onAttendanceSaved={onRefresh}
+        />
+      )}
+
+      {/* Grouped Student Import / Pull Modal */}
+      {groupImportEventId !== null && (
+        <EventGroupImportModal
+          isOpen={groupImportEventId !== null}
+          onClose={() => setGroupImportEventId(null)}
+          eventsList={eventsList}
+          initialEventId={groupImportEventId || undefined}
+          registrationsList={registrationsList}
+          onImported={onRefresh}
         />
       )}
     </div>

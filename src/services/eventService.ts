@@ -231,6 +231,122 @@ export async function registerStudentForEvent(
   return newReg;
 }
 
+export interface BatchEventRegistrationInput {
+  studentCode: string;
+  studentName: string;
+  groupNumber?: number;
+  groupName?: string;
+  programType?: string;
+  degreeLevel?: string;
+  major?: string;
+  yearLevel?: number;
+  department?: string;
+  role?: string;
+  vasa?: string | number;
+  remarks?: string;
+  status?: 'REGISTERED' | 'ATTENDED' | 'CANCELLED';
+}
+
+export interface BatchImportRegistrationsResult {
+  importedCount: number;
+  skippedCount: number;
+  replacedCount: number;
+  items: EventRegistration[];
+}
+
+/**
+ * Batch imports grouped student registrations into an event while preventing duplicates
+ * by normalized studentCode (group code) or (groupNumber + studentName).
+ */
+export async function batchImportEventRegistrations(
+  eventId: string,
+  items: BatchEventRegistrationInput[],
+  mode: 'APPEND' | 'REPLACE_EVENT' = 'APPEND'
+): Promise<BatchImportRegistrationsResult> {
+  const local = readLocalJson<any[]>('event_registrations.json', []);
+  const events = await getEvents();
+  const targetEvent = events.find((e) => e.id === eventId);
+
+  let replacedCount = 0;
+  const remaining =
+    mode === 'REPLACE_EVENT'
+      ? local.filter((r) => {
+          if (r.eventId === eventId) {
+            replacedCount += 1;
+            return false;
+          }
+          return true;
+        })
+      : [...local];
+
+  const existingCodes = new Set<string>();
+  const existingGroupNames = new Set<string>();
+  for (const r of remaining) {
+    if (r.eventId !== eventId) continue;
+    const codeKey = String(r.studentCode || '').trim().toLowerCase();
+    if (codeKey) existingCodes.add(codeKey);
+    const nameKey = `${r.groupNumber || ''}|${String(r.studentName || '').trim().toLowerCase()}`;
+    if (r.studentName) existingGroupNames.add(nameKey);
+  }
+
+  const now = Date.now();
+  const nowIso = new Date(now).toISOString();
+  const createdItems: EventRegistration[] = [];
+  let skippedCount = 0;
+
+  items.forEach((item, index) => {
+    const cleanCode = String(item.studentCode || '').trim();
+    const cleanName = String(item.studentName || '').trim();
+    if (!cleanName || !cleanCode) {
+      skippedCount += 1;
+      return;
+    }
+
+    const codeKey = cleanCode.toLowerCase();
+    const nameKey = `${item.groupNumber || ''}|${cleanName.toLowerCase()}`;
+    if (existingCodes.has(codeKey) || existingGroupNames.has(nameKey)) {
+      skippedCount += 1;
+      return;
+    }
+
+    existingCodes.add(codeKey);
+    existingGroupNames.add(nameKey);
+
+    const reg: EventRegistration = {
+      id: `reg-${now}-${index}-${Math.floor(Math.random() * 1000)}`,
+      eventId,
+      eventTitle: targetEvent?.title,
+      studentCode: cleanCode,
+      studentName: cleanName,
+      status: item.status || 'REGISTERED',
+      role: item.role || 'STUDENT',
+      degreeLevel: item.degreeLevel,
+      programType: item.programType,
+      major: item.major,
+      yearLevel: item.yearLevel,
+      department: item.department,
+      groupNumber: item.groupNumber,
+      groupName: item.groupName || (item.groupNumber ? `กลุ่มที่ ${item.groupNumber}` : undefined),
+      vasa: item.vasa,
+      remarks: item.remarks,
+      createdAt: nowIso,
+    };
+
+    createdItems.push(reg);
+  });
+
+  // Prepend created items in natural order before remaining rows
+  const nextList = [...createdItems, ...remaining];
+  writeLocalJson('event_registrations.json', nextList);
+
+  return {
+    importedCount: createdItems.length,
+    skippedCount,
+    replacedCount,
+    items: createdItems,
+  };
+}
+
 export async function checkInEventStudent(
   registrationId: string,
   status: 'ATTENDED' | 'REGISTERED' | 'CANCELLED' = 'ATTENDED'

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { getStudents, getCourses, getCertificateRequests, getAttendanceRecords, getSystemSettings } from '@/lib/data-store';
 import { HeroWildSection } from '@/components/home/HeroWildSection';
+import { CookieConsentBanner } from '@/components/home/CookieConsentBanner';
 
 export const revalidate = 0;
 
@@ -282,6 +283,9 @@ export default async function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Cookie / PDPA Consent Notice Banner (Shown on Homepage `/` only) */}
+      <CookieConsentBanner />
     </div>
   );
 }

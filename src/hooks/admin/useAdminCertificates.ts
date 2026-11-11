@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { CertificateRequest } from '@/types';
-import { calculateNextDocNo } from '@/lib/utils';
+import { calculateNextDocNo, getErrorMessage } from '@/lib/utils';
 
 interface UseAdminCertificatesOptions {
   loadData: () => Promise<void> | void;
@@ -103,8 +103,8 @@ export function useAdminCertificates({
       } else {
         alert('เกิดข้อผิดพลาด: ' + data.error);
       }
-    } catch (err: any) {
-      alert('การอนุมัติล้มเหลว: ' + err.message);
+    } catch (err: unknown) {
+      alert('การอนุมัติล้มเหลว: ' + getErrorMessage(err));
     }
   };
 
@@ -140,8 +140,8 @@ export function useAdminCertificates({
       } else {
         alert('เกิดข้อผิดพลาด: ' + data.error);
       }
-    } catch (err: any) {
-      alert('ข้อผิดพลาด: ' + err.message);
+    } catch (err: unknown) {
+      alert('ข้อผิดพลาด: ' + getErrorMessage(err));
     } finally {
       setRejectSubmitting(false);
     }

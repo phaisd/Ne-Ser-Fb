@@ -28,9 +28,17 @@ import {
   FileSpreadsheet,
   Trash2,
   AlertTriangle,
+  History,
+  Copy,
 } from 'lucide-react';
 import { Course, UserAccount } from '@/types';
-import { CourseImportModal } from '../modals';
+import { downloadCsvFile, getErrorMessage } from '@/lib/utils';
+import {
+  CourseCloneModal,
+  CourseDeleteModal,
+  CourseHistoryModal,
+  CourseImportModal,
+} from '../modals';
 
 interface AdminCoursesTabProps {
   coursesCount: number;
@@ -116,21 +124,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
       c.description || '',
     ]);
 
-    const csvContent =
-      '\uFEFF' +
-      [
-        headers.join(','),
-        ...rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
-      ].join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsvFile(filename, headers, rows);
     setIsExportMenuOpen(false);
   };
 
@@ -161,8 +155,23 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
 
   // Filter states in toolbar
   const [degreeFilter, setDegreeFilter] = useState('ALL');
+  const [academicYearFilter, setAcademicYearFilter] = useState('ALL');
   const [semesterFilter, setSemesterFilter] = useState('ALL');
   const [yearFilter, setYearFilter] = useState('ALL');
+
+  // Instructor change reason, history modal, and clone-term modal states
+  const [formChangeReason, setFormChangeReason] = useState('');
+  const [historyCourse, setHistoryCourse] = useState<Course | null>(null);
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+
+  const availableAcademicYears = useMemo(() => {
+    const years = new Set<string>();
+    filteredCourses.forEach((c) => {
+      const yr = c.academicYear?.trim() || c.term?.split('/')[1]?.trim();
+      if (yr) years.add(yr);
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [filteredCourses]);
 
   // Extract unique instructor names from prop or from course list
   const availableInstructors = useMemo(() => {
@@ -222,6 +231,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
       setIsCustomInstructor(false);
     }
 
+    setFormChangeReason('');
     setSaveSuccessMsg(null);
     setSaveErrorMsg(null);
   };
@@ -255,6 +265,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
         id: editingCourse.id || editingCourse.courseCode,
         courseCode: editingCourse.courseCode,
         section: editingCourse.section || '1',
+        reason: formChangeReason.trim() || undefined,
         updates: {
           courseCode: formCourseCode.trim(),
           courseName: formCourseName.trim(),
@@ -326,17 +337,23 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
       if (onRefreshCourses) {
         onRefreshCourses();
       }
-    } catch (err: any) {
-      alert(err.message || 'เกิดข้อผิดพลาดในการลบรายวิชา');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, 'เกิดข้อผิดพลาดในการลบรายวิชา'));
     } finally {
       setIsDeleting(false);
     }
   };
 
-  // Filtered courses including local degree, semester, and year filters
+  // Filtered courses including local degree, academicYear, semester, and year filters
   const displayedCourses = useMemo(() => {
     return filteredCourses.filter((c) => {
       if (degreeFilter !== 'ALL' && c.degreeLevel !== degreeFilter) return false;
+
+      // Filter by Academic Year
+      if (academicYearFilter !== 'ALL') {
+        const cYearStr = c.academicYear?.trim() || c.term?.split('/')[1]?.trim();
+        if (cYearStr !== academicYearFilter) return false;
+      }
 
       // Filter by Semester
       if (semesterFilter !== 'ALL') {
@@ -357,7 +374,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
 
       return true;
     });
-  }, [filteredCourses, degreeFilter, semesterFilter, yearFilter]);
+  }, [filteredCourses, degreeFilter, academicYearFilter, semesterFilter, yearFilter]);
 
   const dayNames = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
 
@@ -375,6 +392,17 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Clone Term Button */}
+          <button
+            type="button"
+            onClick={() => setIsCloneModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+            title="คัดลอกรายวิชาทั้งหมดจากปีการศึกษา/ภาคเรียนเดิม ไปสร้างเป็นปีการศึกษาใหม่โดยไม่ทับประวัติเดิม"
+          >
+            <Copy className="w-3.5 h-3.5 text-amber-600" />
+            <span>📋 คัดลอกข้ามปีการศึกษา</span>
+          </button>
+
           {/* Import Button */}
           <button
             type="button"
@@ -510,6 +538,23 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
             </select>
           </div>
 
+          {/* Academic Year Filter */}
+          <div className="flex items-center gap-1">
+            <span className="text-slate-400 font-medium text-[11px] hidden sm:inline">ปีการศึกษา:</span>
+            <select
+              value={academicYearFilter}
+              onChange={(e) => setAcademicYearFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            >
+              <option value="ALL">ปีการศึกษา: ทั้งหมด</option>
+              {availableAcademicYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  ปี {yr}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Semester Filter */}
           <div className="flex items-center gap-1">
             <span className="text-slate-400 font-medium text-[11px] hidden sm:inline">ภาคการศึกษา:</span>
@@ -570,10 +615,11 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
           </div>
 
           {/* Reset Filters button */}
-          {(degreeFilter !== 'ALL' || semesterFilter !== 'ALL' || yearFilter !== 'ALL' || courseProgramFilter !== 'ALL' || courseSearch.trim()) && (
+          {(degreeFilter !== 'ALL' || academicYearFilter !== 'ALL' || semesterFilter !== 'ALL' || yearFilter !== 'ALL' || courseProgramFilter !== 'ALL' || courseSearch.trim()) && (
             <button
               onClick={() => {
                 setDegreeFilter('ALL');
+                setAcademicYearFilter('ALL');
                 setSemesterFilter('ALL');
                 setYearFilter('ALL');
                 setCourseProgramFilter('ALL');
@@ -649,7 +695,13 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
                           </span>
                           <span className="text-[11px] text-slate-500">
                             {c.degreeLevel || 'ปริญญาตรี'} • ปี {c.yearLevel || 1}
-                            {c.semester ? ` (เทอม ${c.semester})` : c.term ? ` (เทอม ${c.term.split('/')[0]})` : ''}
+                            {c.academicYear
+                              ? ` • ภาค ${c.semester || 1}/${c.academicYear}`
+                              : c.term
+                              ? ` • ภาค ${c.term}`
+                              : c.semester
+                              ? ` (เทอม ${c.semester})`
+                              : ''}
                           </span>
                         </div>
                       </td>
@@ -708,6 +760,19 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
                       {/* Actions */}
                       <td className="px-5 py-3.5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setHistoryCourse(c)}
+                            className={`px-2 py-1.5 rounded-xl text-xs font-semibold border transition inline-flex items-center gap-1 cursor-pointer ${
+                              (c.instructorHistory?.length || 0) > 0
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                            }`}
+                            title="ดูประวัติการเปลี่ยนอาจารย์ผู้สอนย้อนหลัง"
+                          >
+                            <History className="w-3 h-3" />
+                            <span>ประวัติ{(c.instructorHistory?.length || 0) > 0 ? ` (${c.instructorHistory!.length})` : ''}</span>
+                          </button>
                           <button
                             onClick={() => handleOpenEdit(c)}
                             className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition inline-flex items-center gap-1 cursor-pointer shadow-sm shadow-emerald-600/20"
@@ -1026,6 +1091,32 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
               </div>
             </div>
 
+            {/* Change Reason (Logged automatically into Instructor History when instructor changes) */}
+            <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <label className="text-[11px] font-bold text-indigo-900 inline-flex items-center gap-1.5">
+                  <History className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>เหตุผลการเปลี่ยนอาจารย์ผู้สอน / หมายเหตุประวัติ (ไม่บังคับ)</span>
+                </label>
+                {(editingCourse.instructorHistory?.length || 0) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setHistoryCourse(editingCourse)}
+                    className="text-[11px] font-semibold text-indigo-700 hover:text-indigo-900 hover:underline cursor-pointer"
+                  >
+                    ดูประวัติเดิม ({editingCourse.instructorHistory!.length} รายการ)
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                value={formChangeReason}
+                onChange={(e) => setFormChangeReason(e.target.value)}
+                placeholder="เช่น เปลี่ยนผู้สอนประจำภาคการศึกษาใหม่, มอบหมายสอนแทน (ระบบบันทึกประวัติย้อนหลังอัตโนมัติ)"
+                className="w-full px-3 py-2 rounded-xl border border-indigo-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              />
+            </div>
+
             {/* Modal Actions */}
             <div className="flex items-center justify-between pt-4 border-t flex-wrap gap-2">
               <button
@@ -1069,96 +1160,25 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          MODAL: ยืนยันการลบรายวิชา (Delete Confirmation Dialog)
-         ───────────────────────────────────────────────────────────── */}
-      {deletingCourse && (
-        <div
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isDeleting) setDeletingCourse(null);
-          }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
-        >
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 relative">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-slate-900">
-                    ยืนยันการลบรายวิชา?
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-1">
-                    คุณต้องการลบรายวิชานี้ออกจากคลังหลักสูตรใช่หรือไม่?
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setDeletingCourse(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center cursor-pointer transition shrink-0"
-              >
-                ✕
-              </button>
-            </div>
+      <CourseDeleteModal
+        course={deletingCourse}
+        isDeleting={isDeleting}
+        onClose={() => setDeletingCourse(null)}
+        onConfirm={handleConfirmDelete}
+      />
 
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400 font-medium">รหัสวิชา:</span>
-                <span className="font-mono font-bold text-emerald-800">{deletingCourse.courseCode}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400 font-medium">ชื่อวิชา:</span>
-                <span className="font-bold text-slate-900">{deletingCourse.courseName}</span>
-              </div>
-              {deletingCourse.courseNameEn && (
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400 font-medium">En:</span>
-                  <span className="text-slate-600">{deletingCourse.courseNameEn}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400 font-medium">หน่วยกิต:</span>
-                <span className="font-medium text-slate-700">{deletingCourse.credits || 3} หน่วยกิต</span>
-              </div>
-            </div>
+      <CourseHistoryModal
+        course={historyCourse}
+        onClose={() => setHistoryCourse(null)}
+      />
 
-            <div className="text-[11px] text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-100">
-              ⚠️ การลบรายวิชานี้จะนำวิชาออกจากระบบคลังรายวิชาและตารางเรียนโดยสมบูรณ์
-            </div>
+      <CourseCloneModal
+        isOpen={isCloneModalOpen}
+        availableAcademicYears={availableAcademicYears}
+        onClose={() => setIsCloneModalOpen(false)}
+        onCloned={onRefreshCourses}
+      />
 
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeletingCourse(null)}
-                disabled={isDeleting}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold transition cursor-pointer"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                disabled={isDeleting}
-                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                {isDeleting ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>กำลังลบ...</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>ยืนยันลบรายวิชา</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Course Import Modal */}
       <CourseImportModal
         isOpen={isImportModalOpen}

@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   hashPassword,
   verifyPassword,
   isBcryptHash,
   checkRateLimit,
   resetRateLimit,
+  createSignedSessionToken,
+  verifySessionToken,
 } from './auth-security';
 
 describe('auth-security module', () => {
@@ -56,5 +58,63 @@ describe('auth-security module', () => {
     resetRateLimit(ip);
     const afterReset = checkRateLimit(ip, 10, 60000);
     expect(afterReset.allowed).toBe(true);
+  });
+
+  describe('fail-closed session token security', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('rejects malformed signature lengths cleanly without throwing', () => {
+      const token = createSignedSessionToken({
+        id: 'admin-1',
+        email: 'admin@mcu.ac.th',
+        role: 'ADMIN',
+      });
+      const [payload] = token.split('.');
+
+      expect(verifySessionToken(`${payload}.short`)).toBeNull();
+      expect(verifySessionToken(`${payload}.`)).toBeNull();
+      expect(verifySessionToken('invalid-format')).toBeNull();
+    });
+
+    it('fails closed in production when AUTH_SECRET is missing or too short', () => {
+      const devToken = createSignedSessionToken({
+        id: 'admin-1',
+        email: 'admin@mcu.ac.th',
+        role: 'SUPER_ADMIN',
+      });
+
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('AUTH_SECRET', '');
+      vi.stubEnv('NEXTAUTH_SECRET', '');
+
+      expect(() =>
+        createSignedSessionToken({
+          id: 'admin-1',
+          email: 'admin@mcu.ac.th',
+          role: 'SUPER_ADMIN',
+        })
+      ).toThrow(/AUTH_SECRET/);
+
+      // Must reject tokens signed with non-prod fallback once in production
+      expect(verifySessionToken(devToken)).toBeNull();
+    });
+
+    it('signs and verifies tokens in production when strong AUTH_SECRET is configured', () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('AUTH_SECRET', '0123456789abcdef0123456789abcdef0123456789abcdef');
+
+      const prodToken = createSignedSessionToken({
+        id: 'admin-1',
+        email: 'admin@mcu.ac.th',
+        role: 'ADMIN',
+      });
+
+      const verified = verifySessionToken(prodToken);
+      expect(verified).not.toBeNull();
+      expect(verified?.id).toBe('admin-1');
+      expect(verified?.role).toBe('ADMIN');
+    });
   });
 });

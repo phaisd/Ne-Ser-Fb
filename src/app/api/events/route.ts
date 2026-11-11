@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import { 
   getEvents, 
   getEventRegistrations, 
@@ -8,6 +9,7 @@ import {
   updateEvent,
   deleteEvent
 } from '@/services';
+import { requireAdminOrOfficer, requireStaffOrInstructor } from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
   try {
@@ -29,8 +31,8 @@ export async function GET(request: Request) {
       events, 
       registrations: regs 
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
@@ -41,6 +43,9 @@ export async function POST(request: Request) {
 
     // Checkin / Toggle registration status
     if (action === 'checkin') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
       const { registrationId, status } = body;
       if (!registrationId) {
         return NextResponse.json({ success: false, error: 'Missing registrationId' }, { status: 400 });
@@ -51,6 +56,9 @@ export async function POST(request: Request) {
 
     // Save Vipassana 4-Period Daily Attendance
     if (action === 'save_vipassana_attendance') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
       const { eventId, dayKey, records } = body;
       if (!eventId || !dayKey || !records || !Array.isArray(records)) {
         return NextResponse.json(
@@ -63,8 +71,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: 'บันทึกเวลาปฏิบัติวิปัสสนากัมมัฏฐาน 4 รอบเรียบร้อยแล้ว' });
     }
 
+    // Batch import grouped participants into an event
+    if (action === 'batch_import_registrations') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, items, mode } = body;
+      if (!eventId || !Array.isArray(items) || items.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'กรุณาระบุกิจกรรมและรายชื่อนิสิตที่ต้องการนำเข้า' },
+          { status: 400 }
+        );
+      }
+
+      const { batchImportEventRegistrations } = await import('@/services');
+      const result = await batchImportEventRegistrations(
+        eventId,
+        items,
+        mode === 'REPLACE_EVENT' ? 'REPLACE_EVENT' : 'APPEND'
+      );
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `นำเข้าผู้เข้าร่วมกิจกรรมสำเร็จ ${result.importedCount} คน${
+          result.skippedCount > 0 ? ` (ข้ามรายการซ้ำ/ไม่สมบูรณ์ ${result.skippedCount} รายการ)` : ''
+        }`,
+      });
+    }
+
     // Create a new event
     if (action === 'create_event' || action === 'add_event') {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
       const { eventData } = body;
       if (!eventData || !eventData.title) {
         return NextResponse.json({ success: false, error: 'กรุณาระบุชื่อโครงการ/กิจกรรม' }, { status: 400 });
@@ -75,6 +114,9 @@ export async function POST(request: Request) {
 
     // Update an event
     if (action === 'update_event') {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
       const { id, updates } = body;
       if (!id) {
         return NextResponse.json({ success: false, error: 'Missing event id' }, { status: 400 });
@@ -88,6 +130,8 @@ export async function POST(request: Request) {
 
     // Delete an event
     if (action === 'delete_event') {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
       const { id } = body;
       if (!id) {
         return NextResponse.json({ success: false, error: 'Missing event id' }, { status: 400 });
@@ -119,13 +163,16 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, data: newReg });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
 export async function DELETE(request: Request) {
   try {
+    const adminAuth = requireAdminOrOfficer(request);
+    if (adminAuth.response) return adminAuth.response;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) {
@@ -133,7 +180,7 @@ export async function DELETE(request: Request) {
     }
     const success = await deleteEvent(id);
     return NextResponse.json({ success });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

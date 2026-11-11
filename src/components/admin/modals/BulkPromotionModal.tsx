@@ -21,7 +21,8 @@ export interface PromotionCandidate {
   fullName: string;
   currentYear: number;
   currentStatus: string;
-  programType: 'THAI' | 'ENGLISH';
+  programType?: string;
+  degree?: string;
   major?: string;
   actionType: 'PROMOTE' | 'REPEAT' | 'DROP' | 'GRADUATE' | 'RETIRE' | 'CUSTOM';
   newYear: number;
@@ -46,21 +47,21 @@ interface BulkPromotionModalProps {
   showConfirm: boolean;
   setShowConfirm: (show: boolean) => void;
   promotionStats: PromotionStats;
-  promotionTargetYear: any;
-  setPromotionTargetYear: (yr: any) => void;
-  promotionProgramFilter: any;
-  setPromotionProgramFilter: (prog: any) => void;
+  promotionTargetYear: string;
+  setPromotionTargetYear: (yr: string) => void;
+  promotionProgramFilter: 'ALL' | 'THAI' | 'ENGLISH';
+  setPromotionProgramFilter: (prog: 'ALL' | 'THAI' | 'ENGLISH') => void;
   promotionActionFilter: string;
   setPromotionActionFilter: (act: string) => void;
   promotionSearch: string;
   setPromotionSearch: (q: string) => void;
-  filteredPromotionItems: any[];
-  setFilteredPromotionSelection: (selected: boolean, items: any[]) => void;
-  setFilteredPromotionAction: (action: any, items: any[]) => void;
+  filteredPromotionItems: PromotionCandidate[];
+  setFilteredPromotionSelection: (selected: boolean, items: PromotionCandidate[]) => void;
+  setFilteredPromotionAction: (action: 'PROMOTE' | 'GRADUATE' | 'REPEAT' | 'DROP', items: PromotionCandidate[]) => void;
   onResetRecommendation: () => void;
   onToggleSelect: (studentCode: string) => void;
-  onActionChange: (studentCode: string, action: any) => void;
-  onCustomFieldChange: (studentCode: string, field: 'newYear' | 'newStatus' | 'note', value: any) => void;
+  onActionChange: (studentCode: string, action: PromotionCandidate['actionType']) => void;
+  onCustomFieldChange: (studentCode: string, field: 'newYear' | 'newStatus' | 'note', value: string | number) => void;
   promotionSubmitting: boolean;
   onExecuteBulkPromotion: () => void;
 }
@@ -257,7 +258,7 @@ export function BulkPromotionModal({
                 <select
                   onChange={(e) => {
                     if (!e.target.value) return;
-                    const val = e.target.value as any;
+                    const val = e.target.value as 'PROMOTE' | 'GRADUATE' | 'REPEAT' | 'DROP';
                     setFilteredPromotionAction(val, filteredPromotionItems);
                     e.target.value = '';
                   }}
@@ -383,7 +384,7 @@ export function BulkPromotionModal({
                           <select
                             value={item.actionType}
                             onChange={(e) =>
-                              onActionChange(item.studentCode, e.target.value as any)
+                              onActionChange(item.studentCode, e.target.value as PromotionCandidate['actionType'])
                             }
                             className={`w-full px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition ${
                               item.actionType === 'PROMOTE'

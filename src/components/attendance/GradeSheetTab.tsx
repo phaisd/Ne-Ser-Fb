@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AlertTriangle, Lock } from 'lucide-react';
-import { CourseGradeSheet, StudentScoreItem } from '@/types';
+import { CollectionScoreColumn, CourseGradeSheet, StudentScoreItem } from '@/types';
 import { toSafeCsvCell, cleanImportedCsvCell } from '@/lib/security';
 import { groupAndSortByMajor } from './majorGrouping';
 import {
@@ -10,6 +10,13 @@ import {
   calculateTotalScore,
   calculateGradeSummaryStats,
 } from '@/lib/grading/gradeCalculator';
+import {
+  calculateCollectionSum,
+  clampCollectionCount,
+  DEFAULT_COLLECTION_COUNT,
+  normalizeCollectionColumns,
+  scaleCollectionToTarget,
+} from '@/lib/grading/collectionScores';
 
 import {
   GradeSheetStudentInput,
@@ -18,6 +25,7 @@ import {
   GradeSheetControls,
   GradeSheetMobileCards,
   GradeSheetTable,
+  CollectionScoreSheet,
   PrintScaleToolbar,
   GradeSheetPrintView,
 } from './grades';
@@ -109,6 +117,12 @@ export function GradeSheetTab({
 
   // Scores map: studentCode -> StudentScoreItem
   const [scoresMap, setScoresMap] = useState<Record<string, StudentScoreItem>>({});
+  const [activeGradeSubTab, setActiveGradeSubTab] = useState<'main' | 'collection'>('main');
+  const [collectionCount, setCollectionCount] = useState<number>(DEFAULT_COLLECTION_COUNT);
+  const [collectionColumns, setCollectionColumns] = useState<CollectionScoreColumn[]>(() =>
+    normalizeCollectionColumns(DEFAULT_COLLECTION_COUNT)
+  );
+  const [collectionScores, setCollectionScores] = useState<Record<string, (number | null)[]>>({});
   const [saving, setSaving] = useState<boolean>(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -154,6 +168,9 @@ export function GradeSheetTab({
     );
     setCreditText(String(currentCourse.credits || '3'));
     setLecturerName(currentCourse.instructor || currentUser?.name || '');
+    setCollectionCount(DEFAULT_COLLECTION_COUNT);
+    setCollectionColumns(normalizeCollectionColumns(DEFAULT_COLLECTION_COUNT));
+    setCollectionScores({});
 
     // Load saved grade sheet for this course from /api/grades
     fetch(`/api/grades?courseCode=${encodeURIComponent(currentCourse.courseCode)}`)
@@ -176,6 +193,10 @@ export function GradeSheetTab({
           if (saved.submitDateTextTh !== undefined) setSubmitDateTextTh(saved.submitDateTextTh);
           if (saved.submitDateTextEn !== undefined) setSubmitDateTextEn(saved.submitDateTextEn);
           if (saved.scores) setScoresMap(saved.scores);
+          const loadedCount = clampCollectionCount(saved.collectionCount);
+          setCollectionCount(loadedCount);
+          setCollectionColumns(normalizeCollectionColumns(loadedCount, saved.collectionColumns));
+          setCollectionScores(saved.collectionScores || {});
         } else {
           // Initialize empty scores with auto-populated ineligible remarks from attendance
           const initialMap: Record<string, StudentScoreItem> = {};
@@ -349,6 +370,9 @@ export function GradeSheetTab({
         yearLevelText,
         majorText,
         scores: scoresMap,
+        collectionCount,
+        collectionColumns: normalizeCollectionColumns(collectionCount, collectionColumns),
+        collectionScores,
         updatedBy: currentUser?.name || lecturerName,
       };
 
@@ -493,6 +517,102 @@ export function GradeSheetTab({
     );
   }
 
+  const handleChangeCollectionCount = (nextCount: number) => {
+    const clamped = clampCollectionCount(nextCount);
+    setCollectionCount(clamped);
+    setCollectionColumns((prev) => normalizeCollectionColumns(clamped, prev));
+  };
+
+  const handleUpdateCollectionColumn = (
+    index: number,
+    patch: Partial<CollectionScoreColumn>,
+  ) => {
+    setCollectionColumns((prev) => {
+      const normalized = normalizeCollectionColumns(collectionCount, prev);
+      return normalized.map((col, idx) => (idx === index ? { ...col, ...patch } : col));
+    });
+  };
+
+  const handleSetAllCollectionMaxScores = (maxScore: number) => {
+    if (!Number.isFinite(maxScore) || maxScore <= 0) return;
+    setCollectionColumns((prev) =>
+      normalizeCollectionColumns(collectionCount, prev).map((col) => ({
+        ...col,
+        maxScore,
+      })),
+    );
+  };
+
+  const handleUpdateCollectionCellScore = (
+    studentCode: string,
+    colIndex: number,
+    rawValue: string,
+  ) => {
+    const colMax = collectionColumns[colIndex]?.maxScore ?? 10;
+    const trimmed = rawValue.trim();
+    let parsed: number | null = null;
+    if (trimmed !== '') {
+      const num = parseFloat(trimmed);
+      if (Number.isFinite(num)) {
+        parsed = Math.min(colMax, Math.max(0, num));
+      } else {
+        return;
+      }
+    }
+
+    setCollectionScores((prev) => {
+      const currentArr = [...(prev[studentCode] || [])];
+      while (currentArr.length < collectionCount) {
+        currentArr.push(null);
+      }
+      currentArr[colIndex] = parsed;
+      return {
+        ...prev,
+        [studentCode]: currentArr,
+      };
+    });
+  };
+
+  const handleApplyCollectionToMainSheet = (
+    targetField: 'assignScore' | 'midtermScore',
+  ): number => {
+    const safeCount = clampCollectionCount(collectionCount);
+    const activeCols = collectionColumns.slice(0, safeCount);
+    const totalColMax = activeCols.reduce(
+      (acc, c) => acc + (Number.isFinite(c.maxScore) && c.maxScore > 0 ? c.maxScore : 0),
+      0,
+    );
+    const targetMax = targetField === 'assignScore' ? maxAssignScore : maxMidtermScore;
+
+    const scaledUpdates: { studentCode: string; studentName: string; scaled: number }[] = [];
+    studentsList.forEach((stu) => {
+      const arr = collectionScores[stu.studentCode];
+      const { sum, filledCount } = calculateCollectionSum(arr, safeCount);
+      if (filledCount === 0) return;
+      scaledUpdates.push({
+        studentCode: stu.studentCode,
+        studentName: stu.studentName,
+        scaled: scaleCollectionToTarget(sum, totalColMax, targetMax),
+      });
+    });
+
+    if (scaledUpdates.length > 0) {
+      setScoresMap((prev) => {
+        const next = { ...prev };
+        scaledUpdates.forEach(({ studentCode, studentName, scaled }) => {
+          const existing = next[studentCode] || { studentCode, studentName };
+          next[studentCode] = {
+            ...existing,
+            [targetField]: scaled,
+          };
+        });
+        return next;
+      });
+    }
+
+    return scaledUpdates.length;
+  };
+
   const totalMaxWeight = maxAssignScore + maxAffectiveScore + maxMidtermScore + maxFinalScore;
 
   return (
@@ -546,62 +666,114 @@ export function GradeSheetTab({
           setSubmitDateTextEn={setSubmitDateTextEn}
         />
 
-        {/* Score Inputs (Mobile & Desktop) */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-5 sm:p-6 space-y-5 print:hidden">
-          <GradeSheetMobileCards
-            groupedSections={groupedSections}
-            formLanguage={formLanguage}
-            maxAssignScore={maxAssignScore}
-            maxAffectiveScore={maxAffectiveScore}
-            maxMidtermScore={maxMidtermScore}
-            maxFinalScore={maxFinalScore}
-            handleUpdateStudentScore={handleUpdateStudentScore}
-          />
-
-          <GradeSheetTable
-            groupedSections={groupedSections}
-            formLanguage={formLanguage}
-            maxAssignScore={maxAssignScore}
-            maxAffectiveScore={maxAffectiveScore}
-            maxMidtermScore={maxMidtermScore}
-            maxFinalScore={maxFinalScore}
-            totalMaxWeight={totalMaxWeight}
-            handleUpdateStudentScore={handleUpdateStudentScore}
-          />
-
-          <PrintScaleToolbar
-            showPrintPreviewOnScreen={showPrintPreviewOnScreen}
-            setShowPrintPreviewOnScreen={setShowPrintPreviewOnScreen}
-            printSizePreset={printSizePreset}
-            applyPrintSizePreset={applyPrintSizePreset}
-            printRowHeightPx={printRowHeightPx}
-            printFontSizePx={printFontSizePx}
-            handleCustomPrintScaleChange={handleCustomPrintScaleChange}
-          />
+        {/* Sub-Tab Switcher: Official Exam Score Sheet vs Continuous Collection Sheet (5-10 items) */}
+        <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-2xs print:hidden">
+          <button
+            type="button"
+            onClick={() => setActiveGradeSubTab('main')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition cursor-pointer flex items-center gap-2 ${
+              activeGradeSubTab === 'main'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <span>📝 ใบกรอกคะแนนผลการสอบ (Official Grade Sheet)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveGradeSubTab('collection')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition cursor-pointer flex items-center gap-2 ${
+              activeGradeSubTab === 'collection'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-indigo-50 hover:text-indigo-700'
+            }`}
+          >
+            <span>📋 ใบคะแนนเก็บ ({collectionCount} ครั้ง / 5-10 ครั้ง)</span>
+          </button>
         </div>
+
+        {/* Score Inputs: Main Grade Sheet OR Collection Score Sheet */}
+        {activeGradeSubTab === 'main' ? (
+          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-5 sm:p-6 space-y-5 print:hidden">
+            <GradeSheetMobileCards
+              groupedSections={groupedSections}
+              formLanguage={formLanguage}
+              maxAssignScore={maxAssignScore}
+              maxAffectiveScore={maxAffectiveScore}
+              maxMidtermScore={maxMidtermScore}
+              maxFinalScore={maxFinalScore}
+              handleUpdateStudentScore={handleUpdateStudentScore}
+            />
+
+            <GradeSheetTable
+              groupedSections={groupedSections}
+              formLanguage={formLanguage}
+              maxAssignScore={maxAssignScore}
+              maxAffectiveScore={maxAffectiveScore}
+              maxMidtermScore={maxMidtermScore}
+              maxFinalScore={maxFinalScore}
+              totalMaxWeight={totalMaxWeight}
+              handleUpdateStudentScore={handleUpdateStudentScore}
+            />
+
+            <PrintScaleToolbar
+              showPrintPreviewOnScreen={showPrintPreviewOnScreen}
+              setShowPrintPreviewOnScreen={setShowPrintPreviewOnScreen}
+              printSizePreset={printSizePreset}
+              applyPrintSizePreset={applyPrintSizePreset}
+              printRowHeightPx={printRowHeightPx}
+              printFontSizePx={printFontSizePx}
+              handleCustomPrintScaleChange={handleCustomPrintScaleChange}
+            />
+          </div>
+        ) : (
+          <CollectionScoreSheet
+            courseCode={currentCourse?.courseCode || selectedCourseCode}
+            courseName={currentCourse?.courseName}
+            semesterText={semesterText}
+            academicYearText={academicYearText}
+            lecturerName={lecturerName}
+            formLanguage={formLanguage}
+            groupedSections={groupedSections}
+            collectionCount={collectionCount}
+            collectionColumns={collectionColumns}
+            collectionScores={collectionScores}
+            maxAssignScore={maxAssignScore}
+            maxMidtermScore={maxMidtermScore}
+            saving={saving}
+            onChangeCount={handleChangeCollectionCount}
+            onUpdateColumn={handleUpdateCollectionColumn}
+            onSetAllMaxScores={handleSetAllCollectionMaxScores}
+            onUpdateCellScore={handleUpdateCollectionCellScore}
+            onApplyToMainSheet={handleApplyCollectionToMainSheet}
+            onSave={handleSaveGradeSheet}
+          />
+        )}
       </div>
 
       {/* 2. Official A4 Print Document (Thai / English) */}
-      <GradeSheetPrintView
-        showPrintPreviewOnScreen={showPrintPreviewOnScreen}
-        formLanguage={formLanguage}
-        resolvedLogoUrl={resolvedLogoUrl}
-        currentCourse={currentCourse}
-        yearLevelText={yearLevelText}
-        majorText={majorText}
-        semesterText={semesterText}
-        academicYearText={academicYearText}
-        creditText={creditText}
-        lecturerName={lecturerName}
-        departmentHeadName={departmentHeadName}
-        submitDateTextTh={submitDateTextTh}
-        submitDateTextEn={submitDateTextEn}
-        printFontSizePx={printFontSizePx}
-        printRowHeightPx={printRowHeightPx}
-        groupedSections={groupedSections}
-        printBlankForm={printBlankForm}
-        summaryStats={summaryStats}
-      />
+      {activeGradeSubTab === 'main' && (
+        <GradeSheetPrintView
+          showPrintPreviewOnScreen={showPrintPreviewOnScreen}
+          formLanguage={formLanguage}
+          resolvedLogoUrl={resolvedLogoUrl}
+          currentCourse={currentCourse}
+          yearLevelText={yearLevelText}
+          majorText={majorText}
+          semesterText={semesterText}
+          academicYearText={academicYearText}
+          creditText={creditText}
+          lecturerName={lecturerName}
+          departmentHeadName={departmentHeadName}
+          submitDateTextTh={submitDateTextTh}
+          submitDateTextEn={submitDateTextEn}
+          printFontSizePx={printFontSizePx}
+          printRowHeightPx={printRowHeightPx}
+          groupedSections={groupedSections}
+          printBlankForm={printBlankForm}
+          summaryStats={summaryStats}
+        />
+      )}
     </div>
   );
 }

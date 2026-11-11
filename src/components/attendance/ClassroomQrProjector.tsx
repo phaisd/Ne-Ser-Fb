@@ -21,20 +21,30 @@ import {
   BookOpen,
   Calendar,
 } from 'lucide-react';
-import { Course, Student, AttendanceRecord } from '@/types';
+import { AttendanceHistoryItem, AttendanceRecord, Student } from '@/types';
+import type { AuthUser } from '@/lib/auth-client';
+
+export interface ClassroomQrCourse {
+  courseCode: string;
+  courseName: string;
+  room?: string;
+  instructor?: string;
+  yearLevel?: number;
+  sectionKey?: string;
+}
 
 interface ClassroomQrProjectorProps {
-  availableCourses: Course[];
-  currentCourse: Course | null;
+  availableCourses: ClassroomQrCourse[];
+  currentCourse: ClassroomQrCourse | null;
   onSelectCourse: (courseCode: string) => void;
   date: string;
   onChangeDate: (newDate: string) => void;
   sessionNumber: number;
   onChangeSessionNumber: (num: number) => void;
   targetStudents: Student[];
-  currentUser: any;
+  currentUser: AuthUser | null;
   recordedBy: string;
-  onRecordsSynced: (records: AttendanceRecord[]) => void;
+  onRecordsSynced: (records: AttendanceHistoryItem[]) => void;
 }
 
 export function ClassroomQrProjector({
@@ -285,17 +295,17 @@ export function ClassroomQrProjector({
           <div className="flex items-center gap-1.5 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
             <BookOpen className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <select
-              value={(currentCourse as any).sectionKey || currentCourse.courseCode}
+              value={currentCourse.sectionKey || currentCourse.courseCode}
               onChange={(e) => onSelectCourse(e.target.value)}
               className="bg-transparent text-white font-bold focus:outline-none cursor-pointer max-w-[160px] sm:max-w-xs md:max-w-none truncate"
             >
               {availableCourses.map((c, idx) => (
                 <option
-                  key={`${(c as any).sectionKey || c.courseCode}-${idx}`}
-                  value={(c as any).sectionKey || c.courseCode}
+                  key={`${c.sectionKey || c.courseCode}-${idx}`}
+                  value={c.sectionKey || c.courseCode}
                   className="text-slate-900"
                 >
-                  {c.courseCode} — {c.courseName} (ปี {(c as any).yearLevel || 1})
+                  {c.courseCode} — {c.courseName} (ปี {c.yearLevel || 1})
                 </option>
               ))}
             </select>

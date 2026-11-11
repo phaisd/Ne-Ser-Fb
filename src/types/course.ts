@@ -1,5 +1,16 @@
 import { ProgramType } from './student';
 
+export interface CourseInstructorHistoryEntry {
+  id: string;
+  academicYear: string;
+  semester: number;
+  previousInstructor: string;
+  newInstructor: string;
+  changedAt: string;
+  changedBy?: string;
+  reason?: string;
+}
+
 export interface Course {
   id?: string;
   courseCode: string;
@@ -23,6 +34,7 @@ export interface Course {
   instructor?: string;
   primaryTeacherName?: string;
   primaryTeacherId?: string;
+  instructorHistory?: CourseInstructorHistoryEntry[];
   description?: string;
   status?: string;
   isActive?: boolean;

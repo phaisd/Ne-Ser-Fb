@@ -1,40 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getCourses, createCourse, updateCourse, deleteCourse, Course, importCoursesBatch } from '@/lib/data-store';
-import { getAuthenticatedUserFromRequest, isServerAdminOrOfficer } from '@/lib/server-auth-guard';
-
-function checkCourseManageAuth(request: Request): { authorized: boolean; role?: string } {
-  const authUser = getAuthenticatedUserFromRequest(request);
-  if (authUser && isServerAdminOrOfficer(authUser)) {
-    return { authorized: true, role: authUser.role };
-  }
-
-  // Check cookie fallback
-  const cookieHeader = request.headers.get('cookie') || '';
-  const match = cookieHeader.match(/mcu_auth_user=([^;]+)/);
-  if (match && match[1]) {
-    try {
-      const decoded = decodeURIComponent(match[1]);
-      const user = JSON.parse(decoded);
-      const role = String(user?.role || '').toUpperCase();
-      const isAllowed =
-        role === 'SUPER_ADMIN' ||
-        role === 'ADMIN' ||
-        role === 'OFFICER' ||
-        role === 'STAFF' ||
-        role === 'EDITOR' ||
-        user?.isSuperAdmin === true ||
-        user?.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th';
-      if (isAllowed) return { authorized: true, role };
-    } catch {}
-  }
-
-  // Development environment fallback
-  if (process.env.NODE_ENV !== 'production') {
-    return { authorized: true, role: 'ADMIN' };
-  }
-
-  return { authorized: false };
-}
+import { apiErrorResponse, getErrorMessage } from '@/lib/api-error';
+import {
+  getCourses,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  Course,
+  importCoursesBatch,
+  cloneCoursesTerm,
+} from '@/lib/data-store';
+import { requireAdminOrOfficer } from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
   try {
@@ -88,22 +63,41 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ success: true, count: list.length, data: list });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const auth = checkCourseManageAuth(request);
-    if (!auth.authorized) {
-      return NextResponse.json(
-        { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) และเจ้าหน้าที่เท่านั้นที่มีสิทธิ์จัดการรายวิชา' },
-        { status: 403 }
-      );
-    }
+    const auth = requireAdminOrOfficer(request);
+    if (auth.response) return auth.response;
 
     const body = await request.json();
+
+    // Handle Clone Term (Copy historical courses to a new academic year/semester cleanly)
+    if (body.action === 'clone-term') {
+      const { sourceAcademicYear, sourceSemester, targetAcademicYear, targetSemester, keepInstructors } = body;
+      if (!sourceAcademicYear || !targetAcademicYear) {
+        return NextResponse.json(
+          { success: false, error: 'กรุณาระบุปีการศึกษาต้นทางและปีการศึกษาปลายทาง' },
+          { status: 400 },
+        );
+      }
+      const res = await cloneCoursesTerm({
+        sourceAcademicYear: String(sourceAcademicYear),
+        sourceSemester: Number(sourceSemester) || 1,
+        targetAcademicYear: String(targetAcademicYear),
+        targetSemester: Number(targetSemester) || 1,
+        keepInstructors: keepInstructors !== false,
+        clonedBy: auth.user.name,
+      });
+      return NextResponse.json({
+        success: true,
+        ...res,
+        message: `คัดลอกรายวิชาจาก ${sourceSemester || 1}/${sourceAcademicYear} ไปยัง ${targetSemester || 1}/${targetAcademicYear} สำเร็จ (${res.cloned} วิชา, ข้ามวิชาที่มีอยู่แล้ว ${res.skipped} วิชา)`,
+      });
+    }
 
     // Handle Bulk Import
     if (body.action === 'import' || Array.isArray(body.courses)) {
@@ -153,21 +147,16 @@ export async function POST(request: Request) {
 
     const created = await createCourse(payload);
     return NextResponse.json({ success: true, data: created });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('POST error in /api/courses:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
-    const auth = checkCourseManageAuth(request);
-    if (!auth.authorized) {
-      return NextResponse.json(
-        { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) และเจ้าหน้าที่เท่านั้นที่มีสิทธิ์แก้ไขรายวิชา' },
-        { status: 403 }
-      );
-    }
+    const auth = requireAdminOrOfficer(request);
+    if (auth.response) return auth.response;
 
     const body = await request.json();
     const idOrCode = body.id || body.courseCode;
@@ -179,8 +168,13 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const updates = body.updates && typeof body.updates === 'object' ? { ...body.updates } : { ...body };
-    delete updates.id;
+    const rawUpdates = body.updates && typeof body.updates === 'object' ? { ...body.updates } : { ...body };
+    const { id: _ignoredId, reason: _ignoredReason, ...updates } = rawUpdates as Record<string, unknown> & {
+      courseCode?: string;
+      section?: string;
+    };
+    const changeReason = typeof body.reason === 'string' ? body.reason : undefined;
+
     if (body.courseCode && !updates.courseCode) {
       updates.courseCode = body.courseCode;
     }
@@ -188,26 +182,24 @@ export async function PATCH(request: Request) {
       updates.section = body.section;
     }
 
-    const updated = await updateCourse(idOrCode, updates);
+    const updated = await updateCourse(idOrCode, updates, {
+      changedBy: auth.user.name,
+      reason: changeReason,
+    });
     if (!updated) {
       return NextResponse.json({ success: false, error: 'ไม่พบรายวิชาที่ต้องการแก้ไข' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, data: updated });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
 export async function DELETE(request: Request) {
   try {
-    const auth = checkCourseManageAuth(request);
-    if (!auth.authorized) {
-      return NextResponse.json(
-        { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) และเจ้าหน้าที่เท่านั้นที่มีสิทธิ์ลบรายวิชา' },
-        { status: 403 }
-      );
-    }
+    const auth = requireAdminOrOfficer(request);
+    if (auth.response) return auth.response;
 
     const { searchParams } = new URL(request.url);
     const idOrCode = searchParams.get('id') || searchParams.get('courseCode');
@@ -225,7 +217,7 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true, message: 'ลบรายวิชาสำเร็จ' });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

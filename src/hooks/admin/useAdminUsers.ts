@@ -2,8 +2,17 @@
 
 import { useState, useMemo } from 'react';
 import QRCode from 'qrcode';
-import { UserAccount, TimetableItem, Course } from '@/types';
-import { matchInstructorStrict } from '@/lib/utils';
+import { UserAccount, TimetableItem, Course, Student, UserRole } from '@/types';
+import { getErrorMessage, matchInstructorStrict, TeachingSlipCourseRow } from '@/lib/utils';
+import type {
+  ExistingInstructorMatch,
+  ProvisionCandidate,
+} from '@/components/admin/modals/AutoProvisionModal';
+
+export type AdminUserFilterItem = Omit<UserAccount, 'role'> & {
+  role?: UserRole | 'STUDENT';
+  studentData?: Student & { gmail?: string };
+};
 
 interface UseAdminUsersOptions {
   isOfficer: boolean;
@@ -11,7 +20,7 @@ interface UseAdminUsersOptions {
   setActionSuccess: (msg: string | null) => void;
   timetablesList: TimetableItem[];
   coursesList: Course[];
-  studentsList?: any[];
+  studentsList?: (Student & { gmail?: string })[];
   availableAcademicYears?: string[];
 }
 
@@ -36,8 +45,8 @@ export function useAdminUsers({
     totalTimetableInstructors: number;
     existingCount: number;
     newCount: number;
-    alreadyExisting: any[];
-    candidates: any[];
+    alreadyExisting: ExistingInstructorMatch[];
+    candidates: ProvisionCandidate[];
   }>({
     isOpen: false,
     totalTimetableInstructors: 0,
@@ -63,7 +72,7 @@ export function useAdminUsers({
   const [editUserSaving, setEditUserSaving] = useState(false);
 
   // Teaching assignment slip & LINE copy state
-  const [teachingSlipUser, setTeachingSlipUser] = useState<any | null>(null);
+  const [teachingSlipUser, setTeachingSlipUser] = useState<UserAccount | null>(null);
   const [teachingSlipQr, setTeachingSlipQr] = useState<string | null>(null);
   const [copiedLineUserId, setCopiedLineUserId] = useState<string | null>(null);
   const [isBatchTeachingSlipOpen, setIsBatchTeachingSlipOpen] = useState(false);
@@ -100,8 +109,8 @@ export function useAdminUsers({
       } else {
         alert(data.error);
       }
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(getErrorMessage(e));
     }
   };
 
@@ -121,14 +130,14 @@ export function useAdminUsers({
           existingCount: data.existingCount || 0,
           newCount: data.newCount || 0,
           alreadyExisting: data.alreadyExisting || [],
-          candidates: (data.candidates || []).map((c: any) => ({ ...c, selected: true })),
+          candidates: ((data.candidates || []) as ProvisionCandidate[]).map((c) => ({ ...c, selected: true })),
         });
         setShowExistingList(false);
       } else {
         alert('เกิดข้อผิดพลาดในการสแกน: ' + (data.error || 'ไม่สามารถสแกนได้'));
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + getErrorMessage(err));
     } finally {
       setIsScanningInstructors(false);
     }
@@ -142,7 +151,7 @@ export function useAdminUsers({
     });
   };
 
-  const handleUpdateCandidateField = (idx: number, field: string, val: any) => {
+  const handleUpdateCandidateField = (idx: number, field: string, val: string) => {
     setProvisionModal((prev) => {
       const nextCand = [...prev.candidates];
       nextCand[idx] = { ...nextCand[idx], [field]: val };
@@ -175,8 +184,8 @@ export function useAdminUsers({
       } else {
         alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถสร้างบัญชีได้'));
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + getErrorMessage(err));
     } finally {
       setIsSubmittingProvision(false);
     }
@@ -235,8 +244,8 @@ export function useAdminUsers({
       } else {
         alert(data.error || 'ไม่สามารถแก้ไขข้อมูลได้');
       }
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(getErrorMessage(e));
     } finally {
       setEditUserSaving(false);
     }
@@ -265,8 +274,8 @@ export function useAdminUsers({
       } else {
         alert(data.error || 'เกิดข้อผิดพลาดในการดำเนินการ');
       }
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(getErrorMessage(e));
     }
   };
 
@@ -307,7 +316,11 @@ export function useAdminUsers({
     }
   };
 
-  const getCoursesForInstructor = (user: any, filterYear: string = 'ALL', filterSemester: string = 'ALL') => {
+  const getCoursesForInstructor = (
+    user: UserAccount | null | undefined,
+    filterYear: string = 'ALL',
+    filterSemester: string = 'ALL'
+  ): TeachingSlipCourseRow[] => {
     if (!user) return [];
 
     const normCode = (s?: string) => String(s || '').replace(/\s+/g, '').toUpperCase();
@@ -324,7 +337,7 @@ export function useAdminUsers({
       return matchInstructorStrict(user, c.instructor);
     });
 
-    const unique: any[] = [];
+    const unique: TeachingSlipCourseRow[] = [];
     const seenSlot = new Set<string>();
     const scheduledCourseKeys = new Set<string>();
 
@@ -386,7 +399,8 @@ export function useAdminUsers({
 
     // Sort in consistent logical order: semester asc, dayOfWeek asc, startTime asc, courseCode asc
     unique.sort((a, b) => {
-      if ((a.semester || 1) !== (b.semester || 1)) return (a.semester || 1) - (b.semester || 1);
+      const semDiff = Number(a.semester || 1) - Number(b.semester || 1);
+      if (semDiff !== 0) return semDiff;
       if ((a.dayOfWeek || 1) !== (b.dayOfWeek || 1)) return (a.dayOfWeek || 1) - (b.dayOfWeek || 1);
       return String(a.startTime || '').localeCompare(String(b.startTime || ''));
     });
@@ -394,7 +408,7 @@ export function useAdminUsers({
     return unique;
   };
 
-  const handleOpenTeachingSlip = async (user: any) => {
+  const handleOpenTeachingSlip = async (user: UserAccount) => {
     setTeachingSlipUser(user);
     try {
       const targetUrl =
@@ -411,7 +425,7 @@ export function useAdminUsers({
     }
   };
 
-  const generateInstructorLineMessage = (user: any, selectedYear?: string, selectedSemester?: string) => {
+  const generateInstructorLineMessage = (user: UserAccount, selectedYear?: string, selectedSemester?: string) => {
     const yearToUse = selectedYear && selectedYear !== 'ALL' ? selectedYear : (availableAcademicYears[0] || '2569');
     const semToUse = selectedSemester && selectedSemester !== 'ALL' ? `ภาคการศึกษาที่ ${selectedSemester} ` : '';
     const courses = getCoursesForInstructor(user, yearToUse, selectedSemester);
@@ -452,7 +466,7 @@ ${coursesText}
 * หมายเหตุ: ระบบจำกัดสิทธิ์ให้อาจารย์ตรวจเช็คชื่อได้เฉพาะรายวิชาที่ท่านรับผิดชอบบรรยายเท่านั้น หากพบว่ารายวิชาคลาดเคลื่อน โปรดติดต่อสำนักงานคณะพุทธศาสตร์ครับ`;
   };
 
-  const handleCopyLineTeachingMessage = (user: any, selectedYear?: string, selectedSemester?: string) => {
+  const handleCopyLineTeachingMessage = (user: UserAccount, selectedYear?: string, selectedSemester?: string) => {
     const text = generateInstructorLineMessage(user, selectedYear, selectedSemester);
     navigator.clipboard.writeText(text);
     setCopiedLineUserId(user.id);
@@ -474,8 +488,8 @@ ${coursesText}
       } else {
         alert(data.error);
       }
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(getErrorMessage(e));
     }
   };
 
@@ -521,12 +535,12 @@ ${coursesText}
       } else {
         alert(data.error);
       }
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(getErrorMessage(e));
     }
   };
 
-  const filteredUsers = useMemo(() => {
+  const filteredUsers = useMemo<AdminUserFilterItem[]>(() => {
     let baseUsers = users;
     if (isOfficer) {
       baseUsers = users.filter(
@@ -552,12 +566,12 @@ ${coursesText}
           );
         })
         .map((s) => ({
-          id: s.studentCode || s.id,
+          id: s.studentCode || s.id || '',
           name: s.fullName || `${s.title || ''}${s.firstName || ''} ${s.lastName || ''}`.trim(),
           email: s.email || `${s.studentCode}@mcu.ac.th`,
           gmail: s.gmail || '',
           department: `${s.major || s.faculty || 'คณะพุทธศาสตร์'}${s.degree ? ` (${s.degree})` : ''}`,
-          role: 'STUDENT' as any,
+          role: 'STUDENT' as const,
           isSuspended: s.studyStatus === 'พ้นสภาพ' || s.isActive === false,
           isActive: s.isActive !== false,
           isSuperAdmin: false,

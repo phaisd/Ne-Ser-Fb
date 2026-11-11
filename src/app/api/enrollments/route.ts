@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import {
   getCourseEnrollments,
   enrollStudentToCourse,
   removeStudentFromCourse,
   getStudentEnrolledCourses,
 } from '@/lib/data-store';
+import { requireStaffOrInstructor } from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
   try {
@@ -19,13 +21,16 @@ export async function GET(request: Request) {
 
     const list = await getCourseEnrollments(courseCode || undefined);
     return NextResponse.json({ success: true, count: list.length, data: list });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const auth = requireStaffOrInstructor(request);
+    if (auth.response) return auth.response;
+
     const body = await request.json();
     const { action, courseCode, studentCode, courseName, studentName, enrollmentType, enrolledBy, notes } = body;
 
@@ -66,7 +71,7 @@ export async function POST(request: Request) {
       message: `เพิ่มนิสิต ${record.studentName || record.studentCode} เข้าห้องเรียนสำเร็จ`,
       data: record,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

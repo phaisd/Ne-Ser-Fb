@@ -2,17 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { FileText, Copy, Printer, BookOpen, Key, Calendar, SlidersHorizontal, CheckCircle2, UserCheck, PenTool } from 'lucide-react';
-import { UserAccount } from '@/types';
+import { SignatoryItem, SystemSettings, UserAccount } from '@/types';
+import { TeachingSlipCourseRow } from '@/lib/utils';
+
+type SignMode = 'OFFICER' | 'ADMIN' | 'DEAN' | 'ONLY_INSTRUCTOR' | 'NONE';
 
 interface TeachingSlipModalProps {
   user: UserAccount | null;
   teachingSlipQr: string | null;
   availableAcademicYears?: string[];
-  getCoursesForInstructor: (user: UserAccount, year?: string, semester?: string) => any[];
+  getCoursesForInstructor: (user: UserAccount, year?: string, semester?: string) => TeachingSlipCourseRow[];
   onCopyLineMessage: (user: UserAccount, year?: string, semester?: string) => void;
   onClose: () => void;
-  settings?: any;
-  signatories?: any[];
+  settings?: Partial<SystemSettings>;
+  signatories?: SignatoryItem[];
   adminName?: string;
 }
 
@@ -149,7 +152,7 @@ export const TeachingSlipModal: React.FC<TeachingSlipModalProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={signMode}
-                onChange={(e) => setSignMode(e.target.value as any)}
+                onChange={(e) => setSignMode(e.target.value as SignMode)}
                 className="px-3 py-1.5 rounded-xl border border-indigo-300 bg-white font-bold text-indigo-950 shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               >
                 <option value="OFFICER">🏢 เจ้าหน้าที่บริการการศึกษาและทะเบียน (แนะนำ)</option>
@@ -257,10 +260,10 @@ export const TeachingSlipModal: React.FC<TeachingSlipModalProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    courses.map((c: any, i: number) => {
+                    courses.map((c, i) => {
                       const isEn =
                         /inter|eng|english|นานาชาติ/i.test(c.timetableTitle || '') ||
-                        /^[A-Za-z0-9\s:,-]+$/.test(c.courseName);
+                        /^[A-Za-z0-9\s:,-]+$/.test(c.courseName || '');
                       return (
                         <tr key={i} className="hover:bg-slate-50">
                           <td className="px-3 py-2 text-center font-mono text-slate-400">{i + 1}</td>
@@ -364,10 +367,10 @@ export const TeachingSlipModal: React.FC<TeachingSlipModalProps> = ({
                     {signMode === 'DEAN' ? (
                       <>
                         <div contentEditable suppressContentEditableWarning className="font-bold outline-none focus:bg-purple-50 px-1 py-0.5 rounded cursor-text">
-                          ( {(settings?.signerNameTh && settings.signerNameTh !== '-') ? settings.signerNameTh : (signatories?.find((s: any) => s.id === 'DEAN')?.name || 'พระราชอุดมวัชรเมธี, ผศ.ดร.')} )
+                          ( {(settings?.signerNameTh && settings.signerNameTh !== '-') ? settings.signerNameTh : (signatories?.find((s) => s.id === 'DEAN')?.name || 'พระราชอุดมวัชรเมธี, ผศ.ดร.')} )
                         </div>
                         <div contentEditable suppressContentEditableWarning className="text-slate-500 font-medium outline-none focus:bg-purple-50 px-1 py-0.5 rounded cursor-text">
-                          {(settings?.signerTitleTh && settings.signerTitleTh !== '-') ? settings.signerTitleTh : (signatories?.find((s: any) => s.id === 'DEAN')?.title || 'คณบดีคณะพุทธศาสตร์')}
+                          {(settings?.signerTitleTh && settings.signerTitleTh !== '-') ? settings.signerTitleTh : (signatories?.find((s) => s.id === 'DEAN')?.title || 'คณบดีคณะพุทธศาสตร์')}
                         </div>
                       </>
                     ) : signMode === 'ADMIN' ? (

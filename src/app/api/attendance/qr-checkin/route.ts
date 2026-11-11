@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import { readLocalJson, writeLocalJson } from '@/services/storageHelper';
 import { getAttendanceRecords, saveAttendanceBatch } from '@/services/attendanceService';
 import { getStudents, getCourses } from '@/lib/data-store';
+import {
+  getAuthenticatedUserFromRequest,
+  isServerStaffOrInstructor,
+  requireStaffOrInstructor,
+} from '@/lib/server-auth-guard';
+import { checkRateLimit } from '@/lib/security';
 
 export interface QrClassroomSession {
   key: string; // `${courseCode}__${date}`
@@ -40,6 +47,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: 'กรุณาระบุรหัสวิชา (courseCode)' }, { status: 400 });
     }
 
+    const authUser = getAuthenticatedUserFromRequest(request);
+    const isStaff = isServerStaffOrInstructor(authUser);
+
     const sessions = readLocalJson<Record<string, QrClassroomSession>>(QR_SESSIONS_FILE, {});
     const key = makeSessionKey(courseCode, date);
     let session = sessions[key];
@@ -60,15 +70,23 @@ export async function GET(request: Request) {
         room: matchedCourse?.room || '-',
         updatedAt: new Date().toISOString(),
       };
-      sessions[key] = session;
-      writeLocalJson(QR_SESSIONS_FILE, sessions);
+      // Only persist a new default session to disk when opened by an authenticated staff/instructor
+      if (isStaff) {
+        sessions[key] = session;
+        writeLocalJson(QR_SESSIONS_FILE, sessions);
+      }
     }
 
-    // Fetch live attendance records for this course & date
-    const records = await getAttendanceRecords(courseCode, date);
+    // Fetch live attendance records only for staff/instructors
+    const records = isStaff ? await getAttendanceRecords(courseCode, date) : [];
 
-    // Optional: if studentCode is passed, look up student info for mobile preview
-    let studentInfo: any = null;
+    // Optional: if studentCode is passed, look up minimal student info for mobile preview
+    let studentInfo: {
+      studentCode: string;
+      fullName: string;
+      major: string;
+      yearLevel?: number | string;
+    } | null = null;
     if (studentCode) {
       const allStudents = await getStudents();
       const found = allStudents.find(
@@ -84,14 +102,17 @@ export async function GET(request: Request) {
       }
     }
 
+    // Never leak active PIN or full attendee roster to unauthenticated callers / students
+    const { pin: _hiddenPin, ...publicSession } = session;
+
     return NextResponse.json({
       success: true,
-      session,
+      session: isStaff ? session : publicSession,
       checkedInRecords: records,
       studentInfo,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
@@ -102,8 +123,11 @@ export async function POST(request: Request) {
 
     const sessions = readLocalJson<Record<string, QrClassroomSession>>(QR_SESSIONS_FILE, {});
 
-    // 1. Instructor updates or opens/closes QR session settings
+    // 1. Instructor/Admin updates or opens/closes QR session settings
     if (action === 'UPSERT_SESSION') {
+      const auth = requireStaffOrInstructor(request);
+      if (auth.response) return auth.response;
+
       const courseCode = String(body.courseCode || '').trim();
       const date = String(body.date || new Date().toISOString().split('T')[0]).trim();
       if (!courseCode) {
@@ -138,6 +162,19 @@ export async function POST(request: Request) {
 
     // 2. Student submits QR check-in from smartphone
     if (action === 'STUDENT_CHECKIN') {
+      const forwardedFor = request.headers.get('x-forwarded-for') || 'local';
+      const clientIp = forwardedFor.split(',')[0].trim();
+      const rate = checkRateLimit(`qr-checkin:${clientIp}`, 30, 5 * 60 * 1000);
+      if (!rate.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `มีการส่งคำขอเช็คชื่อถี่เกินกำหนด กรุณารอ ${rate.retryAfterSeconds} วินาทีแล้วลองใหม่อีกครั้ง`,
+          },
+          { status: 429 }
+        );
+      }
+
       const courseCode = String(body.courseCode || '').trim();
       const date = String(body.date || new Date().toISOString().split('T')[0]).trim();
       const studentCode = String(body.studentCode || '').trim();
@@ -267,7 +304,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

@@ -13,7 +13,7 @@ export interface ProvisionCandidate {
   department: string;
   role: string;
   coursesCount: number;
-  courses?: any[];
+  courses?: Array<{ courseCode?: string; courseName?: string }>;
   aliases?: string[];
   selected?: boolean;
 }
@@ -36,7 +36,7 @@ interface AutoProvisionModalProps {
   candidates: ProvisionCandidate[];
   isSubmitting: boolean;
   onToggleCandidateSelect: (index: number) => void;
-  onUpdateCandidateField: (index: number, field: string, val: any) => void;
+  onUpdateCandidateField: (index: number, field: string, val: string) => void;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
 }

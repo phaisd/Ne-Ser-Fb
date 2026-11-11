@@ -98,6 +98,7 @@ export function HeroWildSection({ settings: initialSettings }: HeroWildSectionPr
     setUploadingImage(true);
     try {
       const formData = new FormData();
+      formData.append('scope', 'branding');
       formData.append('file', file);
       const res = await fetch('/api/upload', {
         method: 'POST',

@@ -1,13 +1,35 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import { readLocalJson } from '@/services/storageHelper';
 import { SystemSettings } from '@/types';
+import { checkRateLimit } from '@/lib/security';
+
+interface AdmittedCandidate {
+  applicationNo?: string;
+  idCardOrPassport?: string;
+  fullName?: string;
+  [key: string]: unknown;
+}
 
 export async function POST(request: Request) {
   try {
+    const forwardedFor = request.headers.get('x-forwarded-for') || 'local';
+    const clientIp = forwardedFor.split(',')[0].trim();
+    const rate = checkRateLimit(`admissions-verify:${clientIp}`, 20, 10 * 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `มีการตรวจสอบข้อมูลถี่เกินกำหนด กรุณารอ ${rate.retryAfterSeconds} วินาทีแล้วลองใหม่อีกครั้ง`,
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { applicationNo, idCardOrPassport } = body;
 
-    const settings = await readLocalJson<SystemSettings>('system_settings.json', {} as any);
+    const settings = await readLocalJson<Partial<SystemSettings>>('system_settings.json', {});
     const isOpen = settings.admissionPeriodOpen !== false;
 
     if (!isOpen) {
@@ -35,7 +57,7 @@ export async function POST(request: Request) {
     const cleanAppNo = applicationNo.trim().toUpperCase();
     const cleanId = idCardOrPassport.trim().toUpperCase();
 
-    const candidates = await readLocalJson<any[]>('admitted_candidates.json', []);
+    const candidates = await readLocalJson<AdmittedCandidate[]>('admitted_candidates.json', []);
     const match = candidates.find((c) => {
       const matchApp = c.applicationNo?.trim().toUpperCase() === cleanAppNo;
       const matchId = c.idCardOrPassport?.trim().toUpperCase() === cleanId;
@@ -58,7 +80,7 @@ export async function POST(request: Request) {
       isOpen: true,
       data: match,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

@@ -6,7 +6,6 @@ import {
   Briefcase,
   BookOpen,
   Calendar,
-  Clock,
   MapPin,
   Globe,
   GraduationCap,
@@ -24,7 +23,8 @@ import {
   UserCheck,
   ArrowRight,
 } from 'lucide-react';
-import { Course, TimetableItem } from '@/types';
+import { AttendanceRecord, Course, CourseGradeSheet, LoginAuditRecord, TimetableItem } from '@/types';
+import { InstructorWorkloadDashboard } from '@/components/workload/InstructorWorkloadDashboard';
 import { getAuthUser, saveAuthSession } from '@/lib/auth-client';
 import {
   buildInstructorWorkloadCourses,
@@ -54,7 +54,12 @@ export default function InstructorWorkloadPage() {
 
   const [timetables, setTimetables] = useState<TimetableItem[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [gradesMap, setGradesMap] = useState<Record<string, CourseGradeSheet>>({});
+  const [loginHistory, setLoginHistory] = useState<LoginAuditRecord[]>([]);
+  const [loginSecurity, setLoginSecurity] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingDashboardDetails, setLoadingDashboardDetails] = useState(true);
 
   // Filters: ระดับ, ชั้นปี, หลักสูตรภาษา, ปีการศึกษา, ภาคเรียน, ค้นหา
   const [search, setSearch] = useState('');
@@ -96,9 +101,10 @@ export default function InstructorWorkloadPage() {
     };
   }, []);
 
-  // Load timetables and courses
+  // Load timetables, courses, attendance summary, and grade sheets
   useEffect(() => {
     setLoading(true);
+    setLoadingDashboardDetails(true);
     Promise.all([
       fetch('/api/timetables').then((r) => r.json()),
       fetch('/api/courses').then((r) => r.json()),
@@ -111,6 +117,25 @@ export default function InstructorWorkloadPage() {
         console.error('Failed to load workload data:', err);
       })
       .finally(() => setLoading(false));
+
+    Promise.all([
+      fetch('/api/attendance').then((r) => r.json()).catch(() => null),
+      fetch('/api/grades').then((r) => r.json()).catch(() => null),
+      fetch('/api/auth?action=history').then((r) => r.json()).catch(() => null),
+    ])
+      .then(([attRes, gradeRes, histRes]) => {
+        if (attRes?.success && Array.isArray(attRes.data)) {
+          setAttendanceRecords(attRes.data);
+        }
+        if (gradeRes?.success && gradeRes.data && typeof gradeRes.data === 'object') {
+          setGradesMap(gradeRes.data);
+        }
+        if (histRes?.success) {
+          if (Array.isArray(histRes.history)) setLoginHistory(histRes.history);
+          if (histRes.security) setLoginSecurity(histRes.security);
+        }
+      })
+      .finally(() => setLoadingDashboardDetails(false));
   }, []);
 
   // All courses assigned to the logged-in instructor
@@ -335,62 +360,17 @@ export default function InstructorWorkloadPage() {
         </div>
       </div>
 
-      {/* 2. Summary KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 flex items-center justify-between">
-            <span>รายวิชาที่สอน (ตามตัวกรอง)</span>
-            <BookOpen className="w-4 h-4 text-indigo-600" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-slate-900">{stats.totalCourses}</span>
-            <span className="text-xs text-slate-500 font-semibold">รายวิชา</span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            จากทั้งหมด {allMyCourses.length} รายวิชาในระบบ
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 flex items-center justify-between">
-            <span>หน่วยกิตรวม</span>
-            <Award className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-emerald-700">{stats.totalCredits}</span>
-            <span className="text-xs text-slate-500 font-semibold">หน่วยกิต</span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">รวมตามรายวิชาที่แสดง</div>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 flex items-center justify-between">
-            <span>ชั่วโมงบรรยาย / สัปดาห์</span>
-            <Clock className="w-4 h-4 text-amber-600" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-amber-700">{stats.weeklyHours}</span>
-            <span className="text-xs text-slate-500 font-semibold">ชั่วโมง/สัปดาห์</span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">คำนวณจากคาบเรียนในตาราง</div>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 flex items-center justify-between">
-            <span>สัดส่วนหลักสูตรภาษา</span>
-            <Globe className="w-4 h-4 text-purple-600" />
-          </div>
-          <div className="mt-2 flex items-center gap-2 text-xs font-bold">
-            <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
-              🇹🇭 ไทย {stats.thaiCourses}
-            </span>
-            <span className="px-2 py-1 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
-              🌐 EN {stats.englishCourses}
-            </span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1.5">ภาคภาษาไทย / นานาชาติ</div>
-        </div>
-      </div>
+      {/* 2. Instructor Operational Dashboard (Directly below Hero Header) */}
+      <InstructorWorkloadDashboard
+        allCoursesCount={allMyCourses.length}
+        filteredCourses={filteredCourses}
+        stats={stats}
+        attendanceRecords={attendanceRecords}
+        gradesMap={gradesMap}
+        loadingDetails={loadingDashboardDetails}
+        loginHistory={loginHistory}
+        loginSecurity={loginSecurity}
+      />
 
       {/* 3. Multi-Dimensional Filters Panel: ระดับ, หลักสูตรภาษา, ปีการศึกษา, ภาคเรียน */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 print:hidden">

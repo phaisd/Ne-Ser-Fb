@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse, getErrorMessage } from '@/lib/api-error';
 import { getSheetsClient } from '@/lib/google-sheets';
 import { getSystemSettings, updateSystemSettings, convertGoogleDriveUrl } from '@/lib/data-store';
 import { readLocalJson } from '@/services/storageHelper';
-import { getAuthenticatedUserFromRequest, isServerAdminOrOfficer } from '@/lib/server-auth-guard';
+import { requireAdminOrOfficer } from '@/lib/server-auth-guard';
 import fs from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = requireAdminOrOfficer(request);
+  if (auth.response) return auth.response;
+
   const client = getSheetsClient();
   const configured = !!client;
 
@@ -32,24 +36,19 @@ export async function GET() {
       spreadsheetTitle: meta.title,
       sheets: meta.sheets,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json({
       configured: true,
       connected: false,
-      error: err.message,
+      error: getErrorMessage(err),
     });
   }
 }
 
 export async function POST(request: Request) {
   // Only Admin / Officer can trigger full synchronization with Google Sheets
-  const authUser = getAuthenticatedUserFromRequest(request);
-  if (!isServerAdminOrOfficer(authUser)) {
-    return NextResponse.json(
-      { success: false, error: 'สงวนสิทธิ์เฉพาะผู้ดูแลระบบและเจ้าหน้าที่เท่านั้น (Unauthorized)' },
-      { status: 403 }
-    );
-  }
+  const auth = requireAdminOrOfficer(request);
+  if (auth.response) return auth.response;
 
   const client = getSheetsClient();
   if (!client) {
@@ -60,10 +59,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    let body: any = {};
+    let body: { action?: string } = {};
     try {
-      body = await request.json();
-    } catch (e) {
+      body = (await request.json()) as { action?: string };
+    } catch {
       body = {};
     }
 
@@ -77,7 +76,7 @@ export async function POST(request: Request) {
         }, { status: 404 });
       }
 
-      const updates: any = {};
+      const updates: Record<string, string> = {};
       for (const row of rows) {
         const key = row[0]?.trim();
         let val = (row[1] || '').trim();
@@ -266,7 +265,7 @@ export async function POST(request: Request) {
         'EventRegistrations',
       ],
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

@@ -84,7 +84,7 @@ export function GradeSheetMobileCards({
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="text-[10px] text-slate-500 font-medium">เกรด / รวม</div>
+                      <div className="text-[10px] text-slate-500 font-medium">รวม / เกรด (Total / Grade)</div>
                       <div className="flex items-center gap-1.5 justify-end mt-0.5">
                         <span className="font-mono font-black text-sm text-slate-800">
                           {row.totalScore !== null ? row.totalScore : '-'}
@@ -101,7 +101,7 @@ export function GradeSheetMobileCards({
                     {/* 1. รายงาน */}
                     <div className="bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/70 space-y-1">
                       <label className="font-bold text-amber-900 block text-[11px]">
-                        รายงาน (เต็ม {maxAssignScore})
+                        รายงาน (Report) (เต็ม {maxAssignScore})
                       </label>
                       <input
                         type="number"
@@ -120,7 +120,7 @@ export function GradeSheetMobileCards({
                     {/* 2. จิตพิสัย */}
                     <div className="bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-200/70 space-y-1">
                       <label className="font-bold text-emerald-900 block text-[11px]">
-                        จิตพิสัย (เต็ม {maxAffectiveScore})
+                        จิตพิสัย (Affective) (เต็ม {maxAffectiveScore})
                       </label>
                       <input
                         type="number"
@@ -139,7 +139,7 @@ export function GradeSheetMobileCards({
                     {/* 3. ระหว่างภาค */}
                     <div className="bg-sky-50/60 p-2.5 rounded-xl border border-sky-200/70 space-y-1">
                       <label className="font-bold text-sky-900 block text-[11px]">
-                        ระหว่างภาค (เต็ม {maxMidtermScore})
+                        ระหว่างภาค (Midterm) (เต็ม {maxMidtermScore})
                       </label>
                       <input
                         type="number"
@@ -158,7 +158,7 @@ export function GradeSheetMobileCards({
                     {/* 4. ปลายภาค */}
                     <div className="bg-purple-50/60 p-2.5 rounded-xl border border-purple-200/70 space-y-1">
                       <label className="font-bold text-purple-900 block text-[11px]">
-                        ปลายภาค (เต็ม {maxFinalScore})
+                        ปลายภาค (Final) (เต็ม {maxFinalScore})
                       </label>
                       <input
                         type="number"
@@ -178,7 +178,7 @@ export function GradeSheetMobileCards({
                   {/* Grade Override & Remarks */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
                     <div>
-                      <label className="font-bold text-slate-700 block mb-1 text-[11px]">เกรด (หรือระบุพิเศษ):</label>
+                      <label className="font-bold text-slate-700 block mb-1 text-[11px]">ระดับเกรด (Grade):</label>
                       <select
                         value={row.gradeOverride}
                         onChange={(e) =>
@@ -202,7 +202,7 @@ export function GradeSheetMobileCards({
                       </select>
                     </div>
                     <div>
-                      <label className="font-bold text-slate-700 block mb-1 text-[11px]">หมายเหตุ:</label>
+                      <label className="font-bold text-slate-700 block mb-1 text-[11px]">หมายเหตุ (Remark):</label>
                       <input
                         type="text"
                         value={row.remark}

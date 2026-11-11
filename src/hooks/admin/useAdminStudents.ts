@@ -2,6 +2,8 @@
 
 import { useState, useMemo, Dispatch, SetStateAction } from 'react';
 import { Student } from '@/types';
+import type { PromotionCandidate } from '@/components/admin/modals/BulkPromotionModal';
+import { getErrorMessage } from '@/lib/utils/error';
 
 interface UseAdminStudentsOptions {
   studentsList: any[];
@@ -39,25 +41,7 @@ export function useAdminStudents({
   const [promotionProgramFilter, setPromotionProgramFilter] = useState<'ALL' | 'THAI' | 'ENGLISH'>('ALL');
   const [promotionActionFilter, setPromotionActionFilter] = useState<string>('ALL');
   const [promotionSearch, setPromotionSearch] = useState<string>('');
-  const [promotionDraft, setPromotionDraft] = useState<
-    Record<
-      string,
-      {
-        studentCode: string;
-        fullName: string;
-        currentYear: number;
-        currentStatus: string;
-        programType?: string;
-        degree?: string;
-        major?: string;
-        selected: boolean;
-        actionType: 'PROMOTE' | 'GRADUATE' | 'REPEAT' | 'DROP' | 'RETIRE' | 'CUSTOM';
-        newYear: number;
-        newStatus: string;
-        note: string;
-      }
-    >
-  >({});
+  const [promotionDraft, setPromotionDraft] = useState<Record<string, PromotionCandidate>>({});
   const [showPromotionConfirm, setShowPromotionConfirm] = useState(false);
   const [promotionSubmitting, setPromotionSubmitting] = useState(false);
 
@@ -196,8 +180,8 @@ export function useAdminStudents({
       } else {
         alert('เกิดข้อผิดพลาดในการลบ: ' + (data.error || 'ไม่สามารถลบได้'));
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + getErrorMessage(err));
     } finally {
       setIsDeletingStudents(false);
     }
@@ -325,7 +309,7 @@ export function useAdminStudents({
   const handlePromotionCustomFieldChange = (
     studentCode: string,
     field: 'newYear' | 'newStatus' | 'note',
-    value: any
+    value: string | number
   ) => {
     setPromotionDraft((prev) => {
       const current = prev[studentCode];
@@ -355,7 +339,7 @@ export function useAdminStudents({
     });
   };
 
-  const setFilteredPromotionSelection = (selected: boolean, items: any[]) => {
+  const setFilteredPromotionSelection = (selected: boolean, items: Array<{ studentCode: string }>) => {
     setPromotionDraft((prev) => {
       const next = { ...prev };
       items.forEach((item) => {
@@ -372,7 +356,7 @@ export function useAdminStudents({
 
   const setFilteredPromotionAction = (
     actionType: 'PROMOTE' | 'GRADUATE' | 'REPEAT' | 'DROP',
-    items: any[]
+    items: Array<{ studentCode: string }>
   ) => {
     setPromotionDraft((prev) => {
       const next = { ...prev };
@@ -510,8 +494,8 @@ export function useAdminStudents({
       setShowPromotionConfirm(false);
       setIsPromotionModalOpen(false);
       loadData();
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเลื่อนชั้นปี: ' + (err.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'));
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการเลื่อนชั้นปี: ' + (getErrorMessage(err) || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'));
     } finally {
       setPromotionSubmitting(false);
     }

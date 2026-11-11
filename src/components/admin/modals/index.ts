@@ -15,5 +15,8 @@ export * from './ArchivedInstructorsModal';
 export * from './AdminCertificatePreviewModal';
 export * from './InstructorImportModal';
 export * from './CertificateTypesRepoModal';
+export * from './EventGroupImportModal';
+export * from './EventFormModal';
+export * from './CourseHistoryAndCloneModals';
 
 

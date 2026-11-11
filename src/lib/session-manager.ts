@@ -75,7 +75,8 @@ export function recordUserLogin(
   email: string,
   name: string,
   ip: string,
-  userAgent: string
+  userAgent: string,
+  method: 'PASSWORD' | 'GOOGLE' | 'SESSION_RESET' = 'PASSWORD'
 ): { sessionId: string; record: LoginAuditRecord } {
   ensureMemoryLoaded();
 
@@ -93,6 +94,7 @@ export function recordUserLogin(
     device,
     sessionId: newSessionId,
     status: 'ACTIVE',
+    method,
   };
 
   // Find existing state by primaryKey or secondaryKey
@@ -123,8 +125,8 @@ export function recordUserLogin(
     state.name = name || state.name;
     state.email = email || state.email;
 
-    // Prepend new record and cap to latest 20 items
-    state.history = [newAuditRecord, ...state.history].slice(0, 20);
+    // Prepend new record and cap to latest 25 items
+    state.history = [newAuditRecord, ...state.history].slice(0, 25);
   }
 
   sessionMemoryStore.set(primaryKey, state);
@@ -135,6 +137,61 @@ export function recordUserLogin(
   persistStore();
 
   return { sessionId: newSessionId, record: newAuditRecord };
+}
+
+/**
+ * Records a failed login attempt (e.g. wrong password) so the account owner
+ * can detect unauthorized access attempts without kicking out their active session.
+ */
+export function recordFailedLoginAttempt(
+  userId: string,
+  email: string,
+  name: string,
+  ip: string,
+  userAgent: string,
+  note = 'รหัสผ่านไม่ถูกต้อง'
+): LoginAuditRecord {
+  ensureMemoryLoaded();
+
+  const primaryKey = (userId || email || '').trim().toLowerCase();
+  const secondaryKey = (email || '').trim().toLowerCase();
+  const nowIso = new Date().toISOString();
+  const device = parseDeviceFromUserAgent(userAgent);
+
+  const failedRecord: LoginAuditRecord = {
+    id: 'fail-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    timestamp: nowIso,
+    ip: ip || '127.0.0.1',
+    userAgent: userAgent ? userAgent.substring(0, 150) : '',
+    device,
+    sessionId: '',
+    status: 'FAILED_ATTEMPT',
+    method: 'PASSWORD',
+    note,
+  };
+
+  let state = sessionMemoryStore.get(primaryKey) || sessionMemoryStore.get(secondaryKey);
+  if (!state) {
+    state = {
+      userId: primaryKey,
+      email: email || '',
+      name: name || '',
+      activeSessionId: '',
+      activeSessionDevice: '',
+      lastLoginAt: '',
+      history: [failedRecord],
+    };
+  } else {
+    state.history = [failedRecord, ...(state.history || [])].slice(0, 25);
+  }
+
+  sessionMemoryStore.set(primaryKey, state);
+  if (secondaryKey && secondaryKey !== primaryKey) {
+    sessionMemoryStore.set(secondaryKey, state);
+  }
+
+  persistStore();
+  return failedRecord;
 }
 
 /**
@@ -204,16 +261,135 @@ export function revokeUserSession(userIdOrEmail?: string, sessionId?: string): v
   persistStore();
 }
 
+export interface LoginSecurityAnalysis {
+  hasSuspiciousActivity: boolean;
+  failedAttemptsCount: number;
+  supersededCount: number;
+  unfamiliarIpCount: number;
+  uniqueDevicesCount: number;
+  uniqueIpsCount: number;
+  currentDevice: string | null;
+  currentIp: string | null;
+  latestSuccessRecord: LoginAuditRecord | null;
+  suspiciousRecordIds: string[];
+}
+
 /**
- * Retrieves login audit history for a user
+ * Retrieves login audit history for a user across primary and alternate keys.
  */
-export function getUserLoginHistory(userIdOrEmail?: string): LoginAuditRecord[] {
-  if (!userIdOrEmail) return [];
+export function getUserLoginHistory(
+  userIdOrEmail?: string,
+  ...alternateKeys: (string | undefined)[]
+): LoginAuditRecord[] {
+  const keys = [userIdOrEmail, ...alternateKeys]
+    .map((k) => (k || '').trim().toLowerCase())
+    .filter(Boolean);
+  if (keys.length === 0) return [];
+
   ensureMemoryLoaded();
 
-  const key = userIdOrEmail.trim().toLowerCase();
-  const state = sessionMemoryStore.get(key);
-  if (!state || !Array.isArray(state.history)) return [];
+  const merged = new Map<string, LoginAuditRecord>();
+  for (const key of keys) {
+    const state = sessionMemoryStore.get(key);
+    if (state && Array.isArray(state.history)) {
+      for (const rec of state.history) {
+        if (rec?.id && !merged.has(rec.id)) {
+          merged.set(rec.id, rec);
+        }
+      }
+    }
+  }
 
-  return state.history;
+  return Array.from(merged.values()).sort((a, b) =>
+    (b.timestamp || '').localeCompare(a.timestamp || ''),
+  );
+}
+
+/**
+ * Evaluates login audit history to flag failed password attempts,
+ * concurrent session takeovers (SUPERSEDED), or unfamiliar IPs/devices.
+ */
+export function analyzeLoginSecurity(
+  history: LoginAuditRecord[],
+  currentSessionId?: string | null,
+): LoginSecurityAnalysis {
+  if (!Array.isArray(history) || history.length === 0) {
+    return {
+      hasSuspiciousActivity: false,
+      failedAttemptsCount: 0,
+      supersededCount: 0,
+      unfamiliarIpCount: 0,
+      uniqueDevicesCount: 0,
+      uniqueIpsCount: 0,
+      currentDevice: null,
+      currentIp: null,
+      latestSuccessRecord: null,
+      suspiciousRecordIds: [],
+    };
+  }
+
+  const activeRecord =
+    (currentSessionId ? history.find((h) => h.sessionId === currentSessionId) : null) ||
+    history.find((h) => h.status === 'ACTIVE') ||
+    history.find((h) => h.status !== 'FAILED_ATTEMPT') ||
+    null;
+
+  const currentIp = activeRecord?.ip && activeRecord.ip !== 'unknown-client' ? activeRecord.ip : null;
+  const currentDevice = activeRecord?.device || null;
+
+  let failedAttemptsCount = 0;
+  let supersededCount = 0;
+  let unfamiliarIpCount = 0;
+  const devices = new Set<string>();
+  const ips = new Set<string>();
+  const suspiciousIds: string[] = [];
+
+  for (const item of history) {
+    if (item.device) devices.add(item.device);
+    if (item.ip && item.ip !== 'unknown-client') ips.add(item.ip);
+
+    let isSuspicious = false;
+    if (item.status === 'FAILED_ATTEMPT') {
+      failedAttemptsCount += 1;
+      isSuspicious = true;
+    } else if (item.status === 'SUPERSEDED') {
+      supersededCount += 1;
+      isSuspicious = true;
+    }
+
+    const ipDiffers =
+      Boolean(currentIp) &&
+      Boolean(item.ip) &&
+      item.ip !== 'unknown-client' &&
+      item.ip !== currentIp;
+    const deviceDiffers =
+      Boolean(currentDevice) &&
+      Boolean(item.device) &&
+      item.device !== currentDevice;
+
+    if ((ipDiffers || deviceDiffers) && item.sessionId !== activeRecord?.sessionId) {
+      unfamiliarIpCount += 1;
+      isSuspicious = true;
+    }
+
+    if (isSuspicious && item.id) {
+      suspiciousIds.push(item.id);
+    }
+  }
+
+  const latestSuccessRecord =
+    history.find((h) => h.status !== 'FAILED_ATTEMPT') || null;
+
+  return {
+    hasSuspiciousActivity: failedAttemptsCount > 0 || supersededCount > 0 || unfamiliarIpCount > 0,
+    failedAttemptsCount,
+    supersededCount,
+    unfamiliarIpCount,
+    uniqueDevicesCount: devices.size,
+    uniqueIpsCount: ips.size,
+    currentDevice,
+    currentIp,
+    latestSuccessRecord,
+    suspiciousRecordIds: suspiciousIds,
+  };
 }

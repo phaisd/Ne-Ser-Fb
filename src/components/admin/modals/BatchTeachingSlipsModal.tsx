@@ -21,11 +21,12 @@ import {
   QrCode,
   FileSpreadsheet,
 } from 'lucide-react';
-import { UserAccount } from '@/types';
+import { SignatoryItem, SystemSettings, UserAccount } from '@/types';
 import {
   buildBatchTeachingSlipsFilename,
   buildBatchTeachingSlipsSheets,
   downloadXlsx,
+  TeachingSlipCourseRow,
 } from '@/lib/utils';
 
 export type SlipLayoutRatio = '1:1' | '2:1' | '4:1' | '6:1' | '8:1';
@@ -35,10 +36,21 @@ interface BatchTeachingSlipsModalProps {
   onClose: () => void;
   instructors: UserAccount[];
   availableAcademicYears?: string[];
-  getCoursesForInstructor: (user: UserAccount, year?: string, semester?: string) => any[];
-  settings?: any;
-  signatories?: any[];
+  getCoursesForInstructor: (user: UserAccount, year?: string, semester?: string) => TeachingSlipCourseRow[];
+  settings?: Partial<SystemSettings>;
+  signatories?: SignatoryItem[];
   adminName?: string;
+}
+
+interface TeachingSlipCardProps {
+  user: UserAccount;
+  courses: TeachingSlipCourseRow[];
+  qrCodeDataUrl: string | null;
+  academicYearText: string;
+  semesterText: string;
+  deanName?: string;
+  adminName?: string;
+  qrScale?: number;
 }
 
 export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = ({
@@ -157,7 +169,7 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
   const deanName =
     settings?.signerNameTh && settings.signerNameTh !== '-'
       ? settings.signerNameTh
-      : signatories?.find((s: any) => s.id === 'DEAN')?.name || 'พระราชอุดมวัชรเมธี, ผศ.ดร.';
+      : signatories?.find((s) => s.id === 'DEAN')?.name || 'พระราชอุดมวัชรเมธี, ผศ.ดร.';
 
   const handleExportExcel = () => {
     if (activeInstructors.length === 0) {
@@ -686,7 +698,7 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
 /* -------------------------------------------------------------
    CARD VARIANT 1: 1:1 Full Sheet A4
    ------------------------------------------------------------- */
-function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, deanName, adminName, qrScale = 1.5 }: any) {
+function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, deanName, adminName, qrScale = 1.5 }: TeachingSlipCardProps) {
   const attendanceUrl = typeof window !== 'undefined' ? `${window.location.origin}/attendance` : 'https://ne-ser-fb.vercel.app/attendance';
 
   return (
@@ -748,7 +760,7 @@ function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
                 </td>
               </tr>
             ) : (
-              courses.map((c: any, i: number) => (
+              courses.map((c, i) => (
                 <tr key={i}>
                   <td className="px-2 py-1.5 text-center text-slate-400">{i + 1}</td>
                   <td className="px-2 py-1.5 font-mono font-bold text-indigo-700">{c.courseCode}</td>
@@ -812,7 +824,7 @@ function FullCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
 /* -------------------------------------------------------------
    CARD VARIANT 2: 2:1 Half Sheet A5
    ------------------------------------------------------------- */
-function HalfCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, deanName, adminName, qrScale = 1.5 }: any) {
+function HalfCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: TeachingSlipCardProps) {
   const attendanceUrl = typeof window !== 'undefined' ? `${window.location.host}/attendance` : 'ระบบเช็คชื่อ';
 
   return (
@@ -870,7 +882,7 @@ function HalfCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {courses.slice(0, 4).map((c: any, i: number) => (
+            {courses.slice(0, 4).map((c, i) => (
               <tr key={i}>
                 <td className="p-1 font-mono font-bold text-indigo-700">{c.courseCode}</td>
                 <td className="p-1 truncate max-w-[180px]">
@@ -919,7 +931,7 @@ function HalfCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText
 /* -------------------------------------------------------------
    CARD VARIANT 3: 4:1 Quarter Card (การ์ดตัดแจก 4 ส่วน - แนะนำ)
    ------------------------------------------------------------- */
-function QuarterCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: any) {
+function QuarterCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: TeachingSlipCardProps) {
   return (
     <div className="h-full flex flex-col justify-between p-3 bg-white border border-slate-300 rounded-xl text-slate-800 shadow-xs relative overflow-hidden">
       {/* Top Banner */}
@@ -974,7 +986,7 @@ function QuarterCard({ user, courses, qrCodeDataUrl, academicYearText, semesterT
                     </td>
                   </tr>
                 ) : (
-                  courses.slice(0, 3).map((c: any, i: number) => (
+                  courses.slice(0, 3).map((c, i) => (
                     <tr key={i}>
                       <td className="px-1.5 py-0.5 font-mono font-bold text-indigo-700">{c.courseCode}</td>
                       <td className="px-1.5 py-0.5 truncate max-w-[130px] font-medium" title={c.courseName}>
@@ -1036,7 +1048,7 @@ function QuarterCard({ user, courses, qrCodeDataUrl, academicYearText, semesterT
 /* -------------------------------------------------------------
    CARD VARIANT 4: 6:1 Mini Slip (สลิปย่อ 6 ช่อง สำหรับแนบซอง/แจก)
    ------------------------------------------------------------- */
-function MiniSlipCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: any) {
+function MiniSlipCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: TeachingSlipCardProps) {
   return (
     <div className="h-full flex flex-col justify-between p-2.5 bg-white border border-slate-300 rounded-lg text-slate-800 shadow-xs relative overflow-hidden text-[10px]">
       <div>
@@ -1056,7 +1068,7 @@ function MiniSlipCard({ user, courses, qrCodeDataUrl, academicYearText, semester
 
         {/* Short Course Bullets */}
         <div className="space-y-0.5 mb-1.5">
-          {courses.slice(0, 2).map((c: any, i: number) => (
+          {courses.slice(0, 2).map((c, i) => (
             <div key={i} className="flex items-center justify-between text-[9px] bg-slate-50 px-1 py-0.5 rounded">
               <span className="font-mono font-bold text-indigo-700 truncate max-w-[65px]">{c.courseCode}</span>
               <span className="truncate max-w-[100px] text-slate-800">{c.courseName}</span>
@@ -1100,7 +1112,7 @@ function MiniSlipCard({ user, courses, qrCodeDataUrl, academicYearText, semester
 /* -------------------------------------------------------------
    CARD VARIANT 5: 8:1 Mini Slip (สลิปย่อ 8 ช่อง พิมพ์ 8 ใบต่อแผ่น A4 • ประหยัดสุด)
    ------------------------------------------------------------- */
-function EightCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: any) {
+function EightCard({ user, courses, qrCodeDataUrl, academicYearText, semesterText, adminName, qrScale = 1.5 }: TeachingSlipCardProps) {
   return (
     <div className="h-full flex flex-col justify-between p-2 bg-white border border-slate-300 rounded-lg text-slate-800 shadow-xs relative overflow-hidden text-[9px] leading-tight">
       <div>
@@ -1120,7 +1132,7 @@ function EightCard({ user, courses, qrCodeDataUrl, academicYearText, semesterTex
 
         {/* Short Course Bullets (Max 2 courses) */}
         <div className="space-y-0.5 mb-1">
-          {courses.slice(0, 2).map((c: any, i: number) => (
+          {courses.slice(0, 2).map((c, i) => (
             <div key={i} className="flex items-center justify-between text-[7.5px] bg-slate-50 px-1 py-0.5 rounded">
               <span className="font-mono font-bold text-indigo-700 truncate max-w-[55px]">{c.courseCode}</span>
               <span className="truncate max-w-[85px] text-slate-800 font-medium">{c.courseName}</span>

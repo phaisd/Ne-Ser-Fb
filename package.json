@@ -6,9 +6,11 @@
     "dev": "next dev --webpack -p 3020",
     "build": "next build --webpack",
     "start": "next start -p 3020",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check": "tsc --noEmit && vitest run"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",

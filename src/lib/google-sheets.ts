@@ -178,6 +178,38 @@ export class GoogleSheetsClient {
 
     return [...meta.sheets, ...toCreate];
   }
+
+  /**
+   * Delete specific 0-based rows from a sheet tab (processed bottom-up to preserve indices).
+   */
+  async deleteRows(sheetTitle: string, rowIndicesZeroBased: number[]): Promise<number> {
+    const uniqueSortedDesc = Array.from(
+      new Set(rowIndicesZeroBased.filter((n) => Number.isInteger(n) && n >= 0))
+    ).sort((a, b) => b - a);
+    if (uniqueSortedDesc.length === 0) return 0;
+
+    const meta = await this.fetchSheets('?fields=sheets.properties');
+    const targetSheet = (meta.sheets || []).find((s: any) => s.properties?.title === sheetTitle);
+    const sheetId = targetSheet?.properties?.sheetId;
+    if (sheetId === undefined || sheetId === null) return 0;
+
+    const requests = uniqueSortedDesc.map((rowIndex) => ({
+      deleteDimension: {
+        range: {
+          sheetId,
+          dimension: 'ROWS',
+          startIndex: rowIndex,
+          endIndex: rowIndex + 1,
+        },
+      },
+    }));
+
+    await this.fetchSheets(':batchUpdate', {
+      method: 'POST',
+      body: JSON.stringify({ requests }),
+    });
+    return uniqueSortedDesc.length;
+  }
 }
 
 export function getSheetsClient(): GoogleSheetsClient | null {

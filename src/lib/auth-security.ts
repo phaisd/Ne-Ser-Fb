@@ -91,13 +91,58 @@ export function resetRateLimit(identifier: string): void {
 
 import crypto from 'crypto';
 
-const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'mcu-fb-prod-sec-key-32chars-fallback!!';
+const DEV_FALLBACK_AUTH_SECRET = 'mcu-fb-dev-test-sec-key-32chars-only!!';
+const MIN_PROD_SECRET_LENGTH = 32;
+
+export interface SessionTokenUserInput {
+  id?: string;
+  studentCode?: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  department?: string;
+  faculty?: string;
+  programType?: string;
+  mustChangePassword?: boolean;
+  sessionId?: string;
+}
+
+export type SignedSessionPayload = {
+  id: string;
+  name: string;
+  email: string;
+  gmail?: string;
+  role: string;
+  department?: string;
+  faculty?: string;
+  programType?: string;
+  mustChangePassword: boolean;
+  isSuperAdmin?: boolean;
+  sessionId?: string;
+  iat: number;
+};
+
+/**
+ * Resolves the HMAC signing secret with fail-closed behavior in production.
+ */
+export function getAuthSecret(): string {
+  const configured = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (configured && configured.trim().length >= MIN_PROD_SECRET_LENGTH) {
+    return configured.trim();
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'AUTH_SECRET (or NEXTAUTH_SECRET) must be configured in production with at least 32 characters'
+    );
+  }
+  return DEV_FALLBACK_AUTH_SECRET;
+}
 
 /**
  * Creates an HMAC signature for cookie payload
  */
 export function signPayload(dataStr: string): string {
-  const hmac = crypto.createHmac('sha256', AUTH_SECRET);
+  const hmac = crypto.createHmac('sha256', getAuthSecret());
   hmac.update(dataStr);
   return hmac.digest('hex');
 }
@@ -105,12 +150,12 @@ export function signPayload(dataStr: string): string {
 /**
  * Encodes payload with signature: "base64Payload.signature"
  */
-export function createSignedSessionToken(user: any): string {
+export function createSignedSessionToken(user: SessionTokenUserInput): string {
   const safeData = JSON.stringify({
-    id: user.id || user.studentCode || user.email,
-    name: user.name,
-    email: user.email,
-    role: user.role,
+    id: user.id || user.studentCode || user.email || '',
+    name: user.name || '',
+    email: user.email || '',
+    role: user.role || 'GUEST',
     department: user.department,
     faculty: user.faculty,
     programType: user.programType,
@@ -124,24 +169,38 @@ export function createSignedSessionToken(user: any): string {
 }
 
 /**
- * Verifies and decodes a signed session token. Returns null if tampered or invalid.
+ * Verifies and decodes a signed session token. Returns null if tampered, unconfigured, or invalid.
  */
-export function verifySessionToken(token?: string | null): any | null {
+export function verifySessionToken(token?: string | null): SignedSessionPayload | null {
   if (!token || typeof token !== 'string') return null;
   const parts = token.split('.');
   if (parts.length !== 2) return null;
 
   const [b64, signature] = parts;
-  const expectedSig = signPayload(b64);
+  if (!b64 || !signature) return null;
+
+  let expectedSig: string;
+  try {
+    expectedSig = signPayload(b64);
+  } catch {
+    // Fail-closed in production if AUTH_SECRET is missing or too short
+    return null;
+  }
+
+  const sigBuf = Buffer.from(signature, 'utf8');
+  const expectedBuf = Buffer.from(expectedSig, 'utf8');
+  if (sigBuf.length !== expectedBuf.length) {
+    return null;
+  }
 
   // Constant-time comparison to prevent timing attacks
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
+  if (!crypto.timingSafeEqual(sigBuf, expectedBuf)) {
     return null;
   }
 
   try {
     const raw = Buffer.from(b64, 'base64url').toString('utf-8');
-    return JSON.parse(raw);
+    return JSON.parse(raw) as SignedSessionPayload;
   } catch {
     return null;
   }

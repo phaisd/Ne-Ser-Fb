@@ -7,7 +7,9 @@ export interface LoginAuditRecord {
   userAgent?: string;
   device: string; // e.g. "Windows PC (Chrome)", "Mac (Safari)", "iPhone (Safari)"
   sessionId: string;
-  status: 'ACTIVE' | 'SUPERSEDED' | 'LOGGED_OUT';
+  status: 'ACTIVE' | 'SUPERSEDED' | 'LOGGED_OUT' | 'FAILED_ATTEMPT';
+  method?: 'PASSWORD' | 'GOOGLE' | 'SESSION_RESET';
+  note?: string;
 }
 
 export interface InstructorAccount {

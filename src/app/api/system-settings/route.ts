@@ -1,18 +1,31 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/api-error';
 import { getSystemSettings, updateSystemSettings } from '@/lib/data-store';
 import { getAuthenticatedUserFromRequest, isServerAdminOrOfficer } from '@/lib/server-auth-guard';
+import { verifyFileMagicBytes } from '@/lib/security';
 import fs from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const settings = await getSystemSettings();
+    const authUser = getAuthenticatedUserFromRequest(request);
+    if (!isServerAdminOrOfficer(authUser)) {
+      const {
+        lineNotifyToken: _lnt,
+        lineChannelAccessToken: _lcat,
+        lineTargetUserId: _ltuid,
+        lineWebhookUrl: _lwu,
+        ...publicSettings
+      } = settings;
+      return NextResponse.json({ success: true, data: publicSettings });
+    }
     return NextResponse.json({ success: true, data: settings });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[GET /api/system-settings] Error:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -29,17 +42,32 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    // Auto-convert Base64 logoUrl to saved file
+    // Auto-convert safe raster Base64 logoUrl to saved file (block SVG script payloads)
     if (body.logoUrl && typeof body.logoUrl === 'string' && body.logoUrl.startsWith('data:image/')) {
       try {
         const matches = body.logoUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
         if (matches && matches.length === 3) {
           const rawExt = matches[1].toLowerCase();
+          if (rawExt.includes('svg')) {
+            return NextResponse.json(
+              { success: false, error: 'ไม่อนุญาตให้อัปโหลดไฟล์ SVG เพื่อป้องกันสคริปต์แฝง (XSS)' },
+              { status: 415 }
+            );
+          }
+
           let ext = '.png';
           if (rawExt.includes('jpeg') || rawExt.includes('jpg')) ext = '.jpg';
-          else if (rawExt.includes('svg')) ext = '.svg';
           else if (rawExt.includes('webp')) ext = '.webp';
           else if (rawExt.includes('gif')) ext = '.gif';
+
+          const buffer = Buffer.from(matches[2], 'base64');
+          const magic = verifyFileMagicBytes(buffer, ext);
+          if (!magic.valid) {
+            return NextResponse.json(
+              { success: false, error: magic.reason || 'ไฟล์โลโก้ไม่ผ่านการตรวจสอบลายเซ็นไบนารี' },
+              { status: 415 }
+            );
+          }
 
           const uploadDir = path.join(process.cwd(), 'public', 'uploads');
           if (!fs.existsSync(uploadDir)) {
@@ -48,9 +76,8 @@ export async function POST(request: Request) {
 
           const fileName = `logo-${Date.now()}${ext}`;
           const filePath = path.join(uploadDir, fileName);
-          fs.writeFileSync(filePath, Buffer.from(matches[2], 'base64'));
+          fs.writeFileSync(filePath, buffer);
           body.logoUrl = `/uploads/${fileName}`;
-          console.log(`[POST /api/system-settings] Converted Base64 logo to ${body.logoUrl}`);
         }
       } catch (fileErr) {
         console.error('[POST /api/system-settings] Failed to write Base64 file:', fileErr);
@@ -64,8 +91,8 @@ export async function POST(request: Request) {
       data: updated,
       message: 'บันทึกการตั้งค่าระบบและโลโก้เรียบร้อยแล้ว'
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[POST /api/system-settings] Error:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 500 });
   }
 }

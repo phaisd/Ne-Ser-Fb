@@ -41,12 +41,23 @@ import {
   HelpCircle
 } from 'lucide-react';
 
-import { Student, TimetableItem, AttendanceHistoryItem } from '@/types';
-import { getSubstantiveTokens, matchInstructorStrict } from '@/lib/utils';
-import { calculateMaxAllowedAbsences } from '@/lib/attendance/attendanceEvaluator';
-import { EligibilityTab, SemesterRoadmapTab, AddStudentToCourseModal, GradeSheetTab, ClassroomQrProjector, groupAndSortByMajor, RollCallTab, AttendanceHistoryTab, SessionCustomModal } from '@/components/attendance';
-import { CourseEnrollment } from '@/types';
-import { getAuthUser, isAdminOrOfficer, clearAuthSession, saveAuthSession } from '@/lib/auth-client';
+import { Student, TimetableItem, AttendanceHistoryItem, CourseEnrollment } from '@/types';
+import { matchInstructorStrict } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/utils/error';
+import { downloadCsvFile } from '@/lib/utils/csv-export';
+import {
+  AttendanceStatusValue,
+  buildAvailableCourses,
+  buildSemesterRoadmapSessions,
+  checkIsEnglishCourse,
+  computeExamEligibility,
+  computeProgramCounts,
+  filterStudentsForCourse,
+  formatDayLabel,
+  SemesterSessionItem,
+} from '@/lib/attendance/workspaceHelpers';
+import { EligibilityTab, SemesterRoadmapTab, AddStudentToCourseModal, GradeSheetTab, ClassroomQrProjector, RollCallTab, AttendanceHistoryTab, SessionCustomModal } from '@/components/attendance';
+import { AuthUser, getAuthUser, isAdminOrOfficer, clearAuthSession } from '@/lib/auth-client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { toSafeCsvCell } from '@/lib/security';
 import UserProfileModal from '@/components/UserProfileModal';
@@ -65,7 +76,7 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
 
   // Auth & Current Instructor State
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Instructor & Course Selection
@@ -188,108 +199,39 @@ export default function AttendancePage() {
   const isAdmin = isAdminOrOfficer(currentUser);
   const isTeacher = Boolean(currentUser && !isAdmin);
 
-  // Helper to detect English/Inter course
-  const checkIsEnglishCourse = (c: TimetableItem) => {
-    const tt = c.timetableTitle || '';
-    const cn = c.courseName || '';
-    return (
-      (c as any).programType === 'ENGLISH' ||
-      (c as any).programType === 'INTERNATIONAL' ||
-      /ภาษาอังกฤษ|inter|eng|english|นานาชาติ/i.test(tt) ||
-      /^[A-Za-z0-9\s:,\-\(\)\/\.\*]+$/.test(cn.trim())
-    );
-  };
-
-  // Helper to format dayOfWeek number into readable Thai/English day label
-  const formatDayLabel = (dayOfWeek?: number, isEn?: boolean) => {
-    const mapTh: Record<number, string> = {
-      1: 'จันทร์',
-      2: 'อังคาร',
-      3: 'พุธ',
-      4: 'พฤหัสบดี',
-      5: 'ศุกร์',
-      6: 'เสาร์',
-      7: 'อาทิตย์',
-    };
-    const mapEn: Record<number, string> = {
-      1: 'Mon',
-      2: 'Tue',
-      3: 'Wed',
-      4: 'Thu',
-      5: 'Fri',
-      6: 'Sat',
-      7: 'Sun',
-    };
-    if (!dayOfWeek) return '-';
-    return (isEn ? mapEn[dayOfWeek] : mapTh[dayOfWeek]) || String(dayOfWeek);
-  };
-
   // Available courses strictly filtered for teacher & deduplicated across shared major timetables
-  const availableCourses = useMemo(() => {
-    const rawMatched = isTeacher
-      ? timetables.filter((t) => matchInstructorStrict(currentUser, t.instructor))
-      : selectedInstructor === 'ALL'
-      ? timetables
-      : timetables.filter((t) => t.instructor?.toLowerCase().includes(selectedInstructor.toLowerCase()));
-
-    const extractMajorFromTitle = (title?: string): string => {
-      if (!title) return '';
-      if (title.includes('พระพุทธศาสนา')) return 'พระพุทธศาสนา';
-      if (title.includes('วิปัสสนาภาวนา')) return 'วิปัสสนาภาวนา';
-      if (title.includes('ศาสนาและปรัชญา')) return 'ศาสนาและปรัชญา';
-      if (title.includes('บาลีสันสกฤต')) return 'บาลีสันสกฤต';
-      return '';
-    };
-
-    const groupedMap = new Map<
-      string,
-      TimetableItem & { sectionKey: string; sharedMajors: string[] }
-    >();
-
-    for (const item of rawMatched) {
-      const isEn = checkIsEnglishCourse(item);
-      const normCode = (item.courseCode || '').trim().toUpperCase();
-      const normStart = (item.startTime || '').trim();
-      // Distinct Teaching Section Key: courseCode + Program (EN/TH) + YearLevel + DayOfWeek + StartTime
-      const sectionKey = `${normCode}__${isEn ? 'EN' : 'TH'}__Y${item.yearLevel || 1}__D${item.dayOfWeek || 1}__T${normStart}`;
-      const maj = extractMajorFromTitle(item.timetableTitle);
-
-      const existing = groupedMap.get(sectionKey);
-      if (!existing) {
-        groupedMap.set(sectionKey, {
-          ...item,
-          sectionKey,
-          sharedMajors: maj ? [maj] : [],
-        });
-      } else {
-        if (maj && !existing.sharedMajors.includes(maj)) {
-          existing.sharedMajors.push(maj);
-        }
-        // Keep the fuller instructor string if one timetable entry has more complete co-instructor names
-        if ((item.instructor || '').length > (existing.instructor || '').length) {
-          existing.instructor = item.instructor;
-        }
-      }
-    }
-
-    return Array.from(groupedMap.values());
-  }, [timetables, currentUser, isTeacher, selectedInstructor]);
+  const availableCourses = useMemo(
+    () => buildAvailableCourses(timetables, { isTeacher, currentUser, selectedInstructor }),
+    [timetables, currentUser, isTeacher, selectedInstructor]
+  );
 
   // Current selected course details (matches by unique sectionKey first, then falls back to courseCode)
   const currentCourse = useMemo(() => {
     return (
       availableCourses.find(
-        (t) => (t as any).sectionKey === selectedCourseCode || t.courseCode === selectedCourseCode
+        (t) => t.sectionKey === selectedCourseCode || t.courseCode === selectedCourseCode
       ) || availableCourses[0]
     );
   }, [availableCourses, selectedCourseCode]);
 
-  // Auto-sync selected course when availableCourses changes (supports ?course= query param from /workload)
+  // Auto-sync selected course & initial mode when availableCourses changes (supports ?course= & ?mode= from /workload)
   const requestedCourseRef = useRef<string | null>(null);
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const paramCourse = new URLSearchParams(window.location.search).get('course');
+      const searchParams = new URLSearchParams(window.location.search);
+      const paramCourse = searchParams.get('course');
+      const paramMode = searchParams.get('mode');
       if (paramCourse) requestedCourseRef.current = paramCourse;
+      if (
+        paramMode === 'ROLL_CALL' ||
+        paramMode === 'ROADMAP' ||
+        paramMode === 'QR_CODE' ||
+        paramMode === 'ELIGIBILITY' ||
+        paramMode === 'GRADE_SHEET' ||
+        paramMode === 'HISTORY'
+      ) {
+        setActiveMode(paramMode);
+      }
     }
   }, []);
 
@@ -298,21 +240,21 @@ export default function AttendancePage() {
       if (requestedCourseRef.current) {
         const req = requestedCourseRef.current;
         const paramMatch = availableCourses.find(
-          (c) => (c as any).sectionKey === req || c.courseCode === req
+          (c) => c.sectionKey === req || c.courseCode === req
         );
         if (paramMatch) {
           requestedCourseRef.current = null;
-          setSelectedCourseCode((paramMatch as any).sectionKey || paramMatch.courseCode);
+          setSelectedCourseCode(paramMatch.sectionKey || paramMatch.courseCode);
           setRecordedBy(currentUser ? currentUser.name : (paramMatch.instructor || 'อาจารย์ประจำวิชา'));
           return;
         }
       }
       const match = availableCourses.find(
-        (c) => (c as any).sectionKey === selectedCourseCode || c.courseCode === selectedCourseCode
+        (c) => c.sectionKey === selectedCourseCode || c.courseCode === selectedCourseCode
       );
       if (!match) {
         const first = availableCourses[0];
-        setSelectedCourseCode((first as any).sectionKey || first.courseCode);
+        setSelectedCourseCode(first.sectionKey || first.courseCode);
         setRecordedBy(currentUser ? currentUser.name : (first.instructor || 'อาจารย์ประจำวิชา'));
       }
     } else {
@@ -320,126 +262,10 @@ export default function AttendancePage() {
     }
   }, [availableCourses, selectedCourseCode, currentUser]);
 
-  // ─────────────────────────────────────────────────────────────
-  // 16-WEEK SEMESTER ROADMAP & FAST NEXT-SESSION PROVISIONING
-  // ─────────────────────────────────────────────────────────────
-  interface SemesterSessionItem {
-    sessionNumber: number;
-    date: string;
-    dateFormattedTh: string;
-    dayNameTh: string;
-    startTime: string;
-    endTime: string;
-    room: string;
-    status: 'COMPLETED' | 'NEXT_UP' | 'UPCOMING';
-    sessionType: 'NORMAL' | 'MAKEUP' | 'SPECIAL' | 'EXAM';
-    stats?: {
-      totalStudents: number;
-      present: number;
-      late: number;
-      absent: number;
-      leave: number;
-      attendancePercent: number;
-      recordedBy?: string;
-    };
-  }
-
-  const semesterRoadmapSessions = useMemo<SemesterSessionItem[]>(() => {
-    if (!currentCourse) return [];
-
-    const recordsByDate = new Map<string, AttendanceHistoryItem[]>();
-    historyRecords.forEach((r) => {
-      if (r.courseCode === currentCourse.courseCode) {
-        if (!recordsByDate.has(r.date)) {
-          recordsByDate.set(r.date, []);
-        }
-        recordsByDate.get(r.date)!.push(r);
-      }
-    });
-
-    const sortedRecordedDates = Array.from(recordsByDate.keys()).sort();
-
-    let startDate = new Date('2026-06-15T00:00:00');
-    if (sortedRecordedDates.length > 0) {
-      const firstRec = new Date(sortedRecordedDates[0] + 'T00:00:00');
-      if (!isNaN(firstRec.getTime())) {
-        startDate = firstRec;
-      }
-    }
-
-    const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-    const thaiDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
-
-    const sessions: SemesterSessionItem[] = [];
-    let foundNextUp = false;
-
-    for (let i = 0; i < semesterTotalSessions; i++) {
-      const sessionNum = i + 1;
-      let sDate = new Date(startDate);
-      sDate.setDate(startDate.getDate() + (i * 7));
-
-      let sessionDateStr = sDate.toISOString().substring(0, 10);
-      if (i < sortedRecordedDates.length) {
-        sessionDateStr = sortedRecordedDates[i];
-        sDate = new Date(sessionDateStr + 'T00:00:00');
-      }
-
-      const dateFormattedTh = `${sDate.getDate()} ${thaiMonthsShort[sDate.getMonth()]} ${(sDate.getFullYear() + 543).toString().substring(2)}`;
-      const dayNameTh = thaiDays[sDate.getDay()];
-
-      const recordsForThis = recordsByDate.get(sessionDateStr);
-
-      if (recordsForThis && recordsForThis.length > 0) {
-        const present = recordsForThis.filter((r) => r.status === 'PRESENT').length;
-        const late = recordsForThis.filter((r) => r.status === 'LATE').length;
-        const absent = recordsForThis.filter((r) => r.status === 'ABSENT').length;
-        const leave = recordsForThis.filter((r) => r.status === 'LEAVE').length;
-        const totalStudents = recordsForThis.length;
-        const attendancePercent = totalStudents > 0 ? Math.round(((present + late) / totalStudents) * 100) : 0;
-
-        sessions.push({
-          sessionNumber: sessionNum,
-          date: sessionDateStr,
-          dateFormattedTh,
-          dayNameTh,
-          startTime: currentCourse.startTime || '09:00',
-          endTime: currentCourse.endTime || '12:00',
-          room: currentCourse.room || 'C301',
-          status: 'COMPLETED',
-          sessionType: 'NORMAL',
-          stats: {
-            totalStudents,
-            present,
-            late,
-            absent,
-            leave,
-            attendancePercent,
-            recordedBy: recordsForThis[0].recordedBy,
-          },
-        });
-      } else {
-        let status: 'NEXT_UP' | 'UPCOMING' = 'UPCOMING';
-        if (!foundNextUp) {
-          status = 'NEXT_UP';
-          foundNextUp = true;
-        }
-
-        sessions.push({
-          sessionNumber: sessionNum,
-          date: sessionDateStr,
-          dateFormattedTh,
-          dayNameTh,
-          startTime: currentCourse.startTime || '09:00',
-          endTime: currentCourse.endTime || '12:00',
-          room: currentCourse.room || 'C301',
-          status,
-          sessionType: 'NORMAL',
-        });
-      }
-    }
-
-    return sessions;
-  }, [currentCourse, historyRecords, semesterTotalSessions]);
+  const semesterRoadmapSessions = useMemo(
+    () => buildSemesterRoadmapSessions(currentCourse, historyRecords, semesterTotalSessions),
+    [currentCourse, historyRecords, semesterTotalSessions]
+  );
 
   const nextUpcomingSession = useMemo(() => {
     return semesterRoadmapSessions.find((s) => s.status === 'NEXT_UP') || null;
@@ -499,24 +325,20 @@ export default function AttendancePage() {
 
   const handleCourseChange = (keyOrCode: string) => {
     const found = availableCourses.find(
-      (t) => (t as any).sectionKey === keyOrCode || t.courseCode === keyOrCode
+      (t) => t.sectionKey === keyOrCode || t.courseCode === keyOrCode
     );
     if (found) {
-      setSelectedCourseCode((found as any).sectionKey || found.courseCode);
+      setSelectedCourseCode(found.sectionKey || found.courseCode);
       setRecordedBy(currentUser ? currentUser.name : (found.instructor || 'อาจารย์ประจำวิชา'));
       setStudentProgramFilter('AUTO');
     }
   };
 
   // Determine if selected course is an International / English Program course
-  const isInterCourse = useMemo(() => {
-    if (!currentCourse) return false;
-    const tt = currentCourse.timetableTitle || '';
-    const cn = currentCourse.courseName || '';
-    const isEnTitle = /ภาษาอังกฤษ|inter|eng|english|นานาชาติ/i.test(tt);
-    const isEnName = /^[A-Za-z0-9\s:,\-\(\)\/\.]+$/.test(cn.trim());
-    return (currentCourse as any).programType === 'ENGLISH' || isEnTitle || isEnName;
-  }, [currentCourse]);
+  const isInterCourse = useMemo(
+    () => (currentCourse ? checkIsEnglishCourse(currentCourse) : false),
+    [currentCourse]
+  );
 
   // Active program filter mode
   const activeProgramMode = useMemo<'ENGLISH' | 'THAI' | 'ALL'>(() => {
@@ -567,110 +389,27 @@ export default function AttendancePage() {
       } else {
         alert(data.error || 'เกิดข้อผิดพลาดในการนำออก');
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + getErrorMessage(err));
     }
   };
 
-  // Determine students to display: filter by target year and program type
   const targetYear = currentCourse?.yearLevel || 1;
 
-  // Counts for the program filter badges
-  const { yearAllCount, yearEnglishCount, yearThaiCount } = useMemo(() => {
-    if (!currentCourse) return { yearAllCount: 0, yearEnglishCount: 0, yearThaiCount: 0 };
-    const baseList = showOnlyTargetYear
-      ? students.filter((s) => s.yearLevel === targetYear)
-      : students;
+  const { yearAllCount, yearEnglishCount, yearThaiCount } = useMemo(
+    () => computeProgramCounts(students, showOnlyTargetYear, targetYear, Boolean(currentCourse)),
+    [students, showOnlyTargetYear, targetYear, currentCourse]
+  );
 
-    const engCount = baseList.filter((s) => {
-      const p = (s.programType || '').toUpperCase();
-      const isThaiNat = s.nationality === 'ไทย' || s.nationality === 'Thai';
-      return p === 'ENGLISH' || p === 'INTER' || (!isThaiNat && p !== 'THAI');
-    }).length;
-
-    const thaiCount = baseList.filter((s) => {
-      const p = (s.programType || '').toUpperCase();
-      return p === 'THAI' || p === '' || !s.programType;
-    }).length;
-
-    return {
-      yearAllCount: baseList.length,
-      yearEnglishCount: engCount,
-      yearThaiCount: thaiCount,
-    };
-  }, [students, showOnlyTargetYear, targetYear, currentCourse]);
-
-  const { groupedTargetSections, targetStudents } = useMemo(() => {
-    if (!currentCourse) return { groupedTargetSections: [], targetStudents: [] };
-
-    // 1. Year level filter
-    let list = showOnlyTargetYear
-      ? students.filter((s) => s.yearLevel === targetYear)
-      : [...students];
-
-    // 2. Program type filter (แยกนิสิตภาคภาษาไทย และ ภาคภาษาอังกฤษ)
-    if (activeProgramMode === 'ENGLISH') {
-      list = list.filter((s) => {
-        const p = (s.programType || '').toUpperCase();
-        const isThaiNat = s.nationality === 'ไทย' || s.nationality === 'Thai';
-        return p === 'ENGLISH' || p === 'INTER' || (!isThaiNat && p !== 'THAI');
-      });
-    } else if (activeProgramMode === 'THAI') {
-      list = list.filter((s) => {
-        const p = (s.programType || '').toUpperCase();
-        return p === 'THAI' || p === '' || !s.programType;
-      });
-    }
-
-    // 3. Always include custom enrolled students (นิสิตเทียบโอน/เดินเรียนประจำวิชานี้)
-    if (customEnrolledCodeSet.size > 0) {
-      const existingCodes = new Set(list.map((s) => s.studentCode.toLowerCase().trim()));
-      const extraStudents = students.filter((s) => {
-        const code = s.studentCode.toLowerCase().trim();
-        return customEnrolledCodeSet.has(code) && !existingCodes.has(code);
-      });
-      extraStudents.forEach((s) => existingCodes.add(s.studentCode.toLowerCase().trim()));
-
-      // Fallback synthesis if a newly enrolled student is not yet in `students` array
-      const fallbackEnrolledStudents: Student[] = [];
-      if (currentCourse) {
-        customEnrollments
-          .filter(
-            (e) =>
-              e.courseCode.trim().toLowerCase() === currentCourse.courseCode.trim().toLowerCase() &&
-              !existingCodes.has(e.studentCode.toLowerCase().trim())
-          )
-          .forEach((e) => {
-            const majorMatch = (e.notes || '').match(/\[สาขาวิชา:\s*([^\]]+)\]/);
-            const extractedMajor = majorMatch ? majorMatch[1].trim() : 'พระพุทธศาสนา';
-            fallbackEnrolledStudents.push({
-              studentCode: e.studentCode.trim(),
-              title: '',
-              firstName: e.studentName || e.studentCode,
-              lastName: '',
-              fullName: e.studentName || e.studentCode,
-              major: extractedMajor,
-              yearLevel: targetYear || 1,
-              studyStatus: 'STUDYING',
-              email: '',
-              phoneNumber: '',
-              programType: activeProgramMode === 'ENGLISH' ? 'ENGLISH' : 'THAI',
-              nationality: activeProgramMode === 'ENGLISH' ? 'International' : 'ไทย',
-            });
-            existingCodes.add(e.studentCode.toLowerCase().trim());
-          });
-      }
-
-      list = [...list, ...extraStudents, ...fallbackEnrolledStudents];
-    }
-
-    // 4. Group by Major (พระพุทธศาสนา -> วิปัสสนาภาวนา -> ศาสนาและปรัชญา -> บาลีสันสกฤต) & sort by studentCode ascending
-    const { sections, flatSorted } = groupAndSortByMajor(list);
-    return {
-      groupedTargetSections: sections,
-      targetStudents: flatSorted,
-    };
-  }, [students, showOnlyTargetYear, targetYear, currentCourse, activeProgramMode, customEnrolledCodeSet, customEnrollments]);
+  const { groupedTargetSections, targetStudents } = useMemo(
+    () =>
+      filterStudentsForCourse(students, customEnrollments, currentCourse, {
+        showOnlyTargetYear,
+        targetYear,
+        activeProgramMode,
+      }),
+    [students, customEnrollments, currentCourse, showOnlyTargetYear, targetYear, activeProgramMode]
+  );
 
   // Initialize attendance map when student list changes
   useEffect(() => {
@@ -716,105 +455,24 @@ export default function AttendancePage() {
     return historyRecords;
   }, [historyRecords, isTeacher, availableCourses, currentUser]);
 
-  // ─────────────────────────────────────────────────────────────
-  // Exam Eligibility Calculation Engine
-  // ─────────────────────────────────────────────────────────────
-  const { eligibilityList, eligibilityStats, recordedSessionsCount, maxAllowedAbsences } = useMemo(() => {
-    if (!currentCourse) {
-      return {
-        eligibilityList: [],
-        eligibilityStats: { total: 0, eligible: 0, warning: 0, ineligible: 0 },
-        recordedSessionsCount: 0,
-        maxAllowedAbsences: 3,
-      };
-    }
-
-    const courseRecords = historyRecords.filter((h) => h.courseCode === currentCourse.courseCode);
-    const uniqueDates = Array.from(new Set(courseRecords.map((h) => h.date).filter(Boolean)));
-    const sessionsRecorded = uniqueDates.length;
-
-    // University regulation: Maximum allowed absences based on percentage requirement (e.g. 16 * 20% = 3 absences)
-    const maxAbsences = calculateMaxAllowedAbsences(semesterTotalSessions, minAttendancePercent);
-
-    const list = targetStudents.map((s) => {
-      const sRecords = courseRecords.filter((r) => r.studentCode === s.studentCode);
-      const sPresent = sRecords.filter((r) => r.status === 'PRESENT').length;
-      const sLate = sRecords.filter((r) => r.status === 'LATE').length;
-      const sLeave = sRecords.filter((r) => r.status === 'LEAVE').length;
-      const sAbsent = sRecords.filter((r) => r.status === 'ABSENT').length;
-
-      // Effective absences = Absent + floor(Late / 3)
-      const effectiveAbsences = sAbsent + Math.floor(sLate / lateToAbsentRatio);
-      const remainingAbsences = maxAbsences - effectiveAbsences;
-
-      // Attended Score
-      const attendedScore = sPresent + (sLate * 0.75) + (includeLeaveAsExcused ? sLeave : 0);
-
-      // Percentage of class attended so far
-      const attendedPercent = sessionsRecorded > 0
-        ? Math.min(100, Math.round((attendedScore / sessionsRecorded) * 100))
-        : 100;
-
-      // Overall Semester Status
-      let status: 'ELIGIBLE' | 'WARNING' | 'INELIGIBLE' = 'ELIGIBLE';
-      let statusText = 'มีสิทธิ์สอบ';
-      let reason = `อยู่ในเกณฑ์ (ยังขาดได้อีก ${Math.max(0, remainingAbsences)} ครั้ง)`;
-
-      if (effectiveAbsences > maxAbsences) {
-        status = 'INELIGIBLE';
-        statusText = 'หมดสิทธิ์สอบ';
-        reason = `ขาดเรียน ${effectiveAbsences} ครั้ง (เกินเกณฑ์ ${maxAbsences} ครั้ง)`;
-      } else if (remainingAbsences === 0 || attendedPercent < minAttendancePercent) {
-        status = 'WARNING';
-        statusText = 'เฝ้าระวัง/เสี่ยงหมดสิทธิ์';
-        reason = remainingAbsences === 0
-          ? `ใช้โควตาขาดครบ ${maxAbsences} ครั้งแล้ว (ห้ามขาดอีก)`
-          : `เวลาเรียนปัจจุบัน ${attendedPercent}% (ต่ำกว่าเกณฑ์ ${minAttendancePercent}%)`;
-      }
-
-      return {
-        studentCode: s.studentCode,
-        studentName: s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`,
-        major: s.major,
-        yearLevel: s.yearLevel,
-        present: sPresent,
-        late: sLate,
-        leave: sLeave,
-        absent: sAbsent,
-        effectiveAbsences,
-        attendedScore,
-        attendedPercent,
-        remainingAbsences,
-        status,
-        statusText,
-        reason,
-      };
-    });
-
-    const eligible = list.filter((i) => i.status === 'ELIGIBLE').length;
-    const warning = list.filter((i) => i.status === 'WARNING').length;
-    const ineligible = list.filter((i) => i.status === 'INELIGIBLE').length;
-
-    return {
-      eligibilityList: list,
-      eligibilityStats: {
-        total: list.length,
-        eligible,
-        warning,
-        ineligible,
-      },
-      recordedSessionsCount: sessionsRecorded,
-      maxAllowedAbsences: maxAbsences,
-    };
-  }, [
-    currentCourse,
-    historyRecords,
-    targetStudents,
-    semesterTotalSessions,
-    minAttendancePercent,
-    lateToAbsentRatio,
-    includeLeaveAsExcused,
-  ]);
+  const { eligibilityList, eligibilityStats, recordedSessionsCount, maxAllowedAbsences } = useMemo(
+    () =>
+      computeExamEligibility(currentCourse, historyRecords, targetStudents, {
+        semesterTotalSessions,
+        minAttendancePercent,
+        lateToAbsentRatio,
+        includeLeaveAsExcused,
+      }),
+    [
+      currentCourse,
+      historyRecords,
+      targetStudents,
+      semesterTotalSessions,
+      minAttendancePercent,
+      lateToAbsentRatio,
+      includeLeaveAsExcused,
+    ]
+  );
 
   // Filtered list for Exam Eligibility view
   const filteredEligibilityList = useMemo(() => {
@@ -870,15 +528,11 @@ export default function AttendancePage() {
       toSafeCsvCell(item.reason),
     ]);
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Exam_Eligibility_${currentCourse.courseCode.replace(/\s+/g, '_')}_${new Date().toISOString().substring(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsvFile(
+      `Exam_Eligibility_${currentCourse.courseCode.replace(/\s+/g, '_')}_${new Date().toISOString().substring(0, 10)}.csv`,
+      headers,
+      rows
+    );
   };
 
   // Simulate Attendance Data for Testing
@@ -897,10 +551,20 @@ export default function AttendancePage() {
       '2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31'
     ];
 
-    const records: any[] = [];
+    interface BatchAttendancePayload {
+      courseCode: string;
+      courseName: string;
+      date: string;
+      studentCode: string;
+      studentName: string;
+      status: AttendanceStatusValue;
+      recordedBy: string;
+    }
+
+    const records: BatchAttendancePayload[] = [];
     baseDates.forEach((dt, dateIdx) => {
       targetStudents.forEach((s, sIdx) => {
-        let status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE' = 'PRESENT';
+        let status: AttendanceStatusValue = 'PRESENT';
         if (sIdx % 17 === 0 && dateIdx % 2 === 0) {
           status = 'ABSENT';
         } else if (sIdx % 11 === 0 && (dateIdx === 2 || dateIdx === 5 || dateIdx === 9)) {
@@ -937,8 +601,8 @@ export default function AttendancePage() {
         const refData = await refRes.json();
         if (refData.success) setHistoryRecords(refData.data);
       }
-    } catch (e: any) {
-      alert('เกิดข้อผิดพลาด: ' + e.message);
+    } catch (e: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + getErrorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -1005,8 +669,8 @@ export default function AttendancePage() {
       } else {
         alert('เกิดข้อผิดพลาด: ' + resData.error);
       }
-    } catch (err: any) {
-      alert('บันทึกล้มเหลว: ' + err.message);
+    } catch (err: unknown) {
+      alert('บันทึกล้มเหลว: ' + getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -1365,8 +1029,8 @@ export default function AttendancePage() {
          ───────────────────────────────────────────────────────────── */}
       {activeMode === 'QR_CODE' && (
         <ClassroomQrProjector
-          availableCourses={availableCourses as any}
-          currentCourse={currentCourse as any}
+          availableCourses={availableCourses}
+          currentCourse={currentCourse}
           onSelectCourse={(code) => setSelectedCourseCode(code)}
           date={date}
           onChangeDate={(newDate) => {
@@ -1381,7 +1045,7 @@ export default function AttendancePage() {
           currentUser={currentUser}
           recordedBy={recordedBy}
           onRecordsSynced={(allRecords) => {
-            setHistoryRecords(allRecords as any);
+            setHistoryRecords(allRecords);
           }}
         />
       )}

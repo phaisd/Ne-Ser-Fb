@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import {
   getCertificateRequests,
   getCertificateTypes,
@@ -11,7 +12,24 @@ import {
   clearMockApprovedRequests,
   syncCertificateRequestsToSheets,
 } from '@/lib/data-store';
-import { sendNotification } from '@/lib/notifier';
+import { sendNotification, type NotificationPayload } from '@/lib/notifier';
+import {
+  getAuthenticatedUserFromRequest,
+  isServerAdminOrOfficer,
+  maskSensitiveStudentData,
+  requireAdminOrOfficer,
+} from '@/lib/server-auth-guard';
+
+function resolveProgramLanguage(targetAudience?: string, nationality?: string): string {
+  const isInter =
+    targetAudience === 'INTERNATIONAL' ||
+    nationality === 'International' ||
+    Boolean(nationality && !['ไทย', 'Thai', 'th', 'TH'].includes(String(nationality).trim()));
+
+  return isInter
+    ? 'หลักสูตรนานาชาติ / ภาษาอังกฤษ (International Program)'
+    : 'หลักสูตรภาษาไทย (Thai Program)';
+}
 
 export async function GET(request: Request) {
   try {
@@ -23,6 +41,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, data: types });
     }
 
+    const authUser = getAuthenticatedUserFromRequest(request);
+    const isAdmin = isServerAdminOrOfficer(authUser);
+
     const studentCode = searchParams.get('studentCode')?.trim();
     let list = await getCertificateRequests();
 
@@ -30,9 +51,11 @@ export async function GET(request: Request) {
       list = list.filter((r) => r.studentCode === studentCode);
     }
 
-    return NextResponse.json({ success: true, count: list.length, data: list });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    const sanitizedList = isAdmin ? list : list.map((r) => maskSensitiveStudentData(r));
+
+    return NextResponse.json({ success: true, count: sanitizedList.length, data: sanitizedList });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
@@ -42,12 +65,16 @@ export async function POST(request: Request) {
     const action = searchParams.get('action');
 
     if (action === 'types') {
+      const auth = requireAdminOrOfficer(request);
+      if (auth.response) return auth.response;
       const body = await request.json();
       const newType = await createCertificateType(body);
       return NextResponse.json({ success: true, data: newType });
     }
 
     if (action === 'sync_sheets' || action === 'sync-sheets') {
+      const auth = requireAdminOrOfficer(request);
+      if (auth.response) return auth.response;
       const result = await syncCertificateRequestsToSheets();
       return NextResponse.json(result);
     }
@@ -55,22 +82,41 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     if (body.action === 'types' || body.action === 'create_type') {
+      const auth = requireAdminOrOfficer(request);
+      if (auth.response) return auth.response;
       const newType = await createCertificateType(body);
       return NextResponse.json({ success: true, data: newType });
     }
 
     if (body.action === 'sync_sheets' || body.action === 'sync-sheets') {
+      const auth = requireAdminOrOfficer(request);
+      if (auth.response) return auth.response;
       const result = await syncCertificateRequestsToSheets();
       return NextResponse.json(result);
     }
 
-    const { studentCode, fullName, certType, degreeLevel, major, requestPurpose, email, phone, ...rest } = body;
+    const {
+      studentCode,
+      fullName,
+      certType,
+      degreeLevel,
+      major,
+      requestPurpose,
+      email,
+      phone,
+      status: _ignoredStatus,
+      docNo: _ignoredDocNo,
+      approvedAt: _ignoredApprovedAt,
+      approvedBy: _ignoredApprovedBy,
+      ...rest
+    } = body;
 
     if (!studentCode || !fullName || !certType) {
       return NextResponse.json({ success: false, error: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน' }, { status: 400 });
     }
 
     const newReq = await createCertificateRequest({
+      ...rest,
       studentCode,
       fullName,
       certType,
@@ -80,18 +126,9 @@ export async function POST(request: Request) {
       status: 'PENDING',
       email: email || '',
       phone: phone || '',
-      ...rest,
     });
 
-    // Determine Program Language (หลักสูตรภาษาไทย / ภาคอินเตอร์)
-    const isInter =
-      rest.targetAudience === 'INTERNATIONAL' ||
-      rest.nationality === 'International' ||
-      (rest.nationality && !['ไทย', 'Thai', 'th', 'TH'].includes(String(rest.nationality).trim()));
-
-    const programLanguage = isInter
-      ? 'หลักสูตรนานาชาติ / ภาษาอังกฤษ (International Program)'
-      : 'หลักสูตรภาษาไทย (Thai Program)';
+    const programLanguage = resolveProgramLanguage(rest.targetAudience, rest.nationality);
 
     // Trigger Notification for new request with rich details
     sendNotification({
@@ -109,13 +146,16 @@ export async function POST(request: Request) {
     }).catch((e) => console.error('Notification error on POST:', e));
 
     return NextResponse.json({ success: true, data: newReq });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    const auth = requireAdminOrOfficer(request);
+    if (auth.response) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
     const body = await request.json();
@@ -149,15 +189,15 @@ export async function PATCH(request: Request) {
     }
 
     // Trigger Notification for status update (Approved / Rejected)
-    if (status) {
-      const isInter =
-        (updated as any).targetAudience === 'INTERNATIONAL' ||
-        (updated as any).nationality === 'International' ||
-        ((updated as any).nationality && !['ไทย', 'Thai', 'th', 'TH'].includes(String((updated as any).nationality).trim()));
-
-      const programLanguage = isInter
-        ? 'หลักสูตรนานาชาติ / ภาษาอังกฤษ (International Program)'
-        : 'หลักสูตรภาษาไทย (Thai Program)';
+    if (status === 'PENDING' || status === 'APPROVED' || status === 'REJECTED') {
+      const programLanguage = resolveProgramLanguage(updated.targetAudience, updated.nationality);
+      const notifyStatus: NotificationPayload['status'] = status;
+      const reasonInput =
+        typeof rest.rejectReason === 'string'
+          ? rest.rejectReason
+          : typeof rest.note === 'string'
+          ? rest.note
+          : undefined;
 
       sendNotification({
         toEmail: updated.email,
@@ -166,24 +206,27 @@ export async function PATCH(request: Request) {
         docNo: updated.docNo,
         certType: updated.certType,
         programLanguage,
-        degreeLevel: (updated as any).degreeLevel || '',
-        major: (updated as any).major || '',
-        requestPurpose: (updated as any).requestPurpose || updated.certType,
-        phone: (updated as any).phone || '',
-        status: status as any,
-        rejectReason: (rest as any).rejectReason || (rest as any).note,
+        degreeLevel: updated.degreeLevel || '',
+        major: updated.major || '',
+        requestPurpose: updated.requestPurpose || updated.certType,
+        phone: updated.phone || '',
+        status: notifyStatus,
+        rejectReason: reasonInput,
         actionUrl: process.env.NEXTAUTH_URL || 'https://ne-ser-fb.vercel.app/admin',
       }).catch((e) => console.error('Notification error on PATCH:', e));
     }
 
     return NextResponse.json({ success: true, data: updated });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
 export async function DELETE(request: Request) {
   try {
+    const auth = requireAdminOrOfficer(request);
+    if (auth.response) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
     let id = searchParams.get('id');
@@ -226,7 +269,7 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true, message: 'ลบคำร้องเรียบร้อยแล้ว', id });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import {
   authenticateInstructor,
   authenticateGoogleUser,
@@ -10,17 +11,43 @@ import {
   updateStudentPassword,
 } from '@/lib/data-store';
 import { checkRateLimit, resetRateLimit, createSignedSessionToken, verifySessionToken } from '@/lib/auth-security';
+import { verifyGoogleIdToken } from '@/lib/google-auth';
 import {
   recordUserLogin,
+  recordFailedLoginAttempt,
   validateUserSession,
   revokeUserSession,
   getUserLoginHistory,
+  analyzeLoginSecurity,
 } from '@/lib/session-manager';
 import {
   requestPasswordReset,
   verifyResetTokenOrOtp,
   completePasswordReset,
 } from '@/lib/password-reset';
+
+interface AuthSessionCandidate {
+  id?: string;
+  studentCode?: string;
+  email: string;
+  gmail?: string;
+  name: string;
+  role?: string;
+  sessionId?: string;
+  isSuperAdmin?: boolean;
+  hasChangedPassword?: boolean;
+  defaultPassword?: string;
+  mustChangePassword?: boolean;
+  [key: string]: unknown;
+}
+
+interface AuthCookieConfig {
+  httpOnly: boolean;
+  path: string;
+  sameSite: 'lax' | 'strict' | 'none';
+  secure: boolean;
+  maxAge?: number;
+}
 
 export async function POST(request: Request) {
   try {
@@ -41,8 +68,8 @@ export async function POST(request: Request) {
 
     // Helper to build cookie options based on rememberMe (Personal device vs Public shared PC)
     const isProduction = process.env.NODE_ENV === 'production';
-    const getAuthCookieOptions = (httpOnly = true) => {
-      const opts: any = {
+    const getAuthCookieOptions = (httpOnly = true): AuthCookieConfig => {
+      const opts: AuthCookieConfig = {
         httpOnly,
         path: '/',
         sameSite: 'lax',
@@ -55,24 +82,55 @@ export async function POST(request: Request) {
     };
 
     const userAgent = request.headers.get('user-agent') || '';
-    const registerSession = (u: any) => {
+    const registerSession = <T extends AuthSessionCandidate>(
+      u: T,
+      method: 'PASSWORD' | 'GOOGLE' | 'SESSION_RESET' = 'PASSWORD'
+    ) => {
       const { sessionId } = recordUserLogin(
         u.id || u.studentCode || u.email,
         u.email,
         u.name,
         clientIp,
-        userAgent
+        userAgent,
+        method
       );
       return { ...u, sessionId };
     };
 
-    const attachAuthCookies = (resp: NextResponse, u: any) => {
+    const attachAuthCookies = (resp: NextResponse, u: AuthSessionCandidate & { sessionId: string }) => {
       const token = createSignedSessionToken(u);
       // 1. Secure Signed HttpOnly Session Cookie (Source of truth for Server APIs)
       resp.cookies.set('mcu_session_token', token, getAuthCookieOptions(true));
       // 2. Client-readable profile cookie for fast UI rendering (Non-sensitive display info only)
       resp.cookies.set('mcu_auth_user', JSON.stringify(u), getAuthCookieOptions(false));
     };
+
+    // 0.0 Revoke all other devices & rotate current session
+    if (action === 'revoke-other-sessions') {
+      const cookieHeader = request.headers.get('cookie') || '';
+      const tokenMatch = cookieHeader.match(/mcu_session_token=([^;]+)/);
+      const verified = tokenMatch?.[1] ? verifySessionToken(decodeURIComponent(tokenMatch[1])) : null;
+      if (!verified) {
+        return NextResponse.json(
+          { success: false, error: 'กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อจัดการเซสชัน' },
+          { status: 401 }
+        );
+      }
+
+      const rotatedUser = registerSession(verified, 'SESSION_RESET');
+      const history = getUserLoginHistory(rotatedUser.id, rotatedUser.email, rotatedUser.gmail);
+      const security = analyzeLoginSecurity(history, rotatedUser.sessionId);
+
+      const resp = NextResponse.json({
+        success: true,
+        user: rotatedUser,
+        history,
+        security,
+        message: 'ออกจากระบบทุกอุปกรณ์อื่นและรีเฟรชเซสชันปัจจุบันเรียบร้อยแล้ว',
+      });
+      attachAuthCookies(resp, rotatedUser);
+      return resp;
+    }
 
     // 0.1 Request Password Reset (Sends Token & 6-digit OTP to User's Actual Email)
     if (action === 'request-password-reset' || (action === 'forgot-password' && !body.newPassword && !body.token && !body.otp)) {
@@ -191,7 +249,7 @@ export async function POST(request: Request) {
 
       // Check student accounts
       const students = await getStudents();
-      const student = students.find((s: any) =>
+      const student = students.find((s) =>
         s.studentCode?.toLowerCase() === cleanId ||
         s.email?.toLowerCase() === cleanId
       );
@@ -254,7 +312,7 @@ export async function POST(request: Request) {
       }
 
       let updatedOk = false;
-      let updatedUser: any = null;
+      let updatedUser: AuthSessionCandidate | null = null;
 
       if (role === 'STUDENT') {
         updatedOk = await updateStudentPassword(targetId, newPassword);
@@ -287,32 +345,37 @@ export async function POST(request: Request) {
       return response;
     }
 
-    // 1. One-click / Direct Google & Gmail Authentication (including Google Identity Services JWT credential)
-    if (provider === 'google' || provider === 'gmail' || credential || (gmail && !password)) {
-      let targetGmail = gmail || email;
-
-      if (!targetGmail && credential && typeof credential === 'string') {
-        try {
-          const parts = credential.split('.');
-          if (parts.length === 3) {
-            const payloadJson = Buffer.from(parts[1], 'base64url').toString('utf8');
-            const payload = JSON.parse(payloadJson);
-            if (payload?.email) {
-              targetGmail = String(payload.email).trim();
-            }
-          }
-        } catch {}
-      }
-
-      if (!targetGmail) {
+    // 1. Google Identity Services JWT Authentication (cryptographic token verification required)
+    if (provider === 'google' || provider === 'gmail' || credential) {
+      if (!credential || typeof credential !== 'string') {
         return NextResponse.json(
-          { success: false, error: 'กรุณาระบุบัญชี Gmail หรืออีเมล @mcu.ac.th สำหรับเข้าสู่ระบบ' },
-          { status: 400 }
+          {
+            success: false,
+            error:
+              'ไม่อนุญาตให้เข้าสู่ระบบด้วยอีเมลเพียงอย่างเดียว กรุณายืนยันตัวตนผ่าน Google OAuth หรือกรอกรหัสผ่านให้ถูกต้อง',
+          },
+          { status: 401 }
         );
       }
 
+      const settings = await getSystemSettings();
+      const expectedClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || settings?.googleClientId;
+      const googleCheck = await verifyGoogleIdToken(credential, expectedClientId);
+
+      if (!googleCheck.valid || !googleCheck.email) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: googleCheck.error || 'โทเค็นยืนยันตัวตนจาก Google ไม่ถูกต้องหรือหมดอายุ',
+          },
+          { status: 401 }
+        );
+      }
+
+      const targetGmail = googleCheck.email;
+
       // Check instructor first, then student
-      let user = await authenticateGoogleUser(targetGmail);
+      let user: AuthSessionCandidate | null = await authenticateGoogleUser(targetGmail);
       if (!user) {
         user = await authenticateStudent(targetGmail);
       }
@@ -326,12 +389,12 @@ export async function POST(request: Request) {
 
       resetRateLimit(`auth:${clientIp}`);
 
-      const sessionUser = registerSession(user);
+      const sessionUser = registerSession(user, 'GOOGLE');
 
       const response = NextResponse.json({
         success: true,
         user: sessionUser,
-        message: `เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${user.name} (${(user as any).role === 'STUDENT' ? 'นิสิต' : 'อาจารย์'})`,
+        message: `เข้าสู่ระบบสำเร็จ: ยินดีต้อนรับ ${user.name} (${sessionUser.role === 'STUDENT' ? 'นิสิต' : 'อาจารย์'})`,
       });
 
       attachAuthCookies(response, sessionUser);
@@ -354,6 +417,29 @@ export async function POST(request: Request) {
     }
 
     if (!user) {
+      // If login identifier matches an instructor account, audit failed attempt for security monitoring
+      try {
+        const cleanLoginId = String(email || '').trim().toLowerCase();
+        const instructors = await getInstructorAccounts();
+        const matchedInstructor = instructors.find(
+          (inst) =>
+            inst.email?.toLowerCase() === cleanLoginId ||
+            inst.gmail?.toLowerCase() === cleanLoginId ||
+            inst.id?.toLowerCase() === cleanLoginId ||
+            inst.name?.toLowerCase() === cleanLoginId,
+        );
+        if (matchedInstructor) {
+          recordFailedLoginAttempt(
+            matchedInstructor.id || matchedInstructor.email,
+            matchedInstructor.email,
+            matchedInstructor.name,
+            clientIp,
+            userAgent,
+            'รหัสผ่านไม่ถูกต้อง',
+          );
+        }
+      } catch {}
+
       return NextResponse.json(
         {
           success: false,
@@ -367,12 +453,13 @@ export async function POST(request: Request) {
 
     // Check system setting: Force password change on first login
     const settings = await getSystemSettings();
+    const typedUser: AuthSessionCandidate = user;
     const isForceEnabled = settings.forcePasswordChangeOnFirstLogin !== false;
-    const hasChanged = Boolean((user as any).hasChangedPassword);
+    const hasChanged = Boolean(typedUser.hasChangedPassword);
     const isDefaultPassword =
       password === 'mcu123456' ||
-      password === (user as any).defaultPassword ||
-      password === (user as any).studentCode ||
+      password === typedUser.defaultPassword ||
+      password === typedUser.studentCode ||
       password === '123456';
 
     const mustChangePassword = isForceEnabled && (!hasChanged || isDefaultPassword);
@@ -398,8 +485,8 @@ export async function POST(request: Request) {
     attachAuthCookies(response, sessionUser);
 
     return response;
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 403 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err, 403);
   }
 }
 
@@ -415,7 +502,7 @@ export async function GET(request: Request) {
     }
 
     const cookieHeader = request.headers.get('cookie') || '';
-    let verified: any = null;
+    let verified: AuthSessionCandidate | null = null;
     
     // First, verify via cryptographically signed httpOnly session token
     const tokenMatch = cookieHeader.match(/mcu_session_token=([^;]+)/);
@@ -423,8 +510,8 @@ export async function GET(request: Request) {
       verified = verifySessionToken(decodeURIComponent(tokenMatch[1]));
     }
 
-    // Fallback check on client cookie
-    if (!verified) {
+    // Fallback check on unsigned client cookie strictly in non-production environments
+    if (!verified && process.env.NODE_ENV !== 'production') {
       const match = cookieHeader.match(/mcu_auth_user=([^;]+)/);
       if (match && match[1]) {
         try {
@@ -433,14 +520,47 @@ export async function GET(request: Request) {
       }
     }
 
-    // Login Audit History endpoint
+    // Login Audit History endpoint (Owner or Admin/Officer only)
     if (action === 'history') {
-      const targetId = searchParams.get('userId') || verified?.id || verified?.email;
-      if (!targetId) {
-        return NextResponse.json({ success: false, error: 'กรุณาระบุบัญชีผู้ใช้' }, { status: 400 });
+      if (!verified) {
+        return NextResponse.json(
+          { success: false, error: 'กรุณาเข้าสู่ระบบเพื่อดูประวัติการเข้าใช้งาน' },
+          { status: 401 }
+        );
       }
-      const history = getUserLoginHistory(targetId);
-      return NextResponse.json({ success: true, history });
+
+      const roleUpper = String(verified.role || '').toUpperCase();
+      const canInspectOther =
+        roleUpper === 'SUPER_ADMIN' ||
+        roleUpper === 'ADMIN' ||
+        roleUpper === 'OFFICER' ||
+        roleUpper === 'STAFF' ||
+        verified.isSuperAdmin === true;
+
+      const requestedId = searchParams.get('userId')?.trim();
+      const ownKeys = [verified.id, verified.studentCode, verified.email, verified.gmail]
+        .filter(Boolean)
+        .map((s) => String(s).trim().toLowerCase());
+
+      const isSelfRequest = !requestedId || ownKeys.includes(requestedId.toLowerCase());
+      if (!isSelfRequest && !canInspectOther) {
+        return NextResponse.json(
+          { success: false, error: 'ไม่มีสิทธิ์เข้าถึงประวัติการเข้าใช้ของบัญชีอื่น' },
+          { status: 403 }
+        );
+      }
+
+      const history = isSelfRequest
+        ? getUserLoginHistory(verified.id, verified.studentCode, verified.email, verified.gmail)
+        : getUserLoginHistory(requestedId);
+      const security = analyzeLoginSecurity(history, verified.sessionId);
+
+      return NextResponse.json({
+        success: true,
+        history,
+        security,
+        currentSessionId: verified.sessionId || null,
+      });
     }
 
     if (verified) {
@@ -466,8 +586,8 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ success: true, authenticated: false, user: null });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 

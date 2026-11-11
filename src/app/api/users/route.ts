@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import {
   getInstructorAccounts,
   scanTimetableInstructors,
@@ -16,15 +17,28 @@ import {
   deleteInstructorPermanent,
 } from '@/lib/data-store';
 import { verifyPassword } from '@/lib/auth-security';
+import {
+  isSelfUserIdentity,
+  isServerAdminOrOfficer,
+  isServerSuperAdmin,
+  requireAdminOrOfficer,
+  requireAuthenticatedUser,
+} from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
   try {
+    const auth = requireAuthenticatedUser(request);
+    if (auth.response) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');
     const query = searchParams.get('q')?.toLowerCase() || '';
     const archived = searchParams.get('archived') === 'true';
 
     if (archived) {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
       const archivedList = await getArchivedInstructors();
       const safeArchived = archivedList.map(({ password, ...safe }) => safe);
       return NextResponse.json({ success: true, count: safeArchived.length, data: safeArchived });
@@ -66,13 +80,16 @@ export async function GET(request: Request) {
     // Hide password hashes, return safe objects
     const safeAccounts = accounts.map(({ password, ...safe }) => safe);
     return NextResponse.json({ success: true, count: safeAccounts.length, data: safeAccounts });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const auth = requireAuthenticatedUser(request);
+    if (auth.response) return auth.response;
+
     const body = await request.json();
     const { action, userId, newRole, newPassword, userData, updates, isSuspended, reason } = body;
 
@@ -83,7 +100,23 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: 'กรุณาระบุ userId ที่ต้องการแก้ไข' }, { status: 400 });
       }
 
-      const updated = await updateUserProfile(targetId, updates || body);
+      const isAdmin = isServerAdminOrOfficer(auth.user);
+      if (!isAdmin && !isSelfUserIdentity(auth.user, targetId)) {
+        return NextResponse.json({ success: false, error: 'ไม่มีสิทธิ์แก้ไขข้อมูลผู้ใช้งานอื่น' }, { status: 403 });
+      }
+
+      const rawUpdates = { ...(updates || body) };
+      if (!isAdmin) {
+        // Prevent self-escalation of role or suspension status by non-admins
+        delete rawUpdates.role;
+        delete rawUpdates.isSuperAdmin;
+        delete rawUpdates.isSuspended;
+        delete rawUpdates.isActive;
+      } else if (String(rawUpdates.role || '').toUpperCase() === 'SUPER_ADMIN' && !isServerSuperAdmin(auth.user)) {
+        return NextResponse.json({ success: false, error: 'เฉพาะ Super Admin เท่านั้นที่กำหนดบทบาท SUPER_ADMIN ได้' }, { status: 403 });
+      }
+
+      const updated = await updateUserProfile(targetId, rawUpdates);
       if (!updated) {
         return NextResponse.json({ success: false, error: 'ไม่พบผู้ใช้ที่ระบุ' }, { status: 404 });
       }
@@ -92,35 +125,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, data: safe, message: 'แก้ไขข้อมูลอีเมลและผู้ใช้งานสำเร็จ' });
     }
 
-    // 2. Suspend / Activate User Account
-    if (action === 'toggle-suspend' || action === 'suspend-user') {
-      if (!userId) {
-        return NextResponse.json({ success: false, error: 'กรุณาระบุ userId' }, { status: 400 });
-      }
-      const shouldSuspend = isSuspended !== undefined ? Boolean(isSuspended) : true;
-      const result = await toggleUserSuspension(userId, shouldSuspend, reason);
-
-      if (!result.success) {
-        return NextResponse.json({ success: false, error: result.message }, { status: 400 });
-      }
-
-      return NextResponse.json({ success: true, message: result.message, user: result.user });
-    }
-
-    // 3. Update Role
-    if (action === 'update-role') {
-      if (!userId || !newRole) {
-        return NextResponse.json({ success: false, error: 'กรุณาระบุ userId และ newRole' }, { status: 400 });
-      }
-      const ok = await updateUserRole(userId, newRole);
-      return NextResponse.json({ success: ok, message: ok ? 'เปลี่ยนบทบาทผู้ใช้สำเร็จ' : 'ไม่พบผู้ใช้' });
-    }
-
-    // 4. Change Password (by user or admin)
+    // 2. Change Password (by self or Admin/Officer)
     if (action === 'change-password') {
       const targetId = userId || updates?.id || updates?.email || body.email;
       if (!targetId) {
         return NextResponse.json({ success: false, error: 'กรุณาระบุบัญชีผู้ใช้ที่ต้องการเปลี่ยนรหัสผ่าน' }, { status: 400 });
+      }
+
+      if (!isServerAdminOrOfficer(auth.user) && !isSelfUserIdentity(auth.user, targetId)) {
+        return NextResponse.json({ success: false, error: 'ไม่มีสิทธิ์เปลี่ยนรหัสผ่านของบัญชีอื่น' }, { status: 403 });
       }
 
       if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
@@ -131,10 +144,11 @@ export async function POST(request: Request) {
       if (body.oldPassword) {
         const accounts = await getInstructorAccounts();
         const clean = String(targetId).toLowerCase().trim();
-        const found = accounts.find((a) => 
-          (a.id || '').toLowerCase() === clean || 
-          (a.email || '').toLowerCase() === clean ||
-          (a.gmail || '').toLowerCase() === clean
+        const found = accounts.find(
+          (a) =>
+            (a.id || '').toLowerCase() === clean ||
+            (a.email || '').toLowerCase() === clean ||
+            (a.gmail || '').toLowerCase() === clean
         );
         if (found) {
           const matchPass = await verifyPassword(body.oldPassword, found.password);
@@ -152,6 +166,37 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json({ success: true, message: 'เปลี่ยนรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว' });
+    }
+
+    // All remaining user-management actions require Admin or Officer privilege
+    const adminAuth = requireAdminOrOfficer(request);
+    if (adminAuth.response) return adminAuth.response;
+
+    // 3. Suspend / Activate User Account
+    if (action === 'toggle-suspend' || action === 'suspend-user') {
+      if (!userId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุ userId' }, { status: 400 });
+      }
+      const shouldSuspend = isSuspended !== undefined ? Boolean(isSuspended) : true;
+      const result = await toggleUserSuspension(userId, shouldSuspend, reason);
+
+      if (!result.success) {
+        return NextResponse.json({ success: false, error: result.message }, { status: 400 });
+      }
+
+      return NextResponse.json({ success: true, message: result.message, user: result.user });
+    }
+
+    // 4. Update Role
+    if (action === 'update-role') {
+      if (!userId || !newRole) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุ userId และ newRole' }, { status: 400 });
+      }
+      if (String(newRole).toUpperCase() === 'SUPER_ADMIN' && !isServerSuperAdmin(adminAuth.user)) {
+        return NextResponse.json({ success: false, error: 'เฉพาะ Super Admin เท่านั้นที่กำหนดบทบาท SUPER_ADMIN ได้' }, { status: 403 });
+      }
+      const ok = await updateUserRole(userId, newRole);
+      return NextResponse.json({ success: ok, message: ok ? 'เปลี่ยนบทบาทผู้ใช้สำเร็จ' : 'ไม่พบผู้ใช้' });
     }
 
     // 5. Reset Password (by admin)
@@ -261,8 +306,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 

@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { getErrorMessage } from '@/lib/utils/error';
 import { readLocalJson, writeLocalJson } from '@/services/storageHelper';
 
 export interface SendMailOptions {
@@ -179,17 +180,17 @@ export async function sendPasswordResetEmail(
       sent: true,
       message: `ส่งอีเมลพร้อมลิงก์และรหัสยืนยันไปยัง ${primaryRecipient} สำเร็จแล้ว`,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[MAILER] Failed to send reset email:', err);
     logEntry.sent = false;
-    logEntry.error = err.message || 'SendMail error';
+    logEntry.error = getErrorMessage(err) || 'SendMail error';
     logs.unshift(logEntry);
     writeLocalJson('email-logs.json', logs.slice(0, 100));
 
     return {
       success: true, // we still allow OTP verification through fallback
       sent: false,
-      message: `เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ส่งอีเมล: ${err.message}`,
+      message: `เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ส่งอีเมล: ${getErrorMessage(err)}`,
     };
   }
 }

@@ -1,20 +1,44 @@
-import { CertificateRequest, SystemSettings, SignatoryItem } from '@/types';
+import { CertificateRequest, CertRequestStatus, SystemSettings, SignatoryItem } from '@/types';
+import { getErrorMessage } from '@/lib/utils/error';
 import { readLocalJson, writeLocalJson, getSheetsClient } from './storageHelper';
 import { getStudents } from './studentService';
 
-// ----------------- CERTIFICATE TYPES -----------------
-
-export async function getCertificateTypes(): Promise<any[]> {
-  return readLocalJson<any[]>('certificate_types.json', []);
+export interface StoredCertificateType {
+  id: string;
+  code: string;
+  name: string;
+  targetAudience: string;
+  badge: string;
+  category: string;
+  iconName: string;
+  description: string;
+  templateType: string;
+  isActive: boolean;
 }
 
-export async function createCertificateType(data: any): Promise<any> {
+type CertificateTypeInput = Partial<StoredCertificateType>;
+
+type RawCertificateRequestRecord = Partial<CertificateRequest> & {
+  id: string;
+  note?: string | Record<string, unknown>;
+  user?: { name?: string };
+  certificateType?: { name?: string };
+  academicYear?: string;
+};
+
+// ----------------- CERTIFICATE TYPES -----------------
+
+export async function getCertificateTypes(): Promise<StoredCertificateType[]> {
+  return readLocalJson<StoredCertificateType[]>('certificate_types.json', []);
+}
+
+export async function createCertificateType(data: CertificateTypeInput): Promise<StoredCertificateType> {
   const types = await getCertificateTypes();
   const audience = data.targetAudience || 'THAI';
   const prefix = audience.toLowerCase().slice(0, 4);
   const id = data.id || `cert-${prefix}-${Date.now().toString(36)}`;
   
-  const newType = {
+  const newType: StoredCertificateType = {
     id,
     code: data.code || `CERT-${types.length + 1}`,
     name: data.name || 'หนังสือรับรองใหม่',
@@ -32,7 +56,10 @@ export async function createCertificateType(data: any): Promise<any> {
   return newType;
 }
 
-export async function updateCertificateType(id: string, updates: any): Promise<any | null> {
+export async function updateCertificateType(
+  id: string,
+  updates: CertificateTypeInput
+): Promise<StoredCertificateType | null> {
   const types = await getCertificateTypes();
   const idx = types.findIndex((t) => t.id === id);
   if (idx === -1) return null;
@@ -59,68 +86,85 @@ export async function deleteCertificateType(id: string): Promise<boolean> {
 // ----------------- CERTIFICATE REQUESTS -----------------
 
 export async function getCertificateRequests(): Promise<CertificateRequest[]> {
-  const rawRequests = readLocalJson<any[]>('certificate_requests.json', []);
+  const rawRequests = readLocalJson<RawCertificateRequestRecord[]>('certificate_requests.json', []);
   const localMap = new Map<string, CertificateRequest>();
 
   const parsedLocalList: CertificateRequest[] = rawRequests.map((r) => {
-    let noteObj: any = {};
+    let noteObj: Record<string, unknown> = {};
     if (typeof r.note === 'string') {
-      try { noteObj = JSON.parse(r.note); } catch (e) {}
+      try {
+        const parsed = JSON.parse(r.note);
+        if (parsed && typeof parsed === 'object') noteObj = parsed as Record<string, unknown>;
+      } catch {}
     } else if (r.note && typeof r.note === 'object') {
       noteObj = r.note;
     }
 
-    const nationality = r.nationality || noteObj.nationality || '';
+    const strNote = (key: string): string | undefined =>
+      typeof noteObj[key] === 'string' ? (noteObj[key] as string) : undefined;
+    const numOrStrNote = (key: string): string | number | undefined => {
+      const val = noteObj[key];
+      return typeof val === 'string' || typeof val === 'number' ? val : undefined;
+    };
+    const nationality = r.nationality || strNote('nationality') || '';
     const isThai = nationality === 'Thai' || nationality === 'ไทย';
+    const noteApplicant = strNote('applicantType');
+    const resolvedApplicantType: CertificateRequest['applicantType'] =
+      r.applicantType ||
+      (noteApplicant === 'STUDENT' || noteApplicant === 'STAFF' || noteApplicant === 'CANDIDATE'
+        ? noteApplicant
+        : r.targetAudience === 'STAFF'
+        ? 'STAFF'
+        : 'STUDENT');
 
     const item: CertificateRequest = {
       id: r.id,
       createdAt: r.createdAt || new Date().toISOString(),
-      studentCode: r.studentCode || noteObj.studentCode || '',
-      fullName: r.fullName || noteObj.fullName || (r.user ? r.user.name : ''),
-      certType: r.certType || r.certificateType?.name || noteObj.requestPurpose || 'หนังสือรับรอง',
-      degreeLevel: r.degreeLevel || noteObj.degreeLevel || '',
-      major: r.major || noteObj.major || '',
-      requestPurpose: r.requestPurpose || noteObj.requestPurpose || '',
+      studentCode: r.studentCode || strNote('studentCode') || '',
+      fullName: r.fullName || strNote('fullName') || (r.user ? r.user.name || '' : ''),
+      certType: r.certType || r.certificateType?.name || strNote('requestPurpose') || 'หนังสือรับรอง',
+      degreeLevel: r.degreeLevel || strNote('degreeLevel') || '',
+      major: r.major || strNote('major') || '',
+      requestPurpose: r.requestPurpose || strNote('requestPurpose') || '',
       status: r.status || 'PENDING',
-      docNo: r.docNo || noteObj.docNo || '',
-      docNoPrefix: r.docNoPrefix || noteObj.docNoPrefix || (r.docNo && r.docNo.includes('8002.1') ? '8002.1' : '8002'),
-      email: r.email || noteObj.email || '',
-      phone: r.phone || noteObj.phone || '',
+      docNo: r.docNo || strNote('docNo') || '',
+      docNoPrefix: r.docNoPrefix || strNote('docNoPrefix') || (r.docNo && r.docNo.includes('8002.1') ? '8002.1' : '8002'),
+      email: r.email || strNote('email') || '',
+      phone: r.phone || strNote('phone') || '',
       targetAudience: r.targetAudience || (isThai ? 'THAI' : 'INTERNATIONAL'),
-      applicantType: r.applicantType || noteObj.applicantType || (r.targetAudience === 'STAFF' ? 'STAFF' : 'STUDENT'),
-      position: r.position || noteObj.position || '',
-      department: r.department || noteObj.department || '',
-      candidateAppNo: r.candidateAppNo || noteObj.candidateAppNo || '',
-      age: r.age || noteObj.age || '',
-      gender: r.gender || noteObj.sex || '',
+      applicantType: resolvedApplicantType,
+      position: r.position || strNote('position') || '',
+      department: r.department || strNote('department') || '',
+      candidateAppNo: r.candidateAppNo || strNote('candidateAppNo') || '',
+      age: r.age || numOrStrNote('age') || '',
+      gender: r.gender || strNote('sex') || '',
       nationality: nationality,
-      country: r.country || noteObj.country || '',
-      passportNo: r.passportNo || noteObj.passportNo || '',
-      passportExpireDate: r.passportExpireDate || noteObj.passportExpireDate || '',
-      visaType: r.visaType || noteObj.visaType || '',
-      visaExpireDate: r.visaExpireDate || noteObj.visaExpireDate || '',
-      gpa: r.gpa || noteObj.gpa || '',
-      address: r.address || noteObj.addressLine || noteObj.fullAddress || '',
-      subdistrict: r.subdistrict || noteObj.subdistrict || '',
-      district: r.district || noteObj.district || '',
-      province: r.province || noteObj.province || '',
-      postalCode: r.postalCode || noteObj.postalCode || '',
-      bankTargetTh: r.bankTargetTh || noteObj.bankTargetTh || '',
-      bankActionTh: r.bankActionTh || noteObj.bankActionTh || '',
-      issueDateTh: r.issueDateTh || noteObj.issueDateTh || '',
-      issueDateEn: r.issueDateEn || noteObj.issueDateEn || '',
-      docTemplate: r.docTemplate || noteObj.docTemplate || '',
-      signerNameTh: r.signerNameTh || noteObj.signerNameTh || '',
-      signerTitleTh: r.signerTitleTh || noteObj.signerTitleTh || '',
-      signerNameEn: r.signerNameEn || noteObj.signerNameEn || '',
-      signerTitleEn: r.signerTitleEn || noteObj.signerTitleEn || '',
-      coordinatorNameTh: r.coordinatorNameTh || noteObj.coordinatorNameTh || '',
-      coordinatorPhoneTh: r.coordinatorPhoneTh || noteObj.coordinatorPhoneTh || '',
-      customBodyText: r.customBodyText || noteObj.customBodyText || '',
-      enrollmentSlipUrl: r.enrollmentSlipUrl || noteObj.registrationPdfUrl || '',
-      passportCopyUrl: r.passportCopyUrl || noteObj.passportCopyUrl || '',
-      rejectReason: r.rejectReason || r.reason || '',
+      country: r.country || strNote('country') || '',
+      passportNo: r.passportNo || strNote('passportNo') || '',
+      passportExpireDate: r.passportExpireDate || strNote('passportExpireDate') || '',
+      visaType: r.visaType || strNote('visaType') || '',
+      visaExpireDate: r.visaExpireDate || strNote('visaExpireDate') || '',
+      gpa: r.gpa || numOrStrNote('gpa') || '',
+      address: r.address || strNote('addressLine') || strNote('fullAddress') || '',
+      subdistrict: r.subdistrict || strNote('subdistrict') || '',
+      district: r.district || strNote('district') || '',
+      province: r.province || strNote('province') || '',
+      postalCode: r.postalCode || strNote('postalCode') || '',
+      bankTargetTh: r.bankTargetTh || strNote('bankTargetTh') || '',
+      bankActionTh: r.bankActionTh || strNote('bankActionTh') || '',
+      issueDateTh: r.issueDateTh || strNote('issueDateTh') || '',
+      issueDateEn: r.issueDateEn || strNote('issueDateEn') || '',
+      docTemplate: r.docTemplate || strNote('docTemplate') || '',
+      signerNameTh: r.signerNameTh || strNote('signerNameTh') || '',
+      signerTitleTh: r.signerTitleTh || strNote('signerTitleTh') || '',
+      signerNameEn: r.signerNameEn || strNote('signerNameEn') || '',
+      signerTitleEn: r.signerTitleEn || strNote('signerTitleEn') || '',
+      coordinatorNameTh: r.coordinatorNameTh || strNote('coordinatorNameTh') || '',
+      coordinatorPhoneTh: r.coordinatorPhoneTh || strNote('coordinatorPhoneTh') || '',
+      customBodyText: r.customBodyText || strNote('customBodyText') || '',
+      enrollmentSlipUrl: r.enrollmentSlipUrl || strNote('registrationPdfUrl') || '',
+      passportCopyUrl: r.passportCopyUrl || strNote('passportCopyUrl') || '',
+      rejectReason: r.rejectReason || strNote('rejectReason') || '',
     };
     localMap.set(r.id, item);
     return item;
@@ -144,7 +188,7 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
             degreeLevel: r[5] || local.degreeLevel || '',
             major: r[6] || local.major || '',
             requestPurpose: r[7] || local.requestPurpose || '',
-            status: (r[8] as any) || local.status || 'PENDING',
+            status: (r[8] as CertRequestStatus) || local.status || 'PENDING',
             docNo: r[9] || local.docNo || '',
             docNoPrefix: local.docNoPrefix || (r[9] && r[9].includes('8002.1') ? '8002.1' : '8002'),
             email: r[10] || local.email || '',
@@ -160,13 +204,15 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
   return parsedLocalList;
 }
 
-export async function syncCertificateRequestsToSheets(items?: any[]): Promise<{ success: boolean; count: number; error?: string }> {
+export async function syncCertificateRequestsToSheets(
+  items?: RawCertificateRequestRecord[]
+): Promise<{ success: boolean; count: number; error?: string }> {
   const gClient = getSheetsClient();
   if (!gClient) {
     return { success: false, count: 0, error: 'ยังไม่ได้ตั้งค่า Google Sheets API' };
   }
 
-  const rawList = items || readLocalJson<any[]>('certificate_requests.json', []);
+  const rawList = items || readLocalJson<RawCertificateRequestRecord[]>('certificate_requests.json', []);
 
   try {
     // Clear existing rows A2:Z1000
@@ -191,11 +237,11 @@ export async function syncCertificateRequestsToSheets(items?: any[]): Promise<{ 
       'เบอร์โทรศัพท์',
     ];
 
-    const rows = rawList.map((r: any) => [
+    const rows = rawList.map((r) => [
       r.id || '',
       r.createdAt || '',
       r.studentCode || '',
-      r.fullName || (r.user ? r.user.name : ''),
+      r.fullName || (r.user ? r.user.name || '' : ''),
       r.certType || r.certificateType?.name || '',
       r.degreeLevel || '',
       r.major || '',
@@ -208,9 +254,9 @@ export async function syncCertificateRequestsToSheets(items?: any[]): Promise<{ 
 
     await gClient.updateValues('CertificateRequests!A1', [headers, ...rows]);
     return { success: true, count: rows.length };
-  } catch (err: any) {
-    console.warn('syncCertificateRequestsToSheets error:', err.message);
-    return { success: false, count: 0, error: err.message };
+  } catch (err: unknown) {
+    console.warn('syncCertificateRequestsToSheets error:', getErrorMessage(err));
+    return { success: false, count: 0, error: getErrorMessage(err) };
   }
 }
 
@@ -650,7 +696,8 @@ export async function archiveAcademicYear(year: string): Promise<AcademicYearArc
   const certs = await getCertificateRequests();
   const matching = certs.filter((c) => {
     const createdYear = new Date(c.createdAt).getFullYear() + 543;
-    return String(createdYear) === String(year) || (c as any).academicYear === String(year) || year === '2569';
+    const itemWithYear = c as CertificateRequest & { academicYear?: string };
+    return String(createdYear) === String(year) || itemWithYear.academicYear === String(year) || year === '2569';
   });
 
   const approvedCount = matching.filter((c) => c.status === 'APPROVED').length;

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useMemo } from 'react';
 import { SystemSettings, SignatoryItem } from '@/types';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export const SIGNER_PRESETS: SignatoryItem[] = [
   {
@@ -203,6 +204,7 @@ export function useAdminSettings(options?: UseAdminSettingsOptions) {
       // Step 1: Upload via multipart/form-data
       try {
         const formData = new FormData();
+        formData.append('scope', 'branding');
         formData.append('file', file);
 
         const res = await fetch('/api/upload', {
@@ -270,9 +272,9 @@ export function useAdminSettings(options?: UseAdminSettingsOptions) {
           options?.onSuccess?.('อัปโหลดรูปภาพสำเร็จแล้ว โปรดคลิกปุ่มบันทึกการตั้งค่าเพื่อยืนยัน');
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Logo upload error:', err);
-      alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + (err.message || 'ไม่สามารถอัปโหลดได้'));
+      alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + (getErrorMessage(err) || 'ไม่สามารถอัปโหลดได้'));
     } finally {
       setUploadingLogo(false);
     }
@@ -296,8 +298,8 @@ export function useAdminSettings(options?: UseAdminSettingsOptions) {
       } else {
         alert('เกิดข้อผิดพลาด: ' + data.error);
       }
-    } catch (err: any) {
-      alert('การบันทึกล้มเหลว: ' + err.message);
+    } catch (err: unknown) {
+      alert('การบันทึกล้มเหลว: ' + getErrorMessage(err));
     } finally {
       setSavingSettings(false);
     }

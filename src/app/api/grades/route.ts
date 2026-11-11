@@ -1,34 +1,25 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { getErrorMessage } from '@/lib/api-error';
 import { CourseGradeSheet } from '@/types';
+import { readLocalJson, writeLocalJson } from '@/services/storageHelper';
+import { requireStaffOrInstructor } from '@/lib/server-auth-guard';
 
-const GRADES_FILE_PATH = path.join(process.cwd(), 'data', 'course-grades.json');
+const GRADES_FILENAME = 'course-grades.json';
 
 function readGradesMap(): Record<string, CourseGradeSheet> {
-  try {
-    if (!fs.existsSync(GRADES_FILE_PATH)) {
-      return {};
-    }
-    const raw = fs.readFileSync(GRADES_FILE_PATH, 'utf8');
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch (e) {
-    console.error('Error reading course-grades.json:', e);
-    return {};
-  }
+  const parsed = readLocalJson<Record<string, CourseGradeSheet>>(GRADES_FILENAME, {});
+  return parsed && typeof parsed === 'object' ? parsed : {};
 }
 
 function writeGradesMap(data: Record<string, CourseGradeSheet>): void {
-  const dir = path.dirname(GRADES_FILE_PATH);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(GRADES_FILE_PATH, JSON.stringify(data, null, 2), 'utf8');
+  writeLocalJson(GRADES_FILENAME, data);
 }
 
 export async function GET(request: Request) {
   try {
+    const auth = requireStaffOrInstructor(request);
+    if (auth.response) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const courseCode = searchParams.get('courseCode')?.trim();
     const map = readGradesMap();
@@ -44,9 +35,9 @@ export async function GET(request: Request) {
       success: true,
       data: map,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error?.message || 'ไม่สามารถโหลดข้อมูลใบกรอกคะแนนได้' },
+      { success: false, error: getErrorMessage(error, 'ไม่สามารถโหลดข้อมูลใบกรอกคะแนนได้') },
       { status: 500 }
     );
   }
@@ -54,6 +45,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = requireStaffOrInstructor(request);
+    if (auth.response) return auth.response;
+
     const body = await request.json();
     const { courseCode, sheet } = body as { courseCode?: string; sheet?: CourseGradeSheet };
 
@@ -79,9 +73,9 @@ export async function POST(request: Request) {
       data: updatedSheet,
       message: `บันทึกข้อมูลใบกรอกคะแนนวิชา ${courseCode} เรียบร้อยแล้ว`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error?.message || 'ไม่สามารถบันทึกใบกรอกคะแนนได้' },
+      { success: false, error: getErrorMessage(error, 'ไม่สามารถบันทึกใบกรอกคะแนนได้') },
       { status: 500 }
     );
   }

@@ -36,45 +36,49 @@ export function GradeSheetTable({
       <table className="w-full text-xs text-left border-collapse">
         <thead className="bg-slate-800 text-white">
           <tr>
-            <th className="py-3 px-3 text-center w-12 sticky left-0 z-20 bg-slate-800">ที่</th>
-            <th className="py-3 px-3 w-28 sticky left-12 z-20 bg-slate-800">รหัสนิสิต</th>
-            <th className="py-3 px-3 min-w-[200px] sticky left-40 z-20 bg-slate-800 shadow-[4px_0_8px_rgba(0,0,0,0.2)]">
-              ชื่อ-ฉายา-นามสกุล
+            <th className="py-3 px-2.5 text-center w-16 whitespace-nowrap sticky left-0 z-20 bg-slate-800">
+              ที่ (No.)
             </th>
-            <th className="py-3 px-2 text-center w-24">
-              รายงาน
+            <th className="py-3 px-3 w-36 whitespace-nowrap sticky left-16 z-20 bg-slate-800">
+              รหัสนิสิต (CodeID)
+            </th>
+            <th className="py-3 px-3 min-w-[220px] whitespace-nowrap sticky left-52 z-20 bg-slate-800 shadow-[4px_0_8px_rgba(0,0,0,0.2)]">
+              ชื่อ-ฉายา-นามสกุล (Full Name)
+            </th>
+            <th className="py-3 px-2 text-center min-w-[115px] whitespace-nowrap">
+              รายงาน (Report)
               <span className="block text-[10px] text-amber-300 font-normal">
                 (เต็ม {maxAssignScore})
               </span>
             </th>
-            <th className="py-3 px-2 text-center w-24">
-              จิตพิสัย
+            <th className="py-3 px-2 text-center min-w-[120px] whitespace-nowrap">
+              จิตพิสัย (Affective)
               <span className="block text-[10px] text-emerald-300 font-normal">
                 (เต็ม {maxAffectiveScore})
               </span>
             </th>
-            <th className="py-3 px-2 text-center w-24">
-              ระหว่างภาค
+            <th className="py-3 px-2 text-center min-w-[130px] whitespace-nowrap">
+              ระหว่างภาค (Midterm)
               <span className="block text-[10px] text-sky-300 font-normal">
                 (เต็ม {maxMidtermScore})
               </span>
             </th>
-            <th className="py-3 px-2 text-center w-24">
-              ปลายภาค
+            <th className="py-3 px-2 text-center min-w-[115px] whitespace-nowrap">
+              ปลายภาค (Final)
               <span className="block text-[10px] text-purple-300 font-normal">
                 (เต็ม {maxFinalScore})
               </span>
             </th>
-            <th className="py-3 px-2 text-center w-20 bg-slate-900">
-              รวม
+            <th className="py-3 px-2 text-center min-w-[100px] whitespace-nowrap bg-slate-900">
+              รวม (Total)
               <span className="block text-[10px] text-slate-300 font-normal">
                 ({totalMaxWeight})
               </span>
             </th>
-            <th className="py-3 px-2 text-center w-24 bg-indigo-950">
+            <th className="py-3 px-2 text-center min-w-[105px] whitespace-nowrap bg-indigo-950">
               ระดับ (Grade)
             </th>
-            <th className="py-3 px-3 min-w-[160px]">หมายเหตุ (Remark)</th>
+            <th className="py-3 px-3 min-w-[170px] whitespace-nowrap">หมายเหตุ (Remark)</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 bg-white">
@@ -117,13 +121,13 @@ export function GradeSheetTable({
                         isIneligible ? 'bg-rose-50/40' : ''
                       }`}
                     >
-                      <td className={`py-2 px-3 text-center font-mono font-bold text-slate-600 sticky left-0 z-10 ${stickyCellBg}`}>
+                      <td className={`py-2 px-2.5 text-center font-mono font-bold text-slate-600 sticky left-0 z-10 ${stickyCellBg}`}>
                         {row.indexInMajor}
                       </td>
-                      <td className={`py-2 px-3 font-mono font-extrabold text-sm sm:text-base text-slate-800 tracking-tight whitespace-nowrap sticky left-12 z-10 ${stickyCellBg}`}>
+                      <td className={`py-2 px-3 font-mono font-extrabold text-sm sm:text-base text-slate-800 tracking-tight whitespace-nowrap sticky left-16 z-10 ${stickyCellBg}`}>
                         {row.studentCode}
                       </td>
-                      <td className={`py-2 px-3 font-semibold text-sm sm:text-base text-slate-900 sticky left-40 z-10 ${stickyCellBg} shadow-[4px_0_8px_rgba(0,0,0,0.06)]`}>
+                      <td className={`py-2 px-3 font-semibold text-sm sm:text-base text-slate-900 sticky left-52 z-10 ${stickyCellBg} shadow-[4px_0_8px_rgba(0,0,0,0.06)]`}>
                         {row.studentName}
                       </td>
                       <td className="py-1.5 px-2 text-center">

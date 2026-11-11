@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import {
   getStudents,
   updateStudent,
@@ -11,6 +12,7 @@ import {
   getAuthenticatedUserFromRequest,
   isServerAdminOrOfficer,
   maskSensitiveStudentData,
+  requireAdminOrOfficer,
 } from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
@@ -23,8 +25,11 @@ export async function GET(request: Request) {
     const status = searchParams.get('status');
     const isArchived = searchParams.get('archived') === 'true';
 
-    // If requested archived/deleted students
+    // If requested archived/deleted students (Admin / Officer only)
     if (isArchived) {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
       let archiveList = await getArchivedStudents();
       if (query) {
         archiveList = archiveList.filter(
@@ -84,8 +89,8 @@ export async function GET(request: Request) {
     const safeList = isAdmin ? list : list.map((s) => maskSensitiveStudentData(s));
 
     return NextResponse.json({ success: true, count: safeList.length, data: safeList });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
@@ -117,8 +122,8 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json({ success: true, data: updated });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
@@ -136,8 +141,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { action, items, mode, updates } = body;
 
-    // Handle Restore Student from Archive
+    // Handle Restore Student from Archive (Admin / Officer only)
     if (action === 'restore') {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
       const studentCode = body.studentCode;
       if (!studentCode) {
         return NextResponse.json(
@@ -159,10 +167,10 @@ export async function POST(request: Request) {
       });
     }
 
-    const listToUpdate: any[] = Array.isArray(items) 
-      ? items 
-      : Array.isArray(updates) 
-      ? updates 
+    const listToUpdate: Record<string, unknown>[] | null = Array.isArray(items)
+      ? items
+      : Array.isArray(updates)
+      ? updates
       : body.students && Array.isArray(body.students)
       ? body.students
       : null;
@@ -180,13 +188,16 @@ export async function POST(request: Request) {
       message: `อัปเดตข้อมูลสำเร็จ ${result.updated} คน, เพิ่มใหม่ ${result.added} คน`,
       ...result,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }
 
 export async function DELETE(request: Request) {
   try {
+    const adminAuth = requireAdminOrOfficer(request);
+    if (adminAuth.response) return adminAuth.response;
+
     const body = await request.json();
     const { studentCode, studentCodes, deletedBy, reason } = body;
 
@@ -212,7 +223,7 @@ export async function DELETE(request: Request) {
       remainingCount: result.remainingCount,
       archivedCount: result.archivedCount,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

@@ -1,8 +1,22 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import { sendNotification } from '@/lib/notifier';
+import { requireStaffOrInstructor } from '@/lib/server-auth-guard';
+import { checkRateLimit } from '@/lib/security';
 
 export async function POST(request: Request) {
   try {
+    const auth = requireStaffOrInstructor(request);
+    if (auth.response) return auth.response;
+
+    const rate = checkRateLimit(`notifications:${auth.user.id || auth.user.email}`, 20, 5 * 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { success: false, error: `ส่งคำขอแจ้งเตือนถี่เกินกำหนด กรุณารอ ${rate.retryAfterSeconds} วินาที` },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const {
       studentName,
@@ -31,7 +45,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, result });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

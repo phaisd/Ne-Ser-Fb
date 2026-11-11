@@ -1,4 +1,5 @@
 import { getSystemSettings } from './data-store';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export interface NotificationPayload {
   toEmail?: string;
@@ -122,8 +123,8 @@ export async function sendNotification(payload: NotificationPayload): Promise<{
         const errJson = await res.json().catch(() => ({}));
         messages.push(`LINE Messaging API ล้มเหลว (${res.status}): ${errJson.message || 'Error'}`);
       }
-    } catch (e: any) {
-      messages.push(`LINE Messaging API เชื่อมต่อไม่ได้: ${e.message}`);
+    } catch (e: unknown) {
+      messages.push(`LINE Messaging API เชื่อมต่อไม่ได้: ${getErrorMessage(e)}`);
     }
   }
 
@@ -147,8 +148,8 @@ export async function sendNotification(payload: NotificationPayload): Promise<{
         const errJson = await res.json().catch(() => ({}));
         messages.push(`LINE Notify ล้มเหลว (${res.status}): ${errJson.message || 'Error'}`);
       }
-    } catch (e: any) {
-      messages.push(`LINE Notify เชื่อมต่อไม่ได้: ${e.message}`);
+    } catch (e: unknown) {
+      messages.push(`LINE Notify เชื่อมต่อไม่ได้: ${getErrorMessage(e)}`);
     }
   }
 
@@ -172,8 +173,8 @@ export async function sendNotification(payload: NotificationPayload): Promise<{
       } else {
         messages.push(`Webhook ล้มเหลว (${res.status})`);
       }
-    } catch (e: any) {
-      messages.push(`Webhook เชื่อมต่อไม่ได้: ${e.message}`);
+    } catch (e: unknown) {
+      messages.push(`Webhook เชื่อมต่อไม่ได้: ${getErrorMessage(e)}`);
     }
   }
 

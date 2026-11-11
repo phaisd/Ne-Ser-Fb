@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { CertTypeItem } from './types';
 import { isAdmissionPeriodActive } from '@/lib/utils';
+import { isAdminOrOfficer } from '@/lib/auth-client';
 
 interface CertificateTypesGridProps {
   settings: any;
@@ -93,8 +94,14 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
 }) => {
   const { t, isEn } = useLanguage();
   const admissionStatus = isAdmissionPeriodActive(settings);
+  const isInstructorOnly = Boolean(
+    currentUser &&
+      String(currentUser.role || '').toUpperCase() === 'INSTRUCTOR' &&
+      !isAdminOrOfficer(currentUser),
+  );
   const showCandidateButton =
-    admissionStatus.isOpen || settings?.hideCandidateTabWhenClosed !== true;
+    !isInstructorOnly &&
+    (admissionStatus.isOpen || settings?.hideCandidateTabWhenClosed !== true);
 
   const isStudentAudience =
     cardAudienceFilter === 'ALL' ||
@@ -109,8 +116,11 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
   const requiresStaffLogin = isStaffAudience && !isStaffUser;
   return (
     <>
-      {/* Important Notices for Students */}
-      {(settings?.visaAlertEnabled !== false || settings?.timelineAlertEnabled !== false || settings?.accuracyAlertEnabled !== false) && (
+      {/* Important Notices for Students (hidden for Instructors who only request Staff certs) */}
+      {!isInstructorOnly &&
+        (settings?.visaAlertEnabled !== false ||
+          settings?.timelineAlertEnabled !== false ||
+          settings?.accuracyAlertEnabled !== false) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* กล่องที่ 1: แจ้งเตือนสีแดง (สำหรับการต่อวีซ่า 30 วัน) */}
           {settings?.visaAlertEnabled !== false && (
@@ -197,39 +207,43 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
 
           {/* Category Filter Pills (Touch-Friendly & Scrollable) */}
           <div className="w-full sm:w-auto flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl overflow-x-auto no-scrollbar scroll-smooth text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setCardAudienceFilter('ALL')}
-              className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition cursor-pointer whitespace-nowrap ${
-                cardAudienceFilter === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {t.certFilterAll} ({visibleCards.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setCardAudienceFilter('THAI')}
-              className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                cardAudienceFilter === 'THAI'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-blue-700 hover:bg-blue-50'
-              }`}
-            >
-              <span>🇹🇭 {t.certFilterThai}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCardAudienceFilter('INTERNATIONAL')}
-              className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                cardAudienceFilter === 'INTERNATIONAL'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-purple-700 hover:bg-purple-50'
-              }`}
-            >
-              <span>🌐 {t.certFilterInter}</span>
-            </button>
+            {!isInstructorOnly && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setCardAudienceFilter('ALL')}
+                  className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition cursor-pointer whitespace-nowrap ${
+                    cardAudienceFilter === 'ALL'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t.certFilterAll} ({visibleCards.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCardAudienceFilter('THAI')}
+                  className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                    cardAudienceFilter === 'THAI'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-blue-700 hover:bg-blue-50'
+                  }`}
+                >
+                  <span>🇹🇭 {t.certFilterThai}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCardAudienceFilter('INTERNATIONAL')}
+                  className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                    cardAudienceFilter === 'INTERNATIONAL'
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-purple-700 hover:bg-purple-50'
+                  }`}
+                >
+                  <span>🌐 {t.certFilterInter}</span>
+                </button>
+              </>
+            )}
 
             {/* Staff Filter Button: visible if isStaffUser is TRUE or admin enables showStaffCertificatesInPortal */}
             {(isStaffUser || settings?.showStaffCertificatesInPortal === true) && (

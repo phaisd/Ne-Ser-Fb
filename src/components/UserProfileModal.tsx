@@ -68,7 +68,17 @@ export default function UserProfileModal({
 
   // History state
   const [loginHistory, setLoginHistory] = useState<LoginAuditRecord[]>([]);
+  const [loginSecurity, setLoginSecurity] = useState<{
+    hasSuspiciousActivity?: boolean;
+    failedAttemptsCount?: number;
+    supersededCount?: number;
+    unfamiliarIpCount?: number;
+    uniqueDevicesCount?: number;
+    uniqueIpsCount?: number;
+    suspiciousRecordIds?: string[];
+  } | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [revokingSessions, setRevokingSessions] = useState(false);
 
   // Status feedback
   const [loading, setLoading] = useState(false);
@@ -135,11 +145,41 @@ export default function UserProfileModal({
       const data = await res.json();
       if (data.success && Array.isArray(data.history)) {
         setLoginHistory(data.history);
+        setLoginSecurity(data.security || null);
       }
     } catch (e) {
       console.warn('Failed to load login history:', e);
     } finally {
       setLoadingHistory(false);
+    }
+  };
+
+  const handleRevokeOtherSessions = async () => {
+    if (!currentUser) return;
+    try {
+      setRevokingSessions(true);
+      setErrorMsg('');
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'revoke-other-sessions' }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setErrorMsg(data.error || 'ไม่สามารถรีเซ็ตเซสชันได้');
+        return;
+      }
+      if (data.user) {
+        saveAuthSession(data.user, true);
+        if (onUserUpdated) onUserUpdated(data.user);
+      }
+      if (Array.isArray(data.history)) setLoginHistory(data.history);
+      if (data.security) setLoginSecurity(data.security);
+      setSuccessMsg(data.message || 'ออกจากระบบเครื่องอื่นทั้งหมดและรีเฟรชเซสชันนี้เรียบร้อยแล้ว');
+    } catch {
+      setErrorMsg('เกิดข้อผิดพลาดในการรีเฟรชเซสชัน');
+    } finally {
+      setRevokingSessions(false);
     }
   };
 
@@ -648,22 +688,77 @@ export default function UserProfileModal({
           {/* Tab 3: Login History & Devices */}
           {activeTab === 'HISTORY' && (
             <div className="space-y-4">
-              {/* Single Device Policy Banner */}
-              <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200 text-indigo-950 text-xs space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-indigo-900">
-                  <ShieldAlert className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span>ระบบป้องกันการเข้าใช้งานซ้อน (Single Active Device)</span>
+              {/* Suspicious Activity Assessment Card */}
+              {loginSecurity?.hasSuspiciousActivity ? (
+                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-950 text-xs space-y-2">
+                  <div className="font-extrabold flex items-center gap-1.5 text-rose-900">
+                    <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>⚠️ พบประวัติที่ควรตรวจสอบ (อาจมีการพยายามเข้าใช้บัญชีจากผู้อื่น)</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-bold">
+                    {(loginSecurity.failedAttemptsCount || 0) > 0 && (
+                      <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-200">
+                        ❌ รหัสผ่านผิด {loginSecurity.failedAttemptsCount} ครั้ง
+                      </span>
+                    )}
+                    {(loginSecurity.supersededCount || 0) > 0 && (
+                      <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-200">
+                        🚨 ถูกเข้าสู่ระบบซ้อน {loginSecurity.supersededCount} ครั้ง
+                      </span>
+                    )}
+                    {(loginSecurity.unfamiliarIpCount || 0) > 0 && (
+                      <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-200">
+                        🌐 IP/อุปกรณ์ต่างจากเครื่องนี้ {loginSecurity.unfamiliarIpCount} รายการ
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-rose-800/90 leading-relaxed">
+                    หากไม่ใช่การเข้าสู่ระบบของท่านเอง แนะนำให้กด <strong>&ldquo;เตะอุปกรณ์อื่นออกทั้งหมด&rdquo;</strong> และเปลี่ยนรหัสผ่านใหม่ทันที
+                  </p>
                 </div>
-                <p className="text-[11px] leading-relaxed text-indigo-900/80">
-                  เพื่อความปลอดภัย ระบบอนุญาตให้อาจารย์เข้าใช้งานได้ **1 เครื่องล่าสุด** เท่านั้น หากท่านลืมปิดออกจากระบบที่เครื่องห้องเรียน เมื่อท่านล็อกอินจากโน้ตบุ๊กหรือมือถือ เครื่องก่อนหน้านี้จะถูกปิดออกจากระบบโดยอัตโนมัติทันที
-                </p>
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-emerald-950 text-xs space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>สถานะความปลอดภัยบัญชี: ปกติ (Single Active Device)</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-emerald-900/80">
+                    ระบบบันทึกทุกการเข้าสู่ระบบทั้งจากรหัสผ่าน Google และความพยายามใส่รหัสผ่านผิด พร้อมบังคับใช้งานได้ครั้งละ <strong>1 เครื่องล่าสุด</strong> หากมีผู้อื่นเข้าซ้อน เครื่องนี้จะถูกแจ้งเตือนทันที
+                  </p>
+                </div>
+              )}
+
+              {/* Quick Security Actions */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRevokeOtherSessions}
+                  disabled={revokingSessions}
+                  className="flex-1 min-w-[180px] px-3 py-2 rounded-xl bg-slate-900 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  {revokingSessions ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                  )}
+                  <span>เตะอุปกรณ์อื่นออกทั้งหมด (รีเซ็ตเซสชัน)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('PASSWORD')}
+                  className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>เปลี่ยนรหัสผ่านทันที</span>
+                </button>
               </div>
 
               {/* History List */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1">
-                  <span>ประวัติการเข้าสู่ระบบล่าสุด</span>
+                  <span>ประวัติการเข้าสู่ระบบและเหตุการณ์ล่าสุด ({loginHistory.length})</span>
                   <button
+                    type="button"
                     onClick={loadLoginHistory}
                     disabled={loadingHistory}
                     className="text-[11px] text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
@@ -688,24 +783,38 @@ export default function UserProfileModal({
                     {loginHistory.map((item, index) => {
                       const isActive = item.status === 'ACTIVE';
                       const isSuperseded = item.status === 'SUPERSEDED';
+                      const isFailed = item.status === 'FAILED_ATTEMPT';
+                      const isFlagged = Boolean(
+                        item.id && loginSecurity?.suspiciousRecordIds?.includes(item.id),
+                      );
+                      const methodLabel =
+                        item.method === 'GOOGLE'
+                          ? 'Google'
+                          : item.method === 'SESSION_RESET'
+                          ? 'รีเซ็ตเซสชัน'
+                          : 'รหัสผ่าน';
 
                       return (
                         <div
                           key={item.id || index}
                           className={`p-3 rounded-2xl border transition flex items-center justify-between gap-3 ${
-                            isActive
+                            isFailed
+                              ? 'bg-rose-50 border-rose-300 shadow-xs'
+                              : isActive
                               ? 'bg-emerald-50/70 border-emerald-300 shadow-sm'
                               : isSuperseded
-                              ? 'bg-rose-50/50 border-rose-200'
+                              ? 'bg-amber-50/70 border-amber-300'
                               : 'bg-slate-50 border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                              isActive
+                              isFailed
+                                ? 'bg-rose-600 text-white shadow-sm'
+                                : isActive
                                 ? 'bg-emerald-600 text-white shadow-sm'
                                 : isSuperseded
-                                ? 'bg-rose-100 text-rose-600'
+                                ? 'bg-amber-500 text-white'
                                 : 'bg-slate-200 text-slate-600'
                             }`}>
                               {item.device?.includes('Phone') || item.device?.includes('Android') ? (
@@ -719,15 +828,23 @@ export default function UserProfileModal({
                                 <span className="font-bold text-xs text-slate-900 truncate">
                                   {item.device || 'อุปกรณ์ไม่ระบุ'}
                                 </span>
+                                <span className="px-1.5 py-0.5 rounded bg-white/80 border border-slate-200 text-[10px] font-bold text-slate-600">
+                                  {methodLabel}
+                                </span>
                                 {isActive && (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white shadow-xs">
                                     <Radio className="w-2.5 h-2.5 animate-pulse" />
                                     <span>เครื่องปัจจุบัน (Active)</span>
                                   </span>
                                 )}
+                                {isFailed && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-600 text-white">
+                                    ❌ {item.note || 'พยายามเข้าสู่ระบบไม่สำเร็จ'}
+                                  </span>
+                                )}
                                 {isSuperseded && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
-                                    ปิดอัตโนมัติ (มีเครื่องอื่นเข้าซ้อน)
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                    🚨 ถูกเข้าซ้อนจากเครื่องอื่น
                                   </span>
                                 )}
                                 {item.status === 'LOGGED_OUT' && (
@@ -735,17 +852,20 @@ export default function UserProfileModal({
                                     ออกจากระบบปกติ
                                   </span>
                                 )}
+                                {!isFailed && !isSuperseded && !isActive && isFlagged && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                                    ⚠️ ต่างอุปกรณ์/IP
+                                  </span>
+                                )}
                               </div>
-                              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
                                 <span className="flex items-center gap-1">
                                   <Clock className="w-3 h-3 text-slate-400" />
                                   <span>{formatDateTime(item.timestamp)}</span>
                                 </span>
-                                {item.ip && item.ip !== 'unknown-client' && (
-                                  <span className="text-[10px] font-mono text-slate-400">
-                                    • IP: {item.ip}
-                                  </span>
-                                )}
+                                <span className="text-[10px] font-mono text-slate-500">
+                                  • IP: {item.ip && item.ip !== 'unknown-client' ? item.ip : 'local'}
+                                </span>
                               </div>
                             </div>
                           </div>

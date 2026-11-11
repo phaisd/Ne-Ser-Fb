@@ -7,11 +7,14 @@ export interface TeachingSlipCourseRow {
   academicYear?: string | number;
   semester?: string | number;
   yearLevel?: string | number;
+  dayOfWeek?: number;
   dayShort?: string;
   dayLabel?: string;
   startTime?: string;
   endTime?: string;
   room?: string;
+  instructor?: string;
+  periodLabel?: string;
   timetableTitle?: string;
   programType?: string;
 }

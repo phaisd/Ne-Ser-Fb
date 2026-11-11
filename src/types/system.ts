@@ -107,6 +107,9 @@ export interface SystemSettings {
 
   // Role-Based Access Control (RBAC) Permission Matrix
   rolePermissions?: any[];
+
+  // Google Identity Services OAuth Client ID (optional runtime override)
+  googleClientId?: string;
 }
 
 export interface SheetStatus {

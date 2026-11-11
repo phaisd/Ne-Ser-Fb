@@ -41,6 +41,12 @@ export interface StudentScoreItem {
   remark?: string;                 // หมายเหตุ / Remark (เช่น หมดสิทธิ์สอบทุกวิชา, ขาดสอบ)
 }
 
+export interface CollectionScoreColumn {
+  id: string;
+  label: string;
+  maxScore: number;
+}
+
 export interface CourseGradeSheet {
   courseCode: string;
   courseName?: string;
@@ -60,6 +66,9 @@ export interface CourseGradeSheet {
   yearLevelText?: string;
   majorText?: string;
   scores: Record<string, StudentScoreItem>;
+  collectionCount?: number;
+  collectionColumns?: CollectionScoreColumn[];
+  collectionScores?: Record<string, (number | null)[]>;
   updatedAt?: string;
   updatedBy?: string;
 }

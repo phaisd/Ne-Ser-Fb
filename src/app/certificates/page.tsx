@@ -36,6 +36,14 @@ export default function CertificatesPage() {
     return isAdminOrOfficer(currentUser) || currentUser.role === 'INSTRUCTOR';
   }, [currentUser]);
 
+  const isInstructorOnly = useMemo(() => {
+    if (!currentUser) return false;
+    return (
+      String(currentUser.role || '').toUpperCase() === 'INSTRUCTOR' &&
+      !isAdminOrOfficer(currentUser)
+    );
+  }, [currentUser]);
+
   // Filter for Certificate Type Cards (ALL | THAI | INTERNATIONAL | STAFF | CANDIDATE)
   const [cardAudienceFilter, setCardAudienceFilter] = useState<'ALL' | 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE'>('ALL');
   const [selectedCert, setSelectedCert] = useState<CertTypeItem | null>(null);
@@ -162,6 +170,18 @@ export default function CertificatesPage() {
   // Auto-switch filter to STAFF when an instructor or staff user logs in
   const staffInitializedRef = React.useRef(false);
   useEffect(() => {
+    if (isInstructorOnly) {
+      staffInitializedRef.current = true;
+      if (cardAudienceFilter !== 'STAFF') {
+        setCardAudienceFilter('STAFF');
+      }
+      if (!selectedCert || selectedCert.targetAudience !== 'STAFF') {
+        const firstStaffCert = certTypes.find((c) => c.targetAudience === 'STAFF') || null;
+        setSelectedCert(firstStaffCert);
+      }
+      return;
+    }
+
     if (isStaffUser) {
       if (!staffInitializedRef.current && certTypes.length > 0) {
         staffInitializedRef.current = true;
@@ -174,9 +194,14 @@ export default function CertificatesPage() {
     } else {
       staffInitializedRef.current = false;
     }
-  }, [isStaffUser, certTypes]);
+  }, [isInstructorOnly, isStaffUser, certTypes, cardAudienceFilter, selectedCert]);
 
   const visibleCards = useMemo(() => {
+    // Instructors only see STAFF certificates (hide THAI student, INTERNATIONAL student, and CANDIDATE cards)
+    if (isInstructorOnly) {
+      return certTypes.filter((c) => c.targetAudience === 'STAFF');
+    }
+
     return certTypes.filter((c) => {
       // 1. Staff cards: visible if currentUser is staff OR admin enables showStaffCertificatesInPortal
       if (c.targetAudience === 'STAFF') {
@@ -201,7 +226,7 @@ export default function CertificatesPage() {
       if (cardAudienceFilter === 'ALL') return true;
       return c.targetAudience === cardAudienceFilter || c.targetAudience === 'ALL';
     });
-  }, [certTypes, canSeeStaffCards, cardAudienceFilter]);
+  }, [certTypes, canSeeStaffCards, cardAudienceFilter, isInstructorOnly]);
 
   const handleCardSelect = (item: CertTypeItem) => {
     setSelectedCert(item);

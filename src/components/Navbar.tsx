@@ -53,6 +53,7 @@ export default function Navbar() {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [autoLogoutMins, setAutoLogoutMins] = useState<number>(15);
+  const [suspiciousAlertsCount, setSuspiciousAlertsCount] = useState<number>(0);
 
   useEffect(() => {
     try {
@@ -129,6 +130,48 @@ export default function Navbar() {
       document.removeEventListener('visibilitychange', handleFocus);
     };
   }, [currentUser]);
+
+  // Listen for global requests to open Profile / Password / Login History modal + check suspicious alerts
+  useEffect(() => {
+    const handleOpenProfile = (e: any) => {
+      const tab = e?.detail?.tab;
+      if (tab === 'PROFILE' || tab === 'PASSWORD' || tab === 'HISTORY') {
+        setProfileModalTab(tab);
+      }
+      setIsUserMenuOpen(false);
+      setIsProfileModalOpen(true);
+    };
+
+    window.addEventListener('mcu_open_profile_modal', handleOpenProfile);
+    return () => {
+      window.removeEventListener('mcu_open_profile_modal', handleOpenProfile);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role === 'STUDENT') {
+      setSuspiciousAlertsCount(0);
+      return;
+    }
+
+    let cancelled = false;
+    fetch('/api/auth?action=history')
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return;
+        if (d?.success && d.security) {
+          const count =
+            (d.security.failedAttemptsCount || 0) +
+            (d.security.supersededCount || 0);
+          setSuspiciousAlertsCount(count);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, isProfileModalOpen]);
 
   const toggleAutoLogout = () => {
     const nextVal = autoLogoutMins === 0 ? 15 : 0;
@@ -291,7 +334,8 @@ export default function Navbar() {
   ];
 
   return (
-    <header className={`sticky top-0 z-50 backdrop-blur border-b shadow-sm transition-colors duration-200 print:hidden theme-nav-accent ${
+    <>
+      <header className={`sticky top-0 z-50 backdrop-blur border-b shadow-sm transition-colors duration-200 print:hidden theme-nav-accent ${
       isAdminRoute ? 'bg-slate-900/95 border-slate-800 text-white' : 'bg-white/95 border-slate-200'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -486,6 +530,12 @@ export default function Navbar() {
                   >
                     <UserCheck className="w-4 h-4 text-emerald-500 shrink-0 group-hover:scale-110 transition-transform" />
                     <span className="hidden sm:inline truncate max-w-[130px]">{currentUser.name}</span>
+                    {suspiciousAlertsCount > 0 && (
+                      <span
+                        title={`พบประวัติความปลอดภัยที่ควรตรวจสอบ ${suspiciousAlertsCount} รายการ`}
+                        className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0"
+                      />
+                    )}
                     <span className="text-[10px] opacity-70 font-normal hidden md:inline ml-0.5 underline">
                       (แก้ไข)
                     </span>
@@ -559,10 +609,17 @@ export default function Navbar() {
                               setProfileModalTab('HISTORY');
                               setIsProfileModalOpen(true);
                             }}
-                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-orange-50 hover:text-orange-900 flex items-center gap-2.5 transition cursor-pointer"
+                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-orange-50 hover:text-orange-900 flex items-center justify-between gap-2 transition cursor-pointer"
                           >
-                            <History className="w-4 h-4 text-indigo-600" />
-                            <span>ประวัติการเข้าใช้งาน</span>
+                            <span className="flex items-center gap-2.5">
+                              <History className="w-4 h-4 text-indigo-600" />
+                              <span>ประวัติการเข้าใช้งาน</span>
+                            </span>
+                            {suspiciousAlertsCount > 0 && (
+                              <span className="px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
+                                {suspiciousAlertsCount}
+                              </span>
+                            )}
                           </button>
                         </div>
 
@@ -645,6 +702,7 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      </header>
 
       {/* Mobile & Tablet Drawer Menu */}
       {isMobileMenuOpen && (
@@ -864,6 +922,6 @@ export default function Navbar() {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }

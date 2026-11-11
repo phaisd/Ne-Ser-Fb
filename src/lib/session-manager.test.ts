@@ -1,10 +1,23 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+const mockJsonStore: Record<string, any> = {};
+vi.mock('@/services/storageHelper', () => ({
+  readLocalJson: vi.fn((file: string, fallback: any) =>
+    file in mockJsonStore ? JSON.parse(JSON.stringify(mockJsonStore[file])) : fallback
+  ),
+  writeLocalJson: vi.fn((file: string, data: any) => {
+    mockJsonStore[file] = JSON.parse(JSON.stringify(data));
+  }),
+}));
+
 import {
   parseDeviceFromUserAgent,
   recordUserLogin,
+  recordFailedLoginAttempt,
   validateUserSession,
   revokeUserSession,
   getUserLoginHistory,
+  analyzeLoginSecurity,
 } from './session-manager';
 
 describe('session-manager module (Single Concurrent Session & Login History)', () => {
@@ -80,5 +93,37 @@ describe('session-manager module (Single Concurrent Session & Login History)', (
     const historyAfterLogout = getUserLoginHistory(userKey);
     const loggedOutItem = historyAfterLogout.find((h) => h.sessionId === login2.sessionId);
     expect(loggedOutItem?.status).toBe('LOGGED_OUT');
+  });
+
+  it('records failed login attempts and flags suspicious activity in security analysis', () => {
+    const userKey = 'security.teacher@mcu.ac.th';
+
+    const okLogin = recordUserLogin(
+      userKey,
+      userKey,
+      'อาจารย์ปลอดภัย',
+      '203.150.10.1',
+      'Mozilla/5.0 (Windows NT 10.0) Chrome/122.0',
+      'PASSWORD',
+    );
+    recordFailedLoginAttempt(
+      userKey,
+      userKey,
+      'อาจารย์ปลอดภัย',
+      '45.67.89.10',
+      'Mozilla/5.0 (iPhone) Safari/604.1',
+      'รหัสผ่านไม่ถูกต้อง',
+    );
+
+    const history = getUserLoginHistory(userKey);
+    expect(history.some((h) => h.status === 'FAILED_ATTEMPT')).toBe(true);
+
+    // Active session stays valid even after failed external attempt
+    expect(validateUserSession(userKey, okLogin.sessionId).isValid).toBe(true);
+
+    const security = analyzeLoginSecurity(history, okLogin.sessionId);
+    expect(security.hasSuspiciousActivity).toBe(true);
+    expect(security.failedAttemptsCount).toBe(1);
+    expect(security.unfamiliarIpCount).toBe(1);
   });
 });

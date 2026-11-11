@@ -1,9 +1,24 @@
 import { NextResponse } from 'next/server';
+import { apiErrorResponse } from '@/lib/api-error';
 import { verifyCertificateDocument, getRetentionSummary } from '@/lib/data-store';
+import { checkRateLimit } from '@/lib/security';
 import QRCode from 'qrcode';
 
 export async function GET(request: Request) {
   try {
+    const forwardedFor = request.headers.get('x-forwarded-for') || 'local';
+    const clientIp = forwardedFor.split(',')[0].trim();
+    const rate = checkRateLimit(`doc-verify:${clientIp}`, 60, 5 * 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `มีการตรวจสอบเอกสารบ่อยเกินกำหนด กรุณารอ ${rate.retryAfterSeconds} วินาทีแล้วลองใหม่อีกครั้ง`,
+        },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const docNo = searchParams.get('docNo') || searchParams.get('id') || searchParams.get('query') || '';
     const action = searchParams.get('action');
@@ -54,7 +69,7 @@ export async function GET(request: Request) {
         qrDataUrl,
       },
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return apiErrorResponse(err);
   }
 }

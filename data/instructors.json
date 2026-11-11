@@ -570,7 +570,7 @@
     "name": "พระมหาราชัน จิตฺตปาโล, ดร.",
     "nameEn": "Phramaha Rachan Cittapalo, Ph.D.",
     "email": "rachan.cit@mcu.ac.th",
-    "gmail": "rachan.mcu@gmail.com",
+    "gmail": "pmrachan@gmail.com",
     "department": "ภาควิชาพระพุทธศาสนา คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
     "password": "mcu1015",
@@ -1401,10 +1401,10 @@
     "id": "inst-72",
     "name": "พระครูภาวนาวัฒนบัณฑิต วิ., รศ.ดร.",
     "email": "teacher44@mcu.ac.th",
-    "gmail": "teacher44.mcu@gmail.com",
+    "gmail": "vipassanathai2557@gmail.com",
     "password": "mcu1043",
     "defaultPassword": "mcu123456",
-    "department": "ภาควิชาพระพุทธศาสนา",
+    "department": "คณะพุทธศาสตร์",
     "role": "INSTRUCTOR",
     "coursesCount": 3,
     "isActive": true,
@@ -1415,16 +1415,26 @@
       "Assoc. Prof. Dr. Phrakhru Bhavanavattana-bundit",
       "teacher44@mcu.ac.th",
       "teacher44.mcu@gmail.com",
-      "พระครูภาวนาวัฒนบัณฑิต วิ., รศ.ดร."
+      "vipassanathai2557@gmail.com",
+      "พระครูภาวนาวัฒนบัณฑิต วิ., รศ.ดร.",
+      "พระครูภาวนาพัฒนบัณฑิต",
+      "พระครูภาวนาพัฒนบัณฑิต วิ.",
+      "พระครูภาวนาพัฒนบัณฑิต วิ., ผศ. ดร.",
+      "Asst. Prof. Dr. Phrakhru Bhavanapattana-bundit",
+      "teacher126@mcu.ac.th",
+      "teacher126.mcu@gmail.com",
+      "รศ.ดร.",
+      "ผศ. ดร."
     ],
     "previousIds": [
       "inst-72",
-      "inst-76"
+      "inst-76",
+      "inst-124"
     ],
     "isSuperAdmin": false,
     "nameEn": "Assoc. Prof. Dr. Phrakhru Bhavanavattana-bundit",
     "instructorType": "อาจารย์ประจำ",
-    "updatedAt": "2026-11-07T06:38:34.852Z"
+    "updatedAt": "2026-11-11T05:49:36.228Z"
   },
   {
     "id": "inst-78",
@@ -2530,34 +2540,6 @@
     "nameEn": "Dr. Nadnapang Phophichit",
     "instructorType": "อาจารย์พิเศษ",
     "updatedAt": "2026-11-05T09:17:09.734Z"
-  },
-  {
-    "id": "inst-124",
-    "name": "พระครูภาวนาพัฒนบัณฑิต วิ., ผศ. ดร.",
-    "email": "teacher126@mcu.ac.th",
-    "gmail": "teacher126.mcu@gmail.com",
-    "password": "mcu1125",
-    "defaultPassword": "mcu123456",
-    "department": "ตารางสอนชั้นปีที่ 2 พุทธศาสตรบัณฑิต สาขาวิชาศาสนาและปรัชญา",
-    "role": "INSTRUCTOR",
-    "coursesCount": 1,
-    "isActive": true,
-    "createdAt": "2026-11-02T06:57:57.005Z",
-    "aliases": [
-      "พระครูภาวนาพัฒนบัณฑิต",
-      "พระครูภาวนาพัฒนบัณฑิต วิ.",
-      "ผศ. ดร.",
-      "Asst. Prof. Dr. Phrakhru Bhavanapattana-bundit",
-      "teacher126@mcu.ac.th",
-      "teacher126.mcu@gmail.com"
-    ],
-    "previousIds": [
-      "inst-124"
-    ],
-    "isSuperAdmin": false,
-    "nameEn": "Asst. Prof. Dr. Phrakhru Bhavanapattana-bundit",
-    "instructorType": "อาจารย์พิเศษ",
-    "updatedAt": "2026-11-05T09:17:29.587Z"
   },
   {
     "id": "inst-128",
