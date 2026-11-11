@@ -459,6 +459,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   accuracyAlertDesc: '* ตรวจสอบตัวสะกดชื่อ-นามสกุลภาษาอังกฤษและเลขพาสปอร์ตให้ตรงกับเล่มจริง',
   accuracyAlertEnabled: true,
   forcePasswordChangeOnFirstLogin: true,
+  googleClientId: '383232908495-dk56ffn57og3jscr1es2bjt1vm4h6dfk.apps.googleusercontent.com',
   lineNotifyToken: '',
   lineChannelAccessToken: '',
   lineTargetUserId: '',

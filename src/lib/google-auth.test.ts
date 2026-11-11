@@ -54,6 +54,9 @@ describe('verifyGoogleIdToken', () => {
 
     const unverified = await verifyGoogleIdToken('a.b.c', 'expected-client-id');
     expect(unverified.valid).toBe(false);
+
+    const missingExpectedClient = await verifyGoogleIdToken('a.b.c');
+    expect(missingExpectedClient.valid).toBe(false);
   });
 
   it('accepts valid verified Google tokeninfo payloads', async () => {

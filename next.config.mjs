@@ -5,7 +5,7 @@ const scriptEvalDirective = isProd ? '' : "'unsafe-eval'";
 const cspHeader = `
   default-src 'self';
   script-src 'self' ${scriptEvalDirective} 'unsafe-inline' https://apis.google.com https://accounts.google.com https://translate.google.com https://translate.googleapis.com https://*.gstatic.com https://www.gstatic.com https://*.google.com;
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://translate.googleapis.com https://www.gstatic.com https://*.gstatic.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://translate.googleapis.com https://www.gstatic.com https://*.gstatic.com;
   img-src 'self' blob: data: https:;
   font-src 'self' https://fonts.gstatic.com data:;
   connect-src 'self' https://*.googleapis.com https://accounts.google.com https://translate.googleapis.com https://translate.google.com https://*.gstatic.com https://*.google.com;

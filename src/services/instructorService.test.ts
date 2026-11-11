@@ -190,4 +190,23 @@ describe('instructorService & Authentication', () => {
     expect(result.processed).toHaveLength(2);
     expect(writeSpy).toHaveBeenCalled();
   });
+
+  it('authenticates existing instructors via Google email/gmail/aliases and rejects unknown external emails', async () => {
+    vi.mocked(storageHelper.readLocalJson).mockReturnValue([...mockInstructors]);
+
+    const byGmail = await instructorService.authenticateGoogleUser('phaisal.thita@gmail.com');
+    expect(byGmail?.id).toBe('inst-1');
+    expect((byGmail as any).password).toBeUndefined();
+
+    const byMcuEmail = await instructorService.authenticateGoogleUser('somchai.jai@mcu.ac.th');
+    expect(byMcuEmail?.id).toBe('inst-2');
+
+    const stranger = await instructorService.authenticateGoogleUser('stranger.outsider@gmail.com');
+    expect(stranger).toBeNull();
+    expect(storageHelper.writeLocalJson).not.toHaveBeenCalled();
+
+    await expect(
+      instructorService.authenticateGoogleUser('suspended@mcu.ac.th')
+    ).rejects.toThrow(/ถูกระงับการใช้งานชั่วคราว/);
+  });
 });

@@ -59,7 +59,12 @@ export async function verifyGoogleIdToken(
       }
     }
 
-    if (expectedClientId && data.aud && data.aud !== expectedClientId.trim()) {
+    const trimmedExpectedClientId = expectedClientId?.trim();
+    if (!trimmedExpectedClientId) {
+      return { valid: false, error: 'ระบบยังไม่ได้ตั้งค่า Google Client ID สำหรับยืนยันตัวตน' };
+    }
+
+    if (!data.aud || data.aud !== trimmedExpectedClientId) {
       return { valid: false, error: 'Google Client ID ของโทเค็นไม่ตรงกับระบบ' };
     }
 

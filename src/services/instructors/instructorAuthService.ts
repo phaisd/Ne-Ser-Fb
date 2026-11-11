@@ -86,7 +86,7 @@ export async function authenticateGoogleUser(gmailInput: string): Promise<Omit<I
   const clean = (gmailInput || '').trim().toLowerCase();
   if (!clean) return null;
 
-  let found = accounts.find((a) => {
+  const found = accounts.find((a) => {
     return (
       a.gmail?.toLowerCase() === clean ||
       a.email?.toLowerCase() === clean ||
@@ -95,37 +95,8 @@ export async function authenticateGoogleUser(gmailInput: string): Promise<Omit<I
   });
 
   if (!found) {
-    // If input is a student (numeric code or in students list), do not auto-create as instructor
-    const codePart = clean.replace(/@mcu\.ac\.th$/i, '').trim();
-    const students = readLocalJson<Student[]>('students.json', []);
-    const isStudent = students.some(
-      (s) =>
-        (s.studentCode || '').toLowerCase() === codePart ||
-        (s.email || '').toLowerCase() === clean ||
-        (s.studentCode || '').toLowerCase() === clean
-    );
-    if (isStudent || /^\d{5,12}$/.test(codePart)) {
-      return null;
-    }
-
-    const username = clean.split('@')[0];
-    const newAcc: InstructorAccount = {
-      id: 'inst-' + Date.now(),
-      name: `อาจารย์ (${username})`,
-      email: clean.endsWith('@mcu.ac.th') ? clean : `${username}@mcu.ac.th`,
-      gmail: clean.endsWith('@gmail.com') ? clean : `${username}@gmail.com`,
-      password: 'mcu123456',
-      defaultPassword: 'mcu123456',
-      department: 'คณะพุทธศาสตร์ มจร',
-      role: 'INSTRUCTOR',
-      coursesCount: 0,
-      isActive: true,
-      isSuspended: false,
-      createdAt: new Date().toISOString(),
-    };
-    accounts.push(newAcc);
-    writeLocalJson('instructors.json', accounts);
-    found = newAcc;
+    // Do not auto-create unknown external Gmail accounts; caller falls back to student check or rejects.
+    return null;
   }
 
   if (found.isSuspended || found.isActive === false) {
