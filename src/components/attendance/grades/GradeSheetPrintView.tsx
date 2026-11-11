@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Printer, FileCheck2 } from 'lucide-react';
 import { GroupedMajorSection } from '../majorGrouping';
 import { ComputedGradeRow } from './types';
 import {
@@ -60,6 +61,31 @@ export function GradeSheetPrintView({
 }: GradeSheetPrintViewProps) {
   return (
     <>
+      {showPrintPreviewOnScreen && (
+        <div className="mx-auto max-w-[210mm] mb-2.5 p-3 rounded-2xl bg-indigo-50/90 border border-indigo-200 flex flex-wrap items-center justify-between gap-2 print:hidden">
+          <div className="flex items-start gap-2.5">
+            <FileCheck2 className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+            <div className="text-xs">
+              <div className="font-extrabold text-indigo-950">
+                ตัวอย่างก่อนพิมพ์จริง (A4 Print Preview 1:1)
+              </div>
+              <div className="text-slate-600 mt-0.5">
+                ภาพด้านล่างนี้เป็นฟอร์มเดียวกับเอกสารที่สั่งพิมพ์ลงกระดาษ A4 จริง (แถบสีน้ำเงินนี้จะไม่ถูกพิมพ์ออกกระดาษ)
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>พิมพ์ใบกรอกคะแนน A4</span>
+          </button>
+        </div>
+      )}
+
+      <div className="overflow-x-auto pb-2 print:overflow-visible print:pb-0">
       <div
         id="printable-grade-sheet"
         className={`${
@@ -184,15 +210,15 @@ export function GradeSheetPrintView({
 
               {/* Main Student Score Table (Thai - Grouped by Major & numbered 1..N per Major) */}
               <table
-                className="w-full border-collapse border border-black mt-2"
+                className="w-full table-fixed border-collapse border border-black mt-2"
                 style={{ fontSize: `${printFontSizePx}px` }}
               >
                 <thead>
                   <tr className="font-bold text-center">
-                    <th className="border border-black w-9 py-1.5">ที่</th>
-                    <th className="border border-black w-28 py-1.5">รหัส</th>
+                    <th className="border border-black w-[30px] py-1.5">ที่</th>
+                    <th className="border border-black w-[86px] py-1.5">รหัส</th>
                     <th className="border border-black py-1.5">ชื่อ-ฉายา-นามสกุล</th>
-                    <th className="border border-black w-10 py-1.5 align-bottom">
+                    <th className="border border-black w-[30px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -200,7 +226,7 @@ export function GradeSheetPrintView({
                         รายงาน
                       </div>
                     </th>
-                    <th className="border border-black w-10 py-1.5 align-bottom">
+                    <th className="border border-black w-[30px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -208,7 +234,7 @@ export function GradeSheetPrintView({
                         จิตพิสัย
                       </div>
                     </th>
-                    <th className="border border-black w-10 py-1.5 align-bottom">
+                    <th className="border border-black w-[30px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -216,7 +242,7 @@ export function GradeSheetPrintView({
                         สอบระหว่างภาค
                       </div>
                     </th>
-                    <th className="border border-black w-10 py-1.5 align-bottom">
+                    <th className="border border-black w-[30px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -224,7 +250,7 @@ export function GradeSheetPrintView({
                         สอบปลายภาค
                       </div>
                     </th>
-                    <th className="border border-black w-11 py-1.5 align-bottom">
+                    <th className="border border-black w-[34px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -232,8 +258,8 @@ export function GradeSheetPrintView({
                         รวม
                       </div>
                     </th>
-                    <th className="border border-black w-13 py-1.5">ระดับ</th>
-                    <th className="border border-black w-32 py-1.5">หมายเหตุ</th>
+                    <th className="border border-black w-[40px] py-1.5">ระดับ</th>
+                    <th className="border border-black w-[92px] py-1.5">หมายเหตุ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -562,15 +588,15 @@ export function GradeSheetPrintView({
 
               {/* Main Student Score Table (English - Grouped by Major & numbered 1..N per Major) */}
               <table
-                className="w-full border-collapse border border-black mt-2"
+                className="w-full table-fixed border-collapse border border-black mt-2"
                 style={{ fontSize: `${printFontSizePx}px` }}
               >
                 <thead>
                   <tr className="font-bold text-center">
-                    <th className="border border-black w-9 py-1.5">No.</th>
-                    <th className="border border-black w-28 py-1.5">Resgis No.</th>
+                    <th className="border border-black w-[28px] py-1.5">No.</th>
+                    <th className="border border-black w-[84px] py-1.5">Resgis No.</th>
                     <th className="border border-black py-1.5">Name</th>
-                    <th className="border border-black w-12 py-1.5 align-bottom">
+                    <th className="border border-black w-[44px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -578,7 +604,7 @@ export function GradeSheetPrintView({
                         Major
                       </div>
                     </th>
-                    <th className="border border-black w-10 py-1.5 align-bottom">
+                    <th className="border border-black w-[30px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -586,7 +612,7 @@ export function GradeSheetPrintView({
                         Assign
                       </div>
                     </th>
-                    <th className="border border-black w-10 py-1.5 align-bottom">
+                    <th className="border border-black w-[30px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -594,7 +620,7 @@ export function GradeSheetPrintView({
                         Attd.
                       </div>
                     </th>
-                    <th className="border border-black w-10 py-1.5 align-bottom">
+                    <th className="border border-black w-[30px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -602,7 +628,7 @@ export function GradeSheetPrintView({
                         Mid-Term
                       </div>
                     </th>
-                    <th className="border border-black w-10 py-1.5 align-bottom">
+                    <th className="border border-black w-[30px] py-1.5 align-bottom">
                       <div
                         className="mx-auto leading-none py-1"
                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -610,9 +636,9 @@ export function GradeSheetPrintView({
                         Final
                       </div>
                     </th>
-                    <th className="border border-black w-11 py-1.5">Total</th>
-                    <th className="border border-black w-13 py-1.5">Grade</th>
-                    <th className="border border-black w-24 py-1.5">Remark</th>
+                    <th className="border border-black w-[34px] py-1.5">Total</th>
+                    <th className="border border-black w-[42px] py-1.5">Grade</th>
+                    <th className="border border-black w-[78px] py-1.5">Remark</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -797,6 +823,7 @@ export function GradeSheetPrintView({
             </div>
           </div>
         )}
+      </div>
       </div>
 
       {/* Print-specific CSS to ensure clean 1-page A4 output */}
