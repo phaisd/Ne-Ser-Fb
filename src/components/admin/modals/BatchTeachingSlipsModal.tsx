@@ -19,8 +19,14 @@ import {
   X,
   Sparkles,
   QrCode,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { UserAccount } from '@/types';
+import {
+  buildBatchTeachingSlipsFilename,
+  buildBatchTeachingSlipsSheets,
+  downloadXlsx,
+} from '@/lib/utils';
 
 export type SlipLayoutRatio = '1:1' | '2:1' | '4:1' | '6:1' | '8:1';
 
@@ -153,6 +159,29 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
       ? settings.signerNameTh
       : signatories?.find((s: any) => s.id === 'DEAN')?.name || 'พระราชอุดมวัชรเมธี, ผศ.ดร.';
 
+  const handleExportExcel = () => {
+    if (activeInstructors.length === 0) {
+      alert('กรุณาเลือกอาจารย์อย่างน้อย 1 ท่านก่อนส่งออกไฟล์ Excel');
+      return;
+    }
+
+    const attendanceUrl =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/attendance`
+        : 'https://ne-ser-fb.vercel.app/attendance';
+
+    const sheets = buildBatchTeachingSlipsSheets({
+      instructors: activeInstructors,
+      getCoursesForInstructor,
+      selectedYear,
+      selectedSemester,
+      attendanceUrl,
+      adminName,
+    });
+    const filename = buildBatchTeachingSlipsFilename(selectedYear, selectedSemester);
+    downloadXlsx(filename, sheets);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm print:p-0 print:bg-white print:static print:block animate-in fade-in">
       <div className="bg-white rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 max-h-[96vh] overflow-y-auto space-y-4 print:shadow-none print:border-none print:max-h-none print:p-0 print:w-full print:rounded-none print:overflow-visible print:h-auto print:space-y-0">
@@ -208,19 +237,29 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
               <Printer className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+              <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2 flex-wrap">
                 <span>ออกบัตรแจ้งภาระงานสอนเป็นชุดสำหรับกลุ่มอาจารย์</span>
                 <span className="text-xs bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-full">
-                  Batch Print
+                  Batch Print &amp; Excel
                 </span>
               </h3>
               <p className="text-xs text-slate-500">
-                กำหนดจำนวนอาจารย์ต่อ 1 แผ่นกระดาษ A4 เพื่อพิมพ์ตัดแจกอย่างสะดวกและประหยัดกระดาษ
+                กำหนดจำนวนอาจารย์ต่อ 1 แผ่นกระดาษ A4 เพื่อพิมพ์ตัดแจก หรือส่งออกเป็นไฟล์ Excel (.xlsx) 2 ชีทได้ทันที
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              disabled={activeInstructors.length === 0}
+              title="ส่งออกข้อมูลบัตรภาระงานสอนและรหัสผ่านของอาจารย์ที่เลือกเป็นไฟล์ Excel (.xlsx) 2 ชีท (แยกรายวิชา & สรุปรายอาจารย์)"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20 disabled:opacity-50"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>ส่งออก Excel (.xlsx) ({activeInstructors.length} ท่าน)</span>
+            </button>
             <button
               type="button"
               onClick={() => window.print()}
@@ -443,7 +482,11 @@ export const BatchTeachingSlipsModal: React.FC<BatchTeachingSlipsModalProps> = (
               {filteredInstructors.length} ท่าน (จะพิมพ์ลงกระดาษ A4 ทั้งหมด{' '}
               <strong className="text-purple-700">{pages.length} แผ่น</strong> ที่อัตราส่วน {ratio})
             </span>
-            <div className="flex items-center gap-3 text-[11px] text-slate-500">
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+              <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span>ส่งออก Excel มี 2 ชีท: แยกรายวิชา &amp; สรุปรายอาจารย์</span>
+              </span>
               <span className="flex items-center gap-1">
                 <Scissors className="w-3 h-3 text-amber-600" />
                 <span>มีเส้นประตัดกรรไกร (Cut Lines) อัตโนมัติ</span>

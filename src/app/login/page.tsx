@@ -31,7 +31,7 @@ import {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/attendance';
+  const redirectUrl = searchParams.get('redirect') || '/workload';
   const reason = searchParams.get('reason');
 
   const [email, setEmail] = useState('');

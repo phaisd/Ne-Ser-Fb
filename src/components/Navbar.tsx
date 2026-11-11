@@ -27,7 +27,8 @@ import {
   User,
   History,
   Menu,
-  X
+  X,
+  Briefcase
 } from 'lucide-react';
 import { translations, Language } from '@/lib/translations';
 import { getAuthUser, isAdminOrOfficer, clearAuthSession } from '@/lib/auth-client';
@@ -35,7 +36,7 @@ import UserProfileModal from '@/components/UserProfileModal';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const isAdminRoute = pathname.startsWith('/admin') || pathname === '/attendance' || pathname === '/settings';
+  const isAdminRoute = pathname.startsWith('/admin') || pathname === '/attendance' || pathname === '/workload' || pathname === '/settings';
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -268,9 +269,11 @@ export default function Navbar() {
   };
 
   const isAdmin = isAdminOrOfficer(currentUser);
+  const isStaffOrInstructor = Boolean(currentUser && currentUser.role !== 'STUDENT');
 
   const publicNavItems = [
     { href: '/', label: t.navHome, icon: LayoutDashboard },
+    ...(isStaffOrInstructor ? [{ href: '/workload', label: 'ภาระงานสอนของฉัน', icon: Briefcase }] : []),
     ...(settings?.showCertificatesMenu !== false ? [{ href: '/certificates', label: t.navCertificates, icon: FileText }] : []),
     ...(settings?.showCoursesMenu !== false ? [{ href: '/courses', label: t.navCourses, icon: BookOpen }] : []),
     ...(isAdmin && settings?.showStudentsSearch !== false ? [{ href: '/students', label: t.navStudents, icon: Users }] : []),
@@ -279,6 +282,7 @@ export default function Navbar() {
 
   const adminNavItems = [
     ...(isAdmin ? [{ href: '/admin', label: t.navAdmin, icon: ShieldCheck }] : []),
+    ...(isStaffOrInstructor ? [{ href: '/workload', label: 'ภาระงานสอนของฉัน', icon: Briefcase }] : []),
     ...(settings?.showCoursesMenu !== false ? [{ href: '/courses', label: t.navCourses, icon: BookOpen }] : []),
     { href: '/attendance', label: t.navAttendance, icon: CheckSquare },
     ...(settings?.showEventsMenu === true ? [{ href: '/events', label: 'กิจกรรมนิสิต', icon: Award }] : []),
@@ -511,6 +515,17 @@ export default function Navbar() {
 
                         {/* Dropdown Items */}
                         <div className="p-1 space-y-0.5 text-xs font-semibold">
+                          {isStaffOrInstructor && (
+                            <Link
+                              href="/workload"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="w-full px-3 py-2 text-left rounded-xl hover:bg-indigo-50 hover:text-indigo-900 flex items-center gap-2.5 transition cursor-pointer"
+                            >
+                              <Briefcase className="w-4 h-4 text-indigo-600" />
+                              <span>ภาระงานสอนของฉัน</span>
+                            </Link>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => {

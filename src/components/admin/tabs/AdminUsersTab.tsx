@@ -357,10 +357,10 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
               type="button"
               onClick={onOpenBatchTeachingSlips}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"
-              title="พิมพ์บัตรแจ้งภาระงานสอนเป็นชุดสำหรับกลุ่มอาจารย์ (กำหนดอัตรา 1:1, 2:1, 4:1, 6:1 ต่อแผ่น A4)"
+              title="พิมพ์บัตรแจ้งภาระงานสอนเป็นชุด (A4 อัตรา 1:1 - 8:1) หรือส่งออกไฟล์ Excel (.xlsx) สำหรับกลุ่มอาจารย์"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>🖨️ ออกบัตรภาระงานเป็นชุด</span>
+              <span>🖨️ ออกบัตรภาระงานเป็นชุด (พิมพ์ / Excel)</span>
             </button>
           )}
 
@@ -458,7 +458,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
               💡 ข้อแนะนำเมื่อเริ่มต้นปีการศึกษาใหม่:
             </span>{' '}
             <span>
-              หากต้องการออกบัตรแจ้งภาระงานสอนปีใหม่ กรุณา <strong>1) นำเข้าตารางสอนปีใหม่</strong> ในแท็บ &quot;ตารางสอน&quot; ก่อน ➔ <strong>2) กดปุ่ม &quot;🔄 ซิงค์และสร้างไอดีอาจารย์จากตารางสอน&quot;</strong> ➔ <strong>3) กดปุ่ม &quot;🖨️ ออกบัตรภาระงานเป็นชุด&quot;</strong> เพื่อพิมพ์ตัดแจกอาจารย์ตามอัตรา 4:1, 6:1 หรือ 8:1 ได้ทันที
+              หากต้องการออกบัตรแจ้งภาระงานสอนปีใหม่ กรุณา <strong>1) นำเข้าตารางสอนปีใหม่</strong> ในแท็บ &quot;ตารางสอน&quot; ก่อน ➔ <strong>2) กดปุ่ม &quot;🔄 ซิงค์และสร้างไอดีอาจารย์จากตารางสอน&quot;</strong> ➔ <strong>3) กดปุ่ม &quot;🖨️ ออกบัตรภาระงานเป็นชุด (พิมพ์ / Excel)&quot;</strong> เพื่อพิมพ์ตัดแจกอาจารย์ตามอัตรา 4:1, 6:1 หรือ 8:1 หรือส่งออกเป็นไฟล์ Excel (.xlsx) ได้ทันที
             </span>
           </div>
         </div>
@@ -470,7 +470,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
               className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 text-indigo-600" />
-              <span>ออกบัตรเป็นชุด</span>
+              <span>ออกบัตรเป็นชุด / Excel</span>
             </button>
           )}
           {onOpenNewYearWorkflow && (

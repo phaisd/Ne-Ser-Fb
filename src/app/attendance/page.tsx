@@ -284,9 +284,29 @@ export default function AttendancePage() {
     );
   }, [availableCourses, selectedCourseCode]);
 
-  // Auto-sync selected course when availableCourses changes
+  // Auto-sync selected course when availableCourses changes (supports ?course= query param from /workload)
+  const requestedCourseRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const paramCourse = new URLSearchParams(window.location.search).get('course');
+      if (paramCourse) requestedCourseRef.current = paramCourse;
+    }
+  }, []);
+
   useEffect(() => {
     if (availableCourses.length > 0) {
+      if (requestedCourseRef.current) {
+        const req = requestedCourseRef.current;
+        const paramMatch = availableCourses.find(
+          (c) => (c as any).sectionKey === req || c.courseCode === req
+        );
+        if (paramMatch) {
+          requestedCourseRef.current = null;
+          setSelectedCourseCode((paramMatch as any).sectionKey || paramMatch.courseCode);
+          setRecordedBy(currentUser ? currentUser.name : (paramMatch.instructor || 'อาจารย์ประจำวิชา'));
+          return;
+        }
+      }
       const match = availableCourses.find(
         (c) => (c as any).sectionKey === selectedCourseCode || c.courseCode === selectedCourseCode
       );
