@@ -125,7 +125,6 @@ export function useAdminCertificates({
           id: rejectingRequest.id,
           status: 'REJECTED',
           rejectReason: finalReason,
-          note: finalReason,
         }),
       });
       const data = await res.json();

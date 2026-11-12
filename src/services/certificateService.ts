@@ -188,24 +188,25 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
             } catch {}
           }
           return {
-            ...sheetExtra,
             ...local,
+            ...sheetExtra,
             id,
-            createdAt: r[1] || local.createdAt || sheetExtra.createdAt || new Date().toISOString(),
-            studentCode: r[2] || local.studentCode || sheetExtra.studentCode || '',
-            fullName: r[3] || local.fullName || sheetExtra.fullName || '',
-            monasticName: local.monasticName || sheetExtra.monasticName || '',
-            certType: r[4] || local.certType || sheetExtra.certType || 'หนังสือรับรอง',
-            degreeLevel: r[5] || local.degreeLevel || sheetExtra.degreeLevel || '',
-            major: r[6] || local.major || sheetExtra.major || '',
-            requestPurpose: r[7] || local.requestPurpose || sheetExtra.requestPurpose || '',
-            status: (r[8] as CertRequestStatus) || local.status || sheetExtra.status || 'PENDING',
-            docNo: r[9] || local.docNo || sheetExtra.docNo || '',
-            docNoPrefix: local.docNoPrefix || sheetExtra.docNoPrefix || (r[9] && r[9].includes('8002.1') ? '8002.1' : '8002'),
-            email: r[10] || local.email || sheetExtra.email || '',
-            phone: r[11] || local.phone || sheetExtra.phone || '',
-            age: local.age || sheetExtra.age || '',
-            vassa: local.vassa || sheetExtra.vassa || '',
+            createdAt: r[1] || sheetExtra.createdAt || local.createdAt || new Date().toISOString(),
+            studentCode: r[2] || sheetExtra.studentCode || local.studentCode || '',
+            fullName: r[3] || sheetExtra.fullName || local.fullName || '',
+            monasticName: sheetExtra.monasticName || local.monasticName || '',
+            certType: r[4] || sheetExtra.certType || local.certType || 'หนังสือรับรอง',
+            degreeLevel: r[5] || sheetExtra.degreeLevel || local.degreeLevel || '',
+            major: r[6] || sheetExtra.major || local.major || '',
+            requestPurpose: r[7] || sheetExtra.requestPurpose || local.requestPurpose || '',
+            status: (r[8] as CertRequestStatus) || sheetExtra.status || local.status || 'PENDING',
+            docNo: r[9] || sheetExtra.docNo || local.docNo || '',
+            docNoPrefix: sheetExtra.docNoPrefix || local.docNoPrefix || (r[9] && r[9].includes('8002.1') ? '8002.1' : '8002'),
+            email: r[10] || sheetExtra.email || local.email || '',
+            phone: r[11] || sheetExtra.phone || local.phone || '',
+            age: sheetExtra.age || local.age || '',
+            vassa: sheetExtra.vassa || local.vassa || '',
+            rejectReason: sheetExtra.rejectReason || local.rejectReason || '',
           } as CertificateRequest;
         });
       }
@@ -364,53 +365,161 @@ export async function createCertificateRequest(data: Omit<CertificateRequest, 'i
   return newReq;
 }
 
-export async function updateCertificateRequest(id: string, updates: Partial<CertificateRequest>): Promise<CertificateRequest | null> {
-  const localList = readLocalJson<any[]>('certificate_requests.json', []);
-  const idx = localList.findIndex((r) => r.id === id);
-  if (idx === -1) return null;
-
-  localList[idx] = {
-    ...localList[idx],
-    ...updates,
-    status: updates.status || localList[idx].status,
-    docNo: updates.docNo !== undefined ? updates.docNo : localList[idx].docNo,
-    docNoPrefix: updates.docNoPrefix !== undefined ? updates.docNoPrefix : localList[idx].docNoPrefix,
-    updatedAt: new Date().toISOString(),
-  };
-
-  writeLocalJson('certificate_requests.json', localList);
-
-  // Sync to sheets in background
-  const gClient = getSheetsClient();
-  if (gClient) {
-    syncCertificateRequestsToSheets(localList).catch((e) => console.warn('Sync on update error:', e));
-  }
-
-  return localList[idx];
+function serializeCertRequestRow(r: RawCertificateRequestRecord): string[] {
+  return [
+    r.id || '',
+    r.createdAt || '',
+    r.studentCode || '',
+    r.fullName || (r.user ? r.user.name || '' : ''),
+    r.certType || r.certificateType?.name || '',
+    r.degreeLevel || '',
+    r.major || '',
+    r.requestPurpose || '',
+    r.status || 'PENDING',
+    r.docNo || '',
+    r.email || '',
+    r.phone || '',
+    JSON.stringify({
+      monasticName: r.monasticName,
+      age: r.age,
+      vassa: r.vassa,
+      gender: r.gender,
+      nationality: r.nationality,
+      country: r.country,
+      passportNo: r.passportNo,
+      passportExpireDate: r.passportExpireDate,
+      visaType: r.visaType,
+      visaExpireDate: r.visaExpireDate,
+      gpa: r.gpa,
+      address: r.address,
+      subdistrict: r.subdistrict,
+      district: r.district,
+      province: r.province,
+      postalCode: r.postalCode,
+      targetAudience: r.targetAudience,
+      applicantType: r.applicantType,
+      position: r.position,
+      department: r.department,
+      enrollmentSlipUrl: r.enrollmentSlipUrl,
+      passportCopyUrl: r.passportCopyUrl,
+      customBodyText: r.customBodyText,
+      docNoPrefix: r.docNoPrefix,
+      rejectReason: r.rejectReason,
+    }),
+  ];
 }
 
-export async function deleteCertificateRequest(id: string): Promise<boolean> {
+export async function updateCertificateRequest(id: string, updates: Partial<CertificateRequest>): Promise<CertificateRequest | null> {
+  const cleanId = String(id || '').trim();
+  if (!cleanId) return null;
+
   const localList = readLocalJson<any[]>('certificate_requests.json', []);
-  const nextList = localList.filter((r) => r.id !== id);
-  if (nextList.length === localList.length) {
-    // Check if it's only in sheets
-    const gClient = getSheetsClient();
-    if (gClient) {
-      try {
-        await syncCertificateRequestsToSheets(nextList);
-        return true;
-      } catch (e) {}
-    }
-    return false;
-  }
+  const localIdx = localList.findIndex((r) => String(r.id || '').trim() === cleanId);
 
-  writeLocalJson('certificate_requests.json', nextList);
+  let baseRecord: CertificateRequest | null = localIdx !== -1 ? localList[localIdx] : null;
+  let sheetRowNum: number | null = null;
 
-  // Sync to sheets
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      await syncCertificateRequestsToSheets(nextList);
+      const rows = await gClient.getValues('CertificateRequests!A2:M');
+      if (rows && rows.length > 0) {
+        const sIdx = rows.findIndex((r) => String(r[0] || '').trim() === cleanId);
+        if (sIdx !== -1) {
+          sheetRowNum = sIdx + 2;
+          const r = rows[sIdx];
+          let sheetExtra: Partial<CertificateRequest> = {};
+          if (r[12]) {
+            try {
+              const parsed = JSON.parse(r[12]);
+              if (parsed && typeof parsed === 'object') sheetExtra = parsed;
+            } catch {}
+          }
+          baseRecord = {
+            ...(baseRecord || {}),
+            ...sheetExtra,
+            id: cleanId,
+            createdAt: r[1] || sheetExtra.createdAt || baseRecord?.createdAt || new Date().toISOString(),
+            studentCode: r[2] || sheetExtra.studentCode || baseRecord?.studentCode || '',
+            fullName: r[3] || sheetExtra.fullName || baseRecord?.fullName || '',
+            certType: r[4] || sheetExtra.certType || baseRecord?.certType || 'หนังสือรับรอง',
+            degreeLevel: r[5] || sheetExtra.degreeLevel || baseRecord?.degreeLevel || '',
+            major: r[6] || sheetExtra.major || baseRecord?.major || '',
+            requestPurpose: r[7] || sheetExtra.requestPurpose || baseRecord?.requestPurpose || '',
+            status: (r[8] as CertRequestStatus) || sheetExtra.status || baseRecord?.status || 'PENDING',
+            docNo: r[9] || sheetExtra.docNo || baseRecord?.docNo || '',
+            email: r[10] || sheetExtra.email || baseRecord?.email || '',
+            phone: r[11] || sheetExtra.phone || baseRecord?.phone || '',
+          } as CertificateRequest;
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets lookup on updateCertificateRequest error:', err);
+    }
+  }
+
+  if (!baseRecord) {
+    return null;
+  }
+
+  const updatedRecord: CertificateRequest = {
+    ...baseRecord,
+    ...updates,
+    id: cleanId,
+    status: updates.status || baseRecord.status,
+    docNo: updates.docNo !== undefined ? updates.docNo : baseRecord.docNo,
+    docNoPrefix: updates.docNoPrefix !== undefined ? updates.docNoPrefix : baseRecord.docNoPrefix,
+    rejectReason:
+      updates.rejectReason !== undefined
+        ? updates.rejectReason
+        : (updates as any).note !== undefined && updates.status === 'REJECTED'
+        ? String((updates as any).note)
+        : baseRecord.rejectReason,
+  };
+
+  if (localIdx !== -1) {
+    localList[localIdx] = { ...localList[localIdx], ...updatedRecord, updatedAt: new Date().toISOString() };
+  } else {
+    localList.unshift({ ...updatedRecord, updatedAt: new Date().toISOString() });
+  }
+  writeLocalJson('certificate_requests.json', localList);
+
+  if (gClient) {
+    try {
+      const serializedRow = serializeCertRequestRow(updatedRecord);
+      if (sheetRowNum !== null) {
+        await gClient.updateValues(`CertificateRequests!A${sheetRowNum}:M${sheetRowNum}`, [serializedRow]);
+      } else {
+        await gClient.appendValues('CertificateRequests!A:M', [serializedRow]);
+      }
+    } catch (err) {
+      console.warn('Google Sheets direct update on updateCertificateRequest error:', err);
+    }
+  }
+
+  return updatedRecord;
+}
+
+export async function deleteCertificateRequest(id: string): Promise<boolean> {
+  const cleanId = String(id || '').trim();
+  if (!cleanId) return false;
+
+  const allRequests = await getCertificateRequests();
+  const nextAll = allRequests.filter((r) => String(r.id || '').trim() !== cleanId);
+
+  const localList = readLocalJson<any[]>('certificate_requests.json', []);
+  const nextLocal = localList.filter((r) => String(r.id || '').trim() !== cleanId);
+
+  if (nextAll.length === allRequests.length && nextLocal.length === localList.length) {
+    return false;
+  }
+
+  writeLocalJson('certificate_requests.json', nextLocal);
+
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      await syncCertificateRequestsToSheets(nextAll);
     } catch (err) {
       console.warn('Google Sheets sync on delete error:', err);
     }
