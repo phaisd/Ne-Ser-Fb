@@ -237,27 +237,41 @@ export function HeroWildSection({ settings: initialSettings }: HeroWildSectionPr
 
           {/* Center: Interactive Nav Pills */}
           <div
-            className={`hidden md:flex items-center gap-6 text-xs font-semibold tracking-wide ${
+            className={`hidden md:flex items-center gap-5 text-xs font-semibold tracking-wide ${
               isDarkHero ? 'text-slate-200' : 'text-slate-700'
             }`}
           >
-            <Link
-              href="/certificates"
-              className={`transition-colors flex items-center gap-1.5 ${
-                isDarkHero ? 'hover:text-amber-300' : 'hover:text-slate-950'
-              }`}
-            >
-              <span>ยื่นคำร้อง (Certificates)</span>
-            </Link>
-            <Link
-              href="/courses"
-              className={`transition-colors flex items-center gap-1.5 ${
-                isDarkHero ? 'hover:text-amber-300' : 'hover:text-slate-950'
-              }`}
-            >
-              <span>ตารางเรียน (Timetable)</span>
-            </Link>
-            {isAdmin && (
+            {s.showEnrollmentMenu !== false && (
+              <Link
+                href="/enroll"
+                className={`transition-colors flex items-center gap-1.5 font-bold ${
+                  isDarkHero ? 'text-amber-300 hover:text-amber-200' : 'text-orange-700 hover:text-slate-950'
+                }`}
+              >
+                <span>สมัครเรียน/นิสิตใหม่ (Admission)</span>
+              </Link>
+            )}
+            {s.showCertificatesMenu !== false && (
+              <Link
+                href="/certificates"
+                className={`transition-colors flex items-center gap-1.5 ${
+                  isDarkHero ? 'hover:text-amber-300' : 'hover:text-slate-950'
+                }`}
+              >
+                <span>ยื่นคำร้อง (Certificates)</span>
+              </Link>
+            )}
+            {s.showCoursesMenu !== false && (
+              <Link
+                href="/courses"
+                className={`transition-colors flex items-center gap-1.5 ${
+                  isDarkHero ? 'hover:text-amber-300' : 'hover:text-slate-950'
+                }`}
+              >
+                <span>ตารางเรียน (Timetable)</span>
+              </Link>
+            )}
+            {isAdmin && s.showStudentsSearch !== false && (
               <Link
                 href="/students"
                 className={`transition-colors flex items-center gap-1.5 font-bold ${
@@ -270,14 +284,16 @@ export function HeroWildSection({ settings: initialSettings }: HeroWildSectionPr
                 </span>
               </Link>
             )}
-            <Link
-              href="/events"
-              className={`transition-colors flex items-center gap-1.5 ${
-                isDarkHero ? 'hover:text-amber-300' : 'hover:text-slate-950'
-              }`}
-            >
-              <span>กิจกรรม (Activities)</span>
-            </Link>
+            {s.showEventsMenu === true && (
+              <Link
+                href="/events"
+                className={`transition-colors flex items-center gap-1.5 ${
+                  isDarkHero ? 'hover:text-amber-300' : 'hover:text-slate-950'
+                }`}
+              >
+                <span>กิจกรรม (Activities)</span>
+              </Link>
+            )}
           </div>
 
           {/* Right: Faculty & Social Branding */}

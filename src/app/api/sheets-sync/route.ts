@@ -132,6 +132,7 @@ export async function POST(request: Request) {
     const requiredTabs = [
       'Students',
       'Students_Archive',
+      'Admissions',
       'Courses',
       'Timetables',
       'CertificateRequests',
