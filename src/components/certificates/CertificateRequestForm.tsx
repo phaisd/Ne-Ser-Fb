@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import { CertificateRequest, CertTypeItem, StudentLookupItem } from './types';
 import { isAdmissionPeriodActive } from '@/lib/utils';
+import { CertCandidateGateSection } from './form/CertCandidateGateSection';
+import { CertStaffFormSection } from './form/CertStaffFormSection';
+import { CertStudentAttachmentsSection } from './form/CertStudentAttachmentsSection';
 
 export interface CertificateRequestFormProps {
   currentUser: any;
@@ -492,287 +495,44 @@ export function CertificateRequestForm({
         )}
       </div>
 
-      {/* Access Control Gate: If user is not logged in and not viewing candidate section */}
-      {!currentUser && selectedCert?.targetAudience !== 'CANDIDATE' && selectedCert?.category !== 'ADMISSION' && (
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border-2 border-purple-200 text-slate-800 shadow-sm space-y-4">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-purple-600/30">
-              <ShieldAlert className="w-6 h-6" />
-            </div>
-            <div className="space-y-1.5 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-purple-200 text-purple-900 font-extrabold text-[11px] uppercase tracking-wider">
-                  🔒 มาตรการความปลอดภัยและยืนยันตัวตน (Authentication Required)
-                </span>
-              </div>
-              <h3 className="text-base font-extrabold text-slate-900">
-                นิสิตและบุคลากรต้องเข้าสู่ระบบก่อนยื่นคำร้องขอหนังสือรับรอง
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                ตามระเบียบของมหาวิทยาลัย เพื่อป้องกันการกรอกข้อมูลสวมสิทธิ์ กรอกข้อมูลผิดพลาด หรือบุคคลภายนอกที่ไม่ได้รับอนุญาตเข้ามายื่นคำร้องแทน
-                นิสิตและอาจารย์ทุกคนจะต้องเข้าสู่ระบบก่อนยื่นคำร้อง เมื่อเข้าสู่ระบบแล้วข้อมูลของท่านจะถูกดึงมาใส่ให้อัตโนมัติโดยไม่ต้องพิมพ์เอง
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-purple-200/60">
-            <Link
-              href="/login?redirect=/certificates"
-              className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
-            >
-              <LogIn className="w-4 h-4" /> เข้าสู่ระบบด้วยบัญชีนิสิต (Student Login)
-            </Link>
-            <Link
-              href="/login?redirect=/certificates"
-              className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
-            >
-              <Briefcase className="w-4 h-4 text-purple-600" /> เข้าสู่ระบบอาจารย์ / เจ้าหน้าที่
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setCardAudienceFilter('CANDIDATE');
-                const adm = certTypes.find((c) => c.category === 'ADMISSION' || c.targetAudience === 'CANDIDATE');
-                if (adm) setSelectedCert(adm);
-              }}
-              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline ml-auto cursor-pointer"
-            >
-              🎓 ผู้ผ่านการคัดเลือกใหม่ (ยังไม่มีรหัสนิสิต)? คลิกตรวจสอบสิทธิ์ที่นี่
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Authenticated User Banner */}
-      {currentUser && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <UserCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <div>
-              เข้าสู่ระบบแล้ว: <span className="font-bold">{currentUser.name}</span>{' '}
-              <span className="text-emerald-700 font-mono">
-                ({currentUser.role === 'STUDENT' ? `รหัสนิสิต: ${currentUser.studentCode || currentUser.id}` : `บทบาท: ${currentUser.role}`})
-              </span>
-            </div>
-          </div>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-200 text-emerald-950">
-            ยืนยันตัวตนเรียบร้อย ✓
-          </span>
-        </div>
-      )}
-
-      {/* Special Section for Admitted Candidates (ผู้ผ่านการคัดเลือกเข้าเรียน) */}
-      {(selectedCert?.targetAudience === 'CANDIDATE' || selectedCert?.category === 'ADMISSION' || cardAudienceFilter === 'CANDIDATE') && (
-        <div className="p-5 rounded-2xl bg-emerald-50/70 border-2 border-emerald-300 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-black">
-                ✓
-              </span>
-              <h3 className="text-sm font-bold text-emerald-950">
-                ระบบคัดกรองและตรวจสอบคุณสมบัติผู้ผ่านการคัดเลือกเข้าศึกษา (Candidate Portal)
-              </h3>
-            </div>
-            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${settings.admissionPeriodOpen !== false ? 'bg-emerald-200 text-emerald-900' : 'bg-red-200 text-red-900'}`}>
-              {settings.admissionPeriodOpen !== false ? '🟢 เปิดรับคำร้อง' : '🔴 ปิดรับคำร้อง'}
-            </span>
-          </div>
-
-          {/* Admission Window Alert */}
-          {settings.admissionPeriodOpen === false ? (
-            <div className="p-3.5 rounded-xl bg-red-100 border border-red-300 text-red-950 text-xs flex items-start gap-2.5">
-              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold">ขณะนี้อยู่นอกช่วงเวลาการยื่นขอหนังสือรับรองสำหรับผู้ผ่านการคัดเลือก</p>
-                <p className="text-[11px] text-red-800 mt-0.5">
-                  ระบบเปิดให้บริการเฉพาะช่วงรับสมัครและประกาศผล ({settings.admissionPeriodDates || 'มีนาคม - กรกฎาคม'}) หากมีความจำเป็นเร่งด่วนสำหรับการขอ Visa กรุณาติดต่อสำนักงานคณะพุทธศาสตร์โดยตรง
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-emerald-800">
-              สำหรับผู้ผ่านการคัดเลือกเข้าเป็นนิสิตใหม่ที่ยังไม่มีรหัสนิสิต กรุณากรอก <strong>เลขที่ใบสมัคร</strong> คู่กับ <strong>เลขบัตรประชาชน หรือ เลขหนังสือเดินทาง</strong> เพื่อยืนยันสิทธิ์ก่อนยื่นคำร้อง
-            </p>
-          )}
-
-          {/* Verification Box */}
-          {settings.admissionPeriodOpen !== false && !candidateVerified && (
-            <div className="bg-white p-4 rounded-xl border border-emerald-200 space-y-3 shadow-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    เลขที่ใบสมัคร (Application No.) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="เช่น APP-69001, APP-69002 หรือ 6901xxx"
-                    value={candidateAppNo}
-                    onChange={(e) => setCandidateAppNo(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-mono font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    เลขบัตรประชาชน / เลข Passport <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="กรอกเลขประจำตัวตามใบสมัคร"
-                    value={candidateIdCard}
-                    onChange={(e) => setCandidateIdCard(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-mono font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {candidateVerifyError && (
-                <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                  <span>{candidateVerifyError}</span>
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleVerifyCandidate}
-                  disabled={candidateVerifying}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-                >
-                  {candidateVerifying ? (
-                    <>
-                      <Clock className="w-3.5 h-3.5 animate-spin" /> กำลังตรวจสอบ...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="w-3.5 h-3.5" /> ตรวจสอบสิทธิ์ผู้ผ่านการคัดเลือก
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Candidate Verified Badge */}
-          {candidateVerified && (
-            <div className="p-3.5 rounded-xl bg-white border border-emerald-300 text-xs text-emerald-950 flex items-center justify-between shadow-xs">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                <div>
-                  <span className="font-extrabold text-sm">{candidateVerified.fullName}</span>
-                  <div className="text-[11px] text-emerald-800 mt-0.5">
-                    เลขที่ใบสมัคร: <strong className="font-mono">{candidateVerified.applicationNo}</strong> | หลักสูตร: {candidateVerified.degreeLevel} สาขาวิชา {candidateVerified.major}
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setCandidateVerified(null);
-                  setCandidateAppNo('');
-                  setCandidateIdCard('');
-                }}
-                className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
-              >
-                เปลี่ยนผู้สมัคร
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      <CertCandidateGateSection
+        currentUser={currentUser}
+        selectedCert={selectedCert}
+        setSelectedCert={setSelectedCert}
+        certTypes={certTypes}
+        cardAudienceFilter={cardAudienceFilter}
+        setCardAudienceFilter={setCardAudienceFilter}
+        settings={settings}
+        candidateVerified={candidateVerified}
+        setCandidateVerified={setCandidateVerified}
+        candidateAppNo={candidateAppNo}
+        setCandidateAppNo={setCandidateAppNo}
+        candidateIdCard={candidateIdCard}
+        setCandidateIdCard={setCandidateIdCard}
+        candidateVerifyError={candidateVerifyError}
+        candidateVerifying={candidateVerifying}
+        onVerifyCandidate={handleVerifyCandidate}
+      />
 
       {/* FORM CONTAINER */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* IF STAFF CERTIFICATE: Show Staff & Faculty specific form */}
         {selectedCert?.targetAudience === 'STAFF' ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  ชื่อ - นามสกุล บุคลากร/อาจารย์ (Full Name) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="ชื่อ-นามสกุล และสมณศักดิ์ (ถ้ามี)"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  ตำแหน่งทางวิชาการ / บทบาทหน้าที่ <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={staffPosition}
-                  onChange={(e) => setStaffPosition(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                >
-                  <option value="อาจารย์ประจำหลักสูตร">อาจารย์ประจำหลักสูตร (Full-time Faculty)</option>
-                  <option value="อาจารย์พิเศษ">อาจารย์พิเศษ (Adjunct / Special Lecturer)</option>
-                  <option value="อาจารย์ผู้ช่วยสอน (TA)">อาจารย์ผู้ช่วยสอน (Teaching Assistant)</option>
-                  <option value="เจ้าหน้าที่บริหารงานทั่วไป">เจ้าหน้าที่บริหารงานทั่วไป (Officer)</option>
-                  <option value="นักวิชาการศึกษา">นักวิชาการศึกษา (Academic Officer)</option>
-                  <option value="ผู้บริหาร / คณบดี / รองคณบดี">ผู้บริหาร / คณบดี / รองคณบดี (Executive)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  สังกัด / ภาควิชา (Department) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="เช่น ภาควิชาพระพุทธศาสนา, สำนักงานคณบดี"
-                  value={staffDepartment}
-                  onChange={(e) => setStaffDepartment(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">อีเมลติดต่อ (Email)</label>
-                <input
-                  type="email"
-                  placeholder="อีเมลติดต่อกลับ"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">เบอร์โทรศัพท์ (Phone)</label>
-                <input
-                  type="text"
-                  placeholder="เบอร์โทรศัพท์ที่ติดต่อได้"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                วัตถุประสงค์ในการขอหนังสือรับรอง (Purpose) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="เช่น เพื่อประกอบการยื่นขอวีซ่า, ทำธุรกรรมธนาคาร, ประกอบการประเมินผลงานทางวิชาการ หรือการต่อสัญญา"
-                value={requestPurpose}
-                onChange={(e) => setRequestPurpose(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-              />
-            </div>
-          </div>
-        ) : (
+          <CertStaffFormSection
+            fullName={fullName}
+            setFullName={setFullName}
+            staffPosition={staffPosition}
+            setStaffPosition={setStaffPosition}
+            staffDepartment={staffDepartment}
+            setStaffDepartment={setStaffDepartment}
+            email={email}
+            setEmail={setEmail}
+            phone={phone}
+            setPhone={setPhone}
+            requestPurpose={requestPurpose}
+            setRequestPurpose={setRequestPurpose}
+          />
+                ) : (
           /* STUDENT / CANDIDATE FORM */
           <div className="space-y-4">
             {/* Basic Student Info */}
@@ -1090,176 +850,16 @@ export function CertificateRequestForm({
               />
             </div>
 
-            {/* Registration Slip & Contact Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* 1. แนบเอกสารสำเนาใบลงทะเบียนเรียน */}
-              <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-200/90 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                    <FileCheck2 className="w-4 h-4 text-purple-700" />
-                    <span>แนบเอกสารสำเนาใบลงทะเบียนเรียน</span>
-                  </label>
-                  <span className="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
-                    รูปภาพ / PDF
-                  </span>
-                </div>
-
-                <p className="text-[11px] text-slate-600">
-                  ใบเสร็จรับเงิน หรือหลักฐานยืนยันการลงทะเบียนเรียนในภาคการศึกษาปัจจุบัน
-                </p>
-
-                {enrollmentSlipUrl ? (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-emerald-200 shadow-sm text-xs">
-                    <div className="flex items-center gap-2 truncate">
-                      <FileCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <a
-                        href={enrollmentSlipUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-bold text-emerald-800 underline truncate hover:text-emerald-900"
-                        title="คลิกเพื่อเปิดดูไฟล์ที่แนบ"
-                      >
-                        {enrollmentSlipUrl.toLowerCase().endsWith('.pdf')
-                          ? '📄 ดูไฟล์ PDF สำเนาลงเรียน'
-                          : '🖼️ ดูรูปภาพสำเนาลงเรียน'}
-                      </a>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEnrollmentSlipUrl('')}
-                      className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition cursor-pointer shrink-0 ml-2 shadow-xs"
-                    >
-                      ลบออก
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center gap-1 w-full p-3 rounded-xl border-2 border-dashed border-purple-300 bg-white hover:bg-purple-50 text-purple-700 text-xs font-bold transition cursor-pointer shadow-xs">
-                    <div className="flex items-center gap-1.5">
-                      <UploadCloud className="w-4 h-4 text-purple-600" />
-                      <span>
-                        {uploadingDoc === 'enrollment'
-                          ? 'กำลังอัปโหลดไฟล์...'
-                          : 'คลิกเลือกไฟล์สำเนาลงเรียน'}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-normal text-slate-500">
-                      (รองรับไฟล์ JPG, PNG, WEBP หรือ PDF)
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleFileUpload(f, 'enrollment');
-                      }}
-                    />
-                  </label>
-                )}
-              </div>
-
-              {/* 2. อีเมลสำหรับรับแจ้งเตือนผลคำร้อง */}
-              <div className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-200/90 space-y-2">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    อีเมลติดต่อ (Email for Notifications):
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="student@mcu.ac.th"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-                  />
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    สำหรับรับการแจ้งเตือนความคืบหน้าและผลการอนุมัติคำร้อง
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Supporting Documents Section (เอกสารประกอบคำร้องเพิ่มเติม) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-purple-50/50 border border-purple-200/80 space-y-4">
-              <div className="flex items-center justify-between border-b border-purple-200/60 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <Paperclip className="w-4 h-4 text-purple-700" />
-                  <span className="font-bold text-xs sm:text-sm text-slate-900">
-                    แนบเอกสารประกอบคำร้องเพิ่มเติม (Additional Documents)
-                  </span>
-                </div>
-                <span className="text-[11px] text-purple-700 font-semibold">
-                  รองรับไฟล์ JPG, PNG หรือ PDF
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Document 1: สำเนาหนังสือเดินทาง */}
-                <div className="p-3 bg-white rounded-xl border border-purple-100 shadow-sm space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Paperclip className="w-3.5 h-3.5 text-sky-600" />
-                      สำเนาพาสปอร์ต / บัตร ปชช.
-                    </span>
-                    {passportCopyUrl && (
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                        แนบแล้ว ✓
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    หน้าที่มีรูปถ่ายและวันหมดอายุชัดเจน (รูปภาพ หรือ PDF)
-                  </p>
-                  {passportCopyUrl ? (
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-sky-50/60 border border-sky-200 text-xs">
-                      <a
-                        href={passportCopyUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sky-800 underline truncate max-w-[150px] font-medium"
-                      >
-                        {passportCopyUrl.toLowerCase().endsWith('.pdf') ? '📄 ดูไฟล์ PDF พาสปอร์ต' : '🖼️ ดูภาพพาสปอร์ต'}
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => setPassportCopyUrl('')}
-                        className="text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
-                      >
-                        ลบ
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-dashed border-sky-300 text-sky-700 hover:bg-sky-50 text-xs font-bold cursor-pointer transition">
-                      <UploadCloud className="w-4 h-4" />
-                      <span>{uploadingDoc === 'passport' ? 'กำลังอัปโหลด...' : 'เลือกไฟล์พาสปอร์ต'}</span>
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="hidden"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) handleFileUpload(f, 'passport');
-                        }}
-                      />
-                    </label>
-                  )}
-                </div>
-
-                {/* Photo Instruction Notice Box (ไม่ต้องอัปโหลดรูป นำมาติดเอง) */}
-                <div className="p-3.5 bg-amber-50/80 rounded-xl border border-amber-200/90 shadow-sm space-y-1.5 flex items-start gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                    <Camera className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="space-y-1 text-xs">
-                    <span className="font-extrabold text-amber-950 block">
-                      📸 รูปถ่ายขนาด 1.5 - 2 นิ้ว (นำมาติดเอง):
-                    </span>
-                    <p className="text-[11px] text-amber-900 leading-relaxed">
-                      <strong>ไม่ต้องอัปโหลดรูปถ่ายในระบบ</strong> ให้นิสิตเตรียมรูปถ่ายขนาด 1.5 - 2 นิ้ว (หน้าตรง สวมชุดสุภาพ) มาติดด้วยตนเองบนเอกสารฉบับจริงในวันมารับหนังสือ ณ สำนักงานคณะ
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <CertStudentAttachmentsSection
+              enrollmentSlipUrl={enrollmentSlipUrl}
+              setEnrollmentSlipUrl={setEnrollmentSlipUrl}
+              passportCopyUrl={passportCopyUrl}
+              setPassportCopyUrl={setPassportCopyUrl}
+              email={email}
+              setEmail={setEmail}
+              uploadingDoc={uploadingDoc}
+              onFileUpload={handleFileUpload}
+            />
           </div>
         )}
 
