@@ -37,6 +37,42 @@ export interface CertificateRequestFormProps {
   onBackToSelect?: () => void;
 }
 
+function toDateInputValue(raw?: string): string {
+  if (!raw) return '';
+  const clean = raw.trim();
+  if (!clean) return '';
+
+  const isoMatch = clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (isoMatch) {
+    let year = parseInt(isoMatch[1], 10);
+    if (year > 2400) year -= 543;
+    const month = String(parseInt(isoMatch[2], 10)).padStart(2, '0');
+    const day = String(parseInt(isoMatch[3], 10)).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  const dmyMatch = clean.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmyMatch) {
+    let year = parseInt(dmyMatch[3], 10);
+    if (year > 2400) year -= 543;
+    const month = String(parseInt(dmyMatch[2], 10)).padStart(2, '0');
+    const day = String(parseInt(dmyMatch[1], 10)).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  const normalized = clean.replace(/\bDCE\b/gi, 'DEC');
+  const parsed = new Date(normalized);
+  if (!isNaN(parsed.getTime())) {
+    let year = parsed.getFullYear();
+    if (year > 2400) year -= 543;
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return '';
+}
+
 export function CertificateRequestForm({
   currentUser,
   selectedCert,
@@ -49,10 +85,19 @@ export function CertificateRequestForm({
   onSuccess,
   onBackToSelect,
 }: CertificateRequestFormProps) {
-  const isStaffUser = useMemo(() => {
+  const isStudentUser = useMemo(() => {
     if (!currentUser) return false;
-    return ['INSTRUCTOR', 'OFFICER', 'ADMIN', 'SUPER_ADMIN'].includes(currentUser.role);
+    return (
+      currentUser.role === 'STUDENT' ||
+      Boolean(currentUser.studentCode) ||
+      /^\d{5,12}(@mcu\.ac\.th)?$/i.test((currentUser.email || '').trim())
+    );
   }, [currentUser]);
+
+  const isStaffUser = useMemo(() => {
+    if (!currentUser || isStudentUser) return false;
+    return ['INSTRUCTOR', 'OFFICER', 'ADMIN', 'SUPER_ADMIN'].includes(currentUser.role);
+  }, [currentUser, isStudentUser]);
 
   // Form Fields
   const [studentCode, setStudentCode] = useState('');
@@ -129,9 +174,15 @@ export function CertificateRequestForm({
   useEffect(() => {
     if (!currentUser) return;
 
-    if (currentUser.role === 'STUDENT' && currentUser.studentCode) {
-      setStudentCode(currentUser.studentCode);
-      const found = students.find((s) => s.studentCode === currentUser.studentCode);
+    const resolvedStudentCode =
+      currentUser.studentCode ||
+      (/^\d{5,12}(@mcu\.ac\.th)?$/i.test((currentUser.email || '').trim())
+        ? (currentUser.email || '').replace(/@mcu\.ac\.th$/i, '').trim()
+        : '');
+
+    if (isStudentUser && resolvedStudentCode) {
+      setStudentCode(resolvedStudentCode);
+      const found = students.find((s) => s.studentCode === resolvedStudentCode);
       if (found) {
         const studentFullName = found.fullName || `${found.title || ''} ${found.firstName} ${found.lastName}`.trim();
         setFullName(studentFullName);
@@ -146,9 +197,9 @@ export function CertificateRequestForm({
         if (found.nationality) setNationality(found.nationality);
         if (found.country) setCountry(found.country);
         if (found.passportNo) setPassportNo(found.passportNo);
-        if (found.passportExpireDate) setPassportExpireDate(found.passportExpireDate);
+        if (found.passportExpireDate) setPassportExpireDate(toDateInputValue(found.passportExpireDate));
         if (found.visaType) setVisaType(found.visaType);
-        if (found.visaExpireDate) setVisaExpireDate(found.visaExpireDate);
+        if (found.visaExpireDate) setVisaExpireDate(toDateInputValue(found.visaExpireDate));
         if (found.gpa) setGpa(String(found.gpa));
         if (found.address) setAddress(found.address);
         if (found.subdistrict) setSubdistrict(found.subdistrict);
@@ -256,9 +307,9 @@ export function CertificateRequestForm({
       if (found.nationality) setNationality(found.nationality);
       if (found.country) setCountry(found.country);
       if (found.passportNo) setPassportNo(found.passportNo);
-      if (found.passportExpireDate) setPassportExpireDate(found.passportExpireDate);
+      if (found.passportExpireDate) setPassportExpireDate(toDateInputValue(found.passportExpireDate));
       if (found.visaType) setVisaType(found.visaType);
-      if (found.visaExpireDate) setVisaExpireDate(found.visaExpireDate);
+      if (found.visaExpireDate) setVisaExpireDate(toDateInputValue(found.visaExpireDate));
       if (found.gpa) setGpa(String(found.gpa));
       if (found.address) setAddress(found.address);
       if (found.subdistrict) setSubdistrict(found.subdistrict);
@@ -916,11 +967,10 @@ export function CertificateRequestForm({
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">วันหมดอายุ Passport</label>
                   <input
-                    type="text"
-                    placeholder="YYYY-MM-DD"
+                    type="date"
                     value={passportExpireDate}
                     onChange={(e) => setPassportExpireDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-purple-500"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-purple-500 cursor-pointer"
                   />
                 </div>
 
@@ -938,11 +988,10 @@ export function CertificateRequestForm({
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">วันหมดอายุวีซ่า</label>
                   <input
-                    type="text"
-                    placeholder="เช่น 28 DEC 2026 หรือ 2026-12-28"
+                    type="date"
                     value={visaExpireDate}
                     onChange={(e) => setVisaExpireDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-purple-500"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-purple-500 cursor-pointer"
                   />
                 </div>
               </div>

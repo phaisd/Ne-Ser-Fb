@@ -312,7 +312,13 @@ export default function Navbar() {
   };
 
   const isAdmin = isAdminOrOfficer(currentUser);
-  const isStaffOrInstructor = Boolean(currentUser && currentUser.role !== 'STUDENT');
+  const isStudent = Boolean(
+    currentUser &&
+      (currentUser.role === 'STUDENT' ||
+        currentUser.studentCode ||
+        /^\d{5,12}(@mcu\.ac\.th)?$/i.test((currentUser.email || '').trim()))
+  );
+  const isStaffOrInstructor = Boolean(currentUser && !isStudent);
 
   const publicNavItems = [
     { href: '/', label: t.navHome, icon: LayoutDashboard },
@@ -553,7 +559,7 @@ export default function Navbar() {
                         {/* User Header */}
                         <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/70 -mt-2 mb-1.5 rounded-t-2xl">
                           <div className="text-[10px] font-bold text-orange-600 uppercase flex items-center gap-1">
-                            <span>{isAdmin ? '👑 ผู้ดูแลระบบ' : '🔒 อาจารย์ผู้สอน'}</span>
+                            <span>{isAdmin ? '👑 ผู้ดูแลระบบ' : isStudent ? '🎓 นิสิต' : '🔒 อาจารย์ผู้สอน'}</span>
                           </div>
                           <div className="text-xs font-bold text-slate-900 truncate mt-0.5">
                             {currentUser.name}
@@ -586,7 +592,7 @@ export default function Navbar() {
                             className="w-full px-3 py-2 text-left rounded-xl hover:bg-orange-50 hover:text-orange-900 flex items-center gap-2.5 transition cursor-pointer"
                           >
                             <User className="w-4 h-4 text-orange-600" />
-                            <span>แก้ไขโปรไฟล์อาจารย์</span>
+                            <span>{isStudent ? 'แก้ไขโปรไฟล์นิสิต' : 'แก้ไขโปรไฟล์อาจารย์'}</span>
                           </button>
 
                           <button
@@ -671,7 +677,7 @@ export default function Navbar() {
                 <Lock className="w-3.5 h-3.5 text-emerald-400" />
                 <span>หลังบ้าน</span>
               </Link>
-            ) : currentUser ? (
+            ) : isStaffOrInstructor ? (
               <Link
                 href="/attendance"
                 className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-md transition"
@@ -778,7 +784,7 @@ export default function Navbar() {
                     <Lock className="w-4 h-4" />
                     <span>ระบบ Admin</span>
                   </Link>
-                ) : currentUser ? (
+                ) : isStaffOrInstructor ? (
                   <Link
                     href="/attendance"
                     onClick={() => setIsMobileMenuOpen(false)}

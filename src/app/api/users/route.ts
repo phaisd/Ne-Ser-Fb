@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { apiErrorResponse } from '@/lib/api-error';
 import {
   getInstructorAccounts,
+  getStudents,
+  updateStudent,
+  updateStudentPassword,
   scanTimetableInstructors,
   batchProvisionInstructors,
   batchImportInstructors,
@@ -118,6 +121,35 @@ export async function POST(request: Request) {
 
       const updated = await updateUserProfile(targetId, rawUpdates);
       if (!updated) {
+        // Fallback: check if user is a student in student directory
+        const cleanCode = String(targetId).trim().toLowerCase().replace(/@mcu\.ac\.th$/i, '');
+        const students = await getStudents();
+        const foundStudent = students.find(
+          (s) =>
+            (s.studentCode || '').toLowerCase() === cleanCode ||
+            (s.email || '').toLowerCase() === String(targetId).trim().toLowerCase()
+        );
+        if (foundStudent) {
+          const updatedStudent = await updateStudent(foundStudent.studentCode, {
+            fullName: rawUpdates.name || foundStudent.fullName,
+            email: rawUpdates.email || foundStudent.email,
+            department: rawUpdates.department || foundStudent.department,
+          });
+          if (updatedStudent) {
+            return NextResponse.json({
+              success: true,
+              data: {
+                id: updatedStudent.studentCode,
+                studentCode: updatedStudent.studentCode,
+                name: updatedStudent.fullName,
+                email: updatedStudent.email || `${updatedStudent.studentCode}@mcu.ac.th`,
+                department: updatedStudent.department || updatedStudent.major,
+                role: 'STUDENT',
+              },
+              message: 'แก้ไขข้อมูลนิสิตสำเร็จ',
+            });
+          }
+        }
         return NextResponse.json({ success: false, error: 'ไม่พบผู้ใช้ที่ระบุ' }, { status: 404 });
       }
 
@@ -160,7 +192,10 @@ export async function POST(request: Request) {
         }
       }
 
-      const ok = await updateInstructorPassword(targetId, newPassword);
+      let ok = await updateInstructorPassword(targetId, newPassword);
+      if (!ok) {
+        ok = await updateStudentPassword(targetId, newPassword);
+      }
       if (!ok) {
         return NextResponse.json({ success: false, error: 'ไม่พบผู้ใช้ หรือไม่สามารถเปลี่ยนรหัสผ่านได้' }, { status: 404 });
       }

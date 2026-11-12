@@ -186,6 +186,12 @@ export default function UserProfileModal({
   if (!isOpen || !currentUser) return null;
 
   const isAdmin = isAdminOrOfficer(currentUser);
+  const isStudent = Boolean(
+    currentUser &&
+      (currentUser.role === 'STUDENT' ||
+        currentUser.studentCode ||
+        /^\d{5,12}(@mcu\.ac\.th)?$/i.test((currentUser.email || '').trim()))
+  );
 
   // Format timestamp in Thai
   const formatDateTime = (iso: string) => {
@@ -340,7 +346,7 @@ export default function UserProfileModal({
                   ? 'bg-purple-500/20 border-purple-400/30 text-purple-200'
                   : 'bg-emerald-500/20 border-emerald-400/30 text-emerald-300'
               }`}>
-                {isAdmin ? '👑' : (currentUser.name ? currentUser.name.charAt(0) : 'อ')}
+                {isAdmin ? '👑' : (currentUser.name ? currentUser.name.charAt(0) : isStudent ? 'น' : 'อ')}
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -349,7 +355,7 @@ export default function UserProfileModal({
                       ? 'bg-purple-500/30 text-purple-200 border-purple-400/30'
                       : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/30'
                   }`}>
-                    {isAdmin ? '👑 สิทธิ์ผู้ดูแลระบบ' : `🔒 ${instructorType || 'อาจารย์ประจำ'}`}
+                    {isAdmin ? '👑 สิทธิ์ผู้ดูแลระบบ' : isStudent ? '🎓 นิสิต' : `🔒 ${instructorType || 'อาจารย์ประจำ'}`}
                   </span>
                 </div>
                 <h3 className="text-base font-bold text-white mt-1 truncate max-w-[280px]">
@@ -492,7 +498,9 @@ export default function UserProfileModal({
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                  * อาจารย์สามารถระบุอีเมล มจร (@mcu.ac.th) จริงของท่านได้ (ระบบจะจดจำอีเมลเดิมไว้ในฐานข้อมูลเพื่อเชื่อมโยงตารางสอนให้อัตโนมัติ)
+                  {isStudent
+                    ? '* นิสิตสามารถระบุอีเมล มจร (@mcu.ac.th) หรืออีเมลติดต่อของท่านได้'
+                    : '* อาจารย์สามารถระบุอีเมล มจร (@mcu.ac.th) จริงของท่านได้ (ระบบจะจดจำอีเมลเดิมไว้ในฐานข้อมูลเพื่อเชื่อมโยงตารางสอนให้อัตโนมัติ)'}
                 </p>
               </div>
 
@@ -506,7 +514,7 @@ export default function UserProfileModal({
                     type="email"
                     value={gmail}
                     onChange={(e) => setGmail(e.target.value)}
-                    placeholder="เช่น teacher@gmail.com"
+                    placeholder={isStudent ? 'เช่น student@gmail.com' : 'เช่น teacher@gmail.com'}
                     className="w-full pl-9 pr-3 py-2.5 text-xs bg-white text-slate-900 font-mono font-medium border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition placeholder:text-slate-400"
                   />
                 </div>
@@ -517,7 +525,7 @@ export default function UserProfileModal({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  สังกัด / ภาควิชา
+                  {isStudent ? 'สาขาวิชา / คณะ' : 'สังกัด / ภาควิชา'}
                 </label>
                 <div className="relative">
                   <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -533,23 +541,25 @@ export default function UserProfileModal({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>ประเภทอาจารย์ผู้สอน (จากระบบจัดการผู้ใช้)</span>
+                  <span>{isStudent ? 'สถานะผู้ใช้งาน (ระบบทะเบียนนิสิต)' : 'ประเภทอาจารย์ผู้สอน (จากระบบจัดการผู้ใช้)'}</span>
                   <span className="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 font-medium">
-                    {instructorType}
+                    {isStudent ? 'นิสิต (STUDENT)' : instructorType}
                   </span>
                 </label>
                 <div className="relative">
                   <UserCheck className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    value={instructorType}
+                    value={isStudent ? `นิสิต (${currentUser.studentCode || (currentUser.email || '').replace(/@mcu\.ac\.th$/i, '')})` : instructorType}
                     disabled
                     readOnly
                     className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-100 text-slate-700 font-medium border border-slate-200 rounded-xl cursor-not-allowed"
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  * ข้อมูลทางการจากระบบจัดการผู้ใช้และบทบาท (เช่น อาจารย์ประจำ, อาจารย์พิเศษ)
+                  {isStudent
+                    ? '* ข้อมูลสถานะนิสิตจากระบบทะเบียนนิสิต คณะพุทธศาสตร์'
+                    : '* ข้อมูลทางการจากระบบจัดการผู้ใช้และบทบาท (เช่น อาจารย์ประจำ, อาจารย์พิเศษ)'}
                 </p>
               </div>
 
