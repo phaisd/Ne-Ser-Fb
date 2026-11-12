@@ -127,10 +127,12 @@ export function AdminCertificatePreviewModal({
     const effAge = ageVal !== undefined ? ageVal : previewAge;
     const effVassa = vassaVal !== undefined ? vassaVal : previewVassa;
 
-    const ageStr = effAge ? `อายุ ${fmtNum(effAge)} ปี ` : '';
-    const vassaStr = effVassa ? `พรรษา ${fmtNum(effVassa)} ` : '';
+    const cleanAge = effAge ? String(effAge).replace(/\s*ปี$/g, '').trim() : '';
+    const cleanVassa = effVassa ? String(effVassa).replace(/\s*พรรษา$/g, '').trim() : '';
+    const ageStr = cleanAge && cleanAge !== '-' ? `อายุ ${fmtNum(cleanAge)} ปี ` : '';
+    const vassaStr = cleanVassa && cleanVassa !== '-' ? `พรรษา ${fmtNum(cleanVassa)} ` : '';
 
-    return `โดยหนังสือนี้ขอรับรองว่า ${sanitizeName(previewRequest.fullName)} ${ageStr}${vassaStr}สัญชาติ ${previewRequest.nationality || 'ไทย'} ${previewRequest.country && previewRequest.country !== 'Thailand' ? `ประเทศ ${previewRequest.country} ` : ''}${previewRequest.passportNo ? `ถือหนังสือเดินทางเลขที่ ${previewRequest.passportNo} และวีซ่าประเภท ${previewRequest.visaType || 'คนอยู่ชั่วคราว (Non-Immigrant Visa)'} ` : ''}เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร${previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} (ระดับ${previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร ${fmtNum(4)} ปี) ชั้นปีที่ ${fmtNum(previewRequest.studentCode.substring(0, 2) ? '2' : '1')} สาขาวิชา ${previewRequest.major || 'พระพุทธศาสนา'} (${previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai' ? 'ภาคภาษาไทย' : 'ภาคภาษาอังกฤษ'}) มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย รหัสประจำตัวนิสิต ${fmtNum(previewRequest.studentCode)} เพื่อเป็นหลักฐาน สำหรับ ${previewRequest.requestPurpose || previewRequest.certType} จึงออกหนังสือนี้ไว้เป็นสำคัญ`;
+    return `โดยหนังสือนี้ขอรับรองว่า ${sanitizeName(previewRequest.monasticName || previewRequest.fullName)} ${ageStr}${vassaStr}สัญชาติ ${previewRequest.nationality || 'ไทย'} ${previewRequest.country && previewRequest.country !== 'Thailand' ? `ประเทศ ${previewRequest.country} ` : ''}${previewRequest.passportNo ? `ถือหนังสือเดินทางเลขที่ ${previewRequest.passportNo} และวีซ่าประเภท ${previewRequest.visaType || 'คนอยู่ชั่วคราว (Non-Immigrant Visa)'} ` : ''}เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร${previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} (ระดับ${previewRequest.degreeLevel || 'ปริญญาตรี'} หลักสูตร ${fmtNum(4)} ปี) ชั้นปีที่ ${fmtNum(previewRequest.studentCode.substring(0, 2) ? '2' : '1')} สาขาวิชา ${previewRequest.major || 'พระพุทธศาสนา'} (${previewRequest.nationality === 'ไทย' || previewRequest.nationality === 'Thai' ? 'ภาคภาษาไทย' : 'ภาคภาษาอังกฤษ'}) มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย รหัสประจำตัวนิสิต ${fmtNum(previewRequest.studentCode)} เพื่อเป็นหลักฐาน สำหรับ ${previewRequest.requestPurpose || previewRequest.certType} จึงออกหนังสือนี้ไว้เป็นสำคัญ`;
   };
 
   const computeNextDocNo = (): string => {

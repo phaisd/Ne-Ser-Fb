@@ -13,204 +13,16 @@ import {
   Download,
 } from 'lucide-react';
 import { Student } from '@/types';
+import {
+  parseCSVToStudents,
+  downloadSampleStudentsCSV,
+} from '@/components/students/studentCsvParser';
 
 interface StudentImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   existingStudents: Student[];
   onSuccess: () => void;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Robust CSV / TSV / Excel text parser
-// ─────────────────────────────────────────────────────────────────────────────
-function parseCSVToStudents(rawText: string): Partial<Student>[] {
-  const text = rawText.trim();
-  if (!text) return [];
-
-  const lines: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const next = text[i + 1];
-
-    if (char === '"' || char === "'") {
-      if (inQuotes && next === char) {
-        current += char;
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if ((char === '\r' && next === '\n') || char === '\n' || char === '\r') {
-      if (!inQuotes) {
-        lines.push(current);
-        current = '';
-        if (char === '\r' && next === '\n') i++;
-      } else {
-        current += '\n';
-      }
-    } else {
-      current += char;
-    }
-  }
-  if (current.trim()) lines.push(current);
-  if (lines.length < 2) return [];
-
-  const headerLine = lines[0].replace(/^\uFEFF/, '');
-  const delimiter = headerLine.includes('\t') ? '\t' : ',';
-
-  const parseLine = (line: string): string[] => {
-    const cols: string[] = [];
-    let col = '';
-    let inQ = false;
-    for (let j = 0; j < line.length; j++) {
-      const c = line[j];
-      const n = line[j + 1];
-      if (c === '"') {
-        if (inQ && n === '"') {
-          col += '"';
-          j++;
-        } else {
-          inQ = !inQ;
-        }
-      } else if (c === delimiter && !inQ) {
-        cols.push(col.trim());
-        col = '';
-      } else {
-        col += c;
-      }
-    }
-    cols.push(col.trim());
-    return cols;
-  };
-
-  const headers = parseLine(headerLine).map((h) => h.toLowerCase().replace(/[\s\-_]/g, ''));
-  const parsedList: Partial<Student>[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const values = parseLine(lines[i]);
-    const obj: Record<string, string> = {};
-
-    headers.forEach((h, idx) => {
-      obj[h] = values[idx] !== undefined ? values[idx] : '';
-    });
-
-    const studentCode = (
-      obj['studentcode'] ||
-      obj['รหัสนิสิต'] ||
-      obj['รหัส'] ||
-      obj['code'] ||
-      obj['id'] ||
-      values[0] ||
-      ''
-    ).trim();
-
-    if (!studentCode) continue;
-
-    const fullName = (
-      obj['name'] ||
-      obj['ชื่อนามสกุล'] ||
-      obj['ชื่อสกุล'] ||
-      obj['ชื่อ'] ||
-      obj['fullname'] ||
-      values[1] ||
-      ''
-    ).trim();
-
-    const nameEn = (
-      obj['nameen'] ||
-      obj['englishname'] ||
-      obj['ชื่อภาษาอังกฤษ'] ||
-      ''
-    ).trim();
-
-    const programRaw = (
-      obj['program'] ||
-      obj['programtype'] ||
-      obj['หลักสูตร'] ||
-      values[2] ||
-      ''
-    ).toUpperCase();
-
-    const programType =
-      programRaw.includes('ENG') || programRaw.includes('INTER') || programRaw.includes('อังกฤษ')
-        ? 'ENGLISH'
-        : 'THAI';
-
-    const major = (
-      obj['major'] ||
-      obj['สาขาวิชา'] ||
-      obj['สาขา'] ||
-      values[3] ||
-      ''
-    ).trim();
-
-    const faculty = (
-      obj['faculty'] ||
-      obj['คณะ'] ||
-      'คณะพุทธศาสตร์'
-    ).trim();
-
-    const yearLevelRaw = (
-      obj['yearlevel'] ||
-      obj['year'] ||
-      obj['ชั้นปี'] ||
-      values[4] ||
-      ''
-    ).replace(/\D/g, '');
-
-    const yearLevel = yearLevelRaw ? parseInt(yearLevelRaw, 10) : undefined;
-
-    const status = (
-      obj['status'] ||
-      obj['สถานภาพ'] ||
-      'กำลังศึกษา'
-    ).trim();
-
-    const passportNo = (
-      obj['passport'] ||
-      obj['passportno'] ||
-      obj['เลขพาสปอร์ต'] ||
-      obj['nationalid'] ||
-      obj['บัตรประชาชน'] ||
-      ''
-    ).trim();
-
-    const nationality = (
-      obj['nationality'] ||
-      obj['สัญชาติ'] ||
-      (programType === 'ENGLISH' ? 'ต่างชาติ' : 'ไทย')
-    ).trim();
-
-    const gpaRaw = (
-      obj['gpa'] ||
-      obj['เกรดเฉลี่ย'] ||
-      obj['เกรด'] ||
-      ''
-    ).trim();
-    const gpa = gpaRaw ? parseFloat(gpaRaw) : undefined;
-
-    parsedList.push({
-      studentCode,
-      firstName: fullName,
-      lastName: '',
-      title: '',
-      fullName,
-      programType,
-      major: major || undefined,
-      faculty,
-      yearLevel: yearLevel || undefined,
-      studyStatus: status || undefined,
-      passportNo: passportNo || undefined,
-      nationality: nationality || undefined,
-      gpa: !isNaN(gpa as number) ? gpa : undefined,
-    });
-  }
-
-  return parsedList;
 }
 
 export function StudentImportModal({
@@ -286,20 +98,9 @@ export function StudentImportModal({
     }
   };
 
-  // Download Sample CSV Template
+  // Download Sample CSV Template (Unified with Export CSV structure)
   const handleDownloadSampleCsv = () => {
-    const sampleHeaders = 'รหัสนิสิต,ชื่อ-สกุล,หลักสูตร,สาขาวิชา,คณะ,ชั้นปี,สถานภาพ,สัญชาติ,เกรดเฉลี่ย (GPA)';
-    const sampleRow1 = '6801502001,สามเณร สุรศักดิ์ ใจดี,THAI,พระพุทธศาสนา,คณะพุทธศาสตร์,1,กำลังศึกษา,ไทย,3.50';
-    const sampleRow2 = '6801502002,Ven. Dhammapala,ENGLISH,พระพุทธศาสนา,คณะพุทธศาสตร์,2,กำลังศึกษา,Myanmar,3.75';
-    const csvContent = '\uFEFF' + [sampleHeaders, sampleRow1, sampleRow2].join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'sample_students_template.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadSampleStudentsCSV('sample_students_template.csv');
   };
 
   return (
@@ -381,8 +182,8 @@ export function StudentImportModal({
               <div className="text-sm font-bold text-slate-800">
                 คลิกเพื่อเลือกไฟล์ CSV หรือส่งออกจาก Excel (.csv, .tsv, .txt)
               </div>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                รองรับหัวคอลัมน์มาตรฐาน: รหัสนิสิต, ชื่อ-สกุล, หลักสูตร, สาขาวิชา, ชั้นปี, สัญชาติ, Passport ฯลฯ
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                รองรับไฟล์ที่ส่งออกจากระบบโดยตรง: รหัสนิสิต, คำนำหน้า, ชื่อ, นามสกุล, ระดับการศึกษา (ปริญญาตรี/โท/เอก/ใบประกาศนียบัตร), หลักสูตร, สาขาวิชา, ชั้นปี, สัญชาติ, Passport, GPA, ที่อยู่, อีเมล
               </p>
             </div>
           ) : (
@@ -394,7 +195,7 @@ export function StudentImportModal({
                 rows={6}
                 value={rawText}
                 onChange={(e) => handlePasteChange(e.target.value)}
-                placeholder={`รหัสนิสิต\tชื่อ-สกุล\tหลักสูตร\tสาขาวิชา\n6801502001\tพระสมชาย\tTHAI\tพระพุทธศาสนา\n6801502002\tVen. Dhammapala\tENGLISH\tพระพุทธศาสนา`}
+                placeholder={`รหัสนิสิต\tคำนำหน้า\tชื่อ\tนามสกุล\tระดับการศึกษา\tหลักสูตร\tสาขาวิชา\tชั้นปี\n6801502001\tพระ\tสมชาย\tใจดี\tปริญญาตรี\tRegular\tพระพุทธศาสนา\t1\n6801502002\tVen.\tDhammapala\t\tปริญญาโท\tInternational\tพระพุทธศาสนา\t2`}
                 className="w-full font-mono text-xs p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
               />
             </div>
@@ -451,6 +252,7 @@ export function StudentImportModal({
                       <th className="p-2 w-10 text-center">#</th>
                       <th className="p-2">รหัสนิสิต</th>
                       <th className="p-2">ชื่อ - สกุล</th>
+                      <th className="p-2">ระดับการศึกษา</th>
                       <th className="p-2">หลักสูตร</th>
                       <th className="p-2">สาขาวิชา</th>
                       <th className="p-2">ชั้นปี</th>
@@ -459,21 +261,23 @@ export function StudentImportModal({
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {parsedList.slice(0, 100).map((item, idx) => {
-                      const exists = existingStudents.some((s) => s.studentCode === item.studentCode);
+                      const existing = existingStudents.find((s) => s.studentCode === item.studentCode);
+                      const exists = Boolean(existing);
                       return (
                         <tr key={idx} className="hover:bg-slate-50">
                           <td className="p-2 text-center text-slate-400 font-mono">{idx + 1}</td>
                           <td className="p-2 font-mono font-bold text-slate-800">{item.studentCode}</td>
-                          <td className="p-2 font-medium">{item.firstName}</td>
+                          <td className="p-2 font-medium">{item.fullName || item.firstName || existing?.fullName || '-'}</td>
+                          <td className="p-2 text-slate-700 font-semibold">{item.degree || existing?.degree || 'ปริญญาตรี'}</td>
                           <td className="p-2">
                             <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                               item.programType === 'ENGLISH' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'
                             }`}>
-                              {item.programType || 'THAI'}
+                              {item.programType === 'ENGLISH' ? 'International' : 'Regular'}
                             </span>
                           </td>
-                          <td className="p-2 text-slate-600">{item.major || '-'}</td>
-                          <td className="p-2 font-mono">{item.yearLevel ? `ปี ${item.yearLevel}` : '-'}</td>
+                          <td className="p-2 text-slate-600">{item.major || existing?.major || '-'}</td>
+                          <td className="p-2 font-mono">{item.yearLevel ? `ปี ${item.yearLevel}` : (existing?.yearLevel ? `ปี ${existing.yearLevel}` : '-')}</td>
                           <td className="p-2 text-center">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               exists

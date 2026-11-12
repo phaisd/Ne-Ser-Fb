@@ -20,6 +20,7 @@ import {
 import { Student } from '@/types';
 import { maskPassport } from '@/lib/utils';
 import { StudentImportModal, ArchivedStudentsModal } from '../modals';
+import { downloadStudentsCSV } from '@/components/students/studentCsvParser';
 
 interface AdminStudentsTabProps {
   studentsCount: { total: number; thai: number; intl: number };
@@ -75,56 +76,7 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
 
   const exportStudentsToCSV = (list: Student[], filename: string) => {
-    const headers = [
-      'รหัสนิสิต',
-      'คำนำหน้า',
-      'ชื่อ',
-      'นามสกุล',
-      'หลักสูตร',
-      'สาขาวิชา',
-      'คณะ',
-      'ชั้นปี',
-      'สัญชาติ',
-      'เลขประจำตัวประชาชน/Passport',
-      'สถานภาพ',
-      'เกรดเฉลี่ยสะสม (GPA)',
-      'ที่อยู่',
-      'เบอร์โทรศัพท์',
-      'อีเมล',
-    ];
-
-    const rows = list.map((s) => [
-      `"${s.studentCode || ''}"`,
-      `"${s.title || ''}"`,
-      `"${s.firstName || ''}"`,
-      `"${s.lastName || ''}"`,
-      `"${s.programType === 'ENGLISH' ? 'International' : 'Regular'}"`,
-      `"${s.major || ''}"`,
-      `"${s.faculty || ''}"`,
-      `"${s.yearLevel || ''}"`,
-      `"${s.nationality || ''}"`,
-      `"${s.passportNo || ''}"`,
-      `"${s.studyStatus || ''}"`,
-      `"${s.gpa || ''}"`,
-      `"${(s.address || '').replace(/"/g, '""')}"`,
-      `"${s.phoneNumber || ''}"`,
-      `"${s.email || ''}"`,
-    ]);
-
-    const csvContent =
-      '\uFEFF' +
-      [
-        headers.join(','),
-        ...rows.map((row) => row.join(',')),
-      ].join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadStudentsCSV(list, filename);
     setIsExportMenuOpen(false);
   };
 
@@ -452,8 +404,8 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
                         >
                           {isEnglish ? '🌐 EN Program' : '🇹🇭 ภาคไทย'}
                         </span>
-                        <span className="ml-1.5 text-slate-500 text-[11px]">
-                          ปี {s.yearLevel || 1}
+                        <span className="ml-1.5 text-slate-600 font-semibold text-[11px]">
+                          {s.degree || 'ปริญญาตรี'} • ปี {s.yearLevel || 1}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-center">

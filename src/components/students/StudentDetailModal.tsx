@@ -168,10 +168,6 @@ export function StudentDetailModal({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-            <span>เบอร์โทร: {student.phoneNumber || 'ไม่มีข้อมูล'}</span>
-          </div>
-          <div className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-slate-400 shrink-0" />
             <span>อีเมล: {student.email || 'ไม่มีข้อมูล'}</span>
           </div>

@@ -156,7 +156,7 @@ export function CertCustomBodyEditor({
           {/* Name pill */}
           <div className="flex items-center gap-1 bg-purple-50 px-2 py-1 rounded-lg border border-purple-200 text-purple-900">
             <span className="font-bold text-[10px] text-purple-700">👤 ชื่อ:</span>
-            <span className="font-bold">{sanitizeName(previewRequest.fullName)}</span>
+            <span className="font-bold">{sanitizeName(previewRequest.monasticName || previewRequest.fullName)}</span>
           </div>
 
           {/* Age Input */}
@@ -251,9 +251,9 @@ export function CertCustomBodyEditor({
               {/* Name Badge */}
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded-lg bg-purple-100 text-purple-900 border border-purple-300 font-bold shadow-2xs"
-                title="ข้อมูลชื่อ-นามสกุล"
+                title="ข้อมูลชื่อ-นามสกุล (หรือ ชื่อ-ฉายา/นามสกุล ในบรรทัดแรก)"
               >
-                👤 {sanitizeName(previewRequest.fullName)}
+                👤 {sanitizeName(previewRequest.monasticName || previewRequest.fullName)}
               </span>
               {/* Age Badge */}
               {previewAge && (

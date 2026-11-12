@@ -176,6 +176,7 @@ export function StudentEditModal({
                   <option value="ปริญญาตรี">ปริญญาตรี</option>
                   <option value="ปริญญาโท">ปริญญาโท</option>
                   <option value="ปริญญาเอก">ปริญญาเอก</option>
+                  <option value="ใบประกาศนียบัตร">ใบประกาศนียบัตร</option>
                 </select>
               </div>
               <div>
@@ -327,10 +328,10 @@ export function StudentEditModal({
           <div className="space-y-4 pt-4 border-t border-slate-100">
             <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 text-blue-600">
               <MapPin className="w-4 h-4" />
-              3. ข้อมูลการติดต่อ ที่อยู่ และเกรด
+              3. ข้อมูลอีเมล ที่อยู่ และเกรดเฉลี่ย
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-slate-600 block mb-1">
                   เกรดเฉลี่ยสะสม (GPA)
@@ -340,20 +341,6 @@ export function StudentEditModal({
                   placeholder="เช่น 3.45"
                   value={editForm.gpa || ''}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, gpa: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-orange-500"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-600 block mb-1">
-                  เบอร์โทรศัพท์ (Phone)
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น 081-234-5678"
-                  value={editForm.phoneNumber || ''}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, phoneNumber: e.target.value }))
-                  }
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-orange-500"
                 />
               </div>

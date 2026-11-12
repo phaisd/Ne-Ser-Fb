@@ -3,6 +3,7 @@ export interface CertificateRequest {
   createdAt: string;
   studentCode: string;
   fullName: string;
+  monasticName?: string;
   certType: string;
   degreeLevel?: string;
   major?: string;
@@ -66,6 +67,7 @@ export interface CertTypeItem {
 export interface StudentLookupItem {
   studentCode: string;
   fullName?: string;
+  monasticName?: string;
   title?: string;
   firstName: string;
   lastName: string;

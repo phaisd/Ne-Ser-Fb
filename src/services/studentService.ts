@@ -166,6 +166,7 @@ export async function batchUpdateStudents(
         fullName: item.fullName || (item.firstName || item.lastName || item.title
           ? `${item.title || current.title || ''} ${item.firstName || current.firstName || ''} ${item.lastName || current.lastName || ''}`.trim()
           : current.fullName),
+        degree: item.degree || current.degree || 'ปริญญาตรี',
         programType: item.programType || current.programType || (current.nationality === 'ไทย' || current.nationality === 'Thai' ? 'THAI' : 'ENGLISH'),
         studyStatus: item.studyStatus || current.studyStatus || 'ปกติ',
         remarks: item.remarks !== undefined ? item.remarks : (current.remarks || ''),
@@ -189,10 +190,13 @@ export async function batchUpdateStudents(
           major: item.major || 'พระพุทธศาสนา',
           studyStatus: item.studyStatus || 'ปกติ',
           faculty: item.faculty || 'คณะพุทธศาสตร์',
-          phoneNumber: item.phoneNumber || '',
+          phoneNumber: '',
           email: item.email || '',
           nationality: item.nationality || 'ไทย',
-          country: item.country || 'ไทย',
+          country: item.country || (item.nationality === 'ไทย' || !item.nationality ? 'ไทย' : item.nationality),
+          passportNo: item.passportNo || '',
+          gpa: item.gpa !== undefined ? item.gpa : '',
+          address: item.address || '',
           programType: item.programType || 'THAI',
           remarks: item.remarks || '',
           isActive: true,

@@ -156,7 +156,7 @@ export function CertPrintPaper({
                 className="indent-8 outline-none focus:bg-purple-50 pt-2 text-justify font-normal text-slate-900"
                 style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
               >
-                เนื่องด้วย <strong className="font-bold">{sanitizeName(previewRequest.fullName)}</strong> สัญชาติ{' '}
+                เนื่องด้วย <strong className="font-bold">{sanitizeName(previewRequest.monasticName || previewRequest.fullName)}</strong> สัญชาติ{' '}
                 <strong className="font-bold">{previewRequest.nationality || 'Bangladeshi'}</strong> ประเทศ{' '}
                 <strong className="font-bold">{previewRequest.country || 'Bangladesh'}</strong>{' '}
                 {previewRequest.passportNo && (
@@ -505,16 +505,16 @@ export function CertPrintPaper({
               </div>
 
               <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50 pt-2 leading-relaxed font-normal text-slate-900">
-                ด้วย <strong className="font-bold">{sanitizeName(previewRequest.fullName)}</strong> รหัสนิสิต{' '}
+                ด้วย <strong className="font-bold">{sanitizeName(previewRequest.monasticName || previewRequest.fullName)}</strong> รหัสนิสิต{' '}
                 <strong className="font-mono font-bold">{fmtNum(previewRequest.studentCode)}</strong>{' '}
-                {previewAge && (
+                {previewAge && String(previewAge).trim() !== '-' && (
                   <>
-                    อายุ <strong className="font-bold">{fmtNum(previewAge)}</strong> ปี{' '}
+                    อายุ <strong className="font-bold">{fmtNum(String(previewAge).replace(/\s*ปี$/g, '').trim())}</strong> ปี{' '}
                   </>
                 )}
-                {previewVassa && (
+                {previewVassa && String(previewVassa).trim() !== '-' && (
                   <>
-                    พรรษา <strong className="font-bold">{fmtNum(previewVassa)}</strong>{' '}
+                    พรรษา <strong className="font-bold">{fmtNum(String(previewVassa).replace(/\s*พรรษา$/g, '').trim())}</strong>{' '}
                   </>
                 )}
                 สัญชาติ <strong className="font-bold">{previewRequest.nationality || '-'}</strong>{' '}
@@ -654,15 +654,15 @@ export function CertPrintPaper({
                   className="indent-10 leading-relaxed outline-none focus:bg-purple-50 pt-2 text-justify font-normal text-slate-900"
                   style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
                 >
-                  โดยหนังสือนี้ขอรับรองว่า <strong className="font-bold">{sanitizeName(previewRequest.fullName)}</strong>{' '}
-                  {previewAge && (
+                  โดยหนังสือนี้ขอรับรองว่า <strong className="font-bold">{sanitizeName(previewRequest.monasticName || previewRequest.fullName)}</strong>{' '}
+                  {previewAge && String(previewAge).trim() !== '-' && (
                     <>
-                      อายุ <strong className="font-bold">{fmtNum(previewAge)}</strong> ปี{' '}
+                      อายุ <strong className="font-bold">{fmtNum(String(previewAge).replace(/\s*ปี$/g, '').trim())}</strong> ปี{' '}
                     </>
                   )}
-                  {previewVassa && (
+                  {previewVassa && String(previewVassa).trim() !== '-' && (
                     <>
-                      พรรษา <strong className="font-bold">{fmtNum(previewVassa)}</strong>{' '}
+                      พรรษา <strong className="font-bold">{fmtNum(String(previewVassa).replace(/\s*พรรษา$/g, '').trim())}</strong>{' '}
                     </>
                   )}
                   สัญชาติ <strong className="font-bold">{previewRequest.nationality || 'ไทย'}</strong>{' '}

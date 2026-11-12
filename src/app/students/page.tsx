@@ -49,6 +49,8 @@ import {
   DeleteTarget,
   formatPassportMask,
   parseCSVToStudents,
+  downloadStudentsCSV,
+  downloadSampleStudentsCSV,
   StudentFiltersBar,
   StudentMobileCards,
   StudentTableView,
@@ -363,57 +365,10 @@ export default function StudentsPage() {
   };
 
   // ─────────────────────────────────────────────────────────────
-  // Export Handlers
+  // Export Handlers (Unified CSV Format with /admin)
   // ─────────────────────────────────────────────────────────────
   const exportStudentsToCSV = (list: Student[], filename: string) => {
-    const headers = [
-      'รหัสนิสิต',
-      'คำนำหน้า',
-      'ชื่อ',
-      'นามสกุล',
-      'ชื่อเต็ม',
-      'ชั้นปี',
-      'ระดับการศึกษา',
-      'สาขาวิชา',
-      'สถานภาพ',
-      'หลักสูตร',
-      'เบอร์โทรศัพท์',
-      'อีเมล',
-      'สัญชาติ',
-      'หมายเหตุ',
-    ];
-
-    const rows = list.map((s) => [
-      s.studentCode || '',
-      s.title || '',
-      s.firstName || '',
-      s.lastName || '',
-      s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`.trim(),
-      String(s.yearLevel || 1),
-      s.degree || 'ปริญญาตรี',
-      s.major || 'พระพุทธศาสนา',
-      s.studyStatus || 'ปกติ',
-      s.programType === 'ENGLISH' ? 'ENGLISH' : 'THAI',
-      s.phoneNumber || '',
-      s.email || '',
-      s.nationality || 'ไทย',
-      s.remarks || '',
-    ]);
-
-    const csvContent =
-      '\uFEFF' +
-      [
-        headers.join(','),
-        ...rows.map((r) => r.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(',')),
-      ].join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadStudentsCSV(list, filename);
     setIsExportOpen(false);
   };
 
@@ -431,88 +386,7 @@ export default function StudentsPage() {
   };
 
   const downloadTemplateCSV = () => {
-    const headers = [
-      'รหัสนิสิต',
-      'คำนำหน้า',
-      'ชื่อ',
-      'นามสกุล',
-      'ชื่อเต็ม',
-      'ชั้นปี',
-      'ระดับการศึกษา',
-      'สาขาวิชา',
-      'สถานภาพ',
-      'หลักสูตร',
-      'เบอร์โทรศัพท์',
-      'อีเมล',
-      'สัญชาติ',
-      'หมายเหตุ',
-    ];
-
-    const sampleRows = [
-      [
-        '6801502001',
-        'พระ',
-        'สมชาย',
-        'ใจดี',
-        'พระสมชาย ใจดี',
-        '1',
-        'ปริญญาตรี',
-        'พระพุทธศาสนา',
-        'ปกติ',
-        'THAI',
-        '0812345678',
-        'somchai@mcu.ac.th',
-        'ไทย',
-        'เอกสารครบถ้วน',
-      ],
-      [
-        '6801502002',
-        'Ven.',
-        'Dhammarakso',
-        '',
-        'Ven. Dhammarakso',
-        '2',
-        'ปริญญาตรี',
-        'พระพุทธศาสนา',
-        'ย้ายเข้า',
-        'ENGLISH',
-        '',
-        'dhammarakso@mcu.ac.th',
-        'Myanmar',
-        'ย้ายมาจากต่างวิทยาเขต พร้อมใบเทียบเกรด',
-      ],
-      [
-        '6801502003',
-        'นาย',
-        'ประสิทธิ์',
-        'มีชัย',
-        'นายประสิทธิ์ มีชัย',
-        '3',
-        'ปริญญาตรี',
-        'พระพุทธศาสนา',
-        'เทียบโอน',
-        'THAI',
-        '0899998888',
-        'prasit@mcu.ac.th',
-        'ไทย',
-        'เทียบโอน 42 หน่วยกิตจาก มมร.',
-      ],
-    ];
-
-    const csvContent =
-      '\uFEFF' +
-      [
-        headers.join(','),
-        ...sampleRows.map((r) => r.map((val) => `"${val.replace(/"/g, '""')}"`).join(',')),
-      ].join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'student_batch_edit_template.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadSampleStudentsCSV('sample_students_template.csv');
     setIsExportOpen(false);
   };
 

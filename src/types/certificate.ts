@@ -5,6 +5,7 @@ export interface CertificateRequest {
   createdAt: string;
   studentCode: string;
   fullName: string;
+  monasticName?: string; // ชื่อ-ฉายา/นามสกุล (สำหรับใช้ออกแทนชื่อ-นามสกุลในบรรทัดแรกของหนังสือรับรอง)
   certType: string;
   degreeLevel?: string;
   major?: string;

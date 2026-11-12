@@ -169,8 +169,8 @@ export function StudentImportModal({
               <div className="text-sm font-bold text-slate-800">
                 คลิกเพื่อเลือกไฟล์ CSV หรือ Excel (.csv, .tsv, .txt)
               </div>
-              <p className="text-xs text-slate-500 max-w-sm">
-                รองรับไฟล์ที่มีคอลัมน์: รหัสนิสิต, สถานภาพ, หลักสูตร, หมายเหตุ ฯลฯ
+              <p className="text-xs text-slate-500 max-w-md">
+                รองรับไฟล์ที่ส่งออกจากระบบโดยตรง: รหัสนิสิต, คำนำหน้า, ชื่อ, นามสกุล, ระดับการศึกษา (ปริญญาตรี/โท/เอก/ใบประกาศนียบัตร), หลักสูตร, สาขาวิชา, ชั้นปี, สถานภาพ, หมายเหตุ ฯลฯ
               </p>
             </label>
           </div>
@@ -183,7 +183,7 @@ export function StudentImportModal({
               rows={6}
               value={importRawText}
               onChange={(e) => onPasteChange(e.target.value)}
-              placeholder={`รหัสนิสิต\tสถานภาพ\tหลักสูตร\tหมายเหตุ\n6801502001\tย้ายเข้า\tTHAI\tย้ายมาจากวิทยาเขตเชียงใหม่\n6801502002\tเทียบโอน\tENGLISH\tเทียบโอน 36 หน่วยกิต`}
+              placeholder={`รหัสนิสิต\tคำนำหน้า\tชื่อ\tนามสกุล\tระดับการศึกษา\tหลักสูตร\tสถานภาพ\tหมายเหตุ\n6801502001\tพระ\tสมชาย\tใจดี\tปริญญาตรี\tRegular\tย้ายเข้า\tย้ายมาจากวิทยาเขตเชียงใหม่\n6801502002\tVen.\tDhammapala\t\tปริญญาโท\tInternational\tเทียบโอน\tเทียบโอน 36 หน่วยกิต`}
               className="w-full font-mono text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
             />
           </div>
@@ -224,6 +224,7 @@ export function StudentImportModal({
                   <tr>
                     <th className="px-3 py-2">รหัสนิสิต</th>
                     <th className="px-3 py-2">ชื่อนิสิต (เดิม/ใหม่)</th>
+                    <th className="px-3 py-2">ระดับการศึกษา</th>
                     <th className="px-3 py-2">สถานภาพที่จะปรับปรุง</th>
                     <th className="px-3 py-2">หลักสูตร</th>
                     <th className="px-3 py-2">หมายเหตุ</th>
@@ -242,6 +243,9 @@ export function StudentImportModal({
                         </td>
                         <td className="px-3 py-2">
                           {item.fullName || (existing ? existing.fullName : '-')}
+                        </td>
+                        <td className="px-3 py-2 font-semibold text-slate-700">
+                          {item.degree || existing?.degree || 'ปริญญาตรี'}
                         </td>
                         <td className="px-3 py-2">
                           {item.studyStatus ? (

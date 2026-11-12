@@ -617,7 +617,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
                       className="indent-8 outline-none focus:bg-purple-50 pt-2 text-justify"
                       style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
                     >
-                      เนื่องด้วย <strong className="font-bold">{previewRequest.fullName}</strong> สัญชาติ{' '}
+                      เนื่องด้วย <strong className="font-bold">{sanitizeName(previewRequest.monasticName || previewRequest.fullName)}</strong> สัญชาติ{' '}
                       <strong className="font-bold">{previewRequest.nationality || 'Bangladeshi'}</strong> ประเทศ{' '}
                       <strong className="font-bold">{previewRequest.country || 'Bangladesh'}</strong>{' '}
                       {previewRequest.passportNo && (
@@ -858,7 +858,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
                     </div>
 
                     <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50 pt-2 leading-relaxed">
-                      ด้วย <strong className="font-bold">{previewRequest.fullName}</strong> รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> อายุ {previewRequest.age || '-'} ปี สัญชาติ {previewRequest.nationality || '-'} {previewRequest.passportNo && <>ถือหนังสือเดินทางเลขที่ {previewRequest.passportNo}</>} เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} ได้ยื่นคำร้องเพื่อขอรับรอง{previewRequest.requestPurpose || previewRequest.certType}
+                      ด้วย <strong className="font-bold">{sanitizeName(previewRequest.monasticName || previewRequest.fullName)}</strong> รหัสนิสิต <strong className="font-mono font-bold">{previewRequest.studentCode}</strong> อายุ {previewRequest.age ? String(previewRequest.age).replace(/\s*ปี$/g, '').trim() : '-'} ปี {previewRequest.vassa && String(previewRequest.vassa).trim() !== '-' && <>พรรษา {String(previewRequest.vassa).replace(/\s*พรรษา$/g, '').trim()} </>}สัญชาติ {previewRequest.nationality || '-'} {previewRequest.passportNo && <>ถือหนังสือเดินทางเลขที่ {previewRequest.passportNo}</>} เป็นนิสิตคณะพุทธศาสตร์ หลักสูตร{previewRequest.degreeLevel || 'พุทธศาสตรบัณฑิต'} สาขาวิชา{previewRequest.major || 'พระพุทธศาสนา'} ได้ยื่นคำร้องเพื่อขอรับรอง{previewRequest.requestPurpose || previewRequest.certType}
                     </p>
 
                     <p contentEditable suppressContentEditableWarning className="indent-8 outline-none focus:bg-purple-50">
@@ -930,9 +930,13 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
                       className="indent-10 leading-relaxed outline-none focus:bg-purple-50 pt-2 text-justify"
                       style={{ fontSize: `${docFontSize}pt`, lineHeight: docLineSpacing }}
                     >
-                      โดยหนังสือนี้ขอรับรองว่า <strong className="font-bold">{previewRequest.fullName}</strong>{' '}
-                      {previewRequest.age && <>อายุ <strong className="font-bold">{previewRequest.age}</strong> ปี </>}
-                      {previewRequest.vassa && <>พรรษา <strong className="font-bold">{previewRequest.vassa}</strong> </>}
+                      โดยหนังสือนี้ขอรับรองว่า <strong className="font-bold">{sanitizeName(previewRequest.monasticName || previewRequest.fullName)}</strong>{' '}
+                      {previewRequest.age && String(previewRequest.age).trim() !== '-' && (
+                        <>อายุ <strong className="font-bold">{String(previewRequest.age).replace(/\s*ปี$/g, '').trim()}</strong> ปี </>
+                      )}
+                      {previewRequest.vassa && String(previewRequest.vassa).trim() !== '-' && (
+                        <>พรรษา <strong className="font-bold">{String(previewRequest.vassa).replace(/\s*พรรษา$/g, '').trim()}</strong> </>
+                      )}
                       สัญชาติ <strong className="font-bold">{previewRequest.nationality || 'ไทย'}</strong>{' '}
                       {previewRequest.country && previewRequest.country !== 'Thailand' && (
                         <>ประเทศ <strong className="font-bold">{previewRequest.country}</strong> </>

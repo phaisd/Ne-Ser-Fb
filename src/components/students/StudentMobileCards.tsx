@@ -92,11 +92,6 @@ export function StudentMobileCards({
                     ✉️ {s.email}
                   </div>
                 )}
-                {s.phoneNumber && (
-                  <div className="text-xs text-slate-500 font-normal">
-                    📞 {s.phoneNumber}
-                  </div>
-                )}
                 {s.remarks && (
                   <div className="text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80 line-clamp-2">
                     หมายเหตุ: {s.remarks}

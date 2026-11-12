@@ -57,6 +57,7 @@ export function CertificateRequestForm({
   // Form Fields
   const [studentCode, setStudentCode] = useState('');
   const [fullName, setFullName] = useState('');
+  const [monasticName, setMonasticName] = useState('');
   const [major, setMajor] = useState('');
   const [degreeLevel, setDegreeLevel] = useState('ปริญญาตรี');
   const [requestPurpose, setRequestPurpose] = useState('');
@@ -76,7 +77,20 @@ export function CertificateRequestForm({
 
   // Extended Profile Fields (From ทะเบียนนิสิต / Excel)
   const [age, setAge] = useState('');
+  const [vassa, setVassa] = useState('');
   const [gender, setGender] = useState('ชาย');
+
+  // Lookup matched student in system to lock Full Name and prevent spoofing
+  const matchedStudent = useMemo(() => {
+    const code = studentCode.trim();
+    if (!code) return null;
+    return students.find((s) => s.studentCode === code) || null;
+  }, [students, studentCode]);
+
+  const isFullNameLocked = Boolean(matchedStudent || candidateVerified);
+  const isThaiCertSection = Boolean(
+    selectedCert?.targetAudience === 'THAI' || cardAudienceFilter === 'THAI'
+  );
   const [nationality, setNationality] = useState('');
   const [country, setCountry] = useState('');
   const [passportNo, setPassportNo] = useState('');
@@ -121,11 +135,13 @@ export function CertificateRequestForm({
       if (found) {
         const studentFullName = found.fullName || `${found.title || ''} ${found.firstName} ${found.lastName}`.trim();
         setFullName(studentFullName);
+        if (found.monasticName) setMonasticName(found.monasticName);
         setMajor(found.major || '');
         setDegreeLevel(found.degree || 'ปริญญาตรี');
         if (found.phoneNumber) setPhone(found.phoneNumber);
         if (found.email) setEmail(found.email);
         if (found.age) setAge(String(found.age));
+        if (found.vassa) setVassa(String(found.vassa));
         if (found.gender) setGender(found.gender);
         if (found.nationality) setNationality(found.nationality);
         if (found.country) setCountry(found.country);
@@ -221,11 +237,13 @@ export function CertificateRequestForm({
 
   // Auto-fill student info when entering student code
   const handleStudentCodeChange = (code: string) => {
+    const prevMatched = students.some((s) => s.studentCode === studentCode.trim());
     setStudentCode(code);
     const found = students.find((s) => s.studentCode === code.trim());
     if (found) {
       const studentFullName = found.fullName || `${found.title || ''} ${found.firstName} ${found.lastName}`.trim();
       setFullName(studentFullName);
+      if (found.monasticName) setMonasticName(found.monasticName);
       setMajor(found.major || '');
       setDegreeLevel(found.degree || 'ปริญญาตรี');
       if (found.phoneNumber) setPhone(found.phoneNumber);
@@ -233,6 +251,7 @@ export function CertificateRequestForm({
 
       // Fill extended profile fields
       if (found.age) setAge(String(found.age));
+      if (found.vassa) setVassa(String(found.vassa));
       if (found.gender) setGender(found.gender);
       if (found.nationality) setNationality(found.nationality);
       if (found.country) setCountry(found.country);
@@ -247,17 +266,24 @@ export function CertificateRequestForm({
       if (found.province) setProvince(found.province);
       if (found.postalCode) setPostalCode(found.postalCode);
 
-      // Auto switch card filter based on student nationality
+      // Auto switch card filter based on student nationality (preserve selected card if already matching audience)
       const isThai = found.nationality === 'ไทย' || found.nationality === 'Thai';
       if (isThai) {
         setCardAudienceFilter('THAI');
-        const defaultThai = certTypes.find((c) => c.targetAudience === 'THAI');
-        if (defaultThai) setSelectedCert(defaultThai);
+        if (!selectedCert || selectedCert.targetAudience !== 'THAI') {
+          const defaultThai = certTypes.find((c) => c.targetAudience === 'THAI');
+          if (defaultThai) setSelectedCert(defaultThai);
+        }
       } else if (found.nationality) {
         setCardAudienceFilter('INTERNATIONAL');
-        const defaultInt = certTypes.find((c) => c.targetAudience === 'INTERNATIONAL');
-        if (defaultInt) setSelectedCert(defaultInt);
+        if (!selectedCert || selectedCert.targetAudience !== 'INTERNATIONAL') {
+          const defaultInt = certTypes.find((c) => c.targetAudience === 'INTERNATIONAL');
+          if (defaultInt) setSelectedCert(defaultInt);
+        }
       }
+    } else if (prevMatched) {
+      // Clear auto-filled full name if user changes away from a matched student code
+      setFullName('');
     }
   };
 
@@ -311,10 +337,17 @@ export function CertificateRequestForm({
     try {
       const applicantTypeVal = isStaffCert ? 'STAFF' : (candidateVerified || isCandidateCert) ? 'CANDIDATE' : 'STUDENT';
       const effectiveStudentCode = isStaffCert ? (currentUser?.id || currentUser?.email || 'STAFF') : studentCode;
+      const effectiveFullName =
+        !isStaffCert && matchedStudent
+          ? matchedStudent.fullName || `${matchedStudent.title || ''} ${matchedStudent.firstName} ${matchedStudent.lastName}`.trim()
+          : fullName;
+      const cleanedAge = age ? String(age).replace(/\s*ปี$/g, '').trim() : '';
+      const cleanedVassa = vassa ? String(vassa).replace(/\s*พรรษา$/g, '').trim() : '';
 
       const payload: any = {
         studentCode: effectiveStudentCode,
-        fullName,
+        fullName: effectiveFullName,
+        monasticName: !isStaffCert && isThaiCertSection && monasticName.trim() ? monasticName.trim() : undefined,
         certType: selectedCert.name,
         targetAudience: selectedCert.targetAudience,
         applicantType: applicantTypeVal,
@@ -326,7 +359,8 @@ export function CertificateRequestForm({
         requestPurpose: requestPurpose || selectedCert.name,
         email,
         phone: isStaffCert ? phone : undefined,
-        age,
+        age: cleanedAge,
+        vassa: cleanedVassa || undefined,
         gender,
         nationality: nationality || (selectedCert.targetAudience === 'THAI' ? 'ไทย' : 'International'),
         country,
@@ -691,7 +725,7 @@ export function CertificateRequestForm({
           /* STUDENT / CANDIDATE FORM */
           <div className="space-y-4">
             {/* Basic Student Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className={`grid grid-cols-1 ${isThaiCertSection ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}>
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">
                   {candidateVerified ? 'เลขที่ใบสมัคร (Application No.)' : 'รหัสนิสิต / เลขที่ใบสมัคร / เลขพาสปอร์ต'} <span className="text-red-500">*</span>
@@ -717,13 +751,47 @@ export function CertificateRequestForm({
                 <input
                   type="text"
                   required
-                  readOnly={!!candidateVerified}
+                  readOnly={isFullNameLocked}
                   placeholder="ชื่อและนามสกุลนิสิต (ไทย หรือ อังกฤษ)"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className={`w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${candidateVerified ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                  onChange={(e) => {
+                    if (!isFullNameLocked) setFullName(e.target.value);
+                  }}
+                  title={
+                    isFullNameLocked
+                      ? 'ชื่อ-นามสกุลถูกล็อกตามฐานข้อมูลทะเบียนนิสิต เพื่อป้องกันการสวมสิทธิ์หรือแก้ไขชื่อผู้อื่น'
+                      : 'ชื่อและนามสกุลนิสิต'
+                  }
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm font-medium focus:outline-none ${
+                    isFullNameLocked
+                      ? 'bg-slate-100 border-slate-300 text-slate-700 cursor-not-allowed select-none'
+                      : 'border-slate-200 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500'
+                  }`}
                 />
+                {matchedStudent && (
+                  <span className="text-[11px] text-emerald-700 font-semibold mt-1 block">
+                    🔒 พบชื่อในระบบแล้ว (ล็อกการแก้ไขชื่อเพื่อป้องกันการสวมสิทธิ์)
+                  </span>
+                )}
               </div>
+
+              {isThaiCertSection && (
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                    ชื่อ-ฉายา/นามสกุล
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="เช่น พระมหาสมชาย ธมฺมโชโต (ใจดี)"
+                    value={monasticName}
+                    onChange={(e) => setMonasticName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                  />
+                  <span className="text-[11px] text-purple-700 mt-1 block">
+                    * สำหรับใช้ออกแทน ชื่อ - นามสกุล ในหนังสือรับรองช่วงบรรทัดแรกเท่านั้น (ชื่อ-นามสกุลใต้กรอบติดรูปถ่ายคงของเดิมไว้)
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Academic Info */}
@@ -774,7 +842,7 @@ export function CertificateRequestForm({
                 <span className="text-[11px] text-slate-400">ระบุในเนื้อความหนังสือรับรอง</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">อายุ (Age)</label>
                   <input
@@ -782,6 +850,17 @@ export function CertificateRequestForm({
                     placeholder="เช่น 26 ปี"
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">พรรษา (Vassa)</label>
+                  <input
+                    type="text"
+                    placeholder="เช่น 6 พรรษา (ถ้ามี)"
+                    value={vassa}
+                    onChange={(e) => setVassa(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-purple-500"
                   />
                 </div>

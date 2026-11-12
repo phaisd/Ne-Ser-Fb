@@ -122,6 +122,7 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
       createdAt: r.createdAt || new Date().toISOString(),
       studentCode: r.studentCode || strNote('studentCode') || '',
       fullName: r.fullName || strNote('fullName') || (r.user ? r.user.name || '' : ''),
+      monasticName: r.monasticName || strNote('monasticName') || '',
       certType: r.certType || r.certificateType?.name || strNote('requestPurpose') || 'หนังสือรับรอง',
       degreeLevel: r.degreeLevel || strNote('degreeLevel') || '',
       major: r.major || strNote('major') || '',
@@ -137,6 +138,7 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
       department: r.department || strNote('department') || '',
       candidateAppNo: r.candidateAppNo || strNote('candidateAppNo') || '',
       age: r.age || numOrStrNote('age') || '',
+      vassa: r.vassa || numOrStrNote('vassa') || '',
       gender: r.gender || strNote('sex') || '',
       nationality: nationality,
       country: r.country || strNote('country') || '',
@@ -173,26 +175,37 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const rows = await gClient.getValues('CertificateRequests!A2:L');
+      const rows = await gClient.getValues('CertificateRequests!A2:M');
       if (rows && rows.length > 0) {
         return rows.map((r) => {
           const id = r[0] || '';
           const local = localMap.get(id) || ({} as Partial<CertificateRequest>);
+          let sheetExtra: Partial<CertificateRequest> = {};
+          if (r[12]) {
+            try {
+              const parsed = JSON.parse(r[12]);
+              if (parsed && typeof parsed === 'object') sheetExtra = parsed;
+            } catch {}
+          }
           return {
+            ...sheetExtra,
             ...local,
             id,
-            createdAt: r[1] || local.createdAt || new Date().toISOString(),
-            studentCode: r[2] || local.studentCode || '',
-            fullName: r[3] || local.fullName || '',
-            certType: r[4] || local.certType || 'หนังสือรับรอง',
-            degreeLevel: r[5] || local.degreeLevel || '',
-            major: r[6] || local.major || '',
-            requestPurpose: r[7] || local.requestPurpose || '',
-            status: (r[8] as CertRequestStatus) || local.status || 'PENDING',
-            docNo: r[9] || local.docNo || '',
-            docNoPrefix: local.docNoPrefix || (r[9] && r[9].includes('8002.1') ? '8002.1' : '8002'),
-            email: r[10] || local.email || '',
-            phone: r[11] || local.phone || '',
+            createdAt: r[1] || local.createdAt || sheetExtra.createdAt || new Date().toISOString(),
+            studentCode: r[2] || local.studentCode || sheetExtra.studentCode || '',
+            fullName: r[3] || local.fullName || sheetExtra.fullName || '',
+            monasticName: local.monasticName || sheetExtra.monasticName || '',
+            certType: r[4] || local.certType || sheetExtra.certType || 'หนังสือรับรอง',
+            degreeLevel: r[5] || local.degreeLevel || sheetExtra.degreeLevel || '',
+            major: r[6] || local.major || sheetExtra.major || '',
+            requestPurpose: r[7] || local.requestPurpose || sheetExtra.requestPurpose || '',
+            status: (r[8] as CertRequestStatus) || local.status || sheetExtra.status || 'PENDING',
+            docNo: r[9] || local.docNo || sheetExtra.docNo || '',
+            docNoPrefix: local.docNoPrefix || sheetExtra.docNoPrefix || (r[9] && r[9].includes('8002.1') ? '8002.1' : '8002'),
+            email: r[10] || local.email || sheetExtra.email || '',
+            phone: r[11] || local.phone || sheetExtra.phone || '',
+            age: local.age || sheetExtra.age || '',
+            vassa: local.vassa || sheetExtra.vassa || '',
           } as CertificateRequest;
         });
       }
@@ -235,6 +248,7 @@ export async function syncCertificateRequestsToSheets(
       'เลขที่หนังสือ อว',
       'อีเมล',
       'เบอร์โทรศัพท์',
+      'ข้อมูลเพิ่มเติม (JSON)',
     ];
 
     const rows = rawList.map((r) => [
@@ -250,6 +264,33 @@ export async function syncCertificateRequestsToSheets(
       r.docNo || '',
       r.email || '',
       r.phone || '',
+      JSON.stringify({
+        monasticName: r.monasticName,
+        age: r.age,
+        vassa: r.vassa,
+        gender: r.gender,
+        nationality: r.nationality,
+        country: r.country,
+        passportNo: r.passportNo,
+        passportExpireDate: r.passportExpireDate,
+        visaType: r.visaType,
+        visaExpireDate: r.visaExpireDate,
+        gpa: r.gpa,
+        address: r.address,
+        subdistrict: r.subdistrict,
+        district: r.district,
+        province: r.province,
+        postalCode: r.postalCode,
+        targetAudience: r.targetAudience,
+        applicantType: r.applicantType,
+        position: r.position,
+        department: r.department,
+        enrollmentSlipUrl: r.enrollmentSlipUrl,
+        passportCopyUrl: r.passportCopyUrl,
+        customBodyText: r.customBodyText,
+        docNoPrefix: r.docNoPrefix,
+        rejectReason: r.rejectReason,
+      }),
     ]);
 
     await gClient.updateValues('CertificateRequests!A1', [headers, ...rows]);
@@ -271,7 +312,7 @@ export async function createCertificateRequest(data: Omit<CertificateRequest, 'i
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      await gClient.appendValues('CertificateRequests!A:L', [[
+      await gClient.appendValues('CertificateRequests!A:M', [[
         newReq.id,
         newReq.createdAt,
         newReq.studentCode,
@@ -284,6 +325,32 @@ export async function createCertificateRequest(data: Omit<CertificateRequest, 'i
         newReq.docNo || '',
         newReq.email || '',
         newReq.phone || '',
+        JSON.stringify({
+          monasticName: newReq.monasticName,
+          age: newReq.age,
+          vassa: newReq.vassa,
+          gender: newReq.gender,
+          nationality: newReq.nationality,
+          country: newReq.country,
+          passportNo: newReq.passportNo,
+          passportExpireDate: newReq.passportExpireDate,
+          visaType: newReq.visaType,
+          visaExpireDate: newReq.visaExpireDate,
+          gpa: newReq.gpa,
+          address: newReq.address,
+          subdistrict: newReq.subdistrict,
+          district: newReq.district,
+          province: newReq.province,
+          postalCode: newReq.postalCode,
+          targetAudience: newReq.targetAudience,
+          applicantType: newReq.applicantType,
+          position: newReq.position,
+          department: newReq.department,
+          enrollmentSlipUrl: newReq.enrollmentSlipUrl,
+          passportCopyUrl: newReq.passportCopyUrl,
+          customBodyText: newReq.customBodyText,
+          docNoPrefix: newReq.docNoPrefix,
+        }),
       ]]);
     } catch (err) {
       console.warn('Google Sheets append failed:', err);
