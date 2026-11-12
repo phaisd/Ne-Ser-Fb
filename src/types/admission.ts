@@ -18,7 +18,7 @@ export interface AdmissionApplication {
   firstName: string;
   lastName: string; // ฉายา หรือ นามสกุล
   monasticName?: string; // ฉายาเพิ่มเติม (ถ้ามี)
-  degreeLevel: 'ปริญญาตรี' | 'ปริญญาโท' | 'ปริญญาเอก' | 'ประกาศนียบัตร';
+  degreeLevel: 'ปริญญาตรี' | 'ปริญญาโท' | 'ปริญญาเอก' | 'ประกาศนียบัตร' | string;
   curriculumName: string; // หลักสูตรพุทธศาสตรบัณฑิต (พธ.บ.) ฯลฯ
   major: string; // สาขาวิชา
   programType: 'THAI' | 'ENGLISH'; // หลักสูตรภาษาไทย vs หลักสูตรภาษาอังกฤษ
@@ -40,4 +40,72 @@ export interface AdmissionApplication {
   enrolledAt?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface AdmissionQualificationCard {
+  id: string;
+  badgeText: string;
+  themeColor: 'orange' | 'sky' | 'purple' | 'emerald';
+  items: string[];
+  enabled: boolean;
+}
+
+export interface AdmissionRequiredDocItem {
+  id: string;
+  title: string;
+  description: string;
+  enabled: boolean;
+}
+
+export interface AdmissionSelectOptionItem {
+  id: string;
+  value: string;
+  label: string;
+  enabled: boolean;
+}
+
+export interface AdmissionFirstYearCourseItem {
+  id: string;
+  code: string;
+  nameTh: string;
+  type: string;
+  credits: number;
+  enabled: boolean;
+}
+
+export interface AdmissionPortalConfig {
+  // Section Visibility on /enroll
+  showProcessSteps: boolean;
+  showQuickTestBar: boolean;
+  showOverviewTab: boolean;
+  showApplyTab: boolean;
+  showStatusTab: boolean;
+  showRegisterTab: boolean;
+
+  // Section 1: Overview, Qualifications & Required Docs
+  overviewTitle?: string;
+  overviewSubtitle?: string;
+  qualifications: AdmissionQualificationCard[];
+  requiredDocsTitle?: string;
+  requiredDocuments: AdmissionRequiredDocItem[];
+
+  // Section 2: Application Form Options
+  applyFormTitle?: string;
+  applyFormSubtitle?: string;
+  showDocumentUploadField: boolean;
+  degreeOptions: AdmissionSelectOptionItem[];
+  majorOptions: AdmissionSelectOptionItem[];
+  studyPlanOptions: AdmissionSelectOptionItem[];
+  previousEducationOptions: AdmissionSelectOptionItem[];
+  certificationStatement?: string;
+
+  // Section 3: Status Check & Interview Schedule
+  statusSectionTitle?: string;
+  statusSectionSubtitle?: string;
+
+  // Section 4: Registration & First-Year Plan
+  registerSectionTitle?: string;
+  registerSectionSubtitle?: string;
+  showFirstYearCoursePlan: boolean;
+  firstYearCourses: AdmissionFirstYearCourseItem[];
 }

@@ -20,9 +20,12 @@ import {
   RefreshCw,
   Download,
   Sparkles,
+  Sliders,
+  Users,
 } from 'lucide-react';
 import { AdmissionApplication, AdmissionStatus, SystemSettings } from '@/types';
 import { downloadCsvFile } from '@/lib/utils';
+import { AdmissionPortalCustomizer } from './admissions/AdmissionPortalCustomizer';
 
 export interface AdminAdmissionsTabProps {
   settings: SystemSettings;
@@ -63,6 +66,7 @@ export function AdminAdmissionsTab({
   onRefreshStudents,
   setActionSuccess,
 }: AdminAdmissionsTabProps) {
+  const [subTab, setSubTab] = useState<'APPLICANTS' | 'PORTAL'>('APPLICANTS');
   const [applications, setApplications] = useState<AdmissionApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -466,7 +470,44 @@ export function AdminAdmissionsTab({
         </div>
       </div>
 
-      {/* 2. Summary KPI Cards */}
+      {/* Sub-tab Switcher: Applicants Roster vs /enroll Content Customizer */}
+      <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setSubTab('APPLICANTS')}
+          className={`flex-1 min-w-[220px] inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition cursor-pointer ${
+            subTab === 'APPLICANTS'
+              ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Users className="w-4 h-4 shrink-0" />
+          <span>รายชื่อผู้สมัคร &amp; นัดสัมภาษณ์ ({counts.total})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubTab('PORTAL')}
+          className={`flex-1 min-w-[260px] inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition cursor-pointer ${
+            subTab === 'PORTAL'
+              ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Sliders className="w-4 h-4 shrink-0" />
+          <span>เพิ่ม / แก้ไข / ลบ &amp; เปิด/ปิด 4 ส่วนบนหน้า /enroll</span>
+        </button>
+      </div>
+
+      {subTab === 'PORTAL' ? (
+        <AdmissionPortalCustomizer
+          settings={settings}
+          setSettings={setSettings}
+          onSaveSettings={handleSaveAdmissionConfig}
+          savingConfig={savingConfig}
+        />
+      ) : (
+        <>
+          {/* 2. Summary KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div
           onClick={() => setStatusFilter('ALL')}
@@ -736,6 +777,8 @@ export function AdminAdmissionsTab({
           </table>
         </div>
       </div>
+        </>
+      )}
 
       {/* Edit Applicant / Interview Schedule Modal */}
       {editingApp && (

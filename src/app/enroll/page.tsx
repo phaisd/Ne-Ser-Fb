@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -25,27 +25,39 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { AdmissionApplication, SystemSettings } from '@/types';
+import {
+  DEFAULT_ADMISSION_PORTAL_CONFIG,
+  resolveAdmissionPortalConfig,
+} from '@/lib/admission-config';
 
 type EnrollTab = 'OVERVIEW' | 'APPLY' | 'STATUS' | 'REGISTER';
 
-const FIRST_YEAR_COURSES = [
-  { code: '000 101', nameTh: 'พระไตรปิฎกศึกษา (Tipitaka Studies)', credits: 3, type: 'วิชาแกนพระพุทธศาสนา' },
-  { code: '000 102', nameTh: 'สมาธิและวิปัสสนากรรมฐาน ๑ (Meditation & Vipassana I)', credits: 3, type: 'วิชาปฏิบัติธรรม' },
-  { code: '000 103', nameTh: 'ภาษาบาลีเบื้องต้น (Fundamental Pali)', credits: 3, type: 'วิชาภาษาโบราณ' },
-  { code: '000 104', nameTh: 'การเขียนเชิงวิชาการทางพระพุทธศาสนา (Buddhist Academic Writing)', credits: 3, type: 'วิชาทักษะวิชาการ' },
-  { code: '101 105', nameTh: 'เทศนาและปาฐกถาธรรม (Preaching and Dhamma Lecture)', credits: 2, type: 'วิชาชีพพระพุทธศาสนา' },
-  { code: '101 106', nameTh: 'พระพุทธศาสนากับวิทยาศาสตร์และปัญญาประดิษฐ์ (Buddhism, Science & AI)', credits: 3, type: 'วิชาบูรณาการสมัยใหม่' },
-  { code: '000 107', nameTh: 'ภาษาอังกฤษเพื่อการสื่อสารทางพระพุทธศาสนา (English for Buddhist Communication)', credits: 2, type: 'วิชาภาษาต่างประเทศ' },
-];
+const QUAL_THEME_CLASSES: Record<
+  'orange' | 'sky' | 'purple' | 'emerald',
+  { card: string; badge: string }
+> = {
+  orange: {
+    card: 'bg-orange-50/70 border-orange-200',
+    badge: 'bg-orange-100 text-orange-900',
+  },
+  sky: {
+    card: 'bg-sky-50/70 border-sky-200',
+    badge: 'bg-sky-100 text-sky-900',
+  },
+  purple: {
+    card: 'bg-purple-50/70 border-purple-200',
+    badge: 'bg-purple-100 text-purple-900',
+  },
+  emerald: {
+    card: 'bg-emerald-50/70 border-emerald-200',
+    badge: 'bg-emerald-100 text-emerald-900',
+  },
+};
 
-const MAJORS_OPTIONS = [
-  'สาขาวิชาพระพุทธศาสนา (Buddhist Studies)',
-  'สาขาวิชาศาสนาและปรัชญา (Religion and Philosophy)',
-  'สาขาวิชาพระไตรปิฎกศึกษา (Tipitaka Studies)',
-  'สาขาวิชาวิปัสสนาภาวนา (Vipassana Meditation)',
-  'สาขาวิชาบาลีสันสกฤตและพุทธศาสน์ฮินดู (Pali, Sanskrit & Hindu Studies)',
-  'Buddhist Studies (International English Program)',
-];
+const THAI_NUMERALS = ['๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙', '๑๐'];
+function toThaiOrderLabel(index: number): string {
+  return THAI_NUMERALS[index] || String(index + 1);
+}
 
 function EnrollPortalContent() {
   const searchParams = useSearchParams();
@@ -81,11 +93,21 @@ function EnrollPortalContent() {
   const [titleName, setTitleName] = useState('พระ');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [degreeLevel, setDegreeLevel] = useState<'ปริญญาตรี' | 'ปริญญาโท' | 'ปริญญาเอก' | 'ประกาศนียบัตร'>('ปริญญาตรี');
+  const [degreeLevel, setDegreeLevel] = useState<string>(
+    DEFAULT_ADMISSION_PORTAL_CONFIG.degreeOptions[0]?.value || 'ปริญญาตรี'
+  );
   const [programType, setProgramType] = useState<'THAI' | 'ENGLISH'>('THAI');
-  const [major, setMajor] = useState(MAJORS_OPTIONS[0]);
-  const [previousEducation, setPreviousEducation] = useState('มัธยมศึกษาตอนปลาย (ม.6) หรือเทียบเท่า');
-  const [studyPlan, setStudyPlan] = useState('ภาคปกติ (วันจันทร์ - วันพฤหัสบดี)');
+  const [major, setMajor] = useState(
+    DEFAULT_ADMISSION_PORTAL_CONFIG.majorOptions[0]?.value || ''
+  );
+  const [previousEducation, setPreviousEducation] = useState(
+    DEFAULT_ADMISSION_PORTAL_CONFIG.previousEducationOptions[0]?.value ||
+      'มัธยมศึกษาตอนปลาย (ม.6) หรือเทียบเท่า'
+  );
+  const [studyPlan, setStudyPlan] = useState(
+    DEFAULT_ADMISSION_PORTAL_CONFIG.studyPlanOptions[0]?.value ||
+      'ภาคปกติ (วันจันทร์ - วันพฤหัสบดี)'
+  );
   const [gpa, setGpa] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -107,15 +129,111 @@ function EnrollPortalContent() {
   const [confirmSuccessMsg, setConfirmSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/system-settings')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success && d.data) {
-          setSettings((prev) => ({ ...prev, ...d.data }));
-        }
-      })
-      .catch(() => {});
+    const loadSettings = () => {
+      fetch('/api/system-settings')
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && d.data) {
+            setSettings((prev) => ({ ...prev, ...d.data }));
+          }
+        })
+        .catch(() => {});
+    };
+    loadSettings();
+    window.addEventListener('mcu_settings_updated', loadSettings);
+    return () => window.removeEventListener('mcu_settings_updated', loadSettings);
   }, []);
+
+  const portalConfig = useMemo(
+    () => resolveAdmissionPortalConfig(settings.admissionPortalConfig),
+    [settings.admissionPortalConfig]
+  );
+
+  const visibleTabs = useMemo(() => {
+    const tabs: Array<{ id: EnrollTab; label: string; icon: typeof BookOpen }> = [];
+    if (portalConfig.showOverviewTab) {
+      tabs.push({ id: 'OVERVIEW', label: '๑. ขั้นตอนและคุณสมบัติ', icon: BookOpen });
+    }
+    if (portalConfig.showApplyTab) {
+      tabs.push({ id: 'APPLY', label: '๒. ยื่นใบสมัครออนไลน์', icon: FileText });
+    }
+    if (portalConfig.showStatusTab) {
+      tabs.push({ id: 'STATUS', label: '๓. ตรวจสอบสถานะ & นัดสัมภาษณ์', icon: Search });
+    }
+    if (portalConfig.showRegisterTab) {
+      tabs.push({ id: 'REGISTER', label: '๔. ขึ้นทะเบียนนิสิตใหม่ออนไลน์', icon: GraduationCap });
+    }
+    return tabs;
+  }, [portalConfig]);
+
+  useEffect(() => {
+    if (visibleTabs.length > 0 && !visibleTabs.some((t) => t.id === activeTab)) {
+      setActiveTab(visibleTabs[0].id);
+    }
+  }, [visibleTabs, activeTab]);
+
+  const enabledQualifications = useMemo(
+    () => portalConfig.qualifications.filter((q) => q.enabled !== false),
+    [portalConfig.qualifications]
+  );
+  const enabledRequiredDocs = useMemo(
+    () => portalConfig.requiredDocuments.filter((d) => d.enabled !== false),
+    [portalConfig.requiredDocuments]
+  );
+  const enabledDegreeOptions = useMemo(
+    () => portalConfig.degreeOptions.filter((o) => o.enabled !== false),
+    [portalConfig.degreeOptions]
+  );
+  const enabledMajorOptions = useMemo(
+    () => portalConfig.majorOptions.filter((o) => o.enabled !== false),
+    [portalConfig.majorOptions]
+  );
+  const enabledStudyPlanOptions = useMemo(
+    () => portalConfig.studyPlanOptions.filter((o) => o.enabled !== false),
+    [portalConfig.studyPlanOptions]
+  );
+  const enabledPrevEduOptions = useMemo(
+    () => portalConfig.previousEducationOptions.filter((o) => o.enabled !== false),
+    [portalConfig.previousEducationOptions]
+  );
+  const enabledFirstYearCourses = useMemo(
+    () => portalConfig.firstYearCourses.filter((c) => c.enabled !== false),
+    [portalConfig.firstYearCourses]
+  );
+  const totalFirstYearCredits = useMemo(
+    () => enabledFirstYearCourses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0),
+    [enabledFirstYearCourses]
+  );
+
+  useEffect(() => {
+    if (enabledDegreeOptions.length > 0 && !enabledDegreeOptions.some((o) => o.value === degreeLevel)) {
+      setDegreeLevel(enabledDegreeOptions[0].value);
+    }
+  }, [enabledDegreeOptions, degreeLevel]);
+
+  useEffect(() => {
+    if (enabledMajorOptions.length > 0 && !enabledMajorOptions.some((o) => o.value === major)) {
+      setMajor(enabledMajorOptions[0].value);
+    }
+  }, [enabledMajorOptions, major]);
+
+  useEffect(() => {
+    if (
+      enabledStudyPlanOptions.length > 0 &&
+      !enabledStudyPlanOptions.some((o) => o.value === studyPlan)
+    ) {
+      setStudyPlan(enabledStudyPlanOptions[0].value);
+    }
+  }, [enabledStudyPlanOptions, studyPlan]);
+
+  useEffect(() => {
+    if (
+      enabledPrevEduOptions.length > 0 &&
+      !enabledPrevEduOptions.some((o) => o.value === previousEducation)
+    ) {
+      setPreviousEducation(enabledPrevEduOptions[0].value);
+    }
+  }, [enabledPrevEduOptions, previousEducation]);
 
   useEffect(() => {
     if (initialCheckId) {
@@ -207,14 +325,16 @@ function EnrollPortalContent() {
 
     setSubmitting(true);
     try {
+      const matchedDegreeLabel = enabledDegreeOptions.find((o) => o.value === degreeLevel)?.label;
       const curriculumName =
-        degreeLevel === 'ปริญญาเอก'
+        matchedDegreeLabel ||
+        (degreeLevel === 'ปริญญาเอก'
           ? 'หลักสูตรพุทธศาสตรดุษฎีบัณฑิต (ปริญญาเอก - พธ.ด.)'
           : degreeLevel === 'ปริญญาโท'
           ? 'หลักสูตรพุทธศาสตรมหาบัณฑิต (ปริญญาโท - พธ.ม.)'
           : degreeLevel === 'ประกาศนียบัตร'
           ? 'หลักสูตรประกาศนียบัตรบัณฑิต'
-          : 'หลักสูตรพุทธศาสตรบัณฑิต (ปริญญาตรี - พธ.บ.)';
+          : 'หลักสูตรพุทธศาสตรบัณฑิต (ปริญญาตรี - พธ.บ.)');
 
       const res = await fetch('/api/admissions', {
         method: 'POST',
@@ -358,6 +478,7 @@ function EnrollPortalContent() {
       </div>
 
       {/* 2. 4-Step Process Flow Cards */}
+      {portalConfig.showProcessSteps && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
         <div className="bg-white rounded-2xl border border-orange-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
           <div className="space-y-1.5">
@@ -447,8 +568,10 @@ function EnrollPortalContent() {
           </button>
         </div>
       </div>
+      )}
 
       {/* 3. Quick Test Simulation Links Bar (สำหรับทดสอบ Flow ทั้ง 4 ขั้นตอนทันที) */}
+      {portalConfig.showQuickTestBar && (
       <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
         <div className="flex items-center gap-2 font-bold text-amber-900">
           <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
@@ -478,162 +601,144 @@ function EnrollPortalContent() {
           </button>
         </div>
       </div>
+      )}
 
       {/* 4. Main Tab Navigation */}
-      <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs print:hidden">
-        {[
-          { id: 'OVERVIEW' as const, label: '๑. ขั้นตอนและคุณสมบัติ', icon: BookOpen },
-          { id: 'APPLY' as const, label: '๒. ยื่นใบสมัครออนไลน์', icon: FileText },
-          { id: 'STATUS' as const, label: '๓. ตรวจสอบสถานะ & นัดสัมภาษณ์', icon: Search },
-          { id: 'REGISTER' as const, label: '๔. ขึ้นทะเบียนนิสิตใหม่ออนไลน์', icon: GraduationCap },
-        ].map((t) => {
-          const Icon = t.icon;
-          const active = activeTab === t.id;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setActiveTab(t.id)}
-              className={`flex-1 min-w-[200px] inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition cursor-pointer ${
-                active
-                  ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span>{t.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {visibleTabs.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs print:hidden">
+          {visibleTabs.map((t) => {
+            const Icon = t.icon;
+            const active = activeTab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                className={`flex-1 min-w-[200px] inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition cursor-pointer ${
+                  active
+                    ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="p-8 rounded-3xl bg-white border border-slate-200 text-center space-y-2">
+          <AlertCircle className="w-8 h-8 text-amber-500 mx-auto" />
+          <div className="text-sm font-extrabold text-slate-900">
+            ขณะนี้ผู้ดูแลระบบปิดการแสดงผลเนื้อหาในหน้านี้ชั่วคราว
+          </div>
+          <p className="text-xs text-slate-500">
+            กรุณาติดต่อ {settings.admissionCoordinatorName || 'เจ้าหน้าที่ฝ่ายทะเบียน'} โทร. {settings.admissionCoordinatorPhone || '-'}
+          </p>
+        </div>
+      )}
 
       {/* ─────────────────────────────────────────────────────────────
           TAB 1: OVERVIEW & QUALIFICATIONS
          ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'OVERVIEW' && (
+      {portalConfig.showOverviewTab && activeTab === 'OVERVIEW' && (
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
           <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-orange-600" />
-                <span>คุณสมบัติผู้สมัครและเอกสารหลักฐานที่ต้องใช้</span>
+                <span>{portalConfig.overviewTitle || 'คุณสมบัติผู้สมัครและเอกสารหลักฐานที่ต้องใช้'}</span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                การรับสมัครคัดเลือกบุคคลเข้าศึกษาในคณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย ประจำปีการศึกษา {academicYear}
+                {portalConfig.overviewSubtitle ||
+                  'การรับสมัครคัดเลือกบุคคลเข้าศึกษาในคณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}{' '}
+                ประจำปีการศึกษา {academicYear}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setActiveTab('APPLY')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-extrabold shadow-md transition cursor-pointer self-start"
-            >
-              <FileText className="w-4 h-4" />
-              <span>ดำเนินการยื่นใบสมัครออนไลน์ทันที</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {portalConfig.showApplyTab && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('APPLY')}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-extrabold shadow-md transition cursor-pointer self-start"
+              >
+                <FileText className="w-4 h-4" />
+                <span>ดำเนินการยื่นใบสมัครออนไลน์ทันที</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* 1. Monastic Qualifications */}
-            <div className="rounded-2xl bg-orange-50/70 border border-orange-200 p-5 space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-900 text-xs font-extrabold">
-                <span>☸️ สำหรับบรรพชิต (พระภิกษุ / สามเณร)</span>
-              </div>
-              <ul className="space-y-2 text-xs text-slate-700 leading-relaxed list-disc pl-4">
-                <li>สำเร็จการศึกษาชั้นมัธยมศึกษาปีที่ 6 (ม.6) หรือเทียบเท่า หรือ</li>
-                <li>สอบได้เปรียญธรรม 3 ประโยค (ป.ธ.3) ขึ้นไป และสำเร็จการศึกษาชั้น ม.ต้น หรือเทียบเท่า</li>
-                <li>ระดับปริญญาโท/เอก: สำเร็จการศึกษาปริญญาตรี/โท จากสถาบันการศึกษาที่ ก.พ. หรือมหาวิทยาลัยรับรอง</li>
-                <li>มีศีลาจารวัตรเรียบร้อย ไม่เป็นผู้ต้องอธิกรณ์หรือถูกถอดถอนจากสมณเพศ</li>
-              </ul>
+          {enabledQualifications.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {enabledQualifications.map((card) => {
+                const style = QUAL_THEME_CLASSES[card.themeColor] || QUAL_THEME_CLASSES.orange;
+                return (
+                  <div key={card.id} className={`rounded-2xl border p-5 space-y-3 ${style.card}`}>
+                    <div
+                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold ${style.badge}`}
+                    >
+                      <span>{card.badgeText}</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-slate-700 leading-relaxed list-disc pl-4">
+                      {card.items.map((item, itemIdx) => (
+                        <li key={itemIdx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
-
-            {/* 2. Layperson Qualifications */}
-            <div className="rounded-2xl bg-sky-50/70 border border-sky-200 p-5 space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 text-sky-900 text-xs font-extrabold">
-                <span>👤 สำหรับคฤหัสถ์ (ประชาชนทั่วไป ชาย-หญิง)</span>
-              </div>
-              <ul className="space-y-2 text-xs text-slate-700 leading-relaxed list-disc pl-4">
-                <li>สำเร็จการศึกษาชั้น ม.6, กศน. ม.ปลาย, ปวช. หรือเทียบเท่า (สำหรับระดับปริญญาตรี พธ.บ.)</li>
-                <li>สำเร็จการศึกษาระดับปริญญาตรี/โท ทุกสาขาวิชา (สำหรับสมัครระดับปริญญาโท พธ.ม. / ปริญญาเอก พธ.ด.)</li>
-                <li>มีความประพฤติเรียบร้อย สนใจศึกษาค้นคว้าวิชาการทางพระพุทธศาสนาและปรัชญา</li>
-                <li>สามารถเลือกเรียนได้ทั้ง <strong>ภาคปกติ (จันทร์-พฤหัสบดี)</strong> หรือ <strong>ภาคพิเศษ (เสาร์-อาทิตย์)</strong></li>
-              </ul>
-            </div>
-
-            {/* 3. International Students */}
-            <div className="rounded-2xl bg-purple-50/70 border border-purple-200 p-5 space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-900 text-xs font-extrabold">
-                <span>🌐 สำหรับนิสิตชาวต่างชาติ (International)</span>
-              </div>
-              <ul className="space-y-2 text-xs text-slate-700 leading-relaxed list-disc pl-4">
-                <li>Completed High School (Grade 12) or equivalent Dhamma/Monastic examination recognized by MCU</li>
-                <li>Valid Passport for applying to Non-Immigrant ED Visa</li>
-                <li>Offers B.A., M.A., and Ph.D. in Buddhist Studies (English / International Program)</li>
-                <li>เมื่อผ่านการคัดเลือก สามารถขอ <strong>หนังสือรับรองผู้ผ่านการคัดเลือกเพื่อประกอบการขอวีซ่า (Non-ED)</strong> ได้ทันที</li>
-              </ul>
-            </div>
-          </div>
+          )}
 
           {/* Required Documents */}
-          <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 space-y-3">
-            <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>เอกสารหลักฐานที่ต้องเตรียม (สามารถแนบไฟล์ออนไลน์ในขั้นตอนสมัคร หรือนำมายื่นในวันสัมภาษณ์/รายงานตัว)</span>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700">
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-start gap-2.5">
-                <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-800 font-black flex items-center justify-center shrink-0">
-                  ๑
+          {enabledRequiredDocs.length > 0 && (
+            <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5 space-y-3">
+              <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>
+                  {portalConfig.requiredDocsTitle ||
+                    'เอกสารหลักฐานที่ต้องเตรียม (สามารถแนบไฟล์ออนไลน์ในขั้นตอนสมัคร หรือนำมายื่นในวันสัมภาษณ์/รายงานตัว)'}
                 </span>
-                <div>
-                  <div className="font-bold text-slate-900">สำเนาใบสุทธิ / บัตรประชาชน / หนังสือเดินทาง (Passport)</div>
-                  <div className="text-slate-500 mt-0.5">บรรพชิตใช้สำเนาใบสุทธิ • คฤหัสถ์ใช้สำเนาบัตรประชาชน • ต่างชาติใช้สำเนา Passport (จำนวน 2 ชุด)</div>
-                </div>
-              </div>
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-start gap-2.5">
-                <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-800 font-black flex items-center justify-center shrink-0">
-                  ๒
-                </span>
-                <div>
-                  <div className="font-bold text-slate-900">สำเนาทะเบียนบ้าน หรือ ทะเบียนวัด</div>
-                  <div className="text-slate-500 mt-0.5">พร้อมรับรองสำเนาถูกต้อง จำนวน 2 ชุด</div>
-                </div>
-              </div>
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-start gap-2.5">
-                <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-800 font-black flex items-center justify-center shrink-0">
-                  ๓
-                </span>
-                <div>
-                  <div className="font-bold text-slate-900">สำเนาหลักฐานการศึกษา (รบ. / ปพ.1 / ใบประกาศนียบัตร ป.ธ.)</div>
-                  <div className="text-slate-500 mt-0.5">แสดงผลการเรียนฉบับสมบูรณ์ จำนวน 2 ชุด</div>
-                </div>
-              </div>
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-start gap-2.5">
-                <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-800 font-black flex items-center justify-center shrink-0">
-                  ๔
-                </span>
-                <div>
-                  <div className="font-bold text-slate-900">รูปถ่ายหน้าตรง ขนาด 1.5 นิ้ว</div>
-                  <div className="text-slate-500 mt-0.5">ไม่สวมแว่นตาดำ ถ่ายไว้ไม่เกิน 6 เดือน จำนวน 3 รูป (สำหรับติดใบรายงานตัวนิสิตใหม่)</div>
-                </div>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700">
+                {enabledRequiredDocs.map((doc, idx) => (
+                  <div
+                    key={doc.id}
+                    className="bg-white p-3.5 rounded-xl border border-slate-200/80 flex items-start gap-2.5"
+                  >
+                    <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-800 font-black flex items-center justify-center shrink-0">
+                      {toThaiOrderLabel(idx)}
+                    </span>
+                    <div>
+                      <div className="font-bold text-slate-900">{doc.title}</div>
+                      {doc.description && (
+                        <div className="text-slate-500 mt-0.5">{doc.description}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
           TAB 2: ONLINE APPLICATION FORM
          ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'APPLY' && (
+      {portalConfig.showApplyTab && activeTab === 'APPLY' && (
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
               <FileText className="w-5 h-5 text-orange-600" />
-              <span>แบบฟอร์มยื่นใบสมัครเข้าศึกษาออนไลน์ คณะพุทธศาสตร์ มจร (ปีการศึกษา {academicYear})</span>
+              <span>
+                {portalConfig.applyFormTitle || 'แบบฟอร์มยื่นใบสมัครเข้าศึกษาออนไลน์ คณะพุทธศาสตร์ มจร'}{' '}
+                (ปีการศึกษา {academicYear})
+              </span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              กรอกข้อมูลผู้สมัครให้ครบถ้วน ระบบจะออกรหัสใบสมัครเพื่อใช้ตรวจสอบสถานะและขึ้นทะเบียนนิสิตออนไลน์ทันที
+              {portalConfig.applyFormSubtitle ||
+                'กรอกข้อมูลผู้สมัครให้ครบถ้วน ระบบจะออกรหัสใบสมัครเพื่อใช้ตรวจสอบสถานะและขึ้นทะเบียนนิสิตออนไลน์ทันที'}
             </p>
           </div>
 
@@ -834,13 +939,14 @@ function EnrollPortalContent() {
                   </label>
                   <select
                     value={degreeLevel}
-                    onChange={(e) => setDegreeLevel(e.target.value as any)}
+                    onChange={(e) => setDegreeLevel(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 font-bold text-slate-900"
                   >
-                    <option value="ปริญญาตรี">หลักสูตรพุทธศาสตรบัณฑิต (ปริญญาตรี - พธ.บ.)</option>
-                    <option value="ปริญญาโท">หลักสูตรพุทธศาสตรมหาบัณฑิต (ปริญญาโท - พธ.ม.)</option>
-                    <option value="ปริญญาเอก">หลักสูตรพุทธศาสตรดุษฎีบัณฑิต (ปริญญาเอก - พธ.ด.)</option>
-                    <option value="ประกาศนียบัตร">หลักสูตรประกาศนียบัตรบัณฑิต</option>
+                    {enabledDegreeOptions.map((opt) => (
+                      <option key={opt.id} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -867,9 +973,9 @@ function EnrollPortalContent() {
                     onChange={(e) => setMajor(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 font-bold text-slate-900"
                   >
-                    {MAJORS_OPTIONS.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
+                    {enabledMajorOptions.map((opt) => (
+                      <option key={opt.id} value={opt.value}>
+                        {opt.label}
                       </option>
                     ))}
                   </select>
@@ -887,13 +993,11 @@ function EnrollPortalContent() {
                     onChange={(e) => setPreviousEducation(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 font-bold text-slate-900"
                   >
-                    <option value="มัธยมศึกษาตอนปลาย (ม.6) หรือเทียบเท่า">มัธยมศึกษาตอนปลาย (ม.6) หรือเทียบเท่า</option>
-                    <option value="กศน. มัธยมศึกษาตอนปลาย">กศน. มัธยมศึกษาตอนปลาย</option>
-                    <option value="ประกาศนียบัตรวิชาชีพ (ปวช.)">ประกาศนียบัตรวิชาชีพ (ปวช.)</option>
-                    <option value="ป.ธ.3 - ป.ธ.9 (เปรียญธรรม 3-9 ประโยค)">ป.ธ.3 - ป.ธ.9 (เปรียญธรรม 3-9 ประโยค)</option>
-                    <option value="ปริญญาตรี หรือเทียบเท่า">ปริญญาตรี หรือเทียบเท่า (สำหรับสมัคร ป.โท)</option>
-                    <option value="ปริญญาโท หรือเทียบเท่า">ปริญญาโท หรือเทียบเท่า (สำหรับสมัคร ป.เอก)</option>
-                    <option value="Foreign High School / Equivalent">Foreign High School / Dhamma Exam Equivalent</option>
+                    {enabledPrevEduOptions.map((opt) => (
+                      <option key={opt.id} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -906,8 +1010,11 @@ function EnrollPortalContent() {
                     onChange={(e) => setStudyPlan(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 font-bold text-slate-900"
                   >
-                    <option value="ภาคปกติ (วันจันทร์ - วันพฤหัสบดี)">ภาคปกติ (วันจันทร์ - วันพฤหัสบดี)</option>
-                    <option value="ภาคพิเศษ (วันเสาร์ - วันอาทิตย์)">ภาคพิเศษ (วันเสาร์ - วันอาทิตย์)</option>
+                    {enabledStudyPlanOptions.map((opt) => (
+                      <option key={opt.id} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -969,7 +1076,11 @@ function EnrollPortalContent() {
               </div>
 
               {/* Row 6: Address & Optional Document Upload */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                className={`grid grid-cols-1 ${
+                  portalConfig.showDocumentUploadField ? 'md:grid-cols-2' : ''
+                } gap-4`}
+              >
                 <div>
                   <label className="block font-bold text-slate-800 mb-1.5">
                     ๑๖. {applicantType === 'MONK' ? 'วัดที่จำพรรษา / ที่อยู่ปัจจุบัน *' : 'ที่อยู่ปัจจุบันที่ติดต่อได้ *'}{' '}
@@ -985,36 +1096,38 @@ function EnrollPortalContent() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block font-bold text-slate-800">
-                    ๑๗. แนบไฟล์หรือลิงก์เอกสารหลักฐานเบื้องต้น (ไม่บังคับ - นำมายื่นวันสัมภาษณ์ได้)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={documentUrl}
-                      onChange={(e) => setDocumentUrl(e.target.value)}
-                      placeholder="วางลิงก์ Google Drive หรือกดอัปโหลดไฟล์ด้านขวา..."
-                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs text-slate-900"
-                    />
-                    <label className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold cursor-pointer shrink-0">
-                      <UploadCloud className="w-4 h-4" />
-                      <span>{uploadingDoc ? 'กำลังอัปโหลด...' : 'อัปโหลดไฟล์'}</span>
-                      <input
-                        type="file"
-                        accept=".pdf,image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) handleUploadDocFile(f);
-                        }}
-                      />
+                {portalConfig.showDocumentUploadField && (
+                  <div className="space-y-2">
+                    <label className="block font-bold text-slate-800">
+                      ๑๗. แนบไฟล์หรือลิงก์เอกสารหลักฐานเบื้องต้น (ไม่บังคับ - นำมายื่นวันสัมภาษณ์ได้)
                     </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={documentUrl}
+                        onChange={(e) => setDocumentUrl(e.target.value)}
+                        placeholder="วางลิงก์ Google Drive หรือกดอัปโหลดไฟล์ด้านขวา..."
+                        className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs text-slate-900"
+                      />
+                      <label className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold cursor-pointer shrink-0">
+                        <UploadCloud className="w-4 h-4" />
+                        <span>{uploadingDoc ? 'กำลังอัปโหลด...' : 'อัปโหลดไฟล์'}</span>
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleUploadDocFile(f);
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      รองรับไฟล์รูปภาพหรือ PDF (สำเนาใบสุทธิ/บัตรประชาชน/Passport หรือใบ รบ./ปพ.1)
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-500">
-                    รองรับไฟล์รูปภาพหรือ PDF (สำเนาใบสุทธิ/บัตรประชาชน/Passport หรือใบ รบ./ปพ.1)
-                  </p>
-                </div>
+                )}
               </div>
 
               {/* Certification Checkbox */}
@@ -1026,7 +1139,8 @@ function EnrollPortalContent() {
                   className="mt-0.5 w-4 h-4 accent-orange-600"
                 />
                 <span className="text-xs text-slate-700 leading-relaxed font-medium">
-                  ข้าพเจ้าขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ หากตรวจสอบภายหลังพบว่ามีคุณสมบัติไม่ตรงตามที่มหาวิทยาลัยกำหนด ข้าพเจ้ายินยอมให้ตัดสิทธิ์การเข้าศึกษาโดยไม่มีเงื่อนไข
+                  {portalConfig.certificationStatement ||
+                    'ข้าพเจ้าขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ หากตรวจสอบภายหลังพบว่ามีคุณสมบัติไม่ตรงตามที่มหาวิทยาลัยกำหนด ข้าพเจ้ายินยอมให้ตัดสิทธิ์การเข้าศึกษาโดยไม่มีเงื่อนไข'}
                 </span>
               </label>
 
@@ -1057,15 +1171,18 @@ function EnrollPortalContent() {
       {/* ─────────────────────────────────────────────────────────────
           TAB 3: CHECK STATUS & INTERVIEW SCHEDULE
          ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'STATUS' && (
+      {portalConfig.showStatusTab && activeTab === 'STATUS' && (
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
               <Search className="w-5 h-5 text-sky-600" />
-              <span>ตรวจสอบสถานะการสมัคร & ตารางนัดสอบสัมภาษณ์</span>
+              <span>
+                {portalConfig.statusSectionTitle || 'ตรวจสอบสถานะการสมัคร & ตารางนัดสอบสัมภาษณ์'}
+              </span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              กรอกเลขประจำตัวประชาชน 13 หลัก, เลขพาสปอร์ต หรือรหัสใบสมัคร (เช่น MCU-FB-2570-0001)
+              {portalConfig.statusSectionSubtitle ||
+                'กรอกเลขประจำตัวประชาชน 13 หลัก, เลขพาสปอร์ต หรือรหัสใบสมัคร (เช่น MCU-FB-2570-0001)'}
             </p>
           </div>
 
@@ -1203,20 +1320,21 @@ function EnrollPortalContent() {
                   <span>ขอหนังสือรับรองผู้ผ่านการคัดเลือก (สำหรับต่อวีซ่า Non-ED)</span>
                 </Link>
 
-                {(matchedApp.status === 'INTERVIEW_PASS' || matchedApp.status === 'ENROLLED') && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('REGISTER')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-sm cursor-pointer"
-                  >
-                    <GraduationCap className="w-4 h-4" />
-                    <span>
-                      {matchedApp.status === 'ENROLLED'
-                        ? 'ดูและพิมพ์ใบรายงานตัวนิสิตใหม่ →'
-                        : 'ไปหน้ายืนยันสิทธิ์และขึ้นทะเบียนนิสิตออนไลน์ →'}
-                    </span>
-                  </button>
-                )}
+                {portalConfig.showRegisterTab &&
+                  (matchedApp.status === 'INTERVIEW_PASS' || matchedApp.status === 'ENROLLED') && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('REGISTER')}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-sm cursor-pointer"
+                    >
+                      <GraduationCap className="w-4 h-4" />
+                      <span>
+                        {matchedApp.status === 'ENROLLED'
+                          ? 'ดูและพิมพ์ใบรายงานตัวนิสิตใหม่ →'
+                          : 'ไปหน้ายืนยันสิทธิ์และขึ้นทะเบียนนิสิตออนไลน์ →'}
+                      </span>
+                    </button>
+                  )}
               </div>
             </div>
           )}
@@ -1226,16 +1344,20 @@ function EnrollPortalContent() {
       {/* ─────────────────────────────────────────────────────────────
           TAB 4: ONLINE REGISTRATION & OFFICIAL CERTIFICATE VOUCHER
          ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'REGISTER' && (
+      {portalConfig.showRegisterTab && activeTab === 'REGISTER' && (
         <div className="space-y-6">
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-5 print:hidden">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
                 <GraduationCap className="w-5 h-5 text-emerald-600" />
-                <span>ยืนยันสิทธิ์และขึ้นทะเบียนนิสิตใหม่ออนไลน์ (Online Student Enrollment)</span>
+                <span>
+                  {portalConfig.registerSectionTitle ||
+                    'ยืนยันสิทธิ์และขึ้นทะเบียนนิสิตใหม่ออนไลน์ (Online Student Enrollment)'}
+                </span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                สำหรับผู้สมัครที่ผ่านการสอบสัมภาษณ์แล้ว กรอกเลขบัตรประชาชน/พาสปอร์ต หรือรหัสใบสมัคร เพื่อยืนยันสิทธิ์และสั่งพิมพ์ใบรายงานตัวนิสิตใหม่
+                {portalConfig.registerSectionSubtitle ||
+                  'สำหรับผู้สมัครที่ผ่านการสอบสัมภาษณ์แล้ว กรอกเลขบัตรประชาชน/พาสปอร์ต หรือรหัสใบสมัคร เพื่อยืนยันสิทธิ์และสั่งพิมพ์ใบรายงานตัวนิสิตใหม่'}
               </p>
             </div>
 
@@ -1379,42 +1501,46 @@ function EnrollPortalContent() {
                 </div>
               </div>
 
-              {/* First Semester Course Plan Table (19 Credits) */}
-              <div className="space-y-2">
-                <h4 className="text-xs sm:text-sm font-extrabold text-slate-900">
-                  ตารางแผนการลงทะเบียนเรียน ภาคการศึกษาที่ ๑ ชั้นปีที่ ๑ (รวม ๑๙ หน่วยกิต)
-                </h4>
-                <div className="overflow-x-auto rounded-xl border border-slate-300">
-                  <table className="w-full text-xs text-left border-collapse">
-                    <thead className="bg-slate-100 text-slate-800 border-b border-slate-300">
-                      <tr>
-                        <th className="py-2.5 px-3 font-bold w-12 text-center">ลำดับ</th>
-                        <th className="py-2.5 px-3 font-bold w-28">รหัสวิชา</th>
-                        <th className="py-2.5 px-3 font-bold">ชื่อรายวิชา</th>
-                        <th className="py-2.5 px-3 font-bold w-36">หมวดวิชา</th>
-                        <th className="py-2.5 px-3 font-bold w-20 text-center">หน่วยกิต</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {FIRST_YEAR_COURSES.map((c, idx) => (
-                        <tr key={c.code}>
-                          <td className="py-2 px-3 text-center font-semibold">{idx + 1}</td>
-                          <td className="py-2 px-3 font-mono font-bold text-indigo-900">{c.code}</td>
-                          <td className="py-2 px-3 font-semibold text-slate-900">{c.nameTh}</td>
-                          <td className="py-2 px-3 text-slate-600">{c.type}</td>
-                          <td className="py-2 px-3 text-center font-bold">{c.credits}</td>
+              {/* First Semester Course Plan Table */}
+              {portalConfig.showFirstYearCoursePlan && enabledFirstYearCourses.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs sm:text-sm font-extrabold text-slate-900">
+                    ตารางแผนการลงทะเบียนเรียน ภาคการศึกษาที่ ๑ ชั้นปีที่ ๑ (รวม {totalFirstYearCredits} หน่วยกิต)
+                  </h4>
+                  <div className="overflow-x-auto rounded-xl border border-slate-300">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead className="bg-slate-100 text-slate-800 border-b border-slate-300">
+                        <tr>
+                          <th className="py-2.5 px-3 font-bold w-12 text-center">ลำดับ</th>
+                          <th className="py-2.5 px-3 font-bold w-28">รหัสวิชา</th>
+                          <th className="py-2.5 px-3 font-bold">ชื่อรายวิชา</th>
+                          <th className="py-2.5 px-3 font-bold w-36">หมวดวิชา</th>
+                          <th className="py-2.5 px-3 font-bold w-20 text-center">หน่วยกิต</th>
                         </tr>
-                      ))}
-                      <tr className="bg-slate-50 font-extrabold text-slate-900 border-t-2 border-slate-300">
-                        <td colSpan={4} className="py-2.5 px-3 text-right">
-                          รวมหน่วยกิตลงทะเบียนประจำภาคการศึกษาที่ ๑
-                        </td>
-                        <td className="py-2.5 px-3 text-center text-emerald-800">๑๙ หน่วยกิต</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {enabledFirstYearCourses.map((c, idx) => (
+                          <tr key={c.id}>
+                            <td className="py-2 px-3 text-center font-semibold">{idx + 1}</td>
+                            <td className="py-2 px-3 font-mono font-bold text-indigo-900">{c.code}</td>
+                            <td className="py-2 px-3 font-semibold text-slate-900">{c.nameTh}</td>
+                            <td className="py-2 px-3 text-slate-600">{c.type}</td>
+                            <td className="py-2 px-3 text-center font-bold">{c.credits}</td>
+                          </tr>
+                        ))}
+                        <tr className="bg-slate-50 font-extrabold text-slate-900 border-t-2 border-slate-300">
+                          <td colSpan={4} className="py-2.5 px-3 text-right">
+                            รวมหน่วยกิตลงทะเบียนประจำภาคการศึกษาที่ ๑
+                          </td>
+                          <td className="py-2.5 px-3 text-center text-emerald-800">
+                            {totalFirstYearCredits} หน่วยกิต
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Signatures Footer */}
               <div className="grid grid-cols-2 gap-8 pt-8 text-center text-xs text-slate-700">

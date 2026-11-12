@@ -1,4 +1,5 @@
 import { SignatoryItem } from './certificate';
+import type { AdmissionPortalConfig } from './admission';
 
 export interface SystemSettings {
   universityNameTh: string;
@@ -64,6 +65,7 @@ export interface SystemSettings {
   admissionDefaultInterviewRoom?: string; // สถานที่/ห้องสอบสัมภาษณ์เริ่มต้น
   admissionCoordinatorName?: string; // ชื่อผู้ประสานงานการรับสมัคร
   admissionCoordinatorPhone?: string; // เบอร์โทรติดต่อผู้ประสานงานการรับสมัคร
+  admissionPortalConfig?: AdmissionPortalConfig; // ตั้งค่าการแสดงผลและเนื้อหาในหน้า /enroll (เพิ่ม/แก้ไข/ลบ/เปิด-ปิด)
 
   // Timetable Period Time Configuration (กำหนดเวลาคาบเรียนในตารางสอน)
   morningPeriodLabel?: string; // เช่น "คาบเช้า (09:00 - 11:30 น.)"

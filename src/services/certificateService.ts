@@ -1,5 +1,6 @@
 import { CertificateRequest, CertRequestStatus, SystemSettings, SignatoryItem } from '@/types';
 import { getErrorMessage } from '@/lib/utils/error';
+import { DEFAULT_ADMISSION_PORTAL_CONFIG } from '@/lib/admission-config';
 import { readLocalJson, writeLocalJson, getSheetsClient } from './storageHelper';
 import { getStudents } from './studentService';
 
@@ -668,6 +669,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   admissionDefaultInterviewRoom: 'อาคารสมเด็จพระพุฒาจารย์ (อาคารเรียนรวม) คณะพุทธศาสตร์ มจร วังน้อย',
   admissionCoordinatorName: 'สำนักงานคณบดีคณะพุทธศาสตร์ ฝ่ายทะเบียนและวัดผล',
   admissionCoordinatorPhone: '035-248-000 ต่อ 8323',
+  admissionPortalConfig: DEFAULT_ADMISSION_PORTAL_CONFIG,
 };
 
 export function convertGoogleDriveUrl(url?: string): string {
