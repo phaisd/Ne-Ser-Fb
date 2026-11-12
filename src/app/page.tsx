@@ -15,27 +15,65 @@ import {
   Phone,
   Mail,
   CheckCircle2,
-  Lock
+  Lock,
+  BookOpen,
+  UserCheck,
+  BarChart3,
 } from 'lucide-react';
-import { getStudents, getCourses, getCertificateRequests, getAttendanceRecords, getSystemSettings } from '@/lib/data-store';
+import {
+  getStudents,
+  getCourses,
+  getCertificateRequests,
+  getAttendanceRecords,
+  getSystemSettings,
+  getInstructorAccounts,
+} from '@/lib/data-store';
 import { HeroWildSection } from '@/components/home/HeroWildSection';
 import { CookieConsentBanner } from '@/components/home/CookieConsentBanner';
 
 export const revalidate = 0;
 
 export default async function HomePage() {
-  const [students, courses, certRequests, attendance, settings] = await Promise.all([
+  const [students, courses, certRequests, attendance, settings, instructors] = await Promise.all([
     getStudents(),
     getCourses(),
     getCertificateRequests(),
     getAttendanceRecords(),
     getSystemSettings(),
+    getInstructorAccounts(),
   ]);
 
   const hasSheets = !!process.env.GOOGLE_SHEET_ID && !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const pendingRequests = certRequests.filter((r) => r.status === 'PENDING');
-  const thaiStudents = students.filter((s) => s.nationality === 'ไทย' || s.nationality === 'Thai').length;
-  const intlStudents = students.length - thaiStudents;
+  const approvedRequests = certRequests.filter((r) => r.status === 'APPROVED');
+
+  // Student Breakdown
+  const totalStudents = students.length;
+  const intlStudents = students.filter(
+    (s) => s.programType === 'ENGLISH' || (s.nationality && s.nationality !== 'ไทย' && s.nationality !== 'Thai')
+  ).length;
+  const thaiStudents = totalStudents - intlStudents;
+  const year1Count = students.filter((s) => Number(s.yearLevel || 1) === 1).length;
+  const year2Count = students.filter((s) => Number(s.yearLevel) === 2).length;
+  const year3Count = students.filter((s) => Number(s.yearLevel) === 3).length;
+  const year4Count = students.filter((s) => Number(s.yearLevel) >= 4).length;
+
+  // Instructor & Personnel Breakdown
+  const activePersonnel = instructors.filter((u) => !u.isSuspended && u.isActive !== false);
+  const officerAccounts = activePersonnel.filter(
+    (u) => u.role === 'OFFICER' || (u.instructorType || '').includes('เจ้าหน้าที่')
+  );
+  const facultyList = activePersonnel.filter(
+    (u) => u.role !== 'OFFICER' && !(u.instructorType || '').includes('เจ้าหน้าที่')
+  );
+  const specialInstructors = facultyList.filter((u) => (u.instructorType || '').includes('พิเศษ')).length;
+  const fullTimeInstructors = facultyList.length - specialInstructors;
+  const totalInstructors = facultyList.length;
+
+  // Course Breakdown
+  const totalCourses = courses.length;
+  const englishCourses = courses.filter((c) => c.programType === 'ENGLISH' || c.section === 'EN').length;
+  const thaiCourses = totalCourses - englishCourses;
 
   return (
     <div className="space-y-8">
@@ -107,6 +145,153 @@ export default async function HomePage() {
           </div>
         </div>
       )}
+
+      {/* 1.5 Executive & Academic Statistics Dashboard (แดชบอร์ดภาพรวมสถิติคณะพุทธศาสตร์) */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3.5">
+          <div>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-orange-600" />
+              <span>แดชบอร์ดสรุปสถิติวิชาการและบุคลากร (Academic & Faculty Overview)</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              ข้อมูลสถิตินิสิตปัจจุบัน คณาจารย์ผู้สอน และรายวิชาที่เปิดสอน คณะพุทธศาสตร์ มจร (อัปเดตแบบเรียลไทม์)
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold self-start sm:self-center">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>ข้อมูลปัจจุบันตามจริง (Real-time Sync)</span>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Card 1: Students Statistics */}
+          <div className="rounded-2xl bg-gradient-to-br from-orange-50/90 via-amber-50/50 to-white border border-orange-200/80 p-4 sm:p-5 flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-orange-800 uppercase tracking-wide flex items-center gap-1.5">
+                  <GraduationCap className="w-4 h-4 text-orange-600" />
+                  จำนวนนิสิตปัจจุบันทั้งหมด
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                  กำลังศึกษา
+                </span>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-black text-slate-900">{totalStudents}</span>
+                <span className="text-xs font-semibold text-slate-500">รูป/คน</span>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white/90 rounded-xl p-2.5 border border-orange-200/60 shadow-2xs">
+                  <div className="text-[11px] font-bold text-emerald-700">🇹🇭 หลักสูตรภาษาไทย</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-0.5">
+                    {thaiStudents} <span className="text-[10px] font-normal text-slate-500">รูป/คน</span>
+                  </div>
+                </div>
+                <div className="bg-white/90 rounded-xl p-2.5 border border-orange-200/60 shadow-2xs">
+                  <div className="text-[11px] font-bold text-purple-700">🌐 หลักสูตรภาษาอังกฤษ</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-0.5">
+                    {intlStudents} <span className="text-[10px] font-normal text-slate-500">รูป/คน</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2.5 border-t border-orange-200/50 flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-600 font-semibold">
+              <span>แยกตามชั้นปี:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200">ปี 1: <strong>{year1Count}</strong></span>
+                <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200">ปี 2: <strong>{year2Count}</strong></span>
+                <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200">ปี 3: <strong>{year3Count}</strong></span>
+                <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200">ปี 4: <strong>{year4Count}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Faculty / Instructors Statistics */}
+          <div className="rounded-2xl bg-gradient-to-br from-sky-50/90 via-indigo-50/40 to-white border border-sky-200/80 p-4 sm:p-5 flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-sky-900 uppercase tracking-wide flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-sky-600" />
+                  คณาจารย์ผู้สอนทั้งหมด
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">
+                  คณะพุทธศาสตร์
+                </span>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-black text-slate-900">{totalInstructors}</span>
+                <span className="text-xs font-semibold text-slate-500">รูป/ท่าน</span>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white/90 rounded-xl p-2.5 border border-sky-200/60 shadow-2xs">
+                  <div className="text-[11px] font-bold text-indigo-700">🏛️ อาจารย์ประจำ</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-0.5">
+                    {fullTimeInstructors} <span className="text-[10px] font-normal text-slate-500">รูป/ท่าน</span>
+                  </div>
+                </div>
+                <div className="bg-white/90 rounded-xl p-2.5 border border-sky-200/60 shadow-2xs">
+                  <div className="text-[11px] font-bold text-amber-700">✨ อาจารย์พิเศษ</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-0.5">
+                    {specialInstructors} <span className="text-[10px] font-normal text-slate-500">รูป/ท่าน</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2.5 border-t border-sky-200/50 flex items-center justify-between text-[11px] text-slate-600 font-semibold">
+              <span>เจ้าหน้าที่ / บุคลากรสายสนับสนุน:</span>
+              <span className="px-2.5 py-0.5 rounded-md bg-white border border-slate-200 font-bold text-sky-800">
+                {officerAccounts.length} ท่าน
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3: Courses & Academic Services Statistics */}
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white border border-emerald-200/80 p-4 sm:p-5 flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-emerald-900 uppercase tracking-wide flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-emerald-600" />
+                  รายวิชาที่เปิดสอนทั้งหมด
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  คลังหลักสูตร
+                </span>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-black text-slate-900">{totalCourses}</span>
+                <span className="text-xs font-semibold text-slate-500">รายวิชา</span>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white/90 rounded-xl p-2.5 border border-emerald-200/60 shadow-2xs">
+                  <div className="text-[11px] font-bold text-emerald-700">🇹🇭 รายวิชาภาคไทย</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-0.5">
+                    {thaiCourses} <span className="text-[10px] font-normal text-slate-500">วิชา</span>
+                  </div>
+                </div>
+                <div className="bg-white/90 rounded-xl p-2.5 border border-emerald-200/60 shadow-2xs">
+                  <div className="text-[11px] font-bold text-purple-700">🌐 รายวิชาภาคอังกฤษ</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-0.5">
+                    {englishCourses} <span className="text-[10px] font-normal text-slate-500">วิชา</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2.5 border-t border-emerald-200/50 flex items-center justify-between text-[11px] text-slate-600 font-semibold">
+              <span>หนังสือรับรองที่อนุมัติแล้ว:</span>
+              <span className="px-2.5 py-0.5 rounded-md bg-white border border-slate-200 font-bold text-emerald-800">
+                ✓ {approvedRequests.length} ฉบับ (รออนุมัติ {pendingRequests.length})
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 2. Public Services Grid (สำหรับนักศึกษา & บุคคลภายนอก) */}
       <div className="space-y-4">

@@ -16,15 +16,19 @@ import {
   Lock,
   QrCode,
   Archive,
+  GraduationCap,
+  UserCheck,
 } from 'lucide-react';
-import { CertificateRequest, UserAccount } from '@/types';
+import { CertificateRequest, UserAccount, Student, Course } from '@/types';
 import { AcademicYearWorkflowCard } from '../AcademicYearWorkflowCard';
 
 interface AdminDashboardTabProps {
   pendingRequests: CertificateRequest[];
   approvedRequests: CertificateRequest[];
   studentsCount: { total: number; thai: number; intl: number };
+  studentsList?: Student[];
   coursesCount: number;
+  coursesList?: Course[];
   users: UserAccount[];
   setActiveTab: (tab: any) => void;
   setStatusFilter: (filter: any) => void;
@@ -36,13 +40,37 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
   pendingRequests,
   approvedRequests,
   studentsCount,
+  studentsList = [],
   coursesCount,
+  coursesList = [],
   users,
   setActiveTab,
   setStatusFilter,
   setApprovingId,
   onOpenArchiveModal,
 }) => {
+  // Compute Faculty & Personnel Breakdown
+  const activePersonnel = users.filter((u) => !u.isSuspended && u.isActive !== false);
+  const officerList = activePersonnel.filter(
+    (u) => u.role === 'OFFICER' || (u.instructorType || '').includes('เจ้าหน้าที่')
+  );
+  const actingOfficerCount = activePersonnel.filter((u) => u.isActingOfficer).length;
+  const facultyList = activePersonnel.filter(
+    (u) => u.role !== 'OFFICER' && !(u.instructorType || '').includes('เจ้าหน้าที่')
+  );
+  const specialInstructorsCount = facultyList.filter((u) => (u.instructorType || '').includes('พิเศษ')).length;
+  const fullTimeInstructorsCount = facultyList.length - specialInstructorsCount;
+  const totalInstructorsCount = facultyList.length;
+
+  // Compute Student Year Breakdown
+  const year1Count = studentsList.filter((s) => Number(s.yearLevel || 1) === 1).length;
+  const year2Count = studentsList.filter((s) => Number(s.yearLevel) === 2).length;
+  const year3Count = studentsList.filter((s) => Number(s.yearLevel) === 3).length;
+  const year4Count = studentsList.filter((s) => Number(s.yearLevel) >= 4).length;
+
+  // Compute Course Program Breakdown
+  const englishCoursesCount = coursesList.filter((c) => c.programType === 'ENGLISH' || c.section === 'EN').length;
+  const thaiCoursesCount = Math.max(0, coursesCount - englishCoursesCount);
   return (
     <div className="space-y-6">
       {/* Welcome Identity Banner */}
@@ -78,21 +106,25 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* KPI Cards Grid (Certificate Requests & Academic/Faculty Breakdown) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div
           onClick={() => {
             setActiveTab('CERTIFICATES');
             setStatusFilter('PENDING');
           }}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-400 cursor-pointer transition space-y-2"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-400 cursor-pointer transition flex flex-col justify-between space-y-2"
         >
-          <div className="flex items-center justify-between text-xs font-bold text-amber-700">
-            <span>คำร้องรออนุมัติ</span>
-            <Clock className="w-4 h-4 text-amber-600" />
+          <div>
+            <div className="flex items-center justify-between text-xs font-bold text-amber-700">
+              <span>คำร้องรออนุมัติ</span>
+              <Clock className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="text-3xl font-extrabold text-amber-900 mt-1">{pendingRequests.length}</div>
           </div>
-          <div className="text-3xl font-extrabold text-amber-900">{pendingRequests.length}</div>
-          <div className="text-[11px] text-amber-600 font-medium">คลิกเพื่อพิจารณาออกเลขที่</div>
+          <div className="text-[11px] text-amber-600 font-medium pt-2 border-t border-slate-100">
+            คลิกเพื่อพิจารณาออกเลขที่ →
+          </div>
         </div>
 
         <div
@@ -100,40 +132,99 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
             setActiveTab('CERTIFICATES');
             setStatusFilter('APPROVED');
           }}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-emerald-400 cursor-pointer transition space-y-2"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-emerald-400 cursor-pointer transition flex flex-col justify-between space-y-2"
         >
-          <div className="flex items-center justify-between text-xs font-bold text-emerald-700">
-            <span>อนุมัติแล้ว</span>
-            <CheckCircle className="w-4 h-4 text-emerald-600" />
+          <div>
+            <div className="flex items-center justify-between text-xs font-bold text-emerald-700">
+              <span>อนุมัติแล้ว</span>
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="text-3xl font-extrabold text-emerald-900 mt-1">{approvedRequests.length}</div>
           </div>
-          <div className="text-3xl font-extrabold text-emerald-900">{approvedRequests.length}</div>
-          <div className="text-[11px] text-emerald-600 font-medium">ออกเลขที่และพร้อมพิมพ์</div>
+          <div className="text-[11px] text-emerald-600 font-medium pt-2 border-t border-slate-100">
+            ออกเลขที่และพร้อมพิมพ์ →
+          </div>
         </div>
 
         <div
           onClick={() => setActiveTab('STUDENTS')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-orange-400 cursor-pointer transition space-y-2"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-orange-400 cursor-pointer transition flex flex-col justify-between space-y-2"
         >
-          <div className="flex items-center justify-between text-xs font-bold text-orange-700">
-            <span>นิสิตในระบบ</span>
-            <Users className="w-4 h-4 text-orange-600" />
+          <div>
+            <div className="flex items-center justify-between text-xs font-bold text-orange-700">
+              <span>นิสิตปัจจุบันทั้งหมด</span>
+              <GraduationCap className="w-4 h-4 text-orange-600" />
+            </div>
+            <div className="text-3xl font-extrabold text-slate-900 mt-1">
+              {studentsCount.total} <span className="text-xs font-semibold text-slate-400">รูป/คน</span>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px]">
+              <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-200/60">
+                🇹🇭 ไทย: {studentsCount.thai}
+              </span>
+              <span className="px-2 py-1 rounded-lg bg-purple-50 text-purple-800 font-bold border border-purple-200/60">
+                🌐 อังกฤษ: {studentsCount.intl}
+              </span>
+            </div>
           </div>
-          <div className="text-3xl font-extrabold text-slate-900">{studentsCount.total}</div>
-          <div className="text-[11px] text-slate-500">
-            🇹🇭 {studentsCount.thai} • 🌐 {studentsCount.intl} รูป/คน
+          <div className="text-[10px] text-slate-500 font-semibold pt-2 border-t border-slate-100 flex items-center justify-between">
+            <span>ปี1: {year1Count} • ปี2: {year2Count} • ปี3: {year3Count} • ปี4: {year4Count}</span>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('USERS')}
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-sky-400 cursor-pointer transition flex flex-col justify-between space-y-2"
+        >
+          <div>
+            <div className="flex items-center justify-between text-xs font-bold text-sky-700">
+              <span>อาจารย์ผู้สอนทั้งหมด</span>
+              <UserCheck className="w-4 h-4 text-sky-600" />
+            </div>
+            <div className="text-3xl font-extrabold text-slate-900 mt-1">
+              {totalInstructorsCount} <span className="text-xs font-semibold text-slate-400">รูป/ท่าน</span>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px]">
+              <span className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-800 font-bold border border-indigo-200/60">
+                🏛️ ประจำ: {fullTimeInstructorsCount}
+              </span>
+              <span className="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 font-bold border border-amber-200/60">
+                ✨ พิเศษ: {specialInstructorsCount}
+              </span>
+            </div>
+          </div>
+          <div className="text-[10px] text-slate-500 font-semibold pt-2 border-t border-slate-100 flex items-center justify-between">
+            <span>เจ้าหน้าที่ {officerList.length} ท่าน</span>
+            {actingOfficerCount > 0 && (
+              <span className="text-emerald-700 font-bold">☑️ ช่วยงาน {actingOfficerCount}</span>
+            )}
           </div>
         </div>
 
         <div
           onClick={() => setActiveTab('COURSES')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-blue-400 cursor-pointer transition space-y-2"
+          className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-blue-400 cursor-pointer transition flex flex-col justify-between space-y-2 sm:col-span-2 lg:col-span-1"
         >
-          <div className="flex items-center justify-between text-xs font-bold text-blue-700">
-            <span>รายวิชาที่เปิดสอน</span>
-            <BookOpen className="w-4 h-4 text-blue-600" />
+          <div>
+            <div className="flex items-center justify-between text-xs font-bold text-blue-700">
+              <span>รายวิชาที่เปิดสอน</span>
+              <BookOpen className="w-4 h-4 text-blue-600" />
+            </div>
+            <div className="text-3xl font-extrabold text-slate-900 mt-1">
+              {coursesCount} <span className="text-xs font-semibold text-slate-400">วิชา</span>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px]">
+              <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-200/60">
+                🇹🇭 ไทย: {thaiCoursesCount}
+              </span>
+              <span className="px-2 py-1 rounded-lg bg-purple-50 text-purple-800 font-bold border border-purple-200/60">
+                🌐 EN: {englishCoursesCount}
+              </span>
+            </div>
           </div>
-          <div className="text-3xl font-extrabold text-slate-900">{coursesCount}</div>
-          <div className="text-[11px] text-slate-500">ภาคไทย & ภาษาอังกฤษ</div>
+          <div className="text-[10px] text-blue-600 font-medium pt-2 border-t border-slate-100">
+            คลิกเพื่อจัดการคลังหลักสูตร →
+          </div>
         </div>
       </div>
 

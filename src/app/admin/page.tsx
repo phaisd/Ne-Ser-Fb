@@ -613,7 +613,9 @@ export default function AdminConsolePage() {
               pendingRequests={adminCerts.pendingRequests}
               approvedRequests={adminCerts.approvedRequests}
               studentsCount={studentsCount}
+              studentsList={studentsList}
               coursesCount={coursesCount}
+              coursesList={coursesList}
               users={adminUsers.users}
               setActiveTab={setActiveTab}
               setStatusFilter={adminCerts.setStatusFilter}
