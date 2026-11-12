@@ -13,9 +13,85 @@ import {
   CheckCircle2,
   FileText,
   X,
+  Calendar,
+  Clock,
+  ShieldAlert,
 } from 'lucide-react';
 import { CertificateRequest } from '@/types';
 import { InspectionDocTab } from './types';
+
+function evaluateExpiryStatus(rawDate?: string): {
+  status: 'EXPIRED' | 'WARNING' | 'VALID' | 'UNKNOWN' | 'EMPTY';
+  daysRemaining: number | null;
+  label: string;
+} {
+  const clean = (rawDate || '').trim();
+  if (!clean || clean === '-') {
+    return { status: 'EMPTY', daysRemaining: null, label: 'ไม่ได้ระบุข้อมูล' };
+  }
+
+  // Normalize common month typos (e.g. DCE -> DEC)
+  let normalized = clean
+    .replace(/\bDCE\b/gi, 'DEC')
+    .replace(/\bJNA\b/gi, 'JAN')
+    .replace(/\bFBE\b/gi, 'FEB')
+    .replace(/\bMRA\b/gi, 'MAR')
+    .replace(/\bARP\b/gi, 'APR')
+    .replace(/\bJNU\b/gi, 'JUN')
+    .replace(/\bJLU\b/gi, 'JUL')
+    .replace(/\bAGU\b/gi, 'AUG')
+    .replace(/\bSPE\b/gi, 'SEP')
+    .replace(/\bOTC\b/gi, 'OCT')
+    .replace(/\bNVO\b/gi, 'NOV');
+
+  let parsedDate: Date | null = null;
+
+  // Check DD/MM/YYYY or DD-MM-YYYY
+  const dmyMatch = normalized.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmyMatch) {
+    const d = parseInt(dmyMatch[1], 10);
+    const m = parseInt(dmyMatch[2], 10) - 1;
+    let y = parseInt(dmyMatch[3], 10);
+    if (y > 2400) y -= 543;
+    parsedDate = new Date(y, m, d);
+  } else {
+    // Check if 4-digit year is Buddhist Era (> 2400)
+    normalized = normalized.replace(/\b(2[45]\d{2})\b/, (yr) => String(parseInt(yr, 10) - 543));
+    const t = Date.parse(normalized);
+    if (!Number.isNaN(t)) {
+      parsedDate = new Date(t);
+    }
+  }
+
+  if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+    return { status: 'UNKNOWN', daysRemaining: null, label: 'ตรวจสอบวันที่จากเอกสารแนบ' };
+  }
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetStart = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+  const diffDays = Math.round((targetStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return {
+      status: 'EXPIRED',
+      daysRemaining: diffDays,
+      label: `หมดอายุแล้ว (เลยกำหนด ${Math.abs(diffDays)} วัน)`,
+    };
+  }
+  if (diffDays <= 30) {
+    return {
+      status: 'WARNING',
+      daysRemaining: diffDays,
+      label: diffDays === 0 ? 'หมดอายุวันนี้!' : `ใกล้หมดอายุ (เหลือ ${diffDays} วัน - ต่ำกว่า 30 วัน)`,
+    };
+  }
+  return {
+    status: 'VALID',
+    daysRemaining: diffDays,
+    label: `ยังไม่หมดอายุ (คงเหลือ ${diffDays} วัน)`,
+  };
+}
 
 interface CertAttachmentViewerProps {
   previewRequest: CertificateRequest;
@@ -82,6 +158,13 @@ export function CertAttachmentViewer({
     }
   };
 
+  const passportExpiryInfo = evaluateExpiryStatus(previewRequest.passportExpireDate);
+  const visaExpiryInfo = evaluateExpiryStatus(previewRequest.visaExpireDate);
+  const isThaiApplicant =
+    previewRequest.nationality === 'ไทย' ||
+    previewRequest.nationality === 'Thai' ||
+    previewRequest.targetAudience === 'THAI';
+
   return (
     <div className="space-y-4 animate-in fade-in py-1">
       {/* Student Info Bar */}
@@ -93,6 +176,11 @@ export function CertAttachmentViewer({
           <span className="text-slate-600 ml-2">
             | หลักสูตร: {previewRequest.degreeLevel || 'ปริญญาตรี'} สาขา: {previewRequest.major || '-'}
           </span>
+          {previewRequest.nationality && (
+            <span className="ml-2 px-2 py-0.5 rounded-md bg-white border border-purple-200 text-purple-800 font-bold text-[11px]">
+              สัญชาติ: {previewRequest.nationality}
+            </span>
+          )}
         </div>
         <div>
           <span className="text-slate-500 block text-[11px]">สถานะคำร้อง:</span>
@@ -111,6 +199,171 @@ export function CertAttachmentViewer({
               ? 'ปฏิเสธ'
               : 'รอพิจารณา'}
           </span>
+        </div>
+      </div>
+
+      {/* Passport & Visa Expiry Inspection Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Card 1: Passport Expiry Box */}
+        <div
+          className={`p-3.5 rounded-2xl border-2 flex items-start justify-between gap-3 text-xs shadow-2xs transition ${
+            passportExpiryInfo.status === 'EXPIRED'
+              ? 'bg-rose-50/90 border-rose-400 text-rose-950'
+              : passportExpiryInfo.status === 'WARNING'
+              ? 'bg-amber-50/90 border-amber-400 text-amber-950'
+              : passportExpiryInfo.status === 'VALID'
+              ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+              : 'bg-white border-slate-200 text-slate-800'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 text-white shadow-xs ${
+                passportExpiryInfo.status === 'EXPIRED'
+                  ? 'bg-rose-600'
+                  : passportExpiryInfo.status === 'WARNING'
+                  ? 'bg-amber-500'
+                  : passportExpiryInfo.status === 'VALID'
+                  ? 'bg-emerald-600'
+                  : 'bg-sky-600'
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-extrabold text-xs text-slate-900">
+                  วันหมดอายุ Passport (Passport Expire Date)
+                </span>
+                {previewRequest.passportNo && (
+                  <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-white/90 border border-slate-200 text-sky-800">
+                    No: {previewRequest.passportNo}
+                  </span>
+                )}
+              </div>
+              <div className="text-sm font-black font-mono tracking-wide">
+                {previewRequest.passportExpireDate && previewRequest.passportExpireDate.trim() !== ''
+                  ? previewRequest.passportExpireDate
+                  : isThaiApplicant
+                  ? 'ไม่ระบุ (นิสิตสัญชาติไทย)'
+                  : 'ไม่ได้ระบุวันหมดอายุ Passport'}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                    passportExpiryInfo.status === 'EXPIRED'
+                      ? 'bg-rose-200/90 text-rose-900'
+                      : passportExpiryInfo.status === 'WARNING'
+                      ? 'bg-amber-200/90 text-amber-900'
+                      : passportExpiryInfo.status === 'VALID'
+                      ? 'bg-emerald-200/80 text-emerald-900'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {passportExpiryInfo.status === 'EXPIRED' && <ShieldAlert className="w-3 h-3 text-rose-700" />}
+                  {passportExpiryInfo.status === 'WARNING' && <AlertTriangle className="w-3 h-3 text-amber-700" />}
+                  {passportExpiryInfo.status === 'VALID' && <CheckCircle2 className="w-3 h-3 text-emerald-700" />}
+                  <span>{passportExpiryInfo.label}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {passportExpiryInfo.status === 'EXPIRED' && previewRequest.status === 'PENDING' && (
+            <button
+              type="button"
+              onClick={() => {
+                handleOpenRejectModal(previewRequest);
+                setRejectReasonInput(
+                  `หนังสือเดินทาง (Passport) หมดอายุแล้ว (${previewRequest.passportExpireDate}) กรุณาต่ออายุหนังสือเดินทางก่อนยื่นคำร้อง`
+                );
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] shrink-0 cursor-pointer shadow-xs transition"
+            >
+              ปฏิเสธ (Passport หมดอายุ)
+            </button>
+          )}
+        </div>
+
+        {/* Card 2: Visa Expiry Box */}
+        <div
+          className={`p-3.5 rounded-2xl border-2 flex items-start justify-between gap-3 text-xs shadow-2xs transition ${
+            visaExpiryInfo.status === 'EXPIRED'
+              ? 'bg-rose-50/90 border-rose-400 text-rose-950'
+              : visaExpiryInfo.status === 'WARNING'
+              ? 'bg-amber-50/90 border-amber-400 text-amber-950'
+              : visaExpiryInfo.status === 'VALID'
+              ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+              : 'bg-white border-slate-200 text-slate-800'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 text-white shadow-xs ${
+                visaExpiryInfo.status === 'EXPIRED'
+                  ? 'bg-rose-600'
+                  : visaExpiryInfo.status === 'WARNING'
+                  ? 'bg-amber-500'
+                  : visaExpiryInfo.status === 'VALID'
+                  ? 'bg-emerald-600'
+                  : 'bg-purple-600'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-extrabold text-xs text-slate-900">
+                  วันหมดอายุวีซ่า (Visa Expire Date)
+                </span>
+                {previewRequest.visaType && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-white/90 border border-slate-200 text-purple-800">
+                    ประเภท: {previewRequest.visaType}
+                  </span>
+                )}
+              </div>
+              <div className="text-sm font-black font-mono tracking-wide">
+                {previewRequest.visaExpireDate && previewRequest.visaExpireDate.trim() !== ''
+                  ? previewRequest.visaExpireDate
+                  : isThaiApplicant
+                  ? 'ไม่ระบุ (นิสิตสัญชาติไทย)'
+                  : 'ไม่ได้ระบุวันหมดอายุวีซ่า'}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                    visaExpiryInfo.status === 'EXPIRED'
+                      ? 'bg-rose-200/90 text-rose-900'
+                      : visaExpiryInfo.status === 'WARNING'
+                      ? 'bg-amber-200/90 text-amber-900'
+                      : visaExpiryInfo.status === 'VALID'
+                      ? 'bg-emerald-200/80 text-emerald-900'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {visaExpiryInfo.status === 'EXPIRED' && <ShieldAlert className="w-3 h-3 text-rose-700" />}
+                  {visaExpiryInfo.status === 'WARNING' && <AlertTriangle className="w-3 h-3 text-amber-700" />}
+                  {visaExpiryInfo.status === 'VALID' && <CheckCircle2 className="w-3 h-3 text-emerald-700" />}
+                  <span>{visaExpiryInfo.label}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {visaExpiryInfo.status === 'EXPIRED' && previewRequest.status === 'PENDING' && (
+            <button
+              type="button"
+              onClick={() => {
+                handleOpenRejectModal(previewRequest);
+                setRejectReasonInput(
+                  `วีซ่าหมดอายุแล้ว (${previewRequest.visaExpireDate}) กรุณาติดต่อสำนักงานคณบดีเพื่อตรวจสอบเอกสาร`
+                );
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] shrink-0 cursor-pointer shadow-xs transition"
+            >
+              ปฏิเสธ (วีซ่าหมดอายุ)
+            </button>
+          )}
         </div>
       </div>
 
@@ -362,6 +615,8 @@ export function CertAttachmentViewer({
                   </h4>
                   <p className="text-[11px] text-slate-500 font-mono">
                     เลขที่หนังสือเดินทาง: {previewRequest.passportNo || 'ไม่มี (ใช้เลขบัตร ปชช. ในระบบทะเบียน)'}
+                    {' | '}วันหมดอายุ Passport: <strong className="text-slate-800">{previewRequest.passportExpireDate || '-'}</strong>
+                    {' | '}วันหมดอายุวีซ่า: <strong className="text-slate-800">{previewRequest.visaExpireDate || '-'}</strong>
                   </p>
                 </div>
               </div>

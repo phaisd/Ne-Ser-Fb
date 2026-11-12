@@ -939,7 +939,7 @@ export function CertificateRequestForm({
                   <label className="text-xs font-semibold text-slate-600 block mb-1">วันหมดอายุวีซ่า</label>
                   <input
                     type="text"
-                    placeholder="เช่น 28 DCE 2026"
+                    placeholder="เช่น 28 DEC 2026 หรือ 2026-12-28"
                     value={visaExpireDate}
                     onChange={(e) => setVisaExpireDate(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-purple-500"
