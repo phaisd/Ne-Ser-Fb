@@ -9,7 +9,14 @@ import {
   updateEvent,
   deleteEvent
 } from '@/services';
-import { requireAdminOrOfficer, requireStaffOrInstructor } from '@/lib/server-auth-guard';
+import {
+  requireAdminOrOfficer,
+  requireStaffOrInstructor,
+  requireAuthenticatedUser,
+  getAuthenticatedUserFromRequest,
+  isServerStaffOrInstructor,
+  isSelfUserIdentity,
+} from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
   try {
@@ -19,12 +26,25 @@ export async function GET(request: Request) {
     const studentCode = searchParams.get('studentCode') || undefined;
 
     if (action === 'registrations') {
+      const auth = requireAuthenticatedUser(request);
+      if (auth.response) return auth.response;
+
       const regs = await getEventRegistrations(eventId, studentCode);
-      return NextResponse.json({ success: true, count: regs.length, data: regs });
+      const visibleRegs = isServerStaffOrInstructor(auth.user)
+        ? regs
+        : regs.filter((r) => isSelfUserIdentity(auth.user, r.studentCode));
+      return NextResponse.json({ success: true, count: visibleRegs.length, data: visibleRegs });
     }
 
     const events = await getEvents();
-    const regs = await getEventRegistrations(eventId, studentCode);
+    const authUser = getAuthenticatedUserFromRequest(request);
+    let regs: Awaited<ReturnType<typeof getEventRegistrations>> = [];
+    if (authUser) {
+      const allRegs = await getEventRegistrations(eventId, studentCode);
+      regs = isServerStaffOrInstructor(authUser)
+        ? allRegs
+        : allRegs.filter((r) => isSelfUserIdentity(authUser, r.studentCode));
+    }
 
     return NextResponse.json({ 
       success: true, 

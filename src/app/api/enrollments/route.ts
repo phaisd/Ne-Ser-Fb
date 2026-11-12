@@ -6,13 +6,30 @@ import {
   removeStudentFromCourse,
   getStudentEnrolledCourses,
 } from '@/lib/data-store';
-import { requireStaffOrInstructor } from '@/lib/server-auth-guard';
+import {
+  requireAuthenticatedUser,
+  requireStaffOrInstructor,
+  isServerStaffOrInstructor,
+  isSelfUserIdentity,
+} from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
   try {
+    const auth = requireAuthenticatedUser(request);
+    if (auth.response) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const courseCode = searchParams.get('courseCode');
     const studentCode = searchParams.get('studentCode');
+
+    if (!isServerStaffOrInstructor(auth.user)) {
+      if (!studentCode || !isSelfUserIdentity(auth.user, studentCode)) {
+        return NextResponse.json(
+          { success: false, error: 'ไม่มีสิทธิ์เข้าถึงข้อมูลการลงทะเบียนของผู้อื่น (Forbidden)' },
+          { status: 403 }
+        );
+      }
+    }
 
     if (studentCode) {
       const list = await getStudentEnrolledCourses(studentCode);

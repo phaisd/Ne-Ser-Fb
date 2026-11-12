@@ -10,6 +10,9 @@ import { requireAdminOrOfficer, requireStaffOrInstructor } from '@/lib/server-au
 
 export async function GET(request: Request) {
   try {
+    const auth = requireStaffOrInstructor(request);
+    if (auth.response) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const courseCode = searchParams.get('courseCode') || undefined;
     const date = searchParams.get('date') || undefined;

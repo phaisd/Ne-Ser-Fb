@@ -150,8 +150,14 @@ export async function sendPasswordResetEmail(
   try {
     const transporter = getTransporter();
     if (!transporter) {
-      console.warn(`[MAILER] SMTP not configured. Logged reset email for ${primaryRecipient} with OTP: ${otpCode}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[MAILER] SMTP not configured. Logged reset email for ${primaryRecipient}`);
+      } else {
+        console.warn('[MAILER] SMTP not configured in production; password reset email was not sent.');
+      }
       logEntry.sent = false;
+      logEntry.otpCode = process.env.NODE_ENV === 'production' ? '***' : otpCode;
+      logEntry.resetUrl = process.env.NODE_ENV === 'production' ? '***' : resetUrl;
       logEntry.error = 'SMTP credentials not configured in environment (SMTP_USER/SMTP_PASS)';
       logs.unshift(logEntry);
       writeLocalJson('email-logs.json', logs.slice(0, 100));

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSignedSessionToken } from '@/lib/auth-security';
-import { POST } from './route';
+import { GET, POST } from './route';
 import * as services from '@/services';
 
 vi.mock('@/lib/session-manager', () => ({
@@ -27,6 +27,20 @@ vi.mock('@/services', () => ({
 describe('/api/events RBAC & batch group import', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('hides registrations from unauthenticated GET and protects action=registrations', async () => {
+    vi.mocked(services.getEventRegistrations).mockResolvedValueOnce([
+      { id: 'reg-1', eventId: 'ev-1', studentCode: '6701001', studentName: 'นิสิต', status: 'REGISTERED', createdAt: '' },
+    ]);
+
+    const anonRes = await GET(new Request('http://localhost/api/events'));
+    const anonJson = await anonRes.json();
+    expect(anonRes.status).toBe(200);
+    expect(anonJson.registrations).toEqual([]);
+
+    const anonRegsRes = await GET(new Request('http://localhost/api/events?action=registrations'));
+    expect(anonRegsRes.status).toBe(401);
   });
 
   it('rejects unauthenticated batch_import_registrations and create_event', async () => {

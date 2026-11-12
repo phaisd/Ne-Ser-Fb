@@ -18,11 +18,34 @@ describe('/api/enrollments', () => {
     vi.clearAllMocks();
   });
 
-  it('returns enrollments by studentCode or courseCode on GET', async () => {
-    const res = await GET(new Request('http://localhost/api/enrollments?studentCode=6701001'));
-    const json = await res.json();
-    expect(res.status).toBe(200);
-    expect(json.count).toBe(1);
+  it('enforces auth and self/staff scope on GET enrollments', async () => {
+    const unauth = await GET(new Request('http://localhost/api/enrollments?studentCode=6701001'));
+    expect(unauth.status).toBe(401);
+
+    const studentToken = createSignedSessionToken({
+      id: '6701001',
+      studentCode: '6701001',
+      name: 'นิสิต',
+      email: '6701001@mcu.ac.th',
+      role: 'STUDENT',
+      sessionId: 'sess-stu',
+    });
+
+    const otherRes = await GET(
+      new Request('http://localhost/api/enrollments?studentCode=6701002', {
+        headers: { cookie: `mcu_session_token=${encodeURIComponent(studentToken)}` },
+      })
+    );
+    expect(otherRes.status).toBe(403);
+
+    const selfRes = await GET(
+      new Request('http://localhost/api/enrollments?studentCode=6701001', {
+        headers: { cookie: `mcu_session_token=${encodeURIComponent(studentToken)}` },
+      })
+    );
+    const selfJson = await selfRes.json();
+    expect(selfRes.status).toBe(200);
+    expect(selfJson.count).toBe(1);
   });
 
   it('enforces staff/instructor auth and handles enroll/remove actions on POST', async () => {

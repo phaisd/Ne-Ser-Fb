@@ -18,8 +18,23 @@ describe('/api/attendance', () => {
     vi.clearAllMocks();
   });
 
-  it('lists attendance records on GET', async () => {
-    const res = await GET(new Request('http://localhost/api/attendance?courseCode=000%20101'));
+  it('requires staff or instructor on GET and lists attendance records', async () => {
+    const unauth = await GET(new Request('http://localhost/api/attendance?courseCode=000%20101'));
+    expect(unauth.status).toBe(401);
+
+    const teacherToken = createSignedSessionToken({
+      id: 'inst-1',
+      name: 'อาจารย์',
+      email: 'inst@mcu.ac.th',
+      role: 'INSTRUCTOR',
+      sessionId: 'sess-inst',
+    });
+
+    const res = await GET(
+      new Request('http://localhost/api/attendance?courseCode=000%20101', {
+        headers: { cookie: `mcu_session_token=${encodeURIComponent(teacherToken)}` },
+      })
+    );
     const json = await res.json();
     expect(res.status).toBe(200);
     expect(json.count).toBe(1);

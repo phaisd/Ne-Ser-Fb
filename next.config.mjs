@@ -10,7 +10,7 @@ const cspHeader = `
   font-src 'self' https://fonts.gstatic.com data:;
   connect-src 'self' https://*.googleapis.com https://accounts.google.com https://translate.googleapis.com https://translate.google.com https://*.gstatic.com https://*.google.com;
   frame-src 'self' https://translate.google.com https://translate.googleapis.com https://*.google.com;
-  worker-src 'self' blob:;
+  worker-src 'self';
   object-src 'none';
   frame-ancestors 'none';
   base-uri 'self';
