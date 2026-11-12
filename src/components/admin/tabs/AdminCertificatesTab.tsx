@@ -339,7 +339,7 @@ export function AdminCertificatesTab({
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Year Selector */}
-            <div className="flex items-center gap-1 p-1 bg-purple-50 border border-purple-200 rounded-xl text-xs font-bold">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-purple-50 border border-purple-200 rounded-xl text-xs font-bold">
               <span className="text-purple-700 pl-2 pr-1 font-semibold flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-purple-600" /> ปี พ.ศ.:
               </span>
@@ -386,7 +386,7 @@ export function AdminCertificatesTab({
             </div>
 
             {/* Status filter */}
-            <div className="flex items-center gap-1 p-1 bg-slate-200/80 rounded-xl text-xs font-bold">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-200/80 rounded-xl text-xs font-bold">
               <button
                 onClick={() => setStatusFilter('ALL')}
                 className={`px-3 py-1 rounded-lg transition ${

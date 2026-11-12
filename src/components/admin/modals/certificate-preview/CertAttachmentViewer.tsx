@@ -206,7 +206,7 @@ export function CertAttachmentViewer({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Card 1: Passport Expiry Box */}
         <div
-          className={`p-3.5 rounded-2xl border-2 flex items-start justify-between gap-3 text-xs shadow-2xs transition ${
+          className={`p-3.5 rounded-2xl border-2 flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs shadow-2xs transition ${
             passportExpiryInfo.status === 'EXPIRED'
               ? 'bg-rose-50/90 border-rose-400 text-rose-950'
               : passportExpiryInfo.status === 'WARNING'
@@ -287,7 +287,7 @@ export function CertAttachmentViewer({
 
         {/* Card 2: Visa Expiry Box */}
         <div
-          className={`p-3.5 rounded-2xl border-2 flex items-start justify-between gap-3 text-xs shadow-2xs transition ${
+          className={`p-3.5 rounded-2xl border-2 flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs shadow-2xs transition ${
             visaExpiryInfo.status === 'EXPIRED'
               ? 'bg-rose-50/90 border-rose-400 text-rose-950'
               : visaExpiryInfo.status === 'WARNING'
@@ -551,13 +551,13 @@ export function CertAttachmentViewer({
                 </div>
               </div>
             ) : (
-              <div className="p-8 bg-white/90 rounded-xl border border-amber-200 text-xs text-center space-y-3 my-4">
+              <div className="p-4 sm:p-8 bg-white/90 rounded-xl border border-amber-200 text-xs text-center space-y-3 my-2 sm:my-4">
                 <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
                 <div>
                   <p className="font-bold text-amber-950 text-sm">
                     นิสิตยังไม่ได้แนบใบสำเนาการลงทะเบียนเรียน
                   </p>
-                  <p className="text-xs text-amber-800 max-w-md mx-auto mt-1">
+                  <p className="text-xs text-amber-800 max-w-md mx-auto mt-1 leading-relaxed">
                     หากไม่พบคีย์ข้อมูลการลงทะเบียนเรียนในระบบ
                     สามารถกดปฏิเสธคำร้องพร้อมแจ้งให้นิสิตส่งเอกสารเข้ามาใหม่ได้ทันที
                   </p>
@@ -569,9 +569,9 @@ export function CertAttachmentViewer({
                       handleOpenRejectModal(previewRequest);
                       setRejectReasonInput('ขาดสำเนาเอกสารการลงทะเบียน');
                     }}
-                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-200 cursor-pointer inline-flex items-center gap-1.5 transition"
+                    className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-200 cursor-pointer inline-flex items-center gap-1.5 transition"
                   >
-                    <XCircle className="w-4 h-4" />
+                    <XCircle className="w-4 h-4 shrink-0" />
                     <span>ปฏิเสธคำร้อง (ระบุว่าขาดสำเนาลงทะเบียนเรียน)</span>
                   </button>
                 )}
@@ -718,9 +718,9 @@ export function CertAttachmentViewer({
       </div>
 
       {/* SUMMARY & ACTION FOOTER BAR */}
-      <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
-        <div className="space-y-1">
-          <div className="font-bold text-slate-900 flex flex-wrap items-center gap-3">
+      <div className="p-3.5 sm:p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-3.5 text-xs">
+        <div className="space-y-1.5">
+          <div className="font-bold text-slate-900 flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <span>สรุปเอกสาร:</span>
             <span
               className={
@@ -731,7 +731,7 @@ export function CertAttachmentViewer({
             >
               1. สำเนาลงเรียน {previewRequest.enrollmentSlipUrl ? '✓ เรียบร้อย' : '⚠️ ยังไม่แนบ'}
             </span>
-            <span className="text-slate-300">|</span>
+            <span className="text-slate-300 hidden sm:inline">|</span>
             <span
               className={
                 previewRequest.passportCopyUrl ? 'text-sky-700 font-bold' : 'text-slate-600'
@@ -740,30 +740,30 @@ export function CertAttachmentViewer({
               2. สำเนาพาสปอร์ต {previewRequest.passportCopyUrl ? '✓ แนบแล้ว' : '(ใช้ข้อมูลทะเบียน)'}
             </span>
           </div>
-          <p className="text-[11px] text-amber-800 font-medium">
+          <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
             📸 <strong>ข้อ 3. รูปถ่ายนิสิต (ขนาด 1.5 - 2 นิ้ว):</strong>{' '}
             ให้นิสิตนำรูปถ่ายจริงมาติดบนหนังสือรับรองด้วยตนเองในวันมารับเอกสารฉบับจริง (เว้นช่องเส้นประไว้บนแบบฟอร์มแล้ว)
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto shrink-0">
           <button
             type="button"
             onClick={() => setPreviewTab('DOCUMENT')}
-            className="px-4 py-2.5 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 text-purple-700 font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+            className="w-full sm:w-auto justify-center px-3.5 py-2.5 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 text-purple-700 font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs"
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4 shrink-0" />
             <span>สลับไปดูตัวอย่างหนังสือรับรอง</span>
           </button>
 
           {previewRequest.status === 'PENDING' && (
-            <>
+            <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => handleOpenRejectModal(previewRequest)}
-                className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+                className="w-full sm:w-auto justify-center px-3.5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-sm"
               >
-                <XCircle className="w-4 h-4" />
+                <XCircle className="w-4 h-4 shrink-0" />
                 <span>ปฏิเสธคำร้อง</span>
               </button>
               <button
@@ -772,12 +772,12 @@ export function CertAttachmentViewer({
                   await handleApprove(previewRequest.id);
                   setPreviewRequest(null);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+                className="w-full sm:w-auto justify-center px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-sm"
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>อนุมัติคำร้อง</span>
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>

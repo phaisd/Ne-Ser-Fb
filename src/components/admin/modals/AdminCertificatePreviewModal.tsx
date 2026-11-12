@@ -317,47 +317,48 @@ export function AdminCertificatePreviewModal({
   if (!previewRequest) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm">
       <div
-        className={`bg-white rounded-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto space-y-4 transition-all duration-200 ${
+        className={`bg-white rounded-2xl w-full p-3.5 sm:p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto overflow-x-hidden space-y-4 transition-all duration-200 ${
           previewTab === 'ATTACHMENTS' ? 'max-w-5xl' : 'max-w-3xl'
         }`}
       >
         {/* Header Tabs & Close */}
-        <div className="flex items-center justify-between pb-3 border-b">
-          <div className="flex items-center gap-2">
+        <div className="sticky -top-3.5 sm:-top-6 z-20 bg-white pt-1 pb-3 border-b flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
             <button
               type="button"
               onClick={() => setPreviewTab('DOCUMENT')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 previewTab === 'DOCUMENT'
                   ? 'bg-purple-600 text-white shadow-sm'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
-              <FileText className="w-4 h-4" />
-              <span>ตัวอย่างหนังสือรับรอง (Preview &amp; Print)</span>
+              <FileText className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">ตัวอย่างหนังสือรับรอง (Preview &amp; Print)</span>
+              <span className="sm:hidden">ตัวอย่าง &amp; พิมพ์</span>
             </button>
             <button
               type="button"
               onClick={() => setPreviewTab('ATTACHMENTS')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 previewTab === 'ATTACHMENTS'
                   ? 'bg-purple-600 text-white shadow-sm'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
-              <Paperclip className="w-4 h-4" />
+              <Paperclip className="w-4 h-4 shrink-0" />
               <span>ตรวจเอกสารสำเนาแนบ</span>
               {previewRequest.enrollmentSlipUrl && (
-                <span className="w-2 h-2 rounded-full bg-emerald-500" title="มีไฟล์แนบ"></span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="มีไฟล์แนบ"></span>
               )}
             </button>
           </div>
           <button
             type="button"
             onClick={() => setPreviewRequest(null)}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition cursor-pointer"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 transition cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -511,39 +512,39 @@ export function AdminCertificatePreviewModal({
             />
 
             {/* Bottom Actions Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t">
               <Link
                 href={`/verify?docNo=${encodeURIComponent(
                   previewRequest.docNo || previewRequest.id
                 )}`}
                 target="_blank"
-                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition"
+                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition w-full sm:w-auto"
               >
-                <ExternalLink className="w-4 h-4 text-purple-600" />
+                <ExternalLink className="w-4 h-4 text-purple-600 shrink-0" />
                 <span>ตรวจสอบความถูกต้อง (Verify View)</span>
               </Link>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={handleDownloadPdf}
                   disabled={pdfDownloading}
-                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md transition disabled:opacity-50"
+                  className="flex-1 sm:flex-initial justify-center px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition disabled:opacity-50"
                   title="ดาวน์โหลดเป็นไฟล์ PDF คุณภาพสูงลงเครื่องทันที"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-4 h-4 shrink-0" />
                   <span>
-                    {pdfDownloading ? 'กำลังสร้างไฟล์ PDF...' : 'ดาวน์โหลดไฟล์ PDF (Download)'}
+                    {pdfDownloading ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลด PDF'}
                   </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md transition"
+                  className="flex-1 sm:flex-initial justify-center px-3.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition"
                 >
-                  <Printer className="w-4 h-4" />
-                  <span>สั่งพิมพ์เอกสาร (Print)</span>
+                  <Printer className="w-4 h-4 shrink-0" />
+                  <span>สั่งพิมพ์ (Print)</span>
                 </button>
               </div>
             </div>

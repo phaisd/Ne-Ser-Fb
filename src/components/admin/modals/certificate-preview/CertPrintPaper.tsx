@@ -90,7 +90,7 @@ export function CertPrintPaper({
   sanitizeName,
 }: CertPrintPaperProps) {
   return (
-    <div className="w-full overflow-x-auto bg-slate-200/60 p-4 sm:p-8 rounded-2xl flex justify-center border border-slate-200">
+    <div className="w-full overflow-x-auto bg-slate-200/60 p-3 sm:p-8 rounded-2xl flex justify-start md:justify-center border border-slate-200">
       <div
         id="printable-certificate"
         style={{

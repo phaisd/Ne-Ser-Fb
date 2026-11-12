@@ -518,20 +518,20 @@ export default function AdminConsolePage() {
       {/* ─────────────────────────────────────────────────────────────
           MAIN CONTENT AREA WITH TOP HEADER
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden print:hidden">
+      <div className="flex-1 flex flex-col overflow-hidden print:hidden min-w-0">
         {/* Top Navbar */}
-        <header className="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0 shadow-sm">
-          <div className="flex items-center gap-3">
+        <header className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 shrink-0 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200"
+              className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
-              <span className="text-slate-800 font-bold">Admin Console</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-              <span className="text-orange-600 uppercase">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-semibold text-slate-400 min-w-0">
+              <span className="hidden sm:inline text-slate-800 font-bold shrink-0">Admin Console</span>
+              <ChevronRight className="hidden sm:inline w-3.5 h-3.5 shrink-0" />
+              <span className="text-orange-600 font-bold uppercase truncate">
                 {activeTab === 'DASHBOARD' && 'ภาพรวมระบบ (Dashboard)'}
                 {activeTab === 'CERTIFICATES' && 'งานอนุมัติหนังสือรับรอง'}
                 {activeTab === 'STUDENTS' && 'งานทะเบียนนิสิต'}
@@ -546,14 +546,14 @@ export default function AdminConsolePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {sheetStatus?.connected ? (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 Google Sheets เชื่อมต่อแล้ว
               </span>
             ) : (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+              <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                 <span className="w-2 h-2 rounded-full bg-amber-500" />
                 โหมดข้อมูลภายใน (Local)
               </span>
@@ -562,27 +562,28 @@ export default function AdminConsolePage() {
             <button
               type="button"
               onClick={() => setIsNewYearWorkflowModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold transition shadow-sm cursor-pointer shrink-0"
               title="ดูคำแนะนำขั้นตอนการทำงานเมื่อเปิดปีการศึกษาใหม่"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
               <span className="hidden sm:inline">ขั้นตอนเปิดปีการศึกษาใหม่</span>
               <span className="sm:hidden">เปิดปีใหม่</span>
             </button>
 
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm shrink-0"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>กลับสู่หน้าบ้าน (Public)</span>
+              <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">กลับสู่หน้าบ้าน (Public)</span>
+              <span className="sm:hidden">หน้าบ้าน</span>
             </Link>
           </div>
         </header>
 
         {/* Action Alert Banner */}
         {actionSuccess && (
-          <div className="mx-6 mt-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm flex items-center justify-between shadow-sm animate-in fade-in">
+          <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm flex items-center justify-between shadow-sm animate-in fade-in">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
               <span>{actionSuccess}</span>
@@ -597,7 +598,7 @@ export default function AdminConsolePage() {
         )}
 
         {/* Main Scrollable Canvas */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-4 sm:space-y-6">
           {/* TAB A: DASHBOARD OVERVIEW */}
           {activeTab === 'DASHBOARD' && (
             <AdminDashboardTab

@@ -587,7 +587,7 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
           </div>
 
           {/* Program Filter */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl font-bold shrink-0">
+          <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-xl font-bold shrink-0">
             <button
               onClick={() => setCourseProgramFilter('ALL')}
               className={`px-3 py-1.5 rounded-lg transition ${
