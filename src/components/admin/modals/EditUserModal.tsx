@@ -13,6 +13,7 @@ interface EditUserFormState {
   department: string;
   role: UserRole;
   aliasesText?: string;
+  isActingOfficer?: boolean;
 }
 
 interface EditUserModalProps {
@@ -193,6 +194,27 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                   <option value="SUPER_ADMIN">👑 ผู้ดูแลระบบสูงสุด (SUPER_ADMIN)</option>
                 )}
               </select>
+            )}
+
+            {!isOfficer && !isSuper && editUserForm.role === 'INSTRUCTOR' && (
+              <label className="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl border border-sky-200 bg-sky-50/70 hover:bg-sky-50 cursor-pointer transition">
+                <input
+                  type="checkbox"
+                  checked={Boolean(editUserForm.isActingOfficer)}
+                  onChange={(e) =>
+                    setEditUserForm({ ...editUserForm, isActingOfficer: e.target.checked })
+                  }
+                  className="mt-0.5 w-4 h-4 rounded border-sky-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                />
+                <div className="text-xs leading-relaxed">
+                  <div className="font-bold text-sky-900">
+                    ☑️ ช่วยงานเจ้าหน้าที่ (เสริมสิทธิ์เจ้าหน้าที่โดยไม่เปลี่ยนบทบาทอาจารย์)
+                  </div>
+                  <div className="text-[11px] text-sky-700">
+                    เมื่อติ๊กเลือก อาจารย์ท่านนี้จะยังคงมีชื่อในตารางสอนและใบภาระงานสอนตามปกติทุกประการ แต่จะมีปุ่มเข้าหลังบ้าน (Admin Console) เพื่อช่วยตรวจเอกสารคำร้องและงานทะเบียนได้จนกว่าแอดมินจะติ๊กออก
+                  </div>
+                </div>
+              </label>
             )}
           </div>
 

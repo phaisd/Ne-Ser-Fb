@@ -11,6 +11,7 @@ export interface AuthUser {
   year?: number;
   phone?: string;
   isSuperAdmin?: boolean;
+  isActingOfficer?: boolean;
   [key: string]: any;
 }
 
@@ -36,6 +37,7 @@ export function isAdminOrOfficer(user?: AuthUser | null): boolean {
     role === 'OFFICER' ||
     role === 'STAFF' ||
     user.isSuperAdmin === true ||
+    user.isActingOfficer === true ||
     user.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th'
   );
 }

@@ -559,7 +559,21 @@ export default function Navbar() {
                         {/* User Header */}
                         <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/70 -mt-2 mb-1.5 rounded-t-2xl">
                           <div className="text-[10px] font-bold text-orange-600 uppercase flex items-center gap-1">
-                            <span>{isAdmin ? '👑 ผู้ดูแลระบบ' : isStudent ? '🎓 นิสิต' : '🔒 อาจารย์ผู้สอน'}</span>
+                            <span>
+                              {currentUser.role === 'SUPER_ADMIN' || currentUser.isSuperAdmin
+                                ? '👑 ผู้ดูแลระบบสูงสุด'
+                                : currentUser.role === 'ADMIN'
+                                ? '🛡️ ผู้ดูแลระบบ'
+                                : currentUser.role === 'OFFICER'
+                                ? '👮 เจ้าหน้าที่'
+                                : isStudent
+                                ? currentUser.isActingOfficer
+                                  ? '🎓 นิสิต (☑️ ช่วยงานเจ้าหน้าที่)'
+                                  : '🎓 นิสิต'
+                                : currentUser.isActingOfficer
+                                ? '🔒 อาจารย์ผู้สอน (☑️ ช่วยงานเจ้าหน้าที่)'
+                                : '🔒 อาจารย์ผู้สอน'}
+                            </span>
                           </div>
                           <div className="text-xs font-bold text-slate-900 truncate mt-0.5">
                             {currentUser.name}

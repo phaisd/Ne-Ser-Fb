@@ -68,6 +68,7 @@ export function useAdminUsers({
     instructorType: 'อาจารย์ประจำ',
     department: 'คณะพุทธศาสตร์ มจร',
     role: 'INSTRUCTOR' as 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR',
+    isActingOfficer: false,
   });
   const [editUserSaving, setEditUserSaving] = useState(false);
 
@@ -111,6 +112,54 @@ export function useAdminUsers({
       }
     } catch (e: unknown) {
       alert(getErrorMessage(e));
+    }
+  };
+
+  const handleToggleActingOfficer = async (
+    userId: string,
+    isActingOfficer: boolean,
+    userName: string,
+    userType: 'STUDENT' | 'INSTRUCTOR' = 'INSTRUCTOR'
+  ) => {
+    if (isOfficer) {
+      alert('เฉพาะผู้ดูแลระบบ (Admin / Super Admin) เท่านั้นที่สามารถกำหนดหรือยกเลิกสิทธิ์ช่วยงานเจ้าหน้าที่ได้');
+      return;
+    }
+
+    // Optimistic local state update for instant checkbox responsiveness
+    if (userType === 'INSTRUCTOR') {
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isActingOfficer } : u))
+      );
+    }
+
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggle-acting-officer',
+          userId,
+          isActingOfficer,
+          userType,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionSuccess(
+          data.message ||
+            (isActingOfficer
+              ? `☑️ กำหนดสิทธิ์ "ช่วยงานเจ้าหน้าที่" ให้แก่ ${userName} สำเร็จ`
+              : `ยกเลิกสิทธิ์ "ช่วยงานเจ้าหน้าที่" ของ ${userName} สำเร็จ`)
+        );
+        loadData();
+      } else {
+        alert(data.error || 'ไม่สามารถอัปเดตสิทธิ์ช่วยงานเจ้าหน้าที่ได้');
+        loadData();
+      }
+    } catch (e: unknown) {
+      alert(getErrorMessage(e));
+      loadData();
     }
   };
 
@@ -202,6 +251,7 @@ export function useAdminUsers({
       instructorType: user.instructorType || 'อาจารย์ประจำ',
       department: user.department || 'คณะพุทธศาสตร์ มจร',
       role: user.role || 'INSTRUCTOR',
+      isActingOfficer: Boolean(user.isActingOfficer),
     });
   };
 
@@ -552,6 +602,20 @@ ${coursesText}
       );
     }
 
+    const mapStudentToUserItem = (s: Student & { gmail?: string }): AdminUserFilterItem => ({
+      id: s.studentCode || s.id || '',
+      name: s.fullName || `${s.title || ''}${s.firstName || ''} ${s.lastName || ''}`.trim(),
+      email: s.email || `${s.studentCode}@mcu.ac.th`,
+      gmail: s.gmail || '',
+      department: `${s.major || s.faculty || 'คณะพุทธศาสตร์'}${s.degree ? ` (${s.degree})` : ''}`,
+      role: 'STUDENT' as const,
+      isSuspended: s.studyStatus === 'พ้นสภาพ' || s.isActive === false,
+      isActive: s.isActive !== false,
+      isSuperAdmin: false,
+      isActingOfficer: Boolean(s.isActingOfficer),
+      studentData: s,
+    });
+
     if (userRoleFilter === 'STUDENT') {
       const q = userSearch.trim().toLowerCase();
       return (studentsList || [])
@@ -565,18 +629,35 @@ ${coursesText}
             (s.degree || '').toLowerCase().includes(q)
           );
         })
-        .map((s) => ({
-          id: s.studentCode || s.id || '',
-          name: s.fullName || `${s.title || ''}${s.firstName || ''} ${s.lastName || ''}`.trim(),
-          email: s.email || `${s.studentCode}@mcu.ac.th`,
-          gmail: s.gmail || '',
-          department: `${s.major || s.faculty || 'คณะพุทธศาสตร์'}${s.degree ? ` (${s.degree})` : ''}`,
-          role: 'STUDENT' as const,
-          isSuspended: s.studyStatus === 'พ้นสภาพ' || s.isActive === false,
-          isActive: s.isActive !== false,
-          isSuperAdmin: false,
-          studentData: s,
-        }));
+        .map(mapStudentToUserItem);
+    }
+
+    if (userRoleFilter === 'ACTING_OFFICER') {
+      const q = userSearch.trim().toLowerCase();
+      const actingInstructors = baseUsers.filter((u) => {
+        if (!u.isActingOfficer) return false;
+        if (!q) return true;
+        return (
+          u.name?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q) ||
+          u.gmail?.toLowerCase().includes(q) ||
+          u.department?.toLowerCase().includes(q)
+        );
+      });
+      const actingStudents = (studentsList || [])
+        .filter((s) => {
+          if (!s.isActingOfficer) return false;
+          if (!q) return true;
+          return (
+            (s.fullName || '').toLowerCase().includes(q) ||
+            (s.studentCode || '').toLowerCase().includes(q) ||
+            (s.email || '').toLowerCase().includes(q) ||
+            (s.major || '').toLowerCase().includes(q)
+          );
+        })
+        .map(mapStudentToUserItem);
+
+      return [...actingInstructors, ...actingStudents];
     }
 
     return baseUsers.filter((u) => {
@@ -634,6 +715,7 @@ ${coursesText}
     newUserForm,
     setNewUserForm,
     handleUpdateRole,
+    handleToggleActingOfficer,
     handleScanTimetables,
     handleToggleCandidateSelect,
     handleUpdateCandidateField,

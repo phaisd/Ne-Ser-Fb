@@ -162,6 +162,44 @@ export async function POST(request: Request) {
               safeInst.role === 'SUPER_ADMIN' ||
               Boolean((safeInst as any).isSuperAdmin) ||
               safeInst.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th',
+            isActingOfficer: Boolean(safeInst.isActingOfficer),
+          },
+          'SESSION_RESET'
+        );
+        const resp = NextResponse.json({
+          success: true,
+          authenticated: true,
+          user: sessionUser,
+        });
+        attachAuthCookies(resp, sessionUser);
+        return resp;
+      }
+
+      // Check student accounts (e.g. student with isActingOfficer or regular student session)
+      const cleanStudentCode = (targetId || targetEmail).replace(/@mcu\.ac\.th$/i, '').trim();
+      const students = await getStudents();
+      const matchedStudent = students.find(
+        (s) =>
+          (cleanStudentCode && (s.studentCode || '').toLowerCase() === cleanStudentCode) ||
+          (targetEmail && (s.email || '').toLowerCase() === targetEmail)
+      );
+
+      if (matchedStudent && matchedStudent.isActive !== false) {
+        const studentName =
+          matchedStudent.fullName ||
+          `${matchedStudent.title || ''}${matchedStudent.firstName || ''} ${matchedStudent.lastName || ''}`.trim() ||
+          matchedStudent.studentCode;
+        const sessionUser = registerSession(
+          {
+            id: matchedStudent.studentCode,
+            studentCode: matchedStudent.studentCode,
+            email: matchedStudent.email || `${matchedStudent.studentCode}@mcu.ac.th`,
+            name: studentName,
+            role: 'STUDENT',
+            department: matchedStudent.major || matchedStudent.faculty || 'คณะพุทธศาสตร์',
+            programType: matchedStudent.programType || 'THAI',
+            isSuperAdmin: false,
+            isActingOfficer: Boolean(matchedStudent.isActingOfficer),
           },
           'SESSION_RESET'
         );
@@ -580,7 +618,8 @@ export async function GET(request: Request) {
         roleUpper === 'ADMIN' ||
         roleUpper === 'OFFICER' ||
         roleUpper === 'STAFF' ||
-        verified.isSuperAdmin === true;
+        verified.isSuperAdmin === true ||
+        Boolean((verified as any).isActingOfficer);
 
       const requestedId = searchParams.get('userId')?.trim();
       const ownKeys = [verified.id, verified.studentCode, verified.email, verified.gmail]

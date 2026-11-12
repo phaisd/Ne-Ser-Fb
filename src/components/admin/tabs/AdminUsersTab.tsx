@@ -48,6 +48,12 @@ interface AdminUsersTabProps {
   copiedLineUserId: string | null;
   handleToggleSuspend: (id: string, isSuspended: boolean, name: string) => void;
   handleUpdateRole: (id: string, newRole: any) => void;
+  handleToggleActingOfficer?: (
+    id: string,
+    isActingOfficer: boolean,
+    name: string,
+    userType?: 'STUDENT' | 'INSTRUCTOR'
+  ) => void;
   handleResetPassword: (id: string, name: string) => void;
   forcePasswordChangeOnFirstLogin?: boolean;
   onToggleForcePasswordChange?: (enabled: boolean) => void;
@@ -77,6 +83,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
   copiedLineUserId,
   handleToggleSuspend,
   handleUpdateRole,
+  handleToggleActingOfficer,
   handleResetPassword,
   forcePasswordChangeOnFirstLogin = true,
   onToggleForcePasswordChange,
@@ -608,6 +615,20 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
             🎓 นิสิต ({studentsList.length})
           </button>
           <button
+            onClick={() => setUserRoleFilter('ACTING_OFFICER')}
+            className={`px-2.5 py-1.5 rounded-lg transition ${
+              userRoleFilter === 'ACTING_OFFICER'
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'text-sky-800 bg-sky-50/80 hover:bg-sky-100 border border-sky-200/80'
+            }`}
+            title="ดูรายชื่ออาจารย์และนิสิตที่ได้รับมอบหมายให้ช่วยงานเจ้าหน้าที่"
+          >
+            ☑️ ช่วยงานเจ้าหน้าที่ (
+            {users.filter((u) => u.isActingOfficer).length +
+              studentsList.filter((s) => s.isActingOfficer).length}
+            )
+          </button>
+          <button
             onClick={() => setUserRoleFilter('SUSPENDED')}
             className={`px-2.5 py-1.5 rounded-lg transition ${
               userRoleFilter === 'SUSPENDED' ? 'bg-rose-600 text-white shadow-sm' : 'text-rose-700'
@@ -721,29 +742,70 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                       )}
                     </td>
                     <td className="px-5 py-3.5">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                          isSuper
-                            ? 'bg-purple-50 text-purple-800 border-purple-300 shadow-xs'
+                      <div className="flex flex-col items-start gap-1.5">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                            isSuper
+                              ? 'bg-purple-50 text-purple-800 border-purple-300 shadow-xs'
+                              : u.role === 'ADMIN'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : u.role === 'OFFICER'
+                              ? 'bg-sky-50 text-sky-700 border-sky-200'
+                              : isStudent
+                              ? 'bg-amber-50 text-amber-800 border-amber-300'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}
+                        >
+                          {isSuper
+                            ? '👑 ผู้ดูแลระบบสูงสุด'
                             : u.role === 'ADMIN'
-                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                            ? 'ผู้ดูแลระบบ'
                             : u.role === 'OFFICER'
-                            ? 'bg-sky-50 text-sky-700 border-sky-200'
+                            ? 'เจ้าหน้าที่'
                             : isStudent
-                            ? 'bg-amber-50 text-amber-800 border-amber-300'
-                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        }`}
-                      >
-                        {isSuper
-                          ? '👑 ผู้ดูแลระบบสูงสุด'
-                          : u.role === 'ADMIN'
-                          ? 'ผู้ดูแลระบบ'
-                          : u.role === 'OFFICER'
-                          ? 'เจ้าหน้าที่'
-                          : isStudent
-                          ? '🎓 นิสิต (STUDENT)'
-                          : 'อาจารย์ผู้สอน'}
-                      </span>
+                            ? '🎓 นิสิต (STUDENT)'
+                            : 'อาจารย์ผู้สอน'}
+                        </span>
+
+                        {/* Checkbox: ☑️ ช่วยงานเจ้าหน้าที่ สำหรับทั้งอาจารย์และนิสิต */}
+                        {!isSuper && (u.role === 'INSTRUCTOR' || isStudent || !u.role) && (
+                          <label
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition select-none ${
+                              isOfficer
+                                ? 'opacity-60 cursor-not-allowed'
+                                : 'cursor-pointer'
+                            } ${
+                              u.isActingOfficer
+                                ? 'bg-sky-100 text-sky-900 border-sky-300 shadow-2xs ring-1 ring-sky-500/20'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                            title={
+                              isOfficer
+                                ? 'เฉพาะผู้ดูแลระบบ (Admin / Super Admin) เท่านั้นที่กำหนดสิทธิ์ช่วยงานเจ้าหน้าที่ได้'
+                                : isStudent
+                                ? 'ติ๊กเลือกเพื่อให้นิสิตท่านนี้ช่วยงานเจ้าหน้าที่ (เข้าหลังบ้าน ตรวจคำร้อง จัดการทะเบียน) โดยคงสถานะนิสิตตามปกติจนกว่าแอดมินจะยกเลิก'
+                                : 'ติ๊กเลือกเพื่อให้อาจารย์ท่านนี้ช่วยงานเจ้าหน้าที่ (เข้าหลังบ้าน ตรวจคำร้อง จัดการทะเบียน) โดยคงสถานะอาจารย์ผู้สอนและตารางสอนตามปกติจนกว่าแอดมินจะยกเลิก'
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              checked={Boolean(u.isActingOfficer)}
+                              disabled={isOfficer}
+                              onChange={(e) =>
+                                handleToggleActingOfficer &&
+                                handleToggleActingOfficer(
+                                  u.id,
+                                  e.target.checked,
+                                  u.name,
+                                  isStudent ? 'STUDENT' : 'INSTRUCTOR'
+                                )
+                              }
+                              className="w-3.5 h-3.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer disabled:cursor-not-allowed"
+                            />
+                            <span>ช่วยงานเจ้าหน้าที่</span>
+                          </label>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       {isSuper ? (

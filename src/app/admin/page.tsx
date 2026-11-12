@@ -102,7 +102,12 @@ export default function AdminConsolePage() {
   }, [currentUser]);
 
   const isOfficer = useMemo(() => {
-    return currentUser?.role === 'OFFICER' && !isSuperAdmin;
+    const isRegularOfficer = currentUser?.role === 'OFFICER';
+    const isActing =
+      Boolean(currentUser?.isActingOfficer) &&
+      currentUser?.role !== 'ADMIN' &&
+      currentUser?.role !== 'SUPER_ADMIN';
+    return (isRegularOfficer || isActing) && !isSuperAdmin;
   }, [currentUser, isSuperAdmin]);
 
   // Load Data function definition (hoisted for hooks)
@@ -159,12 +164,15 @@ export default function AdminConsolePage() {
                   ? 'เจ้าหน้าที่'
                   : prev.role === 'ADMIN'
                   ? 'ผู้ดูแลระบบ'
+                  : fullNameAccount.isActingOfficer
+                  ? 'อาจารย์ผู้สอน • ช่วยงานเจ้าหน้าที่'
                   : 'อาจารย์ผู้สอน';
               const cleanBaseName = String(fullNameAccount.name).replace(/\s*\(.*?\)\s*$/, '').trim();
               const formattedName = `${cleanBaseName} (${roleLabel})`;
               const updatedUser = {
                 ...prev,
                 name: formattedName,
+                isActingOfficer: Boolean(fullNameAccount.isActingOfficer),
               };
               saveAuthSession(updatedUser, true);
               return updatedUser;
@@ -669,6 +677,7 @@ export default function AdminConsolePage() {
               copiedLineUserId={adminUsers.copiedLineUserId}
               handleToggleSuspend={adminUsers.handleToggleSuspend}
               handleUpdateRole={adminUsers.handleUpdateRole}
+              handleToggleActingOfficer={adminUsers.handleToggleActingOfficer}
               handleResetPassword={adminUsers.handleResetPassword}
               forcePasswordChangeOnFirstLogin={adminSettings.settings?.forcePasswordChangeOnFirstLogin !== false}
               onToggleForcePasswordChange={adminSettings.handleToggleForcePasswordChange}

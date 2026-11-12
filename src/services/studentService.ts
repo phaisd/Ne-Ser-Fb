@@ -16,7 +16,7 @@ export async function getStudents(): Promise<Student[]> {
 
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Students!A1:T');
+      const rows = await gClient.getValues('Students!A1:U');
       if (rows && rows.length > 0) {
         const firstCell = String(rows[0][0] || '').trim().toLowerCase();
         const startIndex = firstCell.includes('code') || firstCell.includes('รหัส') ? 1 : 0;
@@ -31,6 +31,7 @@ export async function getStudents(): Promise<Student[]> {
             const programFromSheet = r[13] ? (r[13].includes('ENG') ? 'ENGLISH' : 'THAI') : undefined;
             const cleanLast = (r[3] || local.lastName || '') === '-' ? '' : (r[3] || local.lastName || '');
             const sheetPassword = r[19] ? String(r[19]).trim() : '';
+            const sheetActingOfficer = r[20] !== undefined && r[20] !== '' ? String(r[20]).trim().toUpperCase() : undefined;
 
             return {
               ...local,
@@ -55,6 +56,12 @@ export async function getStudents(): Promise<Student[]> {
               address: r[18] || local.address || '',
               password: local.password || sheetPassword || undefined,
               hasChangedPassword: Boolean(local.hasChangedPassword || sheetPassword),
+              isActingOfficer:
+                sheetActingOfficer === 'TRUE'
+                  ? true
+                  : sheetActingOfficer === 'FALSE'
+                  ? false
+                  : Boolean(local.isActingOfficer),
             };
           });
       }

@@ -44,13 +44,14 @@ export async function syncInstructorToSheet(instructor: InstructorAccount): Prom
       instructor.isSuspended ? 'TRUE' : 'FALSE',
       Array.isArray(instructor.aliases) ? instructor.aliases.join(';') : (instructor.aliases || ''),
       instructor.updatedAt || new Date().toISOString(),
+      instructor.isActingOfficer ? 'TRUE' : 'FALSE',
     ];
 
     if (rowIndex !== -1) {
       const sheetRowNum = rowIndex + 2;
-      await gClient.updateValues(`Instructors!A${sheetRowNum}:L${sheetRowNum}`, [rowData]);
+      await gClient.updateValues(`Instructors!A${sheetRowNum}:M${sheetRowNum}`, [rowData]);
     } else {
-      await gClient.appendValues('Instructors!A:L', [rowData]);
+      await gClient.appendValues('Instructors!A:M', [rowData]);
     }
   } catch (err) {
     console.warn('Google Sheets syncInstructorToSheet warning:', err);
@@ -62,7 +63,7 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Instructors!A2:L');
+      const rows = await gClient.getValues('Instructors!A2:M');
       if (rows && rows.length > 0) {
         const localById = new Map<string, InstructorAccount>();
         const localByEmail = new Map<string, InstructorAccount>();
@@ -92,6 +93,7 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
           let isSuspended = false;
           let aliases: string[] = [];
           let updatedAt = '';
+          let sheetActingOfficer: string | undefined = undefined;
 
           if (hasAtInCol2) {
             // Legacy 9-col schema: id, name, email, gmail, department, role, isActive, isSuspended, createdAt
@@ -103,7 +105,7 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
             isSuspended = r[7] === 'TRUE';
             updatedAt = r[8] || '';
           } else {
-            // Standard 12-col schema: id, name, nameEn, email, gmail, department, instructorType, role, isActive, isSuspended, aliases, updatedAt
+            // Standard 12/13-col schema: id, name, nameEn, email, gmail, department, instructorType, role, isActive, isSuspended, aliases, updatedAt, isActingOfficer
             nameEn = (r[2] || '').trim();
             email = (r[3] || '').trim().toLowerCase();
             gmail = (r[4] || '').trim().toLowerCase();
@@ -114,6 +116,7 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
             isSuspended = r[9] === 'TRUE';
             aliases = (r[10] || '').split(';').map((s: string) => s.trim()).filter(Boolean);
             updatedAt = r[11] || '';
+            sheetActingOfficer = r[12] !== undefined && r[12] !== '' ? String(r[12]).trim().toUpperCase() : undefined;
           }
 
           // Skip completely empty cleared rows
@@ -174,6 +177,12 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
             createdAt: localMatch?.createdAt || updatedAt || '',
             updatedAt: updatedAt || localMatch?.updatedAt || '',
             isSuperAdmin: isSuper,
+            isActingOfficer:
+              sheetActingOfficer === 'TRUE'
+                ? true
+                : sheetActingOfficer === 'FALSE'
+                ? false
+                : Boolean(localMatch?.isActingOfficer),
           } as InstructorAccount];
         });
 

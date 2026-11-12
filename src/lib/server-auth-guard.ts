@@ -14,6 +14,7 @@ export interface ServerAuthUser {
   programType?: string;
   mustChangePassword?: boolean;
   isSuperAdmin?: boolean;
+  isActingOfficer?: boolean;
 }
 
 /**
@@ -53,6 +54,7 @@ export function getAuthenticatedUserFromRequest(request: Request): ServerAuthUse
             faculty: parsed.faculty,
             programType: parsed.programType,
             isSuperAdmin: Boolean(parsed.isSuperAdmin),
+            isActingOfficer: Boolean(parsed.isActingOfficer),
           };
         }
       } catch {}
@@ -83,6 +85,7 @@ export function isServerAdminOrOfficer(user?: ServerAuthUser | null): boolean {
   const role = String(user.role || '').toUpperCase();
   return (
     isServerSuperAdmin(user) ||
+    Boolean(user.isActingOfficer) ||
     role === 'ADMIN' ||
     role === 'OFFICER' ||
     role === 'STAFF' ||

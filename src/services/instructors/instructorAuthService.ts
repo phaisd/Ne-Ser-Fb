@@ -1,5 +1,5 @@
 import { InstructorAccount, Student, UserRole } from '@/types';
-import { readLocalJson, writeLocalJson } from '../storageHelper';
+import { readLocalJson, writeLocalJson, getSheetsClient } from '../storageHelper';
 import { getStudents } from '../studentService';
 import { verifyPassword, hashPassword } from '@/lib/auth-security';
 import { getInstructorAccounts, syncInstructorToSheet } from './instructorDirectoryService';
@@ -162,6 +162,7 @@ export async function authenticateStudent(
     programType: found.programType || 'THAI',
     yearLevel: found.yearLevel || 1,
     hasChangedPassword,
+    isActingOfficer: Boolean(found.isActingOfficer),
     studentData: found,
   };
 }
@@ -295,6 +296,10 @@ export async function updateUserProfile(
     instructorType: updates.instructorType !== undefined ? updates.instructorType.trim() : current.instructorType,
     role: updates.role || current.role,
     isSuperAdmin: isSuper || updates.isSuperAdmin || false,
+    isActingOfficer:
+      updates.isActingOfficer !== undefined
+        ? Boolean(updates.isActingOfficer)
+        : Boolean(current.isActingOfficer),
     updatedAt: new Date().toISOString(),
   };
 
@@ -302,6 +307,125 @@ export async function updateUserProfile(
   writeLocalJson('instructors.json', list);
   await syncInstructorToSheet(updated);
   return updated;
+}
+
+export async function toggleActingOfficer(
+  targetId: string,
+  isActingOfficer: boolean,
+  userType?: 'STUDENT' | 'INSTRUCTOR'
+): Promise<{ success: boolean; message: string; data?: any }> {
+  const cleanId = (targetId || '').trim().toLowerCase();
+  if (!cleanId) {
+    return { success: false, message: 'กรุณาระบุรหัสผู้ใช้งาน' };
+  }
+
+  // 1. Handle Student if explicitly STUDENT or if not found in instructors
+  if (userType !== 'INSTRUCTOR') {
+    const codeOnly = cleanId.replace(/@mcu\.ac\.th$/i, '').trim();
+    const localStudents = readLocalJson<any[]>('students.json', []);
+    let sIdx = localStudents.findIndex(
+      (s) =>
+        (s.studentCode || '').trim().toLowerCase() === cleanId ||
+        (s.studentCode || '').trim().toLowerCase() === codeOnly ||
+        (s.id || '').trim().toLowerCase() === cleanId ||
+        (s.email || '').trim().toLowerCase() === cleanId
+    );
+
+    if (sIdx === -1 && userType === 'STUDENT') {
+      const allStudents = await getStudents();
+      const matched = allStudents.find(
+        (s) =>
+          (s.studentCode || '').trim().toLowerCase() === cleanId ||
+          (s.studentCode || '').trim().toLowerCase() === codeOnly ||
+          (s.id || '').trim().toLowerCase() === cleanId ||
+          (s.email || '').trim().toLowerCase() === cleanId
+      );
+      if (matched) {
+        localStudents.push({ ...matched });
+        sIdx = localStudents.length - 1;
+      }
+    }
+
+    if (sIdx !== -1 && (userType === 'STUDENT' || /^\d{5,12}$/.test(codeOnly))) {
+      localStudents[sIdx].isActingOfficer = isActingOfficer;
+      localStudents[sIdx].updatedAt = new Date().toISOString();
+      writeLocalJson('students.json', localStudents);
+
+      const resolvedCode = String(localStudents[sIdx].studentCode || codeOnly).trim();
+      const gClient = getSheetsClient();
+      if (gClient && resolvedCode) {
+        try {
+          const rows = await gClient.getValues('Students!A1:A');
+          if (rows && rows.length > 0) {
+            const rowIndex = rows.findIndex(
+              (r) => String(r[0] || '').trim().toLowerCase() === resolvedCode.toLowerCase()
+            );
+            if (rowIndex !== -1) {
+              const sheetRowNum = rowIndex + 1;
+              await gClient.updateValues(`Students!U${sheetRowNum}`, [[isActingOfficer ? 'TRUE' : 'FALSE']]);
+            }
+          }
+        } catch (err) {
+          console.warn('Google Sheets update student acting officer failed:', err);
+        }
+      }
+
+      const displayName =
+        localStudents[sIdx].fullName ||
+        `${localStudents[sIdx].title || ''}${localStudents[sIdx].firstName || ''} ${localStudents[sIdx].lastName || ''}`.trim() ||
+        resolvedCode;
+
+      return {
+        success: true,
+        message: isActingOfficer
+          ? `☑️ กำหนดสิทธิ์ "ช่วยงานเจ้าหน้าที่" ให้แก่นิสิต "${displayName}" เรียบร้อยแล้ว`
+          : `ยกเลิกสิทธิ์ "ช่วยงานเจ้าหน้าที่" ของนิสิต "${displayName}" เรียบร้อยแล้ว`,
+        data: localStudents[sIdx],
+      };
+    }
+  }
+
+  // 2. Handle Instructor
+  const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
+  let idx = list.findIndex(
+    (u) =>
+      (u.id || '').toLowerCase() === cleanId ||
+      (u.email || '').toLowerCase() === cleanId ||
+      (u.gmail || '').toLowerCase() === cleanId ||
+      u.previousIds?.some((p) => p.toLowerCase() === cleanId)
+  );
+
+  if (idx === -1) {
+    const allInstructors = await getInstructorAccounts();
+    const matched = allInstructors.find(
+      (u) =>
+        (u.id || '').toLowerCase() === cleanId ||
+        (u.email || '').toLowerCase() === cleanId ||
+        (u.gmail || '').toLowerCase() === cleanId
+    );
+    if (matched) {
+      list.push({ ...matched });
+      idx = list.length - 1;
+    }
+  }
+
+  if (idx === -1) {
+    return { success: false, message: 'ไม่พบบัญชีอาจารย์หรือนิสิตที่ระบุ' };
+  }
+
+  list[idx].isActingOfficer = isActingOfficer;
+  list[idx].updatedAt = new Date().toISOString();
+  writeLocalJson('instructors.json', list);
+  await syncInstructorToSheet(list[idx]);
+
+  const { password: _, ...safe } = list[idx];
+  return {
+    success: true,
+    message: isActingOfficer
+      ? `☑️ กำหนดสิทธิ์ "ช่วยงานเจ้าหน้าที่" ให้แก่ "${list[idx].name}" เรียบร้อยแล้ว (คงสถานะอาจารย์ผู้สอนและตารางสอนเดิมครบถ้วน)`
+      : `ยกเลิกสิทธิ์ "ช่วยงานเจ้าหน้าที่" ของ "${list[idx].name}" เรียบร้อยแล้ว`,
+    data: safe,
+  };
 }
 
 export async function toggleUserSuspension(

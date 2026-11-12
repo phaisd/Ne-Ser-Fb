@@ -335,7 +335,16 @@ export function AdminSidebar({
               {currentUser?.email || ''}
             </div>
             <div className="text-[9px] text-emerald-400 font-bold uppercase mt-0.5">
-              สิทธิ์: {isSuperAdmin ? 'SUPER ADMIN' : isOfficer ? 'เจ้าหน้าที่ (OFFICER)' : currentUser?.role || 'ADMIN'}
+              สิทธิ์:{' '}
+              {isSuperAdmin
+                ? 'SUPER ADMIN'
+                : currentUser?.role === 'STUDENT' && currentUser?.isActingOfficer
+                ? 'นิสิต (☑️ ช่วยงานเจ้าหน้าที่)'
+                : currentUser?.role === 'INSTRUCTOR' && currentUser?.isActingOfficer
+                ? 'อาจารย์ (☑️ ช่วยงานเจ้าหน้าที่)'
+                : isOfficer
+                ? 'เจ้าหน้าที่ (OFFICER)'
+                : currentUser?.role || 'ADMIN'}
             </div>
           </div>
         </div>

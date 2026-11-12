@@ -105,6 +105,8 @@ export interface SessionTokenUserInput {
   faculty?: string;
   programType?: string;
   mustChangePassword?: boolean;
+  isSuperAdmin?: boolean;
+  isActingOfficer?: boolean;
   sessionId?: string;
 }
 
@@ -119,6 +121,7 @@ export type SignedSessionPayload = {
   programType?: string;
   mustChangePassword: boolean;
   isSuperAdmin?: boolean;
+  isActingOfficer?: boolean;
   sessionId?: string;
   iat: number;
 };
@@ -178,6 +181,8 @@ export function createSignedSessionToken(user: SessionTokenUserInput): string {
     faculty: user.faculty,
     programType: user.programType,
     mustChangePassword: !!user.mustChangePassword,
+    isSuperAdmin: !!user.isSuperAdmin,
+    isActingOfficer: !!user.isActingOfficer,
     sessionId: user.sessionId,
     iat: Math.floor(Date.now() / 1000),
   });

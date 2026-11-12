@@ -28,6 +28,7 @@ export interface InstructorAccount {
   isSuspended?: boolean;
   suspendReason?: string;
   isSuperAdmin?: boolean;
+  isActingOfficer?: boolean;
   aliases?: string[];
   previousIds?: string[];
   hasChangedPassword?: boolean;

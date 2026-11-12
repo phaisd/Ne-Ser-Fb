@@ -9,6 +9,7 @@ import {
   batchProvisionInstructors,
   batchImportInstructors,
   updateUserRole,
+  toggleActingOfficer,
   resetUserPassword,
   updateInstructorPassword,
   createUserAccount,
@@ -113,6 +114,7 @@ export async function POST(request: Request) {
         // Prevent self-escalation of role or suspension status by non-admins
         delete rawUpdates.role;
         delete rawUpdates.isSuperAdmin;
+        delete rawUpdates.isActingOfficer;
         delete rawUpdates.isSuspended;
         delete rawUpdates.isActive;
       } else if (String(rawUpdates.role || '').toUpperCase() === 'SUPER_ADMIN' && !isServerSuperAdmin(auth.user)) {
@@ -232,6 +234,41 @@ export async function POST(request: Request) {
       }
       const ok = await updateUserRole(userId, newRole);
       return NextResponse.json({ success: ok, message: ok ? 'เปลี่ยนบทบาทผู้ใช้สำเร็จ' : 'ไม่พบผู้ใช้' });
+    }
+
+    // 4.1 Toggle Acting Officer (☑️ ช่วยงานเจ้าหน้าที่ สำหรับอาจารย์และนิสิต โดยไม่เปลี่ยนบทบาทหลัก)
+    if (action === 'toggle-acting-officer') {
+      if (!userId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุ userId' }, { status: 400 });
+      }
+      const callerRole = String(adminAuth.user?.role || '').toUpperCase();
+      const canManageActingOfficer =
+        isServerSuperAdmin(adminAuth.user) ||
+        callerRole === 'SUPER_ADMIN' ||
+        callerRole === 'ADMIN';
+      if (!canManageActingOfficer) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'เฉพาะผู้ดูแลระบบ (Admin / Super Admin) เท่านั้นที่สามารถกำหนดหรือยกเลิกสิทธิ์ช่วยงานเจ้าหน้าที่ได้',
+          },
+          { status: 403 }
+        );
+      }
+
+      const result = await toggleActingOfficer(
+        userId,
+        Boolean(body.isActingOfficer),
+        body.userType
+      );
+      if (!result.success) {
+        return NextResponse.json({ success: false, error: result.message }, { status: 404 });
+      }
+      return NextResponse.json({
+        success: true,
+        message: result.message,
+        data: result.data,
+      });
     }
 
     // 5. Reset Password (by admin)
