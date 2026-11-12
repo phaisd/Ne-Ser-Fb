@@ -14,6 +14,10 @@ export async function getCourses(): Promise<Course[]> {
   const localList = readLocalJson<Course[]>('courses.json', []);
   const localMap = new Map<string, Course>();
   localList.forEach((c) => {
+    const yr = String(c.academicYear || '2569').trim();
+    const sem = String(c.semester || 1).trim();
+    localMap.set(`${c.courseCode}_${c.section || '1'}_${yr}_${sem}`, c);
+    localMap.set(`${norm(c.courseCode)}_${c.section || '1'}_${yr}_${sem}`, c);
     localMap.set(`${c.courseCode}_${c.section || '1'}`, c);
     localMap.set(`${norm(c.courseCode)}_${c.section || '1'}`, c);
     if (!localMap.has(c.courseCode)) localMap.set(c.courseCode, c);
@@ -23,7 +27,7 @@ export async function getCourses(): Promise<Course[]> {
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Courses!A2:L');
+      const rows = await gClient.getValues('Courses!A2:N');
       if (rows && rows.length > 0) {
         const seen = new Set<string>();
         const uniqueCourses: Course[] = [];
@@ -33,34 +37,48 @@ export async function getCourses(): Promise<Course[]> {
           if (!code) continue;
           const sec = (r[4] || '1').trim();
           const term = (r[5] || '').trim();
-          const dedupKey = `${code}_${sec}_${term}`;
+          const rowYear = (r[6] || term.split('/')[1] || '2569').trim();
+          const rowSem = (r[7] || term.split('/')[0] || '1').trim();
+          const dedupKey = `${code}_${sec}_${rowYear}_${rowSem}`;
           if (seen.has(dedupKey)) continue;
           seen.add(dedupKey);
 
           const local =
+            localMap.get(`${code}_${sec}_${rowYear}_${rowSem}`) ||
+            localMap.get(`${norm(code)}_${sec}_${rowYear}_${rowSem}`) ||
             localMap.get(`${code}_${sec}`) ||
             localMap.get(code) ||
             localMap.get(`${norm(code)}_${sec}`) ||
             localMap.get(norm(code));
           const isEn = sec === 'EN' || (r[2] && r[2] === r[1]) || /^[A-Za-z0-9\s:,-]+$/.test(r[1] || '');
 
+          let parsedHistory = local?.instructorHistory;
+          if (r[13]) {
+            try {
+              parsedHistory = JSON.parse(r[13]);
+            } catch {
+              // ignore invalid JSON
+            }
+          }
+
           uniqueCourses.push({
-            id: local?.id || `crs-${code}-${sec}-${uniqueCourses.length}`,
+            id: local?.id || `crs-${code}-${sec}-${rowYear}-${rowSem}-${uniqueCourses.length}`,
             courseCode: code,
             courseName: r[1] || '',
             courseNameEn: r[2] || '',
             credits: r[3] ? parseInt(r[3], 10) : (local?.credits || 3),
             section: sec,
-            term: r[5] || '',
-            academicYear: r[6] || local?.academicYear || '2569',
-            semester: r[7] ? parseInt(r[7], 10) : (local?.semester || 1),
+            term: r[5] || `${rowSem}/${rowYear}`,
+            academicYear: rowYear,
+            semester: parseInt(rowSem, 10) || (local?.semester || 1),
             room: r[8] || local?.room || '',
             dayOfWeek: r[9] ? parseInt(r[9], 10) : (local?.dayOfWeek || 1),
             startTime: r[10] || local?.startTime || '',
             endTime: r[11] || local?.endTime || '',
             programType: local?.programType || (isEn ? 'ENGLISH' : 'THAI'),
             degreeLevel: local?.degreeLevel || 'ปริญญาตรี',
-            instructor: local?.instructor || '',
+            instructor: r[12] || local?.instructor || '',
+            instructorHistory: parsedHistory,
             major: local?.major || '',
             yearLevel: local?.yearLevel || 1,
             description: local?.description || '',
@@ -291,43 +309,47 @@ export async function updateCourse(
 
   const gClient = getSheetsClient();
   if (gClient) {
-    // 1. Update Courses sheet
+    // 1. Update Courses sheet (matching courseCode + academicYear + semester so past terms are preserved)
     try {
-      const rows = await gClient.getValues('Courses!A2:A');
+      const rows = await gClient.getValues('Courses!A2:H');
       if (rows && rows.length > 0) {
         const curNorm = norm(current.courseCode);
-        const rowIndex = rows.findIndex((r) => norm(r[0]) === curNorm);
+        const updYear = String(updated.academicYear || '2569').trim();
+        const updSem = String(updated.semester || 1).trim();
+
+        let rowIndex = rows.findIndex(
+          (r) =>
+            norm(r[0]) === curNorm &&
+            String(r[6] || '2569').trim() === updYear &&
+            String(r[7] || '1').trim() === updSem
+        );
+        if (rowIndex === -1) {
+          rowIndex = rows.findIndex((r) => norm(r[0]) === curNorm);
+        }
+
         if (rowIndex !== -1) {
           const sheetRowNum = rowIndex + 2;
-          await gClient.updateValues(`Courses!A${sheetRowNum}:L${sheetRowNum}`, [[
-            updated.courseCode,
-            updated.courseName,
-            updated.courseNameEn || '',
-            String(updated.credits || 3),
-            updated.section || '1',
-            updated.term || `${updated.semester || 1}/${updated.academicYear || '2569'}`,
-            updated.academicYear || '2569',
-            String(updated.semester || 1),
-            updated.room || '',
-            String(updated.dayOfWeek || 1),
-            updated.startTime || '',
-            updated.endTime || '',
-          ]]);
+          await gClient.updateValues(`Courses!A${sheetRowNum}:N${sheetRowNum}`, [toCourseSheetRow(updated)]);
         }
       }
     } catch (err) {
       console.warn('Google Sheets update course failed:', err);
     }
 
-    // 2. Cascade update to Timetables sheet in Google Sheets
+    // 2. Cascade update to Timetables sheet in Google Sheets ONLY for matching academicYear & semester
     try {
       if (updates.instructor !== undefined || updates.room !== undefined) {
         const ttRows = await gClient.getValues('Timetables!A2:K');
         if (ttRows && ttRows.length > 0) {
           const curNorm = norm(current.courseCode);
           for (let i = 0; i < ttRows.length; i++) {
+            const rYear = ttRows[i][0];
+            const rSem = ttRows[i][1];
             const rCode = norm(ttRows[i][4]); // Column E is courseCode
-            if (rCode === curNorm) {
+            if (
+              rCode === curNorm &&
+              shouldCascadeTimetableEntry(rYear, rSem, updated.academicYear, updated.semester)
+            ) {
               const rowNum = i + 2;
               if (updates.instructor !== undefined) {
                 await gClient.updateValues(`Timetables!K${rowNum}`, [[updates.instructor]]);
@@ -496,6 +518,10 @@ function toCourseSheetRow(c: Course): string[] {
     String(c.dayOfWeek || 1),
     c.startTime || '',
     c.endTime || '',
+    c.instructor || '',
+    Array.isArray(c.instructorHistory) && c.instructorHistory.length > 0
+      ? JSON.stringify(c.instructorHistory)
+      : '',
   ];
 }
 
@@ -510,8 +536,10 @@ export async function cloneCoursesTerm(options: CloneCoursesTermOptions): Promis
   total: number;
   courses: Course[];
 }> {
+  const allCurrentCourses = await getCourses();
   const localList = readLocalJson<Course[]>('courses.json', []);
-  const result = cloneCourseItemsForTerm(localList, options);
+  const sourceBase = allCurrentCourses.length > 0 ? allCurrentCourses : localList;
+  const result = cloneCourseItemsForTerm(sourceBase, options);
 
   if (result.clonedCourses.length > 0) {
     const nextList = [...result.clonedCourses, ...localList];
@@ -521,7 +549,7 @@ export async function cloneCoursesTerm(options: CloneCoursesTermOptions): Promis
     if (gClient) {
       try {
         const rowsToAppend = result.clonedCourses.map(toCourseSheetRow);
-        await gClient.appendValues('Courses!A:L', rowsToAppend);
+        await gClient.appendValues('Courses!A:N', rowsToAppend);
       } catch (err) {
         console.warn('Google Sheets clone term append failed:', err);
       }
@@ -540,7 +568,7 @@ export async function cloneCoursesTerm(options: CloneCoursesTermOptions): Promis
     cloned: 0,
     skipped: result.skippedCount,
     totalSource: result.sourceCount,
-    total: localList.length,
+    total: sourceBase.length,
     courses: [],
   };
 }
