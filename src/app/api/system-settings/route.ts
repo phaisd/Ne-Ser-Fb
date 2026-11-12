@@ -96,3 +96,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 500 });
   }
 }
+
+export async function PATCH() {
+  try {
+    const current = await getSystemSettings();
+    const baseCount = typeof current.visitorCount === 'number' && current.visitorCount > 0 ? current.visitorCount : 1272;
+    const nextCount = baseCount + 1;
+    await updateSystemSettings({ visitorCount: nextCount });
+    return NextResponse.json({
+      success: true,
+      visitorCount: nextCount,
+    });
+  } catch (err: unknown) {
+    return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 500 });
+  }
+}

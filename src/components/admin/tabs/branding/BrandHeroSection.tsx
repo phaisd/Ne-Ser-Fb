@@ -312,6 +312,63 @@ export function BrandHeroSection({
               </label>
             </div>
           </div>
+
+          {/* 7. Footer Visitor Counter */}
+          <div
+            className={`p-4 rounded-2xl border transition ${
+              settings.showVisitorCounter !== false
+                ? 'bg-emerald-50/50 border-emerald-300'
+                : 'bg-slate-50/80 border-slate-200'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5 flex-1">
+                <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>👥 กล่องแสดงจำนวนผู้เข้าชมเว็บไซต์ในส่วน Footer</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      settings.showVisitorCounter !== false
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-rose-100 text-rose-800'
+                    }`}
+                  >
+                    {settings.showVisitorCounter !== false ? '🟢 เปิดแสดง' : '🔴 ปิดซ่อน'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  แสดงกล่องนับจำนวนผู้เข้าชมเว็บไซต์แบบอัตโนมัติในส่วนท้ายหน้าเว็บ (Footer)
+                </p>
+                {settings.showVisitorCounter !== false && (
+                  <div className="pt-1 flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-700">ยอดผู้เข้าชมปัจจุบัน:</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={settings.visitorCount ?? 1272}
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          visitorCount: Math.max(0, parseInt(e.target.value || '0', 10)),
+                        })
+                      }
+                      className="w-28 px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900"
+                    />
+                  </div>
+                )}
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                <input
+                  type="checkbox"
+                  checked={settings.showVisitorCounter !== false}
+                  onChange={(e) =>
+                    setSettings({ ...settings, showVisitorCounter: e.target.checked })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 

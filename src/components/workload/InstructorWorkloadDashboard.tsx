@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   History,
+  Users,
 } from 'lucide-react';
 import { AttendanceRecord, CourseGradeSheet, LoginAuditRecord } from '@/types';
 import {
@@ -43,6 +44,11 @@ export interface InstructorWorkloadDashboardProps {
     unfamiliarIpCount?: number;
     latestSuccessRecord?: LoginAuditRecord | null;
   } | null;
+  studentsSummary?: {
+    totalStudents: number;
+    thaiStudents: number;
+    englishStudents: number;
+  };
 }
 
 export function InstructorWorkloadDashboard({
@@ -54,6 +60,7 @@ export function InstructorWorkloadDashboard({
   loadingDetails = false,
   loginHistory = [],
   loginSecurity = null,
+  studentsSummary,
 }: InstructorWorkloadDashboardProps) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -138,7 +145,7 @@ export function InstructorWorkloadDashboard({
       </div>
 
       {/* 1. Core KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
           <div className="text-xs font-semibold text-slate-500 flex items-center justify-between">
             <span>รายวิชาที่รับผิดชอบ</span>
@@ -156,6 +163,27 @@ export function InstructorWorkloadDashboard({
               EN {stats.englishCourses}
             </span>
             <span className="text-slate-400">จาก {allCoursesCount} วิชา</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-orange-200/80 shadow-sm">
+          <div className="text-xs font-semibold text-orange-800 flex items-center justify-between">
+            <span>นิสิตในรายวิชาที่สอน</span>
+            <Users className="w-4 h-4 text-orange-600" />
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-2xl font-black text-slate-900">
+              {loadingDetails ? '...' : studentsSummary?.totalStudents ?? 0}
+            </span>
+            <span className="text-xs text-slate-500 font-semibold">รูป/คน</span>
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold">
+              🇹🇭 ไทย {studentsSummary?.thaiStudents ?? 0}
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold">
+              🌐 EN {studentsSummary?.englishStudents ?? 0}
+            </span>
           </div>
         </div>
 
@@ -201,7 +229,7 @@ export function InstructorWorkloadDashboard({
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm col-span-2 lg:col-span-1">
           <div className="text-xs font-semibold text-slate-500 flex items-center justify-between">
             <span>กรอกคะแนน / คะแนนเก็บ</span>
             <FileSpreadsheet className="w-4 h-4 text-purple-600" />

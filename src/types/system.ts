@@ -55,6 +55,8 @@ export interface SystemSettings {
   showCertificatesMenu?: boolean; // เปิด/ปิด ระบบขอหนังสือรับรอง (/certificates)
   showStaffCertificatesInPortal?: boolean; // เปิด/ปิด แถบหนังสือรับรองสำหรับอาจารย์และเจ้าหน้าที่ในหน้าขอหนังสือรับรองสาธารณะ
   showPublicDashboardStats?: boolean; // เปิด/ปิด แดชบอร์ดสรุปสถิติวิชาการและบุคลากรบนหน้าแรก (/)
+  showVisitorCounter?: boolean; // เปิด/ปิด กล่องแสดงจำนวนผู้เข้าชมเว็บไซต์ในส่วน Footer
+  visitorCount?: number; // จำนวนผู้เข้าชมเว็บไซต์สะสม
 
   // Timetable Period Time Configuration (กำหนดเวลาคาบเรียนในตารางสอน)
   morningPeriodLabel?: string; // เช่น "คาบเช้า (09:00 - 11:30 น.)"

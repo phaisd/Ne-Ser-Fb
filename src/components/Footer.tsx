@@ -17,6 +17,7 @@ import {
   GraduationCap,
   Calendar,
   Building2,
+  Users,
 } from 'lucide-react';
 import { SystemSettings } from '@/types';
 
@@ -33,15 +34,31 @@ export default function Footer() {
     websiteUrl: 'https://fb.mcu.ac.th/',
     addressTh: 'อาคารสมเด็จพระพุฒาจารย์ (เกี่ยว อุปเสณมหาเถร) อาคารเรียนรวม ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170',
     officeHours: 'จันทร์ - ศุกร์ 08.30 - 16.30 น. (เว้นวันหยุดราชการ)',
+    showVisitorCounter: true,
+    visitorCount: 1272,
   });
 
   useEffect(() => {
     let isMounted = true;
+    const alreadyCounted =
+      typeof window !== 'undefined' && sessionStorage.getItem('mcu_visitor_counted') === '1';
+
     fetch('/api/system-settings')
       .then((res) => res.json())
       .then((data) => {
         if (isMounted && data.success && data.data) {
           setSettings((prev) => ({ ...prev, ...data.data }));
+        }
+        if (!alreadyCounted && typeof window !== 'undefined') {
+          sessionStorage.setItem('mcu_visitor_counted', '1');
+          fetch('/api/system-settings', { method: 'PATCH' })
+            .then((r) => r.json())
+            .then((patchRes) => {
+              if (isMounted && patchRes?.success && typeof patchRes.visitorCount === 'number') {
+                setSettings((prev) => ({ ...prev, visitorCount: patchRes.visitorCount }));
+              }
+            })
+            .catch(() => {});
         }
       })
       .catch(() => {});
@@ -260,6 +277,22 @@ export default function Footer() {
                       <ExternalLink className="w-3 h-3 text-purple-400" />
                     </a>
                   </p>
+                )}
+
+                {settings.showVisitorCounter !== false && (
+                  <div className="pt-2">
+                    <div className="inline-flex items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-[#161f30] border border-slate-700/80 shadow-md">
+                      <Users className="w-6 h-6 text-amber-400 shrink-0" />
+                      <div>
+                        <div className="text-[11px] font-semibold text-slate-300 leading-tight">
+                          ผู้เข้าชมเว็บไซต์
+                        </div>
+                        <div className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight leading-none mt-0.5">
+                          {(settings.visitorCount || 1272).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

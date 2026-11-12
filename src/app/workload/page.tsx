@@ -22,8 +22,9 @@ import {
   Award,
   UserCheck,
   ArrowRight,
+  Users,
 } from 'lucide-react';
-import { AttendanceRecord, Course, CourseGradeSheet, LoginAuditRecord, TimetableItem } from '@/types';
+import { AttendanceRecord, Course, CourseEnrollment, CourseGradeSheet, LoginAuditRecord, Student, TimetableItem } from '@/types';
 import { InstructorWorkloadDashboard } from '@/components/workload/InstructorWorkloadDashboard';
 import { getAuthUser, saveAuthSession } from '@/lib/auth-client';
 import {
@@ -54,6 +55,8 @@ export default function InstructorWorkloadPage() {
 
   const [timetables, setTimetables] = useState<TimetableItem[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [customEnrollments, setCustomEnrollments] = useState<CourseEnrollment[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [gradesMap, setGradesMap] = useState<Record<string, CourseGradeSheet>>({});
   const [loginHistory, setLoginHistory] = useState<LoginAuditRecord[]>([]);
@@ -122,8 +125,10 @@ export default function InstructorWorkloadPage() {
       fetch('/api/attendance').then((r) => r.json()).catch(() => null),
       fetch('/api/grades').then((r) => r.json()).catch(() => null),
       fetch('/api/auth?action=history').then((r) => r.json()).catch(() => null),
+      fetch('/api/students').then((r) => r.json()).catch(() => null),
+      fetch('/api/enrollments').then((r) => r.json()).catch(() => null),
     ])
-      .then(([attRes, gradeRes, histRes]) => {
+      .then(([attRes, gradeRes, histRes, stuRes, enrRes]) => {
         if (attRes?.success && Array.isArray(attRes.data)) {
           setAttendanceRecords(attRes.data);
         }
@@ -133,6 +138,12 @@ export default function InstructorWorkloadPage() {
         if (histRes?.success) {
           if (Array.isArray(histRes.history)) setLoginHistory(histRes.history);
           if (histRes.security) setLoginSecurity(histRes.security);
+        }
+        if (stuRes?.success && Array.isArray(stuRes.data)) {
+          setStudents(stuRes.data);
+        }
+        if (enrRes?.success && Array.isArray(enrRes.data)) {
+          setCustomEnrollments(enrRes.data);
         }
       })
       .finally(() => setLoadingDashboardDetails(false));
@@ -187,6 +198,62 @@ export default function InstructorWorkloadPage() {
   ]);
 
   const stats = useMemo(() => computeWorkloadStats(filteredCourses), [filteredCourses]);
+
+  // Compute student count per course and unique total students across filteredCourses
+  const { courseStudentCountsMap, studentsSummary } = useMemo(() => {
+    const countsMap: Record<string, number> = {};
+    const uniqueAll = new Set<string>();
+    const uniqueThai = new Set<string>();
+    const uniqueEnglish = new Set<string>();
+
+    const isEngStu = (s: Student) => {
+      const p = (s.programType || '').toUpperCase();
+      const isThaiNat = !s.nationality || s.nationality === 'ไทย' || s.nationality === 'Thai';
+      return p === 'ENGLISH' || p === 'INTER' || (!isThaiNat && p !== 'THAI');
+    };
+
+    for (const c of filteredCourses) {
+      const targetYear = Number(c.yearLevel || 1);
+      const isEnCourse = c.programType === 'ENGLISH';
+      const courseCodesSet = new Set<string>();
+
+      for (const s of students) {
+        if (Number(s.yearLevel || 1) !== targetYear) continue;
+        const stuIsEn = isEngStu(s);
+        if (isEnCourse !== stuIsEn) continue;
+        const code = (s.studentCode || '').trim();
+        if (!code) continue;
+        courseCodesSet.add(code);
+        uniqueAll.add(code);
+        if (stuIsEn) uniqueEnglish.add(code);
+        else uniqueThai.add(code);
+      }
+
+      const cleanCourseCode = (c.courseCode || '').trim().toLowerCase();
+      for (const e of customEnrollments) {
+        if ((e.courseCode || '').trim().toLowerCase() === cleanCourseCode) {
+          const code = (e.studentCode || '').trim();
+          if (code) {
+            courseCodesSet.add(code);
+            uniqueAll.add(code);
+            if (isEnCourse) uniqueEnglish.add(code);
+            else uniqueThai.add(code);
+          }
+        }
+      }
+
+      countsMap[c.id] = courseCodesSet.size;
+    }
+
+    return {
+      courseStudentCountsMap: countsMap,
+      studentsSummary: {
+        totalStudents: uniqueAll.size,
+        thaiStudents: uniqueThai.size,
+        englishStudents: uniqueEnglish.size,
+      },
+    };
+  }, [filteredCourses, students, customEnrollments]);
 
   const hasActiveFilters =
     search.trim() !== '' ||
@@ -370,6 +437,7 @@ export default function InstructorWorkloadPage() {
         loadingDetails={loadingDashboardDetails}
         loginHistory={loginHistory}
         loginSecurity={loginSecurity}
+        studentsSummary={studentsSummary}
       />
 
       {/* 3. Multi-Dimensional Filters Panel: ระดับ, หลักสูตรภาษา, ปีการศึกษา, ภาคเรียน */}
@@ -594,6 +662,10 @@ export default function InstructorWorkloadPage() {
                       </span>
                       <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-slate-100 text-slate-700">
                         {course.degreeLevel} • ปี {course.yearLevel}
+                      </span>
+                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-orange-50 text-orange-800 border border-orange-200 inline-flex items-center gap-1">
+                        <Users className="w-3 h-3 text-orange-600" />
+                        <span>นิสิต {courseStudentCountsMap[course.id] ?? 0} รูป/คน</span>
                       </span>
                     </div>
 

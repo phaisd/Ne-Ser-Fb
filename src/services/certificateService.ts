@@ -658,6 +658,9 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   heroBgStyle: 'wavy-contours',
   themePreset: 'pink',
   themeMourningRibbon: false,
+  showPublicDashboardStats: true,
+  showVisitorCounter: true,
+  visitorCount: 1272,
 };
 
 export function convertGoogleDriveUrl(url?: string): string {
