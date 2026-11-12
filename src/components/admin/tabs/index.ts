@@ -8,4 +8,5 @@ export * from './AdminUsersTab';
 export * from './AdminBrandingTab';
 export * from './AdminCertificatesTab';
 export * from './AdminEventsTab';
+export * from './AdminAdmissionsTab';
 

@@ -24,6 +24,7 @@ import {
   AdminBrandingTab,
   AdminCertificatesTab,
   AdminEventsTab,
+  AdminAdmissionsTab,
 } from '@/components/admin/tabs';
 import {
   StudentDeleteModal,
@@ -543,6 +544,7 @@ export default function AdminConsolePage() {
                 {activeTab === 'DASHBOARD' && 'ภาพรวมระบบ (Dashboard)'}
                 {activeTab === 'CERTIFICATES' && 'งานอนุมัติหนังสือรับรอง'}
                 {activeTab === 'STUDENTS' && 'งานทะเบียนนิสิต'}
+                {activeTab === 'ADMISSIONS' && 'ระบบรับสมัครและขึ้นทะเบียนนิสิตใหม่'}
                 {activeTab === 'COURSES' && 'หลักสูตรและรายวิชา'}
                 {activeTab === 'TIMETABLES' && 'ตารางเรียนและตารางสอน'}
                 {activeTab === 'ATTENDANCE' && 'บันทึกเวลาเรียน'}
@@ -655,6 +657,16 @@ export default function AdminConsolePage() {
               setPreviewTab={adminCerts.setPreviewTab}
               onRefreshData={loadData}
               onSuccessMessage={(msg) => setActionSuccess(msg)}
+            />
+          )}
+
+          {/* TAB B.5: ADMISSIONS & NEW STUDENT ENROLLMENT */}
+          {activeTab === 'ADMISSIONS' && (
+            <AdminAdmissionsTab
+              settings={adminSettings.settings}
+              setSettings={adminSettings.setSettings}
+              onRefreshStudents={loadData}
+              setActionSuccess={setActionSuccess}
             />
           )}
 

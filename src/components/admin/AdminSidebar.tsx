@@ -16,6 +16,7 @@ import {
   UserCog,
   LogOut,
   Award,
+  GraduationCap,
 } from 'lucide-react';
 import { SystemSettings } from '@/types';
 import { isAdminOrOfficer } from '@/lib/auth-client';
@@ -24,6 +25,7 @@ export type AdminTab =
   | 'DASHBOARD'
   | 'CERTIFICATES'
   | 'STUDENTS'
+  | 'ADMISSIONS'
   | 'COURSES'
   | 'TIMETABLES'
   | 'ATTENDANCE'
@@ -177,6 +179,32 @@ export function AdminSidebar({
               </div>
               <span className="text-[10px] text-slate-400 font-mono">
                 {studentsTotalCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('ADMISSIONS');
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                activeTab === 'ADMISSIONS'
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 font-bold'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <GraduationCap className="w-4 h-4 text-amber-400" />
+                <span>รับสมัครนิสิตใหม่</span>
+              </div>
+              <span
+                className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                  settings.showEnrollmentMenu !== false
+                    ? 'bg-emerald-500/20 text-emerald-300'
+                    : 'bg-slate-700 text-slate-400'
+                }`}
+              >
+                {settings.showEnrollmentMenu !== false ? 'เปิด' : 'ซ่อน'}
               </span>
             </button>
 

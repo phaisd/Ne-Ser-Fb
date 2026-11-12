@@ -57,6 +57,13 @@ export interface SystemSettings {
   showPublicDashboardStats?: boolean; // เปิด/ปิด แดชบอร์ดสรุปสถิติวิชาการและบุคลากรบนหน้าแรก (/)
   showVisitorCounter?: boolean; // เปิด/ปิด กล่องแสดงจำนวนผู้เข้าชมเว็บไซต์ในส่วน Footer
   visitorCount?: number; // จำนวนผู้เข้าชมเว็บไซต์สะสม
+  showEnrollmentMenu?: boolean; // เปิด/ปิด ระบบรับสมัครเรียนและขึ้นทะเบียนนิสิตใหม่ (/enroll) บนหน้าแรกและเมนูหลัก
+  admissionOpen?: boolean; // เปิด/ปิด การรับยื่นใบสมัครออนไลน์ตามฤดูกาล
+  admissionAcademicYear?: string; // ปีการศึกษาที่เปิดรับสมัครนิสิตใหม่ (เช่น 2570)
+  admissionDefaultInterviewDate?: string; // วันเวลาสอบสัมภาษณ์เริ่มต้น
+  admissionDefaultInterviewRoom?: string; // สถานที่/ห้องสอบสัมภาษณ์เริ่มต้น
+  admissionCoordinatorName?: string; // ชื่อผู้ประสานงานการรับสมัคร
+  admissionCoordinatorPhone?: string; // เบอร์โทรติดต่อผู้ประสานงานการรับสมัคร
 
   // Timetable Period Time Configuration (กำหนดเวลาคาบเรียนในตารางสอน)
   morningPeriodLabel?: string; // เช่น "คาบเช้า (09:00 - 11:30 น.)"

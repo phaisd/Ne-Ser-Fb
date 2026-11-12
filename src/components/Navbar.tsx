@@ -323,6 +323,7 @@ export default function Navbar() {
   const publicNavItems = [
     { href: '/', label: t.navHome, icon: LayoutDashboard },
     ...(isStaffOrInstructor ? [{ href: '/workload', label: 'ภาระงานสอนของฉัน', icon: Briefcase }] : []),
+    ...(settings?.showEnrollmentMenu !== false ? [{ href: '/enroll', label: 'สมัครเรียน/นิสิตใหม่', icon: GraduationCap }] : []),
     ...(settings?.showCertificatesMenu !== false ? [{ href: '/certificates', label: t.navCertificates, icon: FileText }] : []),
     ...(settings?.showCoursesMenu !== false ? [{ href: '/courses', label: t.navCourses, icon: BookOpen }] : []),
     ...(isAdmin && settings?.showStudentsSearch !== false ? [{ href: '/students', label: t.navStudents, icon: Users }] : []),

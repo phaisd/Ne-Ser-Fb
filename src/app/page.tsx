@@ -99,6 +99,16 @@ export default async function HomePage() {
 
             {/* Quick Action Buttons for Students */}
             <div className="pt-3 flex flex-wrap items-center gap-3">
+              {settings?.showEnrollmentMenu !== false && (
+                <Link
+                  href="/enroll"
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 px-5 py-3 text-sm font-black text-slate-950 shadow-md transition"
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  สมัครเรียน / นิสิตใหม่
+                </Link>
+              )}
+
               {settings?.showCertificatesMenu !== false && (
                 <Link
                   href="/certificates"
@@ -308,6 +318,35 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Service 0: สมัครเรียน / ขึ้นทะเบียนนิสิตใหม่ออนไลน์ */}
+          {settings?.showEnrollmentMenu !== false && (
+            <Link
+              href="/enroll"
+              className="group bg-gradient-to-br from-orange-50/80 via-white to-amber-50/60 p-6 rounded-2xl border border-orange-200/90 shadow-sm hover:shadow-md hover:border-orange-400 transition-all flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-orange-600 text-white flex items-center justify-center group-hover:scale-105 transition shadow-xs">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                  <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-900 border border-orange-200">
+                    เปิดรับปี {settings?.admissionAcademicYear || '2570'}
+                  </span>
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  สมัครเรียน / ขึ้นทะเบียนนิสิตใหม่
+                </h3>
+                <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                  ยื่นใบสมัครเข้าศึกษาออนไลน์ (พธ.บ., พธ.ม., พธ.ด.) ทั้งภาคภาษาไทยและนานาชาติ ตรวจสอบตารางสัมภาษณ์ และพิมพ์ใบรายงานตัวนิสิตใหม่
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-orange-200/60 flex items-center justify-between text-xs font-extrabold text-orange-700">
+                <span>สมัครเรียนออนไลน์ &rarr;</span>
+                <span className="text-slate-500 font-normal">ครบวงจร 4 ขั้นตอน</span>
+              </div>
+            </Link>
+          )}
+
           {/* Service 1: ยื่นคำร้องขอหนังสือรับรอง */}
           {settings?.showCertificatesMenu !== false && (
             <Link

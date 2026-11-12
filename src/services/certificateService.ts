@@ -661,6 +661,13 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   showPublicDashboardStats: true,
   showVisitorCounter: true,
   visitorCount: 1272,
+  showEnrollmentMenu: true,
+  admissionOpen: true,
+  admissionAcademicYear: '2570',
+  admissionDefaultInterviewDate: '20 พฤษภาคม 2570 เวลา 09.00 - 12.00 น.',
+  admissionDefaultInterviewRoom: 'อาคารสมเด็จพระพุฒาจารย์ (อาคารเรียนรวม) คณะพุทธศาสตร์ มจร วังน้อย',
+  admissionCoordinatorName: 'สำนักงานคณบดีคณะพุทธศาสตร์ ฝ่ายทะเบียนและวัดผล',
+  admissionCoordinatorPhone: '035-248-000 ต่อ 8323',
 };
 
 export function convertGoogleDriveUrl(url?: string): string {

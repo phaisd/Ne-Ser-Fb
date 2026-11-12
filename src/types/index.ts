@@ -5,3 +5,4 @@ export * from './attendance';
 export * from './certificate';
 export * from './system';
 export * from './event';
+export * from './admission';
