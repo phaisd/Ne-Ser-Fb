@@ -352,8 +352,8 @@ export default function AdminConsolePage() {
       } else {
         alert('เกิดข้อผิดพลาด: ' + data.error);
       }
-    } catch (err: any) {
-      alert('การจัดเก็บประวัติล้มเหลว: ' + err.message);
+    } catch (err: unknown) {
+      alert('การจัดเก็บประวัติล้มเหลว: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setArchiveLoading(false);
     }
@@ -372,8 +372,8 @@ export default function AdminConsolePage() {
       } else {
         alert('เกิดข้อผิดพลาด: ' + data.error);
       }
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert((e instanceof Error ? e.message : String(e)));
     } finally {
       setSyncingSheet(false);
     }

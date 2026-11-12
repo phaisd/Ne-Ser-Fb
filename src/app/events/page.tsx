@@ -163,8 +163,8 @@ export default function EventsPage() {
       } else {
         alert('เกิดข้อผิดพลาด: ' + resData.error);
       }
-    } catch (err: any) {
-      alert('ลงทะเบียนล้มเหลว: ' + err.message);
+    } catch (err: unknown) {
+      alert('ลงทะเบียนล้มเหลว: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSubmittingReg(false);
     }

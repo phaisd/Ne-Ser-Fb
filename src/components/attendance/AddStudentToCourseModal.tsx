@@ -188,10 +188,10 @@ export const AddStudentToCourseModal: React.FC<AddStudentToCourseModalProps> = (
           text: enrollData.error || 'เกิดข้อผิดพลาดในการบันทึกเข้าห้องเรียน',
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFeedback({
         type: 'error',
-        text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message,
+        text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)),
       });
     } finally {
       setSavingManual(false);
@@ -231,8 +231,8 @@ export const AddStudentToCourseModal: React.FC<AddStudentToCourseModalProps> = (
       } else {
         setFeedback({ type: 'error', text: data.error || 'เกิดข้อผิดพลาดในการบันทึก' });
       }
-    } catch (err: any) {
-      setFeedback({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message });
+    } catch (err: unknown) {
+      setFeedback({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)) });
     } finally {
       setSubmittingCode(null);
     }

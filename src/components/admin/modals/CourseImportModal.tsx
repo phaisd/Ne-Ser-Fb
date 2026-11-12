@@ -385,8 +385,8 @@ export const CourseImportModal: React.FC<CourseImportModalProps> = ({
         onSuccess();
         onClose();
       }, 1500);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+    } catch (err: unknown) {
+      setErrorMsg((err instanceof Error ? err.message : String(err)) || 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
     } finally {
       setIsSubmitting(false);
     }

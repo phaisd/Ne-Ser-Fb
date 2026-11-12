@@ -252,8 +252,8 @@ export function BrandIdentitySection({
                     } else {
                       alert(data.error);
                     }
-                  } catch (e: any) {
-                    alert(e.message);
+                  } catch (e: unknown) {
+                    alert((e instanceof Error ? e.message : String(e)));
                   } finally {
                     setSavingSettings(false);
                   }
@@ -781,8 +781,8 @@ export function BrandIdentitySection({
                 } else {
                   alert(data.error);
                 }
-              } catch (e: any) {
-                alert(e.message);
+              } catch (e: unknown) {
+                alert((e instanceof Error ? e.message : String(e)));
               } finally {
                 setSavingSettings(false);
               }

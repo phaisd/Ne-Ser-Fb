@@ -103,8 +103,8 @@ export default function SettingsPage() {
       } else {
         alert(data.error || 'ไม่พบแท็บ Settings ใน Google Sheets หรือยังไม่ได้เชื่อมต่อ');
       }
-    } catch (e: any) {
-      alert('เกิดข้อผิดพลาด: ' + e.message);
+    } catch (e: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setPullingFromSheets(false);
     }
@@ -115,7 +115,7 @@ export default function SettingsPage() {
     fetch('/api/sheets-sync')
       .then((res) => res.json())
       .then((data) => setStatus(data))
-      .catch((err) => setStatus({ configured: false, error: err.message }))
+      .catch((err) => setStatus({ configured: false, error: (err instanceof Error ? err.message : String(err)) }))
       .finally(() => setLoading(false));
   };
 
@@ -214,8 +214,8 @@ export default function SettingsPage() {
           setLogoSaveSuccess('อัปโหลดไฟล์แล้ว กรุณากดปุ่มบันทึกเพื่อยืนยัน');
         }
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setUploadingLogo(false);
     }
@@ -243,8 +243,8 @@ export default function SettingsPage() {
       } else {
         alert(data.error);
       }
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert((err instanceof Error ? err.message : String(err)));
     } finally {
       setSavingLogo(false);
     }
@@ -266,8 +266,8 @@ export default function SettingsPage() {
       } else {
         alert('เกิดข้อผิดพลาดในการซิงค์: ' + data.error);
       }
-    } catch (err: any) {
-      alert('ซิงค์ล้มเหลว: ' + err.message);
+    } catch (err: unknown) {
+      alert('ซิงค์ล้มเหลว: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSyncing(false);
     }
@@ -784,8 +784,8 @@ export default function SettingsPage() {
                 } else {
                   setNotificationTestResult(`❌ ข้อผิดพลาด: ${d.error}`);
                 }
-              } catch (e: any) {
-                setNotificationTestResult(`❌ ไม่สามารถเชื่อมต่อ: ${e.message}`);
+              } catch (e: unknown) {
+                setNotificationTestResult(`❌ ไม่สามารถเชื่อมต่อ: ${(e instanceof Error ? e.message : String(e))}`);
               } finally {
                 setTestingNotification(false);
               }
@@ -948,8 +948,8 @@ export default function SettingsPage() {
                 if (d.success) {
                   alert('บันทึกการตั้งค่าระบบแจ้งเตือนสำเร็จเรียบร้อย');
                 }
-              } catch (e: any) {
-                alert('เกิดข้อผิดพลาด: ' + e.message);
+              } catch (e: unknown) {
+                alert('เกิดข้อผิดพลาด: ' + (e instanceof Error ? e.message : String(e)));
               } finally {
                 setSavingLogo(false);
               }

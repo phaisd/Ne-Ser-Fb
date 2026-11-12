@@ -245,8 +245,8 @@ export function CertificateTypesRepoModal({
           alert('ไม่สามารถเพิ่มได้: ' + (resData.error || 'Unknown error'));
         }
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการบันทึก: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSubmitting(false);
     }
@@ -291,8 +291,8 @@ export function CertificateTypesRepoModal({
       } else {
         alert('ลบไม่สำเร็จ: ' + (resData.error || 'Unknown error'));
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการลบ: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSubmitting(false);
     }

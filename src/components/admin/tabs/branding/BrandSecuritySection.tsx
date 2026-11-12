@@ -57,9 +57,9 @@ export function BrandSecuritySection({
         setTestSuccess(false);
         setTestResult(data.error || 'การส่งทดสอบล้มเหลว');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setTestSuccess(false);
-      setTestResult(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      setTestResult((err instanceof Error ? err.message : String(err)) || 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
     } finally {
       setTestingNotification(false);
     }

@@ -258,8 +258,8 @@ export default function StudentsPage() {
       } else {
         alert('เกิดข้อผิดพลาดในการบันทึก: ' + data.error);
       }
-    } catch (err: any) {
-      alert('บันทึกข้อมูลล้มเหลว: ' + err.message);
+    } catch (err: unknown) {
+      alert('บันทึกข้อมูลล้มเหลว: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSaving(false);
     }
@@ -316,8 +316,8 @@ export default function StudentsPage() {
       } else {
         alert('เกิดข้อผิดพลาดในการลบ: ' + (data.error || 'ไม่สามารถลบได้'));
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsDeleting(false);
     }
@@ -357,8 +357,8 @@ export default function StudentsPage() {
       } else {
         alert('เกิดข้อผิดพลาดในการอัปเดต: ' + data.error);
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setBulkSaving(false);
     }
@@ -471,8 +471,8 @@ export default function StudentsPage() {
       } else {
         alert('เกิดข้อผิดพลาดในการนำเข้า: ' + data.error);
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setImportSaving(false);
     }

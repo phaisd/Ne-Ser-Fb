@@ -118,8 +118,8 @@ export function StudentImportModal({
       } else {
         alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ' + (data.error || 'Unknown error'));
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSubmitting(false);
     }

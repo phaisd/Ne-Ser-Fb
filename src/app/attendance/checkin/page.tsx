@@ -142,8 +142,8 @@ function StudentQrCheckInContent() {
       } catch {}
 
       setCheckInResult(data);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } catch (err: unknown) {
+      setErrorMsg((err instanceof Error ? err.message : String(err)) || 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
     } finally {
       setSubmitting(false);
     }

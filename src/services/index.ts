@@ -9,4 +9,5 @@ export * from './eventService';
 export * from './courseEnrollmentService';
 export * from './admissionService';
 export * from './visitorService';
+export * from './systemSettingsService';
 

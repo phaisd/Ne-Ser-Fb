@@ -245,8 +245,8 @@ export function VipassanaAttendanceSheetModal({
       } else {
         alert('เกิดข้อผิดพลาดในการบันทึก: ' + (data.error || 'Unknown error'));
       }
-    } catch (e: any) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e.message);
+    } catch (e: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setIsSaving(false);
     }

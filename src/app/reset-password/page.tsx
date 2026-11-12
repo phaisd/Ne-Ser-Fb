@@ -71,8 +71,8 @@ function ResetPasswordContent() {
       setUserName(data.name || 'ผู้ใช้งาน');
       setMaskedEmail(data.maskedPrimaryEmail || data.maskedBackupEmail || '');
       setTokenVerified(true);
-    } catch (err: any) {
-      setVerifyError(err.message || 'ไม่สามารถตรวจสอบรหัสยืนยันได้');
+    } catch (err: unknown) {
+      setVerifyError((err instanceof Error ? err.message : String(err)) || 'ไม่สามารถตรวจสอบรหัสยืนยันได้');
       setTokenVerified(false);
     } finally {
       setVerifying(false);
@@ -118,8 +118,8 @@ function ResetPasswordContent() {
       setTimeout(() => {
         router.push('/login');
       }, 3000);
-    } catch (err: any) {
-      setSubmitError(err.message || 'เกิดข้อผิดพลาดในการตั้งรหัสผ่าน');
+    } catch (err: unknown) {
+      setSubmitError((err instanceof Error ? err.message : String(err)) || 'เกิดข้อผิดพลาดในการตั้งรหัสผ่าน');
     } finally {
       setSubmitting(false);
     }

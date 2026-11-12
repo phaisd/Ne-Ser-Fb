@@ -110,8 +110,8 @@ export function HeroWildSection({ settings: initialSettings }: HeroWildSectionPr
       } else {
         alert(data.error || 'อัปโหลดรูปภาพไม่สำเร็จ');
       }
-    } catch (e: any) {
-      alert(e.message || 'เกิดข้อผิดพลาดในการอัปโหลด');
+    } catch (e: unknown) {
+      alert((e instanceof Error ? e.message : String(e)) || 'เกิดข้อผิดพลาดในการอัปโหลด');
     } finally {
       setUploadingImage(false);
     }
@@ -138,8 +138,8 @@ export function HeroWildSection({ settings: initialSettings }: HeroWildSectionPr
       } else {
         alert(data.error || 'บันทึกไม่สำเร็จ');
       }
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert((e instanceof Error ? e.message : String(e)));
     } finally {
       setSaving(false);
     }

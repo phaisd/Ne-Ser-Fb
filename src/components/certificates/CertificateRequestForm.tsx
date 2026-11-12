@@ -234,8 +234,8 @@ export function CertificateRequestForm({
       } else {
         alert('อัปโหลดไฟล์ล้มเหลว: ' + (data.error || 'ไม่สามารถอัปโหลดได้'));
       }
-    } catch (err: any) {
-      alert('อัปโหลดไฟล์ล้มเหลว: ' + err.message);
+    } catch (err: unknown) {
+      alert('อัปโหลดไฟล์ล้มเหลว: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setUploadingDoc(null);
     }
@@ -279,8 +279,8 @@ export function CertificateRequestForm({
         setCandidateVerifyError(data.error || 'ไม่พบข้อมูลผู้ผ่านการคัดเลือก');
         setCandidateVerified(null);
       }
-    } catch (err: any) {
-      setCandidateVerifyError('เกิดข้อผิดพลาดในการตรวจสอบ: ' + err.message);
+    } catch (err: unknown) {
+      setCandidateVerifyError('เกิดข้อผิดพลาดในการตรวจสอบ: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setCandidateVerifying(false);
     }
@@ -447,8 +447,8 @@ export function CertificateRequestForm({
       } else {
         alert('เกิดข้อผิดพลาดในการบันทึกคำร้อง: ' + (data.error || 'กรุณาลองใหม่อีกครั้ง'));
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSubmitting(false);
     }

@@ -75,8 +75,8 @@ function VerifyContent() {
         });
       }
       setHasSearched(true);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล');
+    } catch (err: unknown) {
+      setErrorMsg((err instanceof Error ? err.message : String(err)) || 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล');
       setResult(null);
     } finally {
       setLoading(false);

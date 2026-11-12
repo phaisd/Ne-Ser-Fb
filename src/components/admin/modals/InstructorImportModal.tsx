@@ -315,8 +315,8 @@ export const InstructorImportModal: React.FC<InstructorImportModalProps> = ({
       } else {
         setSubmitError(data.error || 'เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
       }
-    } catch (err: any) {
-      setSubmitError(err.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+    } catch (err: unknown) {
+      setSubmitError((err instanceof Error ? err.message : String(err)) || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
     } finally {
       setIsSubmitting(false);
     }

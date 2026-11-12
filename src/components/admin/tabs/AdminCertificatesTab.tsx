@@ -108,8 +108,8 @@ export function AdminCertificatesTab({
       } else {
         alert('เกิดข้อผิดพลาดในการซิงค์: ' + (data.error || 'Unknown error'));
       }
-    } catch (err: any) {
-      alert('ไม่สามารถเชื่อมต่อกับ Google Sheets ได้: ' + err.message);
+    } catch (err: unknown) {
+      alert('ไม่สามารถเชื่อมต่อกับ Google Sheets ได้: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSyncingSheets(false);
     }
@@ -293,8 +293,8 @@ export function AdminCertificatesTab({
       } else {
         alert('ลบไม่สำเร็จ: ' + data.error);
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการลบ: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsDeleting(false);
     }
@@ -317,8 +317,8 @@ export function AdminCertificatesTab({
       } else {
         alert('ล้างข้อมูลไม่สำเร็จ: ' + data.error);
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsClearingMock(false);
     }

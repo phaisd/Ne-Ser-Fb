@@ -253,8 +253,8 @@ export function AdminCertificatePreviewModal({
       } else {
         alert('บันทึกไม่สำเร็จ: ' + data.error);
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSavingDocNo(false);
     }
@@ -290,8 +290,8 @@ export function AdminCertificatePreviewModal({
       } else {
         alert('บันทึกไม่สำเร็จ: ' + data.error);
       }
-    } catch (err: any) {
-      alert('บันทึกไม่สำเร็จ: ' + err.message);
+    } catch (err: unknown) {
+      alert('บันทึกไม่สำเร็จ: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 

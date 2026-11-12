@@ -1,8 +1,22 @@
-import { CertificateRequest, CertRequestStatus, SystemSettings, SignatoryItem } from '@/types';
+﻿import { CertificateRequest, CertRequestStatus } from '@/types';
 import { getErrorMessage } from '@/lib/utils/error';
-import { DEFAULT_ADMISSION_PORTAL_CONFIG } from '@/lib/admission-config';
 import { readLocalJson, writeLocalJson, getSheetsClient } from './storageHelper';
 import { getStudents } from './studentService';
+import {
+  DEFAULT_SIGNATORIES,
+  DEFAULT_SETTINGS,
+  convertGoogleDriveUrl,
+  getSystemSettings,
+  updateSystemSettings,
+} from './systemSettingsService';
+
+export {
+  DEFAULT_SIGNATORIES,
+  DEFAULT_SETTINGS,
+  convertGoogleDriveUrl,
+  getSystemSettings,
+  updateSystemSettings,
+};
 
 export interface StoredCertificateType {
   id: string;
@@ -42,9 +56,9 @@ export async function createCertificateType(data: CertificateTypeInput): Promise
   const newType: StoredCertificateType = {
     id,
     code: data.code || `CERT-${types.length + 1}`,
-    name: data.name || 'หนังสือรับรองใหม่',
+    name: data.name || 'à¸«à¸™à¸±à¸‡à¸ªà¸·à¸­à¸£à¸±à¸šà¸£à¸­à¸‡à¹ƒà¸«à¸¡à¹ˆ',
     targetAudience: audience,
-    badge: data.badge || (audience === 'INTERNATIONAL' ? 'นิสิตต่างชาติ' : audience === 'STAFF' ? 'อาจารย์/เจ้าหน้าที่' : audience === 'CANDIDATE' ? 'ผู้ผ่านคัดเลือก' : 'นิสิตไทย'),
+    badge: data.badge || (audience === 'INTERNATIONAL' ? 'à¸™à¸´à¸ªà¸´à¸•à¸•à¹ˆà¸²à¸‡à¸Šà¸²à¸•à¸´' : audience === 'STAFF' ? 'à¸­à¸²à¸ˆà¸²à¸£à¸¢à¹Œ/à¹€à¸ˆà¹‰à¸²à¸«à¸™à¹‰à¸²à¸—à¸µà¹ˆ' : audience === 'CANDIDATE' ? 'à¸œà¸¹à¹‰à¸œà¹ˆà¸²à¸™à¸„à¸±à¸”à¹€à¸¥à¸·à¸­à¸' : 'à¸™à¸´à¸ªà¸´à¸•à¹„à¸—à¸¢'),
     category: data.category || 'ACADEMIC',
     iconName: data.iconName || 'FileText',
     description: data.description || '',
@@ -108,7 +122,7 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
       return typeof val === 'string' || typeof val === 'number' ? val : undefined;
     };
     const nationality = r.nationality || strNote('nationality') || '';
-    const isThai = nationality === 'Thai' || nationality === 'ไทย';
+    const isThai = nationality === 'Thai' || nationality === 'à¹„à¸—à¸¢';
     const noteApplicant = strNote('applicantType');
     const resolvedApplicantType: CertificateRequest['applicantType'] =
       r.applicantType ||
@@ -124,7 +138,7 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
       studentCode: r.studentCode || strNote('studentCode') || '',
       fullName: r.fullName || strNote('fullName') || (r.user ? r.user.name || '' : ''),
       monasticName: r.monasticName || strNote('monasticName') || '',
-      certType: r.certType || r.certificateType?.name || strNote('requestPurpose') || 'หนังสือรับรอง',
+      certType: r.certType || r.certificateType?.name || strNote('requestPurpose') || 'à¸«à¸™à¸±à¸‡à¸ªà¸·à¸­à¸£à¸±à¸šà¸£à¸­à¸‡',
       degreeLevel: r.degreeLevel || strNote('degreeLevel') || '',
       major: r.major || strNote('major') || '',
       requestPurpose: r.requestPurpose || strNote('requestPurpose') || '',
@@ -196,7 +210,7 @@ export async function getCertificateRequests(): Promise<CertificateRequest[]> {
             studentCode: r[2] || sheetExtra.studentCode || local.studentCode || '',
             fullName: r[3] || sheetExtra.fullName || local.fullName || '',
             monasticName: sheetExtra.monasticName || local.monasticName || '',
-            certType: r[4] || sheetExtra.certType || local.certType || 'หนังสือรับรอง',
+            certType: r[4] || sheetExtra.certType || local.certType || 'à¸«à¸™à¸±à¸‡à¸ªà¸·à¸­à¸£à¸±à¸šà¸£à¸­à¸‡',
             degreeLevel: r[5] || sheetExtra.degreeLevel || local.degreeLevel || '',
             major: r[6] || sheetExtra.major || local.major || '',
             requestPurpose: r[7] || sheetExtra.requestPurpose || local.requestPurpose || '',
@@ -224,7 +238,7 @@ export async function syncCertificateRequestsToSheets(
 ): Promise<{ success: boolean; count: number; error?: string }> {
   const gClient = getSheetsClient();
   if (!gClient) {
-    return { success: false, count: 0, error: 'ยังไม่ได้ตั้งค่า Google Sheets API' };
+    return { success: false, count: 0, error: 'à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸² Google Sheets API' };
   }
 
   const rawList = items || readLocalJson<RawCertificateRequestRecord[]>('certificate_requests.json', []);
@@ -238,19 +252,19 @@ export async function syncCertificateRequestsToSheets(
     }
 
     const headers = [
-      'ID คำร้อง',
-      'วันที่ยื่นคำร้อง',
-      'รหัสนิสิต/บุคลากร',
-      'ชื่อ-สกุล',
-      'ประเภทหนังสือรับรอง',
-      'ระดับการศึกษา',
-      'สาขาวิชา',
-      'วัตถุประสงค์',
-      'สถานะ',
-      'เลขที่หนังสือ อว',
-      'อีเมล',
-      'เบอร์โทรศัพท์',
-      'ข้อมูลเพิ่มเติม (JSON)',
+      'ID à¸„à¸³à¸£à¹‰à¸­à¸‡',
+      'à¸§à¸±à¸™à¸—à¸µà¹ˆà¸¢à¸·à¹ˆà¸™à¸„à¸³à¸£à¹‰à¸­à¸‡',
+      'à¸£à¸«à¸±à¸ªà¸™à¸´à¸ªà¸´à¸•/à¸šà¸¸à¸„à¸¥à¸²à¸à¸£',
+      'à¸Šà¸·à¹ˆà¸­-à¸ªà¸à¸¸à¸¥',
+      'à¸›à¸£à¸°à¹€à¸ à¸—à¸«à¸™à¸±à¸‡à¸ªà¸·à¸­à¸£à¸±à¸šà¸£à¸­à¸‡',
+      'à¸£à¸°à¸”à¸±à¸šà¸à¸²à¸£à¸¨à¸¶à¸à¸©à¸²',
+      'à¸ªà¸²à¸‚à¸²à¸§à¸´à¸Šà¸²',
+      'à¸§à¸±à¸•à¸–à¸¸à¸›à¸£à¸°à¸ªà¸‡à¸„à¹Œ',
+      'à¸ªà¸–à¸²à¸™à¸°',
+      'à¹€à¸¥à¸‚à¸—à¸µà¹ˆà¸«à¸™à¸±à¸‡à¸ªà¸·à¸­ à¸­à¸§',
+      'à¸­à¸µà¹€à¸¡à¸¥',
+      'à¹€à¸šà¸­à¸£à¹Œà¹‚à¸—à¸£à¸¨à¸±à¸žà¸—à¹Œ',
+      'à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹€à¸žà¸´à¹ˆà¸¡à¹€à¸•à¸´à¸¡ (JSON)',
     ];
 
     const rows = rawList.map((r) => [
@@ -443,7 +457,7 @@ export async function updateCertificateRequest(id: string, updates: Partial<Cert
             createdAt: r[1] || sheetExtra.createdAt || baseRecord?.createdAt || new Date().toISOString(),
             studentCode: r[2] || sheetExtra.studentCode || baseRecord?.studentCode || '',
             fullName: r[3] || sheetExtra.fullName || baseRecord?.fullName || '',
-            certType: r[4] || sheetExtra.certType || baseRecord?.certType || 'หนังสือรับรอง',
+            certType: r[4] || sheetExtra.certType || baseRecord?.certType || 'à¸«à¸™à¸±à¸‡à¸ªà¸·à¸­à¸£à¸±à¸šà¸£à¸­à¸‡',
             degreeLevel: r[5] || sheetExtra.degreeLevel || baseRecord?.degreeLevel || '',
             major: r[6] || sheetExtra.major || baseRecord?.major || '',
             requestPurpose: r[7] || sheetExtra.requestPurpose || baseRecord?.requestPurpose || '',
@@ -537,7 +551,7 @@ export async function clearMockApprovedRequests(): Promise<{ deletedCount: numbe
   // Filter out legacy mock approved items (e.g. uuid-format ids, or items created as mock approved)
   const remainingList = localList.filter((r) => {
     const isLegacyMock = r.status === 'APPROVED' && (
-      r.user?.name === 'ผู้ดูแลระบบ คณะพุทธศาสตร์' ||
+      r.user?.name === 'à¸œà¸¹à¹‰à¸”à¸¹à¹à¸¥à¸£à¸°à¸šà¸š à¸„à¸“à¸°à¸žà¸¸à¸—à¸˜à¸¨à¸²à¸ªà¸•à¸£à¹Œ' ||
       (typeof r.id === 'string' && r.id.length > 20 && !r.id.startsWith('req-'))
     );
     return !isLegacyMock;
@@ -557,187 +571,6 @@ export async function clearMockApprovedRequests(): Promise<{ deletedCount: numbe
   }
 
   return { deletedCount, remainingCount: remainingList.length };
-}
-
-// ----------------- SYSTEM SETTINGS & BRANDING -----------------
-
-export const DEFAULT_SIGNATORIES: SignatoryItem[] = [
-  {
-    id: 'DEAN',
-    label: '1. คณบดีคณะพุทธศาสตร์ (พระครูสุธีกิตติบัณฑิต, รศ.ดร.)',
-    name: 'พระครูสุธีกิตติบัณฑิต, รศ.ดร.',
-    title: 'คณบดีคณะพุทธศาสตร์',
-    isDefault: true,
-  },
-  {
-    id: 'VICE_ACADEMIC',
-    label: '2. รองคณบดีฝ่ายวิชาการ (ปฏิบัติหน้าที่แทนคณบดี)',
-    name: 'พระมหาหรรษา ธมฺมหาโส, ศ.ดร.',
-    title: 'รองคณบดีฝ่ายวิชาการ ปฏิบัติหน้าที่แทนคณบดีคณะพุทธศาสตร์',
-  },
-  {
-    id: 'VICE_STUDENT',
-    label: '3. รองคณบดีฝ่ายกิจการนิสิต (รับรองความประพฤติ/กิจกรรม)',
-    name: 'พระมหาบุญเลิศ ช่วยธานี, ศ.ดร.',
-    title: 'รองคณบดีฝ่ายกิจการนิสิต คณะพุทธศาสตร์',
-  },
-  {
-    id: 'SECRETARY',
-    label: '4. เลขานุการสำนักงานคณบดีคณะพุทธศาสตร์',
-    name: '',
-    title: 'เลขานุการสำนักงานคณบดีคณะพุทธศาสตร์',
-  },
-  {
-    id: 'ACTING_DEAN',
-    label: '5. ผู้รักษาราชการแทนคณบดีคณะพุทธศาสตร์',
-    name: '',
-    title: 'รักษาราชการแทนคณบดีคณะพุทธศาสตร์',
-  },
-  {
-    id: 'REGISTRAR',
-    label: '6. ผู้อำนวยการส่วนทะเบียนและวัดผล (นายทะเบียน)',
-    name: 'พระมหาสุริยัน ปญฺญาวชิโร, ผศ.ดร.',
-    title: 'ผู้อำนวยการส่วนทะเบียนและวัดผล',
-  },
-  {
-    id: 'BLANK',
-    label: '7. เว้นว่างไว้สำหรับลงนามสดด้วยลายมือปากกา (Handwritten)',
-    name: '',
-    title: 'คณบดีคณะพุทธศาสตร์',
-  },
-];
-
-export const DEFAULT_SETTINGS: SystemSettings = {
-  universityNameTh: 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย',
-  universityNameEn: 'Mahachulalongkornrajavidyalaya University',
-  facultyNameTh: 'คณะพุทธศาสตร์',
-  facultyNameEn: 'Faculty of Buddhism',
-  officeNameTh: 'สำนักงานคณบดีคณะพุทธศาสตร์',
-  logoUrl: 'https://www.mcu.ac.th/images/logo-mcu.png',
-  logoEmoji: '☸️',
-  signerNameTh: 'พระครูสุธีกิตติบัณฑิต, รศ.ดร.',
-  signerTitleTh: 'คณบดีคณะพุทธศาสตร์',
-  signerNameEn: 'Assoc. Prof. Dr. Phrakhrusutheekittibandhit',
-  signerTitleEn: 'Dean of the Faculty of Buddhism',
-  contactPhone: '035-248-000 ต่อ 8323',
-  contactEmail: 'buddhism@mcu.ac.th',
-  websiteUrl: 'https://fb.mcu.ac.th/',
-  systemServiceUrl: 'https://fb-service.mcu.ac.th/',
-  addressTh: 'เลขที่ 79 หมู่ 1 ถนนพหลโยธิน ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170',
-  addressEn: '79 Moo 1, Phahonyothin Road, Lamsai, Wangnoi, Phra Nakhon Si Ayutthaya 13170, Thailand',
-  announcementText: 'ยินดีต้อนรับสู่งานบริการการศึกษาและทะเบียน คณะพุทธศาสตร์ มจร. วังน้อย',
-  signatories: DEFAULT_SIGNATORIES,
-  visaAlertTitle: 'สำหรับการต่อวีซ่า ให้ดำเนินการก่อนหนังสือเดินทางหมดอายุ 30 วัน',
-  visaAlertDesc: '* เพื่อให้มีระยะเวลาเพียงพอต่อการพิจารณาของ ตม. และป้องกันการเสียค่าปรับ',
-  visaAlertEnabled: true,
-  timelineAlertTitle: 'การดำเนินการ จะเสร็จสิ้น ประมาณ 1-2 วัน ไม่นับวันหยุด หรือ กรุณาตรวจดูเส้นทางการดำเนินการหนังสือว่า "อนุมัติ"',
-  timelineAlertDesc: '* สามารถตรวจสอบความคืบหน้าได้ตลอดเวลาที่แท็บ "เช็คสถานะคำร้อง"',
-  timelineAlertEnabled: true,
-  accuracyAlertTitle: 'กรุณากรอกข้อมูลให้ครบถ้วน มิฉะนั้นเอกสารจะไม่สมบูรณ์และจะยกเลิกการขอหนังสือ',
-  accuracyAlertDesc: '* ตรวจสอบตัวสะกดชื่อ-นามสกุลภาษาอังกฤษและเลขพาสปอร์ตให้ตรงกับเล่มจริง',
-  accuracyAlertEnabled: true,
-  forcePasswordChangeOnFirstLogin: true,
-  googleClientId: '383232908495-dk56ffn57og3jscr1es2bjt1vm4h6dfk.apps.googleusercontent.com',
-  lineNotifyToken: '',
-  lineChannelAccessToken: '',
-  lineTargetUserId: '',
-  lineWebhookUrl: '',
-  heroWildEnabled: true,
-  heroLeftWord: 'WI',
-  heroRightWord: 'LD',
-  heroCapsuleImage: '/images/wild-capsule-island.jpg',
-  heroCapsuleAlt: 'Floating Island Nature Capsule - MotionSites AI Wild Pil',
-  heroBadgeText: 'Creative Designer & Faculty of Buddhism • MCU',
-  heroHeadingTh: 'ระบบบริการนิสิตและวิชาการออนไลน์ คณะพุทธศาสตร์',
-  heroDescription:
-    'Embark on an inspiring academic journey around the Buddhist wisdom and student services portal. Discover seamless certificate issuance, real-time class timetables, and academic excellence on your unforgettable path.',
-  heroDropCapLetter: 'E',
-  heroPrimaryBtnText: "Let's Get Wild",
-  heroPrimaryBtnUrl: '/certificates',
-  heroSecondaryBtnText: 'ตารางเรียนและวิชาการ',
-  heroSecondaryBtnUrl: '/courses',
-  heroBgStyle: 'wavy-contours',
-  themePreset: 'pink',
-  themeMourningRibbon: false,
-  showPublicDashboardStats: true,
-  showVisitorCounter: true,
-  visitorCount: 0,
-  showEnrollmentMenu: true,
-  admissionOpen: true,
-  admissionAcademicYear: '2570',
-  admissionDefaultInterviewDate: '20 พฤษภาคม 2570 เวลา 09.00 - 12.00 น.',
-  admissionDefaultInterviewRoom: 'อาคารสมเด็จพระพุฒาจารย์ (อาคารเรียนรวม) คณะพุทธศาสตร์ มจร วังน้อย',
-  admissionCoordinatorName: 'สำนักงานคณบดีคณะพุทธศาสตร์ ฝ่ายทะเบียนและวัดผล',
-  admissionCoordinatorPhone: '035-248-000 ต่อ 8323',
-  admissionPortalConfig: DEFAULT_ADMISSION_PORTAL_CONFIG,
-};
-
-export function convertGoogleDriveUrl(url?: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  const matchFile = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (matchFile && matchFile[1]) {
-    return `https://lh3.googleusercontent.com/d/${matchFile[1]}`;
-  }
-  const matchId = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (matchId && matchId[1]) {
-    return `https://lh3.googleusercontent.com/d/${matchId[1]}`;
-  }
-  return trimmed;
-}
-
-export async function getSystemSettings(): Promise<SystemSettings> {
-  let settings = readLocalJson<SystemSettings | null>('system_settings.json', null);
-  const gClient = getSheetsClient();
-  if (gClient) {
-    try {
-      const rows = await gClient.getValues('System_Settings!A2:B2');
-      if (rows && rows.length > 0 && rows[0][1]) {
-        const parsedFromSheet = JSON.parse(String(rows[0][1]));
-        if (parsedFromSheet && typeof parsedFromSheet === 'object') {
-          settings = { ...(settings || {}), ...parsedFromSheet };
-        }
-      }
-    } catch {
-      // System_Settings tab may not exist yet; fall back to local
-    }
-  }
-  if (!settings) {
-    writeLocalJson('system_settings.json', DEFAULT_SETTINGS);
-    return DEFAULT_SETTINGS;
-  }
-  const merged: SystemSettings = { ...DEFAULT_SETTINGS, ...settings };
-  if (!merged.signatories || !Array.isArray(merged.signatories) || merged.signatories.length === 0) {
-    merged.signatories = DEFAULT_SIGNATORIES;
-  }
-  return merged;
-}
-
-export async function updateSystemSettings(updates: Partial<SystemSettings>): Promise<SystemSettings> {
-  const current = await getSystemSettings();
-  if (updates.logoUrl) {
-    updates.logoUrl = convertGoogleDriveUrl(updates.logoUrl);
-  }
-  const updated: SystemSettings = {
-    ...current,
-    ...updates,
-  };
-  writeLocalJson('system_settings.json', updated);
-
-  const gClient = getSheetsClient();
-  if (gClient) {
-    try {
-      await gClient.ensureSheetsExist(['System_Settings']);
-      await gClient.updateValues('System_Settings!A1:B2', [
-        ['Key', 'JSON_Value'],
-        ['SETTINGS_JSON', JSON.stringify(updated)],
-      ]);
-    } catch (err) {
-      console.warn('Google Sheets updateSystemSettings warning:', err);
-    }
-  }
-
-  return updated;
 }
 
 // ----------------- VERIFICATION SERVICE -----------------
@@ -804,26 +637,26 @@ export async function verifyCertificateDocument(query: string): Promise<Document
         status: 'AUTHENTIC',
         docNo: `MCU-ENROLL-${studentOnly.studentCode}`,
         id: `stu-${studentOnly.studentCode}`,
-        certType: 'หนังสือรับรองสถานภาพนิสิตปัจจุบัน (Student Enrollment Status)',
+        certType: 'à¸«à¸™à¸±à¸‡à¸ªà¸·à¸­à¸£à¸±à¸šà¸£à¸­à¸‡à¸ªà¸–à¸²à¸™à¸ à¸²à¸žà¸™à¸´à¸ªà¸´à¸•à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™ (Student Enrollment Status)',
         fullNameTh: studentOnly.fullName || `${studentOnly.title || ''} ${studentOnly.firstName} ${studentOnly.lastName}`.trim(),
         fullNameEn: `${studentOnly.firstName} ${studentOnly.lastName}`.trim(),
         studentCode: studentOnly.studentCode,
-        degreeLevel: studentOnly.degree || 'ปริญญาตรี',
-        major: studentOnly.major || studentOnly.curriculumName || 'สาขาวิชาพระพุทธศาสนา',
-        facultyTh: studentOnly.faculty || settings.facultyNameTh || 'คณะพุทธศาสตร์',
+        degreeLevel: studentOnly.degree || 'à¸›à¸£à¸´à¸à¸à¸²à¸•à¸£à¸µ',
+        major: studentOnly.major || studentOnly.curriculumName || 'à¸ªà¸²à¸‚à¸²à¸§à¸´à¸Šà¸²à¸žà¸£à¸°à¸žà¸¸à¸—à¸˜à¸¨à¸²à¸ªà¸™à¸²',
+        facultyTh: studentOnly.faculty || settings.facultyNameTh || 'à¸„à¸“à¸°à¸žà¸¸à¸—à¸˜à¸¨à¸²à¸ªà¸•à¸£à¹Œ',
         facultyEn: settings.facultyNameEn || 'Faculty of Buddhism',
-        universityTh: settings.universityNameTh || 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย',
+        universityTh: settings.universityNameTh || 'à¸¡à¸«à¸²à¸§à¸´à¸—à¸¢à¸²à¸¥à¸±à¸¢à¸¡à¸«à¸²à¸ˆà¸¸à¸¬à¸²à¸¥à¸‡à¸à¸£à¸“à¸£à¸²à¸Šà¸§à¸´à¸—à¸¢à¸²à¸¥à¸±à¸¢',
         universityEn: settings.universityNameEn || 'Mahachulalongkornrajavidyalaya University',
         passportNo: studentOnly.passportNo || '',
         passportExpireDate: studentOnly.passportExpireDate || '',
         visaType: studentOnly.visaType || '',
         nationality: studentOnly.nationality || studentOnly.country || '',
         issueDate: new Date().toISOString(),
-        signerName: settings.signerNameTh || 'รองอธิการบดีฝ่ายวิชาการ',
-        signerTitle: settings.signerTitleTh || 'ปฏิบัติหน้าที่แทนอธิการบดี',
+        signerName: settings.signerNameTh || 'à¸£à¸­à¸‡à¸­à¸˜à¸´à¸à¸²à¸£à¸šà¸”à¸µà¸à¹ˆà¸²à¸¢à¸§à¸´à¸Šà¸²à¸à¸²à¸£',
+        signerTitle: settings.signerTitleTh || 'à¸›à¸à¸´à¸šà¸±à¸•à¸´à¸«à¸™à¹‰à¸²à¸—à¸µà¹ˆà¹à¸—à¸™à¸­à¸˜à¸´à¸à¸²à¸£à¸šà¸”à¸µ',
         securityHash,
-        retentionStatus: 'จัดเก็บในสารบบถาวร (Archive Protected - 5 ปีขึ้นไปตามระเบียบสารบรรณ)',
-        remarks: 'ตรวจพบในระบบทะเบียนนิสิต มจร. มีสถานภาพเป็นนิสิตจริง ใช้ตรวจสอบสิทธิ์และสถานะวีซ่ากับ ตม. ได้',
+        retentionStatus: 'à¸ˆà¸±à¸”à¹€à¸à¹‡à¸šà¹ƒà¸™à¸ªà¸²à¸£à¸šà¸šà¸–à¸²à¸§à¸£ (Archive Protected - 5 à¸›à¸µà¸‚à¸¶à¹‰à¸™à¹„à¸›à¸•à¸²à¸¡à¸£à¸°à¹€à¸šà¸µà¸¢à¸šà¸ªà¸²à¸£à¸šà¸£à¸£à¸“)',
+        remarks: 'à¸•à¸£à¸§à¸ˆà¸žà¸šà¹ƒà¸™à¸£à¸°à¸šà¸šà¸—à¸°à¹€à¸šà¸µà¸¢à¸™à¸™à¸´à¸ªà¸´à¸• à¸¡à¸ˆà¸£. à¸¡à¸µà¸ªà¸–à¸²à¸™à¸ à¸²à¸žà¹€à¸›à¹‡à¸™à¸™à¸´à¸ªà¸´à¸•à¸ˆà¸£à¸´à¸‡ à¹ƒà¸Šà¹‰à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸ªà¸´à¸—à¸˜à¸´à¹Œà¹à¸¥à¸°à¸ªà¸–à¸²à¸™à¸°à¸§à¸µà¸‹à¹ˆà¸²à¸à¸±à¸š à¸•à¸¡. à¹„à¸”à¹‰',
       };
     }
     return { verified: false, status: 'NOT_FOUND' };
@@ -846,22 +679,22 @@ export async function verifyCertificateDocument(query: string): Promise<Document
     fullNameTh: matched.fullName,
     fullNameEn: matched.fullName,
     studentCode: matched.studentCode,
-    degreeLevel: matched.degreeLevel || linkedStudent?.degree || 'ปริญญาตรี',
-    major: matched.major || linkedStudent?.major || 'สาขาวิชาพระพุทธศาสนา',
-    facultyTh: settings.facultyNameTh || 'คณะพุทธศาสตร์',
+    degreeLevel: matched.degreeLevel || linkedStudent?.degree || 'à¸›à¸£à¸´à¸à¸à¸²à¸•à¸£à¸µ',
+    major: matched.major || linkedStudent?.major || 'à¸ªà¸²à¸‚à¸²à¸§à¸´à¸Šà¸²à¸žà¸£à¸°à¸žà¸¸à¸—à¸˜à¸¨à¸²à¸ªà¸™à¸²',
+    facultyTh: settings.facultyNameTh || 'à¸„à¸“à¸°à¸žà¸¸à¸—à¸˜à¸¨à¸²à¸ªà¸•à¸£à¹Œ',
     facultyEn: settings.facultyNameEn || 'Faculty of Buddhism',
-    universityTh: settings.universityNameTh || 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย',
+    universityTh: settings.universityNameTh || 'à¸¡à¸«à¸²à¸§à¸´à¸—à¸¢à¸²à¸¥à¸±à¸¢à¸¡à¸«à¸²à¸ˆà¸¸à¸¬à¸²à¸¥à¸‡à¸à¸£à¸“à¸£à¸²à¸Šà¸§à¸´à¸—à¸¢à¸²à¸¥à¸±à¸¢',
     universityEn: settings.universityNameEn || 'Mahachulalongkornrajavidyalaya University',
     passportNo,
     passportExpireDate,
     visaType,
     nationality,
     issueDate: matched.issueDateTh || matched.createdAt,
-    signerName: settings.signerNameTh || 'รองอธิการบดีฝ่ายวิชาการ',
-    signerTitle: settings.signerTitleTh || 'ปฏิบัติหน้าที่แทนอธิการบดี',
+    signerName: settings.signerNameTh || 'à¸£à¸­à¸‡à¸­à¸˜à¸´à¸à¸²à¸£à¸šà¸”à¸µà¸à¹ˆà¸²à¸¢à¸§à¸´à¸Šà¸²à¸à¸²à¸£',
+    signerTitle: settings.signerTitleTh || 'à¸›à¸à¸´à¸šà¸±à¸•à¸´à¸«à¸™à¹‰à¸²à¸—à¸µà¹ˆà¹à¸—à¸™à¸­à¸˜à¸´à¸à¸²à¸£à¸šà¸”à¸µ',
     securityHash,
-    retentionStatus: 'จัดเก็บในสารบบถาวร (Archive Protected - 5 ปีขึ้นไปตามระเบียบสารบรรณ)',
-    remarks: 'เอกสารฉบับนี้ออกให้ถูกต้องตามกฎหมายและระเบียบของมหาวิทยาลัย ใช้เป็นหลักฐานแสดงต่อ ตม. และหน่วยงานราชการได้จริง',
+    retentionStatus: 'à¸ˆà¸±à¸”à¹€à¸à¹‡à¸šà¹ƒà¸™à¸ªà¸²à¸£à¸šà¸šà¸–à¸²à¸§à¸£ (Archive Protected - 5 à¸›à¸µà¸‚à¸¶à¹‰à¸™à¹„à¸›à¸•à¸²à¸¡à¸£à¸°à¹€à¸šà¸µà¸¢à¸šà¸ªà¸²à¸£à¸šà¸£à¸£à¸“)',
+    remarks: 'à¹€à¸­à¸à¸ªà¸²à¸£à¸‰à¸šà¸±à¸šà¸™à¸µà¹‰à¸­à¸­à¸à¹ƒà¸«à¹‰à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡à¸•à¸²à¸¡à¸à¸Žà¸«à¸¡à¸²à¸¢à¹à¸¥à¸°à¸£à¸°à¹€à¸šà¸µà¸¢à¸šà¸‚à¸­à¸‡à¸¡à¸«à¸²à¸§à¸´à¸—à¸¢à¸²à¸¥à¸±à¸¢ à¹ƒà¸Šà¹‰à¹€à¸›à¹‡à¸™à¸«à¸¥à¸±à¸à¸à¸²à¸™à¹à¸ªà¸”à¸‡à¸•à¹ˆà¸­ à¸•à¸¡. à¹à¸¥à¸°à¸«à¸™à¹ˆà¸§à¸¢à¸‡à¸²à¸™à¸£à¸²à¸Šà¸à¸²à¸£à¹„à¸”à¹‰à¸ˆà¸£à¸´à¸‡',
   };
 }
 
@@ -873,8 +706,8 @@ export async function getRetentionSummary() {
 
   const totalStudents = students.length;
   const foreignStudents = students.filter((s) => s.passportNo && s.passportNo.trim() !== '').length;
-  const activeStudents = students.filter((s) => !s.studyStatus || s.studyStatus === 'กำลังศึกษา' || s.studyStatus === 'ปกติ').length;
-  const graduatedStudents = students.filter((s) => s.studyStatus === 'สำเร็จการศึกษา').length;
+  const activeStudents = students.filter((s) => !s.studyStatus || s.studyStatus === 'à¸à¸³à¸¥à¸±à¸‡à¸¨à¸¶à¸à¸©à¸²' || s.studyStatus === 'à¸›à¸à¸•à¸´').length;
+  const graduatedStudents = students.filter((s) => s.studyStatus === 'à¸ªà¸³à¹€à¸£à¹‡à¸ˆà¸à¸²à¸£à¸¨à¸¶à¸à¸©à¸²').length;
   const otherStudents = totalStudents - activeStudents - graduatedStudents;
 
   return {
@@ -885,7 +718,7 @@ export async function getRetentionSummary() {
     otherStudents,
     totalCertsIssued: certs.filter((c) => c.status === 'APPROVED' || c.docNo).length,
     retentionPolicyYears: 5,
-    governingRule: 'ระเบียบสำนักนายกรัฐมนตรีว่าด้วยงานสารบรรณ พ.ศ. 2526 และ พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)',
+    governingRule: 'à¸£à¸°à¹€à¸šà¸µà¸¢à¸šà¸ªà¸³à¸™à¸±à¸à¸™à¸²à¸¢à¸à¸£à¸±à¸à¸¡à¸™à¸•à¸£à¸µà¸§à¹ˆà¸²à¸”à¹‰à¸§à¸¢à¸‡à¸²à¸™à¸ªà¸²à¸£à¸šà¸£à¸£à¸“ à¸ž.à¸¨. 2526 à¹à¸¥à¸° à¸ž.à¸£.à¸š. à¸„à¸¸à¹‰à¸¡à¸„à¸£à¸­à¸‡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸ªà¹ˆà¸§à¸™à¸šà¸¸à¸„à¸„à¸¥ à¸ž.à¸¨. 2562 (PDPA)',
   };
 }
 
@@ -924,13 +757,13 @@ export async function archiveAcademicYear(year: string): Promise<AcademicYearArc
   const foreignStudentCount = matching.filter((c) => c.passportNo && c.passportNo.trim() !== '').length;
   const thaiStudentCount = matching.length - foreignStudentCount;
 
-  const bachelor = matching.filter((c) => c.degreeLevel?.includes('ตรี') || !c.degreeLevel).length;
-  const master = matching.filter((c) => c.degreeLevel?.includes('โท')).length;
-  const doctoral = matching.filter((c) => c.degreeLevel?.includes('เอก')).length;
+  const bachelor = matching.filter((c) => c.degreeLevel?.includes('à¸•à¸£à¸µ') || !c.degreeLevel).length;
+  const master = matching.filter((c) => c.degreeLevel?.includes('à¹‚à¸—')).length;
+  const doctoral = matching.filter((c) => c.degreeLevel?.includes('à¹€à¸­à¸')).length;
 
   const purposeSummary: Record<string, number> = {};
   matching.forEach((c) => {
-    const key = c.certType || 'ทั่วไป';
+    const key = c.certType || 'à¸—à¸±à¹ˆà¸§à¹„à¸›';
     purposeSummary[key] = (purposeSummary[key] || 0) + 1;
   });
 

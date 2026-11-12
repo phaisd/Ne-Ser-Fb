@@ -114,7 +114,7 @@ export class GoogleSheetsClient {
   /**
    * Append row(s) to a sheet
    */
-  async appendValues(range: string, values: any[][]) {
+  async appendValues(range: string, values: unknown[][]) {
     const endpoint = `/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`;
     return this.fetchSheets(endpoint, {
       method: 'POST',
@@ -125,7 +125,7 @@ export class GoogleSheetsClient {
   /**
    * Update/overwrite values in range
    */
-  async updateValues(range: string, values: any[][]) {
+  async updateValues(range: string, values: unknown[][]) {
     const endpoint = `/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
     return this.fetchSheets(endpoint, {
       method: 'PUT',
@@ -149,9 +149,10 @@ export class GoogleSheetsClient {
    */
   async testConnection(): Promise<{ title: string; sheets: string[] }> {
     const meta = await this.fetchSheets('');
+    const sheetMetaList = (meta.sheets || []) as Array<{ properties?: { title?: string } }>;
     return {
       title: meta.properties?.title || 'Unknown Sheet',
-      sheets: (meta.sheets || []).map((s: any) => s.properties?.title || ''),
+      sheets: sheetMetaList.map((s) => s.properties?.title || ''),
     };
   }
 
@@ -189,7 +190,10 @@ export class GoogleSheetsClient {
     if (uniqueSortedDesc.length === 0) return 0;
 
     const meta = await this.fetchSheets('?fields=sheets.properties');
-    const targetSheet = (meta.sheets || []).find((s: any) => s.properties?.title === sheetTitle);
+    const sheetMetaList = (meta.sheets || []) as Array<{
+      properties?: { title?: string; sheetId?: number };
+    }>;
+    const targetSheet = sheetMetaList.find((s) => s.properties?.title === sheetTitle);
     const sheetId = targetSheet?.properties?.sheetId;
     if (sheetId === undefined || sheetId === null) return 0;
 

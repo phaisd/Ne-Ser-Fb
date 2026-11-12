@@ -306,8 +306,8 @@ export const AdminCoursesTab: React.FC<AdminCoursesTabProps> = ({
         setEditingCourse(null);
         setSaveSuccessMsg(null);
       }, 1500);
-    } catch (err: any) {
-      setSaveErrorMsg(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    } catch (err: unknown) {
+      setSaveErrorMsg((err instanceof Error ? err.message : String(err)) || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setIsSaving(false);
     }

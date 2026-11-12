@@ -391,8 +391,8 @@ export function GradeSheetTab({
       } else {
         alert('บันทึกไม่สำเร็จ: ' + data.error);
       }
-    } catch (e: any) {
-      alert('เกิดข้อผิดพลาด: ' + e.message);
+    } catch (e: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setSaving(false);
     }

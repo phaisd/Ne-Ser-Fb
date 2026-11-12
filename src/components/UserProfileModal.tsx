@@ -269,8 +269,8 @@ export default function UserProfileModal({
 
       setSuccessMsg('บันทึกข้อมูลส่วนตัวและอัปเดตอีเมลสำเร็จเรียบร้อยแล้ว');
       setTimeout(() => setSuccessMsg(''), 4000);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+    } catch (err: unknown) {
+      setErrorMsg((err instanceof Error ? err.message : String(err)) || 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setLoading(false);
     }
@@ -319,8 +319,8 @@ export default function UserProfileModal({
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => setSuccessMsg(''), 5000);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'ไม่สามารถเปลี่ยนรหัสผ่านได้ กรุณาตรวจสอบรหัสผ่านเดิม');
+    } catch (err: unknown) {
+      setErrorMsg((err instanceof Error ? err.message : String(err)) || 'ไม่สามารถเปลี่ยนรหัสผ่านได้ กรุณาตรวจสอบรหัสผ่านเดิม');
     } finally {
       setLoading(false);
     }

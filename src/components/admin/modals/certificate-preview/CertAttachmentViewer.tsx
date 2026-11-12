@@ -151,8 +151,8 @@ export function CertAttachmentViewer({
       } else {
         alert(data.error || 'อัปโหลดล้มเหลว');
       }
-    } catch (e: any) {
-      alert('เกิดข้อผิดพลาด: ' + e.message);
+    } catch (e: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setUploadingAttachment(false);
     }

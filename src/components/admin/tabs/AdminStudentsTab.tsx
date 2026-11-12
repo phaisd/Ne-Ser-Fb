@@ -107,8 +107,8 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
       }
       alert(`✅ ${data.message}`);
       if (onRefresh) onRefresh();
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาด: ' + (err?.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'));
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + ((err instanceof Error ? err.message : String(err)) || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'));
     } finally {
       setIsSweepingInactive(false);
     }

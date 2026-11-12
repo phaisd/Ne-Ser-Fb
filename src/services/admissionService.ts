@@ -1,7 +1,7 @@
 import { AdmissionApplication, AdmissionStatus } from '@/types';
 import { readLocalJson, writeLocalJson, getSheetsClient } from './storageHelper';
 import { batchUpdateStudents, getStudents } from './studentService';
-import { getSystemSettings } from './certificateService';
+import { getSystemSettings } from './systemSettingsService';
 
 const SHEET_NAME = 'Admissions';
 const LOCAL_FILE = 'admissions.json';

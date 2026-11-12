@@ -58,8 +58,8 @@ export const ArchivedStudentsModal: React.FC<ArchivedStudentsModalProps> = ({
       if (data.success && Array.isArray(data.data)) {
         setArchivedStudents(data.data);
       }
-    } catch (err: any) {
-      setFeedbackMsg({ type: 'error', text: 'ไม่สามารถโหลดข้อมูลแฟ้มประวัติได้: ' + err.message });
+    } catch (err: unknown) {
+      setFeedbackMsg({ type: 'error', text: 'ไม่สามารถโหลดข้อมูลแฟ้มประวัติได้: ' + (err instanceof Error ? err.message : String(err)) });
     } finally {
       setIsLoading(false);
     }
@@ -98,8 +98,8 @@ export const ArchivedStudentsModal: React.FC<ArchivedStudentsModalProps> = ({
       } else {
         setFeedbackMsg({ type: 'error', text: data.error || 'เกิดข้อผิดพลาดในการกู้คืน' });
       }
-    } catch (err: any) {
-      setFeedbackMsg({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message });
+    } catch (err: unknown) {
+      setFeedbackMsg({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)) });
     } finally {
       setRestoringCode(null);
     }

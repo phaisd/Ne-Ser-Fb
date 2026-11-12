@@ -43,8 +43,8 @@ export const ArchivedInstructorsModal: React.FC<ArchivedInstructorsModalProps> =
       if (data.success && Array.isArray(data.data)) {
         setArchivedInstructors(data.data);
       }
-    } catch (err: any) {
-      setFeedbackMsg({ type: 'error', text: 'ไม่สามารถโหลดข้อมูลแฟ้มประวัติอาจารย์ได้: ' + err.message });
+    } catch (err: unknown) {
+      setFeedbackMsg({ type: 'error', text: 'ไม่สามารถโหลดข้อมูลแฟ้มประวัติอาจารย์ได้: ' + (err instanceof Error ? err.message : String(err)) });
     } finally {
       setIsLoading(false);
     }
@@ -82,8 +82,8 @@ export const ArchivedInstructorsModal: React.FC<ArchivedInstructorsModalProps> =
       } else {
         setFeedbackMsg({ type: 'error', text: data.error || 'เกิดข้อผิดพลาดในการกู้คืน' });
       }
-    } catch (err: any) {
-      setFeedbackMsg({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message });
+    } catch (err: unknown) {
+      setFeedbackMsg({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)) });
     } finally {
       setRestoringId(null);
     }
@@ -112,8 +112,8 @@ export const ArchivedInstructorsModal: React.FC<ArchivedInstructorsModalProps> =
       } else {
         setFeedbackMsg({ type: 'error', text: data.error || 'เกิดข้อผิดพลาดในการลบ' });
       }
-    } catch (err: any) {
-      setFeedbackMsg({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message });
+    } catch (err: unknown) {
+      setFeedbackMsg({ type: 'error', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)) });
     } finally {
       setDeletingId(null);
     }

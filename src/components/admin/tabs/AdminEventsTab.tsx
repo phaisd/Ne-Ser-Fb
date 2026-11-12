@@ -307,8 +307,8 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           alert('เพิ่มโครงการไม่สำเร็จ: ' + data.error);
         }
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSubmittingEvent(false);
     }
@@ -340,8 +340,8 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
       } else {
         alert('ลบไม่สำเร็จ: ' + (data.error || 'Unknown error'));
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการลบ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการลบ: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsDeletingEvent(false);
     }
@@ -400,8 +400,8 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
       } else {
         alert('ซิงค์ไม่สำเร็จ: ' + (data.error || 'Unknown error'));
       }
-    } catch (err: any) {
-      alert('ไม่สามารถเชื่อมต่อกับ Google Sheets ได้: ' + err.message);
+    } catch (err: unknown) {
+      alert('ไม่สามารถเชื่อมต่อกับ Google Sheets ได้: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSyncing(false);
     }

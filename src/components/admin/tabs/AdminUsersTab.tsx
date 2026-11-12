@@ -133,8 +133,8 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
       } else {
         alert(data.error || 'เกิดข้อผิดพลาดในการย้ายเข้าแฟ้มประวัติ');
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setArchivingId(null);
     }

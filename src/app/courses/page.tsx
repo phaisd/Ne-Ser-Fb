@@ -372,8 +372,8 @@ export default function CoursesPage() {
       } else {
         alert('เกิดข้อผิดพลาดในการนำเข้า: ' + data.error);
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSubmitting(false);
     }
@@ -429,8 +429,8 @@ export default function CoursesPage() {
           alert('เกิดข้อผิดพลาด: ' + data.error);
         }
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSubmitting(false);
     }
@@ -458,8 +458,8 @@ export default function CoursesPage() {
       } else {
         alert('เกิดข้อผิดพลาด: ' + data.error);
       }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setSubmitting(false);
     }
