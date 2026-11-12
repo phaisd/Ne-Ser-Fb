@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 export async function PATCH() {
   try {
     const current = await getSystemSettings();
-    const baseCount = typeof current.visitorCount === 'number' && current.visitorCount > 0 ? current.visitorCount : 1272;
+    const baseCount = typeof current.visitorCount === 'number' && current.visitorCount >= 0 ? current.visitorCount : 0;
     const nextCount = baseCount + 1;
     await updateSystemSettings({ visitorCount: nextCount });
     return NextResponse.json({

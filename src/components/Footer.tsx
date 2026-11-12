@@ -35,37 +35,91 @@ export default function Footer() {
     addressTh: 'อาคารสมเด็จพระพุฒาจารย์ (เกี่ยว อุปเสณมหาเถร) อาคารเรียนรวม ตำบลลำไทร อำเภอวังน้อย จังหวัดพระนครศรีอยุธยา 13170',
     officeHours: 'จันทร์ - ศุกร์ 08.30 - 16.30 น. (เว้นวันหยุดราชการ)',
     showVisitorCounter: true,
-    visitorCount: 1272,
   });
+  const [visitorStats, setVisitorStats] = useState<{
+    totalVisits: number;
+    todayVisits: number;
+    uniqueVisitors: number;
+  } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    const alreadyCounted =
-      typeof window !== 'undefined' && sessionStorage.getItem('mcu_visitor_counted') === '1';
 
-    fetch('/api/system-settings')
-      .then((res) => res.json())
-      .then((data) => {
-        if (isMounted && data.success && data.data) {
-          setSettings((prev) => ({ ...prev, ...data.data }));
-        }
-        if (!alreadyCounted && typeof window !== 'undefined') {
-          sessionStorage.setItem('mcu_visitor_counted', '1');
-          fetch('/api/system-settings', { method: 'PATCH' })
-            .then((r) => r.json())
-            .then((patchRes) => {
-              if (isMounted && patchRes?.success && typeof patchRes.visitorCount === 'number') {
-                setSettings((prev) => ({ ...prev, visitorCount: patchRes.visitorCount }));
+    const loadSettings = () => {
+      fetch('/api/system-settings')
+        .then((res) => res.json())
+        .then((data) => {
+          if (isMounted && data.success && data.data) {
+            setSettings((prev) => ({ ...prev, ...data.data }));
+          }
+        })
+        .catch(() => {});
+    };
+
+    loadSettings();
+    window.addEventListener('mcu_settings_updated', loadSettings);
+
+    // Track real visitor (deduplicated 1 count per browser per Bangkok day)
+    if (typeof window !== 'undefined') {
+      let visitorId = localStorage.getItem('mcu_visitor_uid');
+      if (!visitorId) {
+        visitorId =
+          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `v-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem('mcu_visitor_uid', visitorId);
+      }
+
+      const todayBkk = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Bangkok',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+
+      const lastCountedDate = localStorage.getItem('mcu_visitor_last_date');
+
+      if (lastCountedDate !== todayBkk) {
+        fetch('/api/visitors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visitorId, path: pathname || '/' }),
+        })
+          .then((r) => r.json())
+          .then((res) => {
+            if (res?.success) {
+              localStorage.setItem('mcu_visitor_last_date', todayBkk);
+              if (isMounted) {
+                setVisitorStats({
+                  totalVisits: Number(res.totalVisits ?? 0),
+                  todayVisits: Number(res.todayVisits ?? 0),
+                  uniqueVisitors: Number(res.uniqueVisitors ?? 0),
+                });
               }
-            })
-            .catch(() => {});
-        }
-      })
-      .catch(() => {});
+            }
+          })
+          .catch(() => {});
+      } else {
+        fetch('/api/visitors')
+          .then((r) => r.json())
+          .then((res) => {
+            if (isMounted && res?.success) {
+              setVisitorStats({
+                totalVisits: Number(res.totalVisits ?? 0),
+                todayVisits: Number(res.todayVisits ?? 0),
+                uniqueVisitors: Number(res.uniqueVisitors ?? 0),
+              });
+            }
+          })
+          .catch(() => {});
+      }
+    }
+
     return () => {
       isMounted = false;
+      window.removeEventListener('mcu_settings_updated', loadSettings);
     };
-  }, []);
+  }, [pathname]);
 
   return (
     <div className="w-full mt-auto border-t border-slate-200/90 bg-white print:hidden">
@@ -288,8 +342,13 @@ export default function Footer() {
                           ผู้เข้าชมเว็บไซต์
                         </div>
                         <div className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight leading-none mt-0.5">
-                          {(settings.visitorCount || 1272).toLocaleString()}
+                          {visitorStats ? visitorStats.totalVisits.toLocaleString() : '...'}
                         </div>
+                        {visitorStats && (
+                          <div className="text-[10px] text-slate-400 mt-1 leading-none">
+                            วันนี้ {visitorStats.todayVisits.toLocaleString()} • อุปกรณ์ไม่ซ้ำ {visitorStats.uniqueVisitors.toLocaleString()}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

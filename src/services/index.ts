@@ -8,4 +8,5 @@ export * from './certificateService';
 export * from './eventService';
 export * from './courseEnrollmentService';
 export * from './admissionService';
+export * from './visitorService';
 

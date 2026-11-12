@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Globe,
   Sparkles,
@@ -23,6 +23,30 @@ export function BrandHeroSection({
   const [uploadingCapsule, setUploadingCapsule] = useState(false);
   const [isCapsuleDragOver, setIsCapsuleDragOver] = useState(false);
   const capsuleFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [liveVisitorStats, setLiveVisitorStats] = useState<{
+    totalVisits: number;
+    todayVisits: number;
+    uniqueVisitors: number;
+  } | null>(null);
+
+  const loadVisitorStats = () => {
+    fetch('/api/visitors')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res?.success) {
+          setLiveVisitorStats({
+            totalVisits: Number(res.totalVisits ?? 0),
+            todayVisits: Number(res.todayVisits ?? 0),
+            uniqueVisitors: Number(res.uniqueVisitors ?? 0),
+          });
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadVisitorStats();
+  }, []);
 
   const handleCapsuleFileUpload = async (file: File) => {
     if (!file) return;
@@ -373,23 +397,28 @@ export function BrandHeroSection({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  แสดงกล่องนับจำนวนผู้เข้าชมเว็บไซต์แบบอัตโนมัติในส่วนท้ายหน้าเว็บ (Footer)
+                  นับจำนวนผู้เข้าชมจริงแบบอัตโนมัติ (บันทึกใน Google Sheets แท็บ Visitor_Logs • 1 อุปกรณ์/วัน)
                 </p>
                 {settings.showVisitorCounter !== false && (
-                  <div className="pt-1 flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-slate-700">ยอดผู้เข้าชมปัจจุบัน:</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={settings.visitorCount ?? 1272}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          visitorCount: Math.max(0, parseInt(e.target.value || '0', 10)),
-                        })
-                      }
-                      className="w-28 px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900"
-                    />
+                  <div className="pt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-bold text-slate-800">
+                      สะสมจริง: {liveVisitorStats ? liveVisitorStats.totalVisits.toLocaleString() : '...'} ครั้ง
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-bold text-emerald-700">
+                      วันนี้: {liveVisitorStats ? liveVisitorStats.todayVisits.toLocaleString() : '...'}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-bold text-indigo-700">
+                      ไม่ซ้ำอุปกรณ์: {liveVisitorStats ? liveVisitorStats.uniqueVisitors.toLocaleString() : '...'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={loadVisitorStats}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+                      title="รีเฟรชยอดผู้เข้าชมจริง"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>รีเฟรช</span>
+                    </button>
                   </div>
                 )}
               </div>

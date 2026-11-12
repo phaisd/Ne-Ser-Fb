@@ -661,7 +661,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   themeMourningRibbon: false,
   showPublicDashboardStats: true,
   showVisitorCounter: true,
-  visitorCount: 1272,
+  visitorCount: 0,
   showEnrollmentMenu: true,
   admissionOpen: true,
   admissionAcademicYear: '2570',
