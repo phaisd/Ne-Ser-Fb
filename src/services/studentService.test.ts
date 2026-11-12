@@ -77,4 +77,32 @@ describe('studentService', () => {
     const success = await studentService.updateStudentPassword('9999999999', 'AnyPass');
     expect(success).toBe(false);
   });
+
+  it('deletes matched rows and compacts blank rows in Google Sheets when archiving/deleting students', async () => {
+    vi.mocked(storageHelper.readLocalJson).mockImplementation((file: string) =>
+      file === 'students.json' ? [...mockStudents] : []
+    );
+    const mockDeleteRows = vi.fn(async () => 2);
+    const mockSheetClient = {
+      ensureSheetsExist: vi.fn(async () => []),
+      appendValues: vi.fn(async () => ({})),
+      updateValues: vi.fn(async () => ({})),
+      getValues: vi.fn(async (range: string) => {
+        if (range.startsWith('Students_Archive')) return [['รหัสนิสิต']];
+        return [['studentCode'], [''], ['6501234567'], ['6609876543']];
+      }),
+      deleteRows: mockDeleteRows,
+    };
+    vi.mocked(storageHelper.getSheetsClient).mockReturnValue(
+      mockSheetClient as unknown as ReturnType<typeof storageHelper.getSheetsClient>
+    );
+
+    try {
+      const res = await studentService.deleteStudents(['6501234567'], 'Admin', 'สำเร็จการศึกษา');
+      expect(res.deletedCount).toBe(1);
+      expect(mockDeleteRows).toHaveBeenCalledWith('Students', [1, 2]);
+    } finally {
+      vi.mocked(storageHelper.getSheetsClient).mockReturnValue(null);
+    }
+  });
 });

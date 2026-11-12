@@ -542,16 +542,18 @@ export async function deleteStudents(
       ]);
       await gClient.appendValues('Students_Archive!A:R', rowsToAppend);
 
-      // Clear matching rows in active Students sheet (A:U)
+      // Delete matching rows and compact any pre-existing blank rows in active Students sheet
       const activeRows = await gClient.getValues('Students!A1:A');
       if (activeRows && activeRows.length > 0) {
-        for (let i = 0; i < activeRows.length; i++) {
-          const rowCode = (activeRows[i][0] || '').trim().toLowerCase();
-          if (codesSet.has(rowCode)) {
-            const sheetRowNum = i + 1;
-            const emptyRow = Array(21).fill('');
-            await gClient.updateValues(`Students!A${sheetRowNum}:U${sheetRowNum}`, [emptyRow]);
+        const rowsToDelete: number[] = [];
+        for (let i = 1; i < activeRows.length; i++) {
+          const rowCode = String(activeRows[i]?.[0] || '').trim().toLowerCase();
+          if (!rowCode || codesSet.has(rowCode)) {
+            rowsToDelete.push(i);
           }
+        }
+        if (rowsToDelete.length > 0) {
+          await gClient.deleteRows('Students', rowsToDelete);
         }
       }
     } catch (err) {
