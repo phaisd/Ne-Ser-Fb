@@ -549,7 +549,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
                       onChange={(e) => setShowPhotoBox(e.target.checked)}
                       className="rounded text-purple-600"
                     />
-                    <span>กรอบรูป 1.5 - 2&quot;</span>
+                    <span>กรอบรูป 1.5&quot;</span>
                   </label>
                   <label className="flex items-center gap-1 font-semibold text-slate-700 cursor-pointer">
                     <input
@@ -764,10 +764,10 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
                       <div className="space-y-3">
                         {showPhotoBox && (
                           <div
-                            className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 transition-transform"
+                            className="w-24 h-32 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-[11px] p-2 text-center bg-slate-50/20 transition-transform"
                             style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
                           >
-                            <span>ติดรูปถ่าย<br />Photo 1.5 - 2&quot;</span>
+                            <span>ติดรูปถ่าย<br />Photo 1.5&quot;</span>
                           </div>
                         )}
                         {showStudentSign && (
@@ -984,10 +984,10 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
                       <div className="space-y-3">
                         {showPhotoBox && (
                           <div
-                            className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 shadow-sm transition-transform"
+                            className="w-24 h-32 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-[11px] p-2 text-center bg-slate-50/20 shadow-sm transition-transform"
                             style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
                           >
-                            <span>ติดรูปถ่าย<br />1.5 - 2 นิ้ว</span>
+                            <span>ติดรูปถ่าย<br />1.5 นิ้ว</span>
                           </div>
                         )}
                         {showStudentSign && (

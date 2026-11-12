@@ -223,9 +223,6 @@ export function CertPrintPaper({
               </div>
 
               <div className="flex flex-col items-center text-center space-y-1">
-                <div contentEditable suppressContentEditableWarning className="text-[11px] font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded">
-                  ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
-                </div>
                 {showQrCode && qrCodeDataUrl && (
                   <img
                     src={qrCodeDataUrl}
@@ -237,6 +234,14 @@ export function CertPrintPaper({
                     className="object-contain"
                   />
                 )}
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
+                  style={{ fontSize: '7.5pt', lineHeight: 1.25 }}
+                  className="font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded"
+                >
+                  ผู้ออกเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -354,13 +359,13 @@ export function CertPrintPaper({
                 <div className="space-y-3">
                   {showPhotoBox && (
                     <div
-                      className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 transition-transform"
+                      className="w-24 h-32 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-[11px] p-2 text-center bg-slate-50/20 transition-transform"
                       style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
                     >
                       <span>
                         ติดรูปถ่าย
                         <br />
-                        Photo 1.5 - 2&quot;
+                        Photo 1.5&quot;
                       </span>
                     </div>
                   )}
@@ -433,9 +438,6 @@ export function CertPrintPaper({
               </div>
 
               <div className="flex flex-col items-center text-center space-y-1">
-                <div contentEditable suppressContentEditableWarning className="text-[11px] font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded">
-                  ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'Academic Officer'}</span>
-                </div>
                 {showQrCode && qrCodeDataUrl && (
                   <img
                     src={qrCodeDataUrl}
@@ -447,6 +449,14 @@ export function CertPrintPaper({
                     className="object-contain"
                   />
                 )}
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
+                  style={{ fontSize: '7.5pt', lineHeight: 1.25 }}
+                  className="font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded"
+                >
+                  ผู้ออกเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'Academic Officer'}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -572,9 +582,6 @@ export function CertPrintPaper({
               </div>
 
               <div className="flex flex-col items-center text-center space-y-1">
-                <div contentEditable suppressContentEditableWarning className="text-[11px] font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded">
-                  ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
-                </div>
                 {showQrCode && qrCodeDataUrl && (
                   <img
                     src={qrCodeDataUrl}
@@ -586,6 +593,14 @@ export function CertPrintPaper({
                     className="object-contain"
                   />
                 )}
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
+                  style={{ fontSize: '7.5pt', lineHeight: 1.25 }}
+                  className="font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded"
+                >
+                  ผู้ออกเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -739,13 +754,13 @@ export function CertPrintPaper({
                 <div className="space-y-3">
                   {showPhotoBox && (
                     <div
-                      className="w-28 h-36 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs p-2 text-center bg-slate-50/20 shadow-sm transition-transform"
+                      className="w-24 h-32 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-400 text-[11px] p-2 text-center bg-slate-50/20 shadow-sm transition-transform"
                       style={{ transform: `translateX(${photoBoxOffsetX}px)` }}
                     >
                       <span>
                         ติดรูปถ่าย
                         <br />
-                        {fmtNum('1.5')} - {fmtNum(2)} นิ้ว
+                        {fmtNum('1.5')} นิ้ว
                       </span>
                     </div>
                   )}
@@ -814,9 +829,6 @@ export function CertPrintPaper({
               </div>
 
               <div className="flex flex-col items-center text-center space-y-1">
-                <div contentEditable suppressContentEditableWarning className="text-[11px] font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded">
-                  ผู้ออกเอกสารหรือปริ้นเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
-                </div>
                 {showQrCode && qrCodeDataUrl && (
                   <img
                     src={qrCodeDataUrl}
@@ -828,6 +840,14 @@ export function CertPrintPaper({
                     className="object-contain"
                   />
                 )}
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
+                  style={{ fontSize: '7.5pt', lineHeight: 1.25 }}
+                  className="font-medium text-slate-700 outline-none focus:bg-purple-50 px-1.5 py-0.5 rounded"
+                >
+                  ผู้ออกเอกสาร : <span className="font-bold text-slate-900">{currentUser?.name || 'อาจารย์ไพศาล (ผู้ดูแลระบบ)'}</span>
+                </div>
               </div>
             </div>
           </div>

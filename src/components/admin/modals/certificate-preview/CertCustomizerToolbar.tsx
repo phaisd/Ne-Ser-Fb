@@ -901,7 +901,7 @@ export function CertCustomizerToolbar({
                 onChange={(e) => setShowPhotoBox(e.target.checked)}
                 className="rounded text-purple-600 cursor-pointer"
               />
-              <span>กรอบรูป 1.5 - 2&quot;</span>
+              <span>กรอบรูป 1.5&quot;</span>
             </label>
             <label className="flex items-center gap-1 font-semibold text-slate-700 cursor-pointer">
               <input
