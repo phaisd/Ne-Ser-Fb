@@ -106,8 +106,9 @@ export interface SystemSettings {
   fontFamilyPreset?: 'sarabun' | 'krub' | 'baijamjuree';
   fontWeightBoost?: boolean; // เพิ่มความเข้มตัวอักษรขนาดเล็กให้อ่านชัดขึ้น
 
-  // Role-Based Access Control (RBAC) Permission Matrix
+  // Role-Based Access Control (RBAC) Permission Matrix & Custom Role Columns
   rolePermissions?: any[];
+  roleColumns?: any[];
 
   // Google Identity Services OAuth Client ID (optional runtime override)
   googleClientId?: string;

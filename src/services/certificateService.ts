@@ -675,7 +675,21 @@ export function convertGoogleDriveUrl(url?: string): string {
 }
 
 export async function getSystemSettings(): Promise<SystemSettings> {
-  const settings = readLocalJson<SystemSettings | null>('system_settings.json', null);
+  let settings = readLocalJson<SystemSettings | null>('system_settings.json', null);
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const rows = await gClient.getValues('System_Settings!A2:B2');
+      if (rows && rows.length > 0 && rows[0][1]) {
+        const parsedFromSheet = JSON.parse(String(rows[0][1]));
+        if (parsedFromSheet && typeof parsedFromSheet === 'object') {
+          settings = { ...(settings || {}), ...parsedFromSheet };
+        }
+      }
+    } catch {
+      // System_Settings tab may not exist yet; fall back to local
+    }
+  }
   if (!settings) {
     writeLocalJson('system_settings.json', DEFAULT_SETTINGS);
     return DEFAULT_SETTINGS;
@@ -697,6 +711,20 @@ export async function updateSystemSettings(updates: Partial<SystemSettings>): Pr
     ...updates,
   };
   writeLocalJson('system_settings.json', updated);
+
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      await gClient.ensureSheetsExist(['System_Settings']);
+      await gClient.updateValues('System_Settings!A1:B2', [
+        ['Key', 'JSON_Value'],
+        ['SETTINGS_JSON', JSON.stringify(updated)],
+      ]);
+    } catch (err) {
+      console.warn('Google Sheets updateSystemSettings warning:', err);
+    }
+  }
+
   return updated;
 }
 
