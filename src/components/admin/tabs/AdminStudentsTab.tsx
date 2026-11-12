@@ -74,6 +74,45 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [isSweepingInactive, setIsSweepingInactive] = useState(false);
+
+  const sourceList = allStudents.length > 0 ? allStudents : filteredStudents;
+  const inactiveStudentsInRegistry = sourceList.filter((s) => {
+    const st = (s.studyStatus || '').trim();
+    return ['สำเร็จการศึกษา', 'จบการศึกษา', 'พ้นสภาพ', 'ลาออก', 'ย้ายออก', 'จำหน่าย'].some(
+      (kw) => st === kw || st.includes(kw)
+    );
+  });
+
+  const handleSweepInactive = async () => {
+    if (inactiveStudentsInRegistry.length === 0) return;
+    if (
+      !confirm(
+        `ยืนยันการย้ายนิสิตที่มีสถานะ สำเร็จการศึกษา / พ้นสภาพ / ลาออก / ย้ายออก จำนวน ${inactiveStudentsInRegistry.length} รูป/คน ออกจากทะเบียนปัจจุบัน ไปเก็บใน "แฟ้มประวัตินิสิต (Students_Archive)" เพื่อให้ยอดนิสิตที่ยังศึกษาอยู่ตรงตามจริงหรือไม่?`
+      )
+    ) {
+      return;
+    }
+
+    setIsSweepingInactive(true);
+    try {
+      const res = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'archive-inactive' }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'ไม่สามารถย้ายข้อมูลได้');
+      }
+      alert(`✅ ${data.message}`);
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาด: ' + (err?.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'));
+    } finally {
+      setIsSweepingInactive(false);
+    }
+  };
 
   const exportStudentsToCSV = (list: Student[], filename: string) => {
     downloadStudentsCSV(list, filename);
@@ -87,10 +126,10 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
         <div>
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Users className="w-5 h-5 text-orange-600" />
-            ระบบทะเบียนนิสิต (Student Directory & Registry)
+            ระบบทะเบียนนิสิตปัจจุบัน (Active Student Registry)
           </h2>
           <p className="text-xs text-slate-500">
-            ข้อมูลทะเบียนนิสิตทั้งหมด {studentsCount.total} รูป/คน (ภาคภาษาไทย {studentsCount.thai} • ภาคภาษาอังกฤษ {studentsCount.intl})
+            นิสิตที่กำลังศึกษาอยู่จริงทั้งหมด <strong className="text-slate-800">{studentsCount.total}</strong> รูป/คน (ภาคภาษาไทย {studentsCount.thai} • ภาคภาษาอังกฤษ {studentsCount.intl}) • นิสิตจบ/พ้นสภาพ/ลาออก/ย้ายออก แยกเก็บในแฟ้มประวัตินิสิต
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -179,10 +218,10 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
             type="button"
             onClick={() => setIsArchiveModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer"
-            title="เปิดดูแฟ้มประวัตินิสิตที่ถูกลบ/จำหน่ายออก และกู้คืนข้อมูล (Google Sheets: Students_Archive)"
+            title="เปิดดูแฟ้มประวัตินิสิต (สำเร็จการศึกษา / พ้นสภาพ / ลาออก / ย้ายออก) และกู้คืนข้อมูล (Google Sheets: Students_Archive)"
           >
             <Archive className="w-3.5 h-3.5 text-amber-700" />
-            <span>📁 แฟ้มประวัติที่ถูกลบ</span>
+            <span>📁 แฟ้มประวัตินิสิต (จบ/พ้นสภาพ/ลาออก)</span>
           </button>
 
           <button
@@ -191,7 +230,7 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition cursor-pointer"
           >
             <GraduationCap className="w-4 h-4" />
-            <span>🎓 เลื่อนชั้นปี</span>
+            <span>🎓 เลื่อนชั้นปี / จบการศึกษา</span>
           </button>
           <Link
             href="/students"
@@ -202,6 +241,38 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
           </Link>
         </div>
       </div>
+
+      {/* Smart Alert Banner if Inactive Students (Graduated / Retired / Resigned / Transferred) exist in Active Registry */}
+      {inactiveStudentsInRegistry.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-300 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Archive className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-extrabold text-amber-950">
+                พบนิสิตสถานะ สำเร็จการศึกษา / พ้นสภาพ / ลาออก / ย้ายออก ค้างอยู่ในทะเบียนปัจจุบัน จำนวน {inactiveStudentsInRegistry.length} รูป/คน
+              </div>
+              <div className="text-[11px] text-amber-800 mt-0.5">
+                แนะนำให้กดย้ายเข้าสู่ <strong>แฟ้มประวัตินิสิต (Students_Archive)</strong> เพื่อให้ยอดจำนวนนิสิตปัจจุบันสะท้อนเฉพาะผู้ที่ยังศึกษาอยู่จริง
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={isSweepingInactive}
+            onClick={handleSweepInactive}
+            className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-amber-600/20 flex items-center justify-center gap-2 transition cursor-pointer shrink-0 disabled:opacity-50"
+          >
+            <Archive className="w-4 h-4" />
+            <span>
+              {isSweepingInactive
+                ? 'กำลังย้ายเข้าแฟ้มประวัติ...'
+                : `📦 ย้ายเข้าแฟ้มประวัติทั้งหมด (${inactiveStudentsInRegistry.length} คน)`}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Filters & Search Toolbar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
@@ -292,25 +363,25 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
         </div>
       </div>
 
-      {/* Bulk Deletion Action Banner */}
+      {/* Bulk Archive / Deletion Action Banner */}
       {adminSelectedStudentCodes.size > 0 && (
-        <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm animate-in fade-in">
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm animate-in fade-in">
           <div className="flex items-center gap-3">
-            <span className="w-8 h-8 rounded-xl bg-rose-600 text-white font-bold text-sm flex items-center justify-center shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-amber-600 text-white font-bold text-sm flex items-center justify-center shadow-sm">
               {adminSelectedStudentCodes.size}
             </span>
             <div>
-              <div className="text-xs font-bold text-rose-900">
+              <div className="text-xs font-bold text-amber-950">
                 เลือกนิสิต {adminSelectedStudentCodes.size} รูป/คน
               </div>
-              <div className="text-[11px] text-rose-600">
-                สามารถเลือกดำเนินการลบข้อมูลนิสิตตัวอย่างหรือข้อมูลที่ไม่ต้องการออกยกชุดได้ทันที
+              <div className="text-[11px] text-amber-800">
+                สามารถย้ายเข้าสู่แฟ้มประวัตินิสิต (สำเร็จการศึกษา / ลาออก / ย้ายออก / พ้นสภาพ / จำหน่าย) ยกชุดได้ทันที
               </div>
             </div>
             <button
               type="button"
               onClick={() => setAdminSelectedStudentCodes(new Set())}
-              className="text-xs text-rose-700 hover:text-rose-900 underline font-semibold ml-2 cursor-pointer"
+              className="text-xs text-amber-800 hover:text-amber-950 underline font-semibold ml-2 cursor-pointer"
             >
               ยกเลิกการเลือก
             </button>
@@ -318,10 +389,10 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
           <button
             type="button"
             onClick={openDeleteBulkStudentsModal}
-            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-600/20 flex items-center gap-2 transition cursor-pointer"
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-600/20 flex items-center gap-2 transition cursor-pointer"
           >
-            <Trash2 className="w-4 h-4" />
-            <span>🗑️ ลบนิสิตที่เลือกยกชุด ({adminSelectedStudentCodes.size} คน)</span>
+            <Archive className="w-4 h-4" />
+            <span>📦 ย้ายที่เลือกเข้าแฟ้มประวัติ ({adminSelectedStudentCodes.size} คน)</span>
           </button>
         </div>
       )}
@@ -440,11 +511,11 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
                           <button
                             type="button"
                             onClick={() => openDeleteSingleStudentModal(s)}
-                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition inline-flex items-center gap-1 cursor-pointer"
-                            title="ลบนิสิตท่านนี้ออกจากระบบ"
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition inline-flex items-center gap-1 cursor-pointer"
+                            title="ย้ายเข้าแฟ้มประวัตินิสิต (สำเร็จการศึกษา / ลาออก / ย้ายออก / พ้นสภาพ / จำหน่าย)"
                           >
-                            <Trash2 className="w-3 h-3 text-rose-600" />
-                            <span>ลบ</span>
+                            <Archive className="w-3 h-3 text-amber-700" />
+                            <span>ย้ายเก็บ</span>
                           </button>
                         </div>
                       </td>

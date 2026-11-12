@@ -488,8 +488,12 @@ export function useAdminStudents({
         throw new Error(data.error || 'ไม่สามารถอัปเดตข้อมูลได้');
       }
 
+      const archivedMsg =
+        data.archived && data.archived > 0
+          ? `\n📦 และย้ายนิสิตที่สำเร็จการศึกษา / พ้นสภาพ / ลาออก / ย้ายออก จำนวน ${data.archived} รูป/คน เข้าสู่แฟ้มประวัตินิสิต (Students_Archive) เรียบร้อยแล้ว เพื่อให้ยอดนิสิตปัจจุบันตรงตามจริง`
+          : '';
       alert(
-        `✅ ดำเนินการเลื่อนชั้นปีการศึกษาและปรับสถานะนิสิตสำเร็จทั้งหมด ${data.updated || selectedList.length} คน เรียบร้อยแล้ว!`
+        `✅ ดำเนินการเลื่อนชั้นปีการศึกษาและปรับสถานะนิสิตสำเร็จทั้งหมด ${data.updated || selectedList.length} คน เรียบร้อยแล้ว!${archivedMsg}`
       );
       setShowPromotionConfirm(false);
       setIsPromotionModalOpen(false);
@@ -498,6 +502,49 @@ export function useAdminStudents({
       alert('เกิดข้อผิดพลาดในการเลื่อนชั้นปี: ' + (getErrorMessage(err) || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'));
     } finally {
       setPromotionSubmitting(false);
+    }
+  };
+
+  const inactiveStudentsInRegistry = useMemo(() => {
+    const inactiveKeywords = ['สำเร็จการศึกษา', 'จบการศึกษา', 'พ้นสภาพ', 'ลาออก', 'ย้ายออก', 'จำหน่าย'];
+    return studentsList.filter((s: Student) => {
+      const st = (s.studyStatus || '').trim();
+      return inactiveKeywords.some((kw) => st === kw || st.includes(kw));
+    });
+  }, [studentsList]);
+
+  const [isArchivingInactive, setIsArchivingInactive] = useState(false);
+
+  const handleSweepInactiveToArchive = async () => {
+    if (inactiveStudentsInRegistry.length === 0) return;
+    if (
+      !confirm(
+        `ยืนยันการย้ายนิสิตที่มีสถานะ สำเร็จการศึกษา / พ้นสภาพ / ลาออก / ย้ายออก จำนวน ${inactiveStudentsInRegistry.length} รูป/คน ออกจากทะเบียนปัจจุบัน ไปเก็บใน "แฟ้มประวัตินิสิต (Students_Archive)" เพื่อให้ยอดนิสิตที่ยังศึกษาอยู่ตรงตามจริงหรือไม่?`
+      )
+    ) {
+      return;
+    }
+
+    setIsArchivingInactive(true);
+    try {
+      const res = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'archive-inactive',
+          deletedBy: currentUser?.fullName || 'ผู้ดูแลระบบ (Admin)',
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'ไม่สามารถย้ายข้อมูลเข้าแฟ้มประวัติได้');
+      }
+      alert(`✅ ${data.message}`);
+      loadData();
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + getErrorMessage(err));
+    } finally {
+      setIsArchivingInactive(false);
     }
   };
 
@@ -522,6 +569,9 @@ export function useAdminStudents({
     openDeleteSingleStudentModal,
     openDeleteBulkStudentsModal,
     handleConfirmDeleteStudents,
+    inactiveStudentsInRegistry,
+    isArchivingInactive,
+    handleSweepInactiveToArchive,
     // Promotion
     isPromotionModalOpen,
     setIsPromotionModalOpen,

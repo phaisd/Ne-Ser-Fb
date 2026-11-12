@@ -5,6 +5,8 @@ import {
   updateStudent,
   batchUpdateStudents,
   deleteStudents,
+  archiveAllInactiveStudents,
+  isInactiveStudyStatus,
   getArchivedStudents,
   restoreStudent,
 } from '@/lib/data-store';
@@ -121,7 +123,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: 'ไม่พบข้อมูลนิสิตตามรหัสที่ระบุ' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: updated });
+    const wasArchived = isInactiveStudyStatus(updated.studyStatus);
+    return NextResponse.json({
+      success: true,
+      archived: wasArchived,
+      message: wasArchived
+        ? `ปรับสถานะเป็น "${updated.studyStatus}" และย้ายเข้าสู่แฟ้มประวัตินิสิต (Students_Archive) เรียบร้อยแล้ว`
+        : 'อัปเดตข้อมูลนิสิตสำเร็จ',
+      data: updated,
+    });
   } catch (err: unknown) {
     return apiErrorResponse(err);
   }
@@ -156,14 +166,31 @@ export async function POST(request: Request) {
       const restored = await restoreStudent(studentCode);
       if (!restored) {
         return NextResponse.json(
-          { success: false, error: `ไม่พบรหัสนิสิต ${studentCode} ในแฟ้มประวัตินิสิตที่ถูกลบ` },
+          { success: false, error: `ไม่พบรหัสนิสิต ${studentCode} ในแฟ้มประวัตินิสิต` },
           { status: 404 }
         );
       }
       return NextResponse.json({
         success: true,
-        message: `กู้คืนข้อมูลนิสิต ${restored.fullName || restored.studentCode} กลับเข้าสู่ทะเบียนสำเร็จแล้ว`,
+        message: `กู้คืนข้อมูลนิสิต ${restored.fullName || restored.studentCode} กลับเข้าสู่ทะเบียนปัจจุบันสำเร็จแล้ว`,
         data: restored,
+      });
+    }
+
+    // Handle Sweep & Archive All Inactive Students (สำเร็จการศึกษา / พ้นสภาพ / ลาออก / ย้ายออก)
+    if (action === 'archive-inactive') {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
+      const deletedBy = body.deletedBy || authUser.email || 'ผู้ดูแลระบบ (Admin)';
+      const sweepRes = await archiveAllInactiveStudents(deletedBy);
+      return NextResponse.json({
+        success: true,
+        message:
+          sweepRes.archivedCount > 0
+            ? `ย้ายนิสิตที่จบการศึกษา/พ้นสภาพ/ลาออก/ย้ายออก จำนวน ${sweepRes.archivedCount} รูป/คน เข้าสู่แฟ้มประวัตินิสิตเรียบร้อยแล้ว`
+            : 'ไม่พบนิสิตที่มีสถานะจบการศึกษา/พ้นสภาพ/ลาออก/ย้ายออก ค้างอยู่ในทะเบียนปัจจุบัน',
+        ...sweepRes,
       });
     }
 

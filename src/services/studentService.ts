@@ -90,10 +90,43 @@ export async function getStudents(): Promise<Student[]> {
   });
 }
 
+export const INACTIVE_STUDY_STATUSES = [
+  'สำเร็จการศึกษา',
+  'จบการศึกษา',
+  'พ้นสภาพ',
+  'พ้นสภาพนิสิต',
+  'ลาออก',
+  'ย้ายออก',
+  'จำหน่าย',
+  'จำหน่ายออก',
+];
+
+export function isInactiveStudyStatus(status?: string): boolean {
+  if (!status) return false;
+  const s = status.trim();
+  return INACTIVE_STUDY_STATUSES.some((inactive) => s === inactive || s.includes(inactive));
+}
+
+export function deriveStudyStatusFromReason(currentStatus?: string, reason?: string): string {
+  const r = (reason || '').trim();
+  if (r.includes('สำเร็จการศึกษา') || r.includes('Graduated')) return 'สำเร็จการศึกษา';
+  if (r.includes('ลาออก') || r.includes('Resigned')) return 'ลาออก';
+  if (r.includes('ย้ายออก') || r.includes('Transferred')) return 'ย้ายออก';
+  if (r.includes('พ้นสภาพ') || r.includes('Retired')) return 'พ้นสภาพ';
+  if (currentStatus && isInactiveStudyStatus(currentStatus)) return currentStatus;
+  return r || currentStatus || 'จำหน่ายออก';
+}
+
 export async function updateStudent(studentCode: string, updates: Partial<Student>): Promise<Student | null> {
   const localList = readLocalJson<any[]>('students.json', []);
-  const idx = localList.findIndex((s) => s.studentCode === studentCode);
-  if (idx === -1) return null;
+  let idx = localList.findIndex((s) => s.studentCode === studentCode);
+  if (idx === -1) {
+    const allStudents = await getStudents();
+    const fromSheet = allStudents.find((s) => s.studentCode === studentCode);
+    if (!fromSheet) return null;
+    localList.push({ ...fromSheet });
+    idx = localList.length - 1;
+  }
 
   const current = localList[idx];
   const updated: Student = {
@@ -106,6 +139,17 @@ export async function updateStudent(studentCode: string, updates: Partial<Studen
 
   localList[idx] = updated;
   writeLocalJson('students.json', localList);
+
+  // If the updated studyStatus is an inactive status (สำเร็จการศึกษา, พ้นสภาพ, ลาออก, ย้ายออก),
+  // automatically move this student out of active Students registry into Students_Archive!
+  if (isInactiveStudyStatus(updated.studyStatus)) {
+    await deleteStudents(
+      [updated.studentCode],
+      'ระบบอัตโนมัติ (ปรับสถานะนิสิต)',
+      `${updated.studyStatus}${updated.remarks ? ` (${updated.remarks})` : ''}`
+    );
+    return updated;
+  }
 
   // If Google Sheets client is available, update row if matching
   const gClient = getSheetsClient();
@@ -206,12 +250,23 @@ export async function updateStudentPassword(studentCode: string, newPassword: st
 export async function batchUpdateStudents(
   updatesList: Partial<Student>[],
   mode: 'UPDATE_ONLY' | 'UPSERT' = 'UPDATE_ONLY'
-): Promise<{ updated: number; added: number; total: number; matchedCodes: string[]; notFoundCodes: string[] }> {
+): Promise<{ updated: number; added: number; archived: number; total: number; matchedCodes: string[]; notFoundCodes: string[] }> {
   const localList = readLocalJson<Student[]>('students.json', []);
+  const allFromSheets = await getStudents();
+  const localCodes = new Set(localList.map((s) => String(s.studentCode || '').trim()));
+  for (const s of allFromSheets) {
+    const c = String(s.studentCode || '').trim();
+    if (c && !localCodes.has(c)) {
+      localList.push({ ...s });
+      localCodes.add(c);
+    }
+  }
+
   let updatedCount = 0;
   let addedCount = 0;
   const matchedCodes: string[] = [];
   const notFoundCodes: string[] = [];
+  const codesToArchive: { code: string; reason: string }[] = [];
 
   for (const item of updatesList) {
     if (!item.studentCode) continue;
@@ -236,6 +291,12 @@ export async function batchUpdateStudents(
       localList[idx] = updatedItem;
       updatedCount++;
       matchedCodes.push(cleanCode);
+      if (isInactiveStudyStatus(updatedItem.studyStatus)) {
+        codesToArchive.push({
+          code: cleanCode,
+          reason: `${updatedItem.studyStatus}${updatedItem.remarks ? ` (${updatedItem.remarks})` : ''}`,
+        });
+      }
     } else {
       notFoundCodes.push(cleanCode);
       if (mode === 'UPSERT' && (item.firstName || item.fullName)) {
@@ -264,6 +325,12 @@ export async function batchUpdateStudents(
         };
         localList.push(newItem);
         addedCount++;
+        if (isInactiveStudyStatus(newItem.studyStatus)) {
+          codesToArchive.push({
+            code: cleanCode,
+            reason: `${newItem.studyStatus}${newItem.remarks ? ` (${newItem.remarks})` : ''}`,
+          });
+        }
       }
     }
   }
@@ -338,10 +405,22 @@ export async function batchUpdateStudents(
     }
   }
 
+  // Automatically archive any students whose status became สำเร็จการศึกษา, พ้นสภาพ, ลาออก, ย้ายออก
+  let archivedCount = 0;
+  if (codesToArchive.length > 0) {
+    const archiveRes = await deleteStudents(
+      codesToArchive.map((c) => c.code),
+      'ระบบอัตโนมัติ (เลื่อนชั้นปี/ปรับสถานะนิสิต)',
+      codesToArchive.length === 1 ? codesToArchive[0].reason : 'สำเร็จการศึกษา / พ้นสภาพ / ลาออก / ย้ายออก'
+    );
+    archivedCount = archiveRes.archivedCount;
+  }
+
   return {
     updated: updatedCount,
     added: addedCount,
-    total: localList.length,
+    archived: archivedCount,
+    total: localList.length - archivedCount,
     matchedCodes,
     notFoundCodes,
   };
@@ -353,26 +432,42 @@ export async function deleteStudents(
   reason: string = 'จำหน่าย/ลบข้อมูลนิสิตออกจากทะเบียน'
 ): Promise<{ deletedCount: number; deletedCodes: string[]; remainingCount: number; archivedCount: number }> {
   const codesSet = new Set(studentCodes.map((c) => String(c).trim().toLowerCase()));
+  const allCurrentStudents = await getStudents();
   const localList = readLocalJson<Student[]>('students.json', []);
   const archiveList = readLocalJson<ArchivedStudent[]>('students_archive.json', []);
 
-  const originalCount = localList.length;
+  // Merge allCurrentStudents with localList so any student in Google Sheets is properly archived
+  const mergedMap = new Map<string, Student>();
+  localList.forEach((s) => {
+    if (s.studentCode) mergedMap.set(String(s.studentCode).trim().toLowerCase(), s);
+  });
+  allCurrentStudents.forEach((s) => {
+    if (s.studentCode) mergedMap.set(String(s.studentCode).trim().toLowerCase(), s);
+  });
+  const fullStudentList = Array.from(mergedMap.values());
+
+  const originalCount = fullStudentList.length;
   const deletedCodes: string[] = [];
   const studentsToArchive: ArchivedStudent[] = [];
 
   const nowIso = new Date().toISOString();
   const thaiDateStr = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
 
-  const remainingList = localList.filter((s) => {
+  const remainingList = fullStudentList.filter((s) => {
     const code = String(s.studentCode || '').trim().toLowerCase();
     if (codesSet.has(code)) {
       deletedCodes.push(s.studentCode);
+      const finalStudyStatus = deriveStudyStatusFromReason(s.studyStatus, reason);
+      const finalReason = isInactiveStudyStatus(s.studyStatus) && reason.includes('สำเร็จการศึกษา / พ้นสภาพ')
+        ? `${s.studyStatus}${s.remarks ? ` (${s.remarks})` : ''}`
+        : reason;
       studentsToArchive.push({
         ...s,
+        studyStatus: finalStudyStatus,
         archivedAt: nowIso,
         deletedAt: nowIso,
         deletedBy,
-        deletionReason: reason,
+        deletionReason: finalReason,
       });
       return false;
     }
@@ -384,7 +479,11 @@ export async function deleteStudents(
   // 1. Update local files (students.json & students_archive.json)
   writeLocalJson('students.json', remainingList);
   if (studentsToArchive.length > 0) {
-    const updatedArchive = [...studentsToArchive, ...archiveList];
+    const existingArchiveCodes = new Set(studentsToArchive.map((s) => String(s.studentCode).trim().toLowerCase()));
+    const deduplicatedOldArchive = archiveList.filter(
+      (s) => !existingArchiveCodes.has(String(s.studentCode).trim().toLowerCase())
+    );
+    const updatedArchive = [...studentsToArchive, ...deduplicatedOldArchive];
     writeLocalJson('students_archive.json', updatedArchive);
   }
 
@@ -408,15 +507,15 @@ export async function deleteStudents(
           'ระดับการศึกษา',
           'ภาควิชา',
           'สาขาวิชา',
-          'สถานภาพเดิม',
+          'สถานภาพสุดท้าย',
           'คณะ',
           'เบอร์โทรศัพท์',
           'อีเมล',
           'หลักสูตร',
           'หมายเหตุเดิม',
-          'วัน-เวลาที่ย้ายเข้าแฟ้มประวัติ (Deleted At)',
-          'ผู้ดำเนินการลบ (Deleted By)',
-          'เหตุผลการลบ (Reason)',
+          'วัน-เวลาที่ย้ายเข้าแฟ้มประวัติ (Archived At)',
+          'ผู้ดำเนินการ (Archived By)',
+          'สาเหตุการย้ายเข้าแฟ้มประวัติ (Reason)',
         ]]);
       }
 
@@ -431,7 +530,7 @@ export async function deleteStudents(
         s.degree || '',
         s.department || '',
         s.major || '',
-        s.studyStatus || 'ปกติ',
+        s.studyStatus || 'จำหน่ายออก',
         s.faculty || '',
         s.phoneNumber || '',
         s.email || '',
@@ -439,19 +538,19 @@ export async function deleteStudents(
         s.remarks || '',
         thaiDateStr,
         deletedBy,
-        reason,
+        s.deletionReason || reason,
       ]);
       await gClient.appendValues('Students_Archive!A:R', rowsToAppend);
 
-      // Clear matching rows in active Students sheet
-      const activeRows = await gClient.getValues('Students!A2:A');
+      // Clear matching rows in active Students sheet (A:U)
+      const activeRows = await gClient.getValues('Students!A1:A');
       if (activeRows && activeRows.length > 0) {
         for (let i = 0; i < activeRows.length; i++) {
           const rowCode = (activeRows[i][0] || '').trim().toLowerCase();
           if (codesSet.has(rowCode)) {
-            const sheetRowNum = i + 2;
-            const emptyRow = Array(15).fill('');
-            await gClient.updateValues(`Students!A${sheetRowNum}:O${sheetRowNum}`, [emptyRow]);
+            const sheetRowNum = i + 1;
+            const emptyRow = Array(21).fill('');
+            await gClient.updateValues(`Students!A${sheetRowNum}:U${sheetRowNum}`, [emptyRow]);
           }
         }
       }
@@ -465,6 +564,31 @@ export async function deleteStudents(
     deletedCodes,
     remainingCount: remainingList.length,
     archivedCount: studentsToArchive.length,
+  };
+}
+
+export async function archiveAllInactiveStudents(
+  deletedBy: string = 'ผู้ดูแลระบบ (Admin)'
+): Promise<{ archivedCount: number; archivedCodes: string[]; remainingCount: number }> {
+  const allStudents = await getStudents();
+  const inactiveStudents = allStudents.filter((s) => isInactiveStudyStatus(s.studyStatus));
+  if (inactiveStudents.length === 0) {
+    return {
+      archivedCount: 0,
+      archivedCodes: [],
+      remainingCount: allStudents.length,
+    };
+  }
+  const codes = inactiveStudents.map((s) => s.studentCode);
+  const res = await deleteStudents(
+    codes,
+    deletedBy,
+    'สำเร็จการศึกษา / พ้นสภาพ / ลาออก / ย้ายออก (ย้ายเข้าแฟ้มประวัตินิสิต)'
+  );
+  return {
+    archivedCount: res.archivedCount,
+    archivedCodes: res.deletedCodes,
+    remainingCount: res.remainingCount,
   };
 }
 
@@ -522,7 +646,7 @@ export async function getArchivedStudents(): Promise<ArchivedStudent[]> {
 
 export async function restoreStudent(studentCode: string): Promise<Student | null> {
   const codeClean = String(studentCode).trim().toLowerCase();
-  const archiveList = readLocalJson<ArchivedStudent[]>('students_archive.json', []);
+  const archiveList = await getArchivedStudents();
   const targetIdx = archiveList.findIndex((s) => String(s.studentCode).trim().toLowerCase() === codeClean);
 
   if (targetIdx === -1) {
@@ -530,16 +654,26 @@ export async function restoreStudent(studentCode: string): Promise<Student | nul
   }
 
   const restored = archiveList[targetIdx];
-  const { archivedAt, deletedAt, deletedBy, deletionReason, ...activeStudent } = restored;
+  const { archivedAt, deletedAt, deletedBy, deletionReason, ...rawActiveStudent } = restored;
+  const activeStudent: Student = {
+    ...rawActiveStudent,
+    studyStatus: isInactiveStudyStatus(rawActiveStudent.studyStatus) ? 'ปกติ' : (rawActiveStudent.studyStatus || 'ปกติ'),
+  };
 
-  // 1. Remove from archive
-  archiveList.splice(targetIdx, 1);
-  writeLocalJson('students_archive.json', archiveList);
+  // 1. Remove from local archive
+  const localArchive = readLocalJson<ArchivedStudent[]>('students_archive.json', []);
+  const updatedLocalArchive = localArchive.filter(
+    (s) => String(s.studentCode).trim().toLowerCase() !== codeClean
+  );
+  writeLocalJson('students_archive.json', updatedLocalArchive);
 
   // 2. Add back to active students
   const localList = readLocalJson<Student[]>('students.json', []);
-  localList.unshift(activeStudent);
-  writeLocalJson('students.json', localList);
+  const filteredLocalList = localList.filter(
+    (s) => String(s.studentCode).trim().toLowerCase() !== codeClean
+  );
+  filteredLocalList.unshift(activeStudent);
+  writeLocalJson('students.json', filteredLocalList);
 
   // 3. Synchronize with Google Sheets
   const gClient = getSheetsClient();
@@ -560,7 +694,7 @@ export async function restoreStudent(studentCode: string): Promise<Student | nul
         activeStudent.faculty || '',
         activeStudent.phoneNumber || '',
         activeStudent.email || '',
-        activeStudent.programType || 'THAI',
+        activeStudent.programType === 'ENGLISH' ? 'หลักสูตรภาคภาษาอังกฤษ (ENGLISH)' : 'หลักสูตรภาคภาษาไทย (THAI)',
         activeStudent.remarks || '',
       ]]);
 
