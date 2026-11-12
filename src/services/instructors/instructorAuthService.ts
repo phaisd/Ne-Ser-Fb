@@ -119,9 +119,10 @@ export async function authenticateStudent(
   const codeOnly = clean.replace(/@mcu\.ac\.th$/i, '').trim();
 
   const found = students.find((s) => {
+    const sId = (s.id || '').toLowerCase();
     const sCode = (s.studentCode || '').toLowerCase();
     const sEmail = (s.email || '').toLowerCase();
-    return sCode === codeOnly || sEmail === clean || sCode === clean;
+    return sCode === codeOnly || sEmail === clean || sCode === clean || (sId !== '' && sId === clean);
   });
 
   if (!found) return null;
@@ -368,6 +369,7 @@ export async function updateInstructorPassword(userId: string, newPassword: stri
   list[idx].hasChangedPassword = true;
   list[idx].updatedAt = new Date().toISOString();
   writeLocalJson('instructors.json', list);
+  await syncInstructorToSheet(list[idx]);
   return true;
 }
 

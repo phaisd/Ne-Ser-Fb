@@ -25,6 +25,7 @@ interface CertificateTrackerProps {
   availableCertYears: string[];
   filteredRequests: CertificateRequest[];
   onPreviewRequest: (r: CertificateRequest) => void;
+  canManageCertificates?: boolean;
 }
 
 export const CertificateTracker: React.FC<CertificateTrackerProps> = ({
@@ -35,6 +36,7 @@ export const CertificateTracker: React.FC<CertificateTrackerProps> = ({
   availableCertYears,
   filteredRequests,
   onPreviewRequest,
+  canManageCertificates = false,
 }) => {
   const { t, isEn } = useLanguage();
   return (
@@ -172,13 +174,15 @@ export const CertificateTracker: React.FC<CertificateTrackerProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
-                    <button
-                      onClick={() => onPreviewRequest(r)}
-                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      ดูตัวอย่าง / พิมพ์
-                    </button>
+                    {canManageCertificates && (
+                      <button
+                        onClick={() => onPreviewRequest(r)}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        ดูตัวอย่าง / พิมพ์
+                      </button>
+                    )}
 
                     {r.status === 'APPROVED' ? (
                       <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">

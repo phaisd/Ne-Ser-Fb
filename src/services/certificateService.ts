@@ -502,6 +502,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   universityNameEn: 'Mahachulalongkornrajavidyalaya University',
   facultyNameTh: 'คณะพุทธศาสตร์',
   facultyNameEn: 'Faculty of Buddhism',
+  officeNameTh: 'สำนักงานคณบดีคณะพุทธศาสตร์',
   logoUrl: 'https://www.mcu.ac.th/images/logo-mcu.png',
   logoEmoji: '☸️',
   signerNameTh: 'พระครูสุธีกิตติบัณฑิต, รศ.ดร.',

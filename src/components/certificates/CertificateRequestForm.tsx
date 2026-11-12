@@ -855,7 +855,7 @@ export function CertificateRequestForm({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1">พรรษา (Vassa)</label>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">พรรษา (Vassa)(เฉพาะภิกษุไทย)</label>
                   <input
                     type="text"
                     placeholder="เช่น 6 พรรษา (ถ้ามี)"

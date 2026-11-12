@@ -331,6 +331,24 @@ export function BrandIdentitySection({
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20"
             />
           </div>
+
+          <div className="md:col-span-2">
+            <label className="font-bold text-slate-700 block mb-1">
+              ชื่อสำนักงานผู้ประสานงานท้ายหนังสือรับรอง (เช่น สำนักงานคณบดีคณะพุทธศาสตร์):
+            </label>
+            <input
+              type="text"
+              value={settings.officeNameTh ?? 'สำนักงานคณบดีคณะพุทธศาสตร์'}
+              onChange={(e) =>
+                setSettings({ ...settings, officeNameTh: e.target.value })
+              }
+              placeholder="สำนักงานคณบดีคณะพุทธศาสตร์"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500/20 font-medium"
+            />
+            <span className="text-[11px] text-slate-500 mt-1 block">
+              * แสดงในส่วนท้ายกระดาษของหนังสือรับรอง (ใต้หัวข้อ &quot;ติดต่อผู้ประสานงาน:&quot;)
+            </span>
+          </div>
         </div>
       </div>
 

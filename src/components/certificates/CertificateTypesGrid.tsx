@@ -205,28 +205,28 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
             </p>
           </div>
 
-          {/* Category Filter Pills (Touch-Friendly & Scrollable) */}
-          <div className="w-full sm:w-auto flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl overflow-x-auto no-scrollbar scroll-smooth text-xs font-bold">
+          {/* Category Filter Pills (Mobile Grid - All Visible Without Horizontal Scroll) */}
+          <div className="w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 p-2 bg-slate-100/90 border border-slate-200/70 rounded-2xl text-xs font-bold">
             {!isInstructorOnly && (
               <>
                 <button
                   type="button"
                   onClick={() => setCardAudienceFilter('ALL')}
-                  className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition cursor-pointer whitespace-nowrap ${
+                  className={`min-h-[42px] px-3 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                     cardAudienceFilter === 'ALL'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/15'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/80'
                   }`}
                 >
-                  {t.certFilterAll} ({visibleCards.length})
+                  <span>📋 {t.certFilterAll} ({visibleCards.length})</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setCardAudienceFilter('THAI')}
-                  className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                  className={`min-h-[42px] px-3 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                     cardAudienceFilter === 'THAI'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-blue-700 hover:bg-blue-50'
+                      ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-500/25'
+                      : 'bg-white text-blue-700 hover:bg-blue-50 border border-blue-200'
                   }`}
                 >
                   <span>🇹🇭 {t.certFilterThai}</span>
@@ -234,13 +234,13 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
                 <button
                   type="button"
                   onClick={() => setCardAudienceFilter('INTERNATIONAL')}
-                  className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                  className={`col-span-2 sm:col-span-1 min-h-[42px] px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                     cardAudienceFilter === 'INTERNATIONAL'
-                      ? 'bg-purple-600 text-white shadow-sm'
-                      : 'text-purple-700 hover:bg-purple-50'
+                      ? 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-500/25'
+                      : 'bg-white text-purple-700 hover:bg-purple-50 border border-purple-200'
                   }`}
                 >
-                  <span>🌐 {t.certFilterInter}</span>
+                  <span>🌐 {isEn ? t.certFilterInter : 'นิสิตต่างประเทศ (International)'}</span>
                 </button>
               </>
             )}
@@ -250,7 +250,7 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
               <button
                 type="button"
                 onClick={() => setCardAudienceFilter('STAFF')}
-                className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                className={`col-span-2 sm:col-span-1 min-h-[42px] px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   cardAudienceFilter === 'STAFF'
                     ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-500/20'
                     : 'text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300'
@@ -265,10 +265,10 @@ export const CertificateTypesGrid: React.FC<CertificateTypesGridProps> = ({
               <button
                 type="button"
                 onClick={() => setCardAudienceFilter('CANDIDATE')}
-                className={`shrink-0 min-h-[38px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                className={`col-span-2 sm:col-span-1 min-h-[42px] px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer text-center ${
                   cardAudienceFilter === 'CANDIDATE'
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-emerald-700 hover:bg-emerald-50'
+                    ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/25'
+                    : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'
                 }`}
               >
                 <span>🎓 {t.certFilterCandidate}</span>

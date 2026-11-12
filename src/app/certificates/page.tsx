@@ -255,8 +255,10 @@ export default function CertificatesPage() {
   const handleRequestSuccess = (newReq: CertificateRequest, msg: string) => {
     setSubmitSuccess(msg);
     setRequests((prev) => [newReq, ...prev]);
-    setPreviewRequest(newReq);
     setRequestStep(1);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -274,10 +276,10 @@ export default function CertificatesPage() {
         </div>
 
         {/* Tab switcher (Responsive Touch-Friendly) */}
-        <div className="w-full sm:w-auto flex items-center p-1 bg-slate-200/80 rounded-2xl overflow-x-auto no-scrollbar scroll-smooth text-xs sm:text-sm font-semibold">
+        <div className="w-full sm:w-auto flex flex-wrap items-center gap-1 p-1 bg-slate-200/80 rounded-2xl text-xs sm:text-sm font-semibold">
           <button
             onClick={() => setActiveTab('REQUEST')}
-            className={`flex-1 sm:flex-initial text-center whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
+            className={`flex-1 sm:flex-initial text-center whitespace-nowrap min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
               activeTab === 'REQUEST'
                 ? 'bg-white text-purple-700 shadow-sm font-bold'
                 : 'text-slate-600 hover:text-slate-900'
@@ -287,7 +289,7 @@ export default function CertificatesPage() {
           </button>
           <button
             onClick={() => setActiveTab('TRACK')}
-            className={`flex-1 sm:flex-initial text-center whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
+            className={`flex-1 sm:flex-initial text-center whitespace-nowrap min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
               activeTab === 'TRACK'
                 ? 'bg-white text-purple-700 shadow-sm font-bold'
                 : 'text-slate-600 hover:text-slate-900'
@@ -298,7 +300,7 @@ export default function CertificatesPage() {
           {canManageCertificates && (
             <button
               onClick={() => setActiveTab('ADMIN')}
-              className={`flex-1 sm:flex-initial text-center whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
+              className={`flex-1 sm:flex-initial text-center whitespace-nowrap min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
                 activeTab === 'ADMIN'
                   ? 'bg-white text-purple-700 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
@@ -468,6 +470,7 @@ export default function CertificatesPage() {
           availableCertYears={availableCertYears}
           filteredRequests={filteredRequests}
           onPreviewRequest={setPreviewRequest}
+          canManageCertificates={canManageCertificates}
         />
       )}
 
@@ -483,12 +486,14 @@ export default function CertificatesPage() {
         />
       )}
 
-      {/* ----------------- 4. OFFICIAL DOCUMENT PREVIEW & PRINT MODAL ----------------- */}
-      <CertificatePreviewModal
-        previewRequest={previewRequest}
-        onClose={() => setPreviewRequest(null)}
-        settings={settings}
-      />
+      {/* ----------------- 4. OFFICIAL DOCUMENT PREVIEW & PRINT MODAL (Admin & Officer Only) ----------------- */}
+      {canManageCertificates && (
+        <CertificatePreviewModal
+          previewRequest={previewRequest}
+          onClose={() => setPreviewRequest(null)}
+          settings={settings}
+        />
+      )}
     </div>
   );
 }

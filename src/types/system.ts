@@ -5,6 +5,7 @@ export interface SystemSettings {
   universityNameEn: string;
   facultyNameTh: string;
   facultyNameEn: string;
+  officeNameTh?: string;
   logoUrl: string;
   logoEmoji?: string;
   signerNameTh: string;

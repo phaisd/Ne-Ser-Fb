@@ -213,7 +213,7 @@ export function CertPrintPaper({
             <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
               <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
                 <p className="font-bold text-slate-800">ติดต่อผู้ประสานงาน:</p>
-                <p>{settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh}` : 'สำนักงานคณะพุทธศาสตร์'}</p>
+                <p>{settings.officeNameTh || (settings.facultyNameTh ? (settings.facultyNameTh.startsWith('สำนักงาน') ? settings.facultyNameTh : `สำนักงานคณบดี${settings.facultyNameTh}`) : 'สำนักงานคณบดีคณะพุทธศาสตร์')}</p>
                 <p>โทร. {settings.contactPhone || '035-247-8000 ต่อ 8323'}</p>
                 <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
                 <p className="text-purple-700 font-mono">
@@ -562,7 +562,7 @@ export function CertPrintPaper({
             {/* Bottom Footer */}
             <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
               <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
-                <p className="font-bold text-slate-800">{settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh}` : 'สำนักงานคณะพุทธศาสตร์'}</p>
+                <p className="font-bold text-slate-800">{settings.officeNameTh || (settings.facultyNameTh ? (settings.facultyNameTh.startsWith('สำนักงาน') ? settings.facultyNameTh : `สำนักงานคณบดี${settings.facultyNameTh}`) : 'สำนักงานคณบดีคณะพุทธศาสตร์')}</p>
                 <p>โทรศัพท์ {settings.contactPhone || '035-247-8000 ต่อ 8323'}</p>
                 <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
                 <p className="text-purple-700 font-mono">
@@ -804,7 +804,7 @@ export function CertPrintPaper({
             {/* Bottom Footer */}
             <div className="mt-auto pt-6 border-t border-slate-200/80 flex justify-between items-end text-xs text-slate-600">
               <div contentEditable suppressContentEditableWarning className="outline-none focus:bg-purple-50 p-1.5 rounded space-y-0.5">
-                <p className="font-bold text-slate-800">{settings.facultyNameTh ? `สำนักงาน${settings.facultyNameTh}` : 'สำนักงานคณะพุทธศาสตร์'}</p>
+                <p className="font-bold text-slate-800">{settings.officeNameTh || (settings.facultyNameTh ? (settings.facultyNameTh.startsWith('สำนักงาน') ? settings.facultyNameTh : `สำนักงานคณบดี${settings.facultyNameTh}`) : 'สำนักงานคณบดีคณะพุทธศาสตร์')}</p>
                 <p>โทรศัพท์ {settings.contactPhone || '035-247-8000 ต่อ 8323'}</p>
                 <p className="text-purple-700 font-mono">{settings.websiteUrl || 'https://fb.mcu.ac.th/'}</p>
                 <p className="text-purple-700 font-mono">

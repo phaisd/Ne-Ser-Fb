@@ -16,7 +16,7 @@ export async function getStudents(): Promise<Student[]> {
 
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Students!A1:S');
+      const rows = await gClient.getValues('Students!A1:T');
       if (rows && rows.length > 0) {
         const firstCell = String(rows[0][0] || '').trim().toLowerCase();
         const startIndex = firstCell.includes('code') || firstCell.includes('รหัส') ? 1 : 0;
@@ -30,6 +30,7 @@ export async function getStudents(): Promise<Student[]> {
             const isThaiNat = sheetNat === 'ไทย' || sheetNat === 'Thai';
             const programFromSheet = r[13] ? (r[13].includes('ENG') ? 'ENGLISH' : 'THAI') : undefined;
             const cleanLast = (r[3] || local.lastName || '') === '-' ? '' : (r[3] || local.lastName || '');
+            const sheetPassword = r[19] ? String(r[19]).trim() : '';
 
             return {
               ...local,
@@ -52,6 +53,8 @@ export async function getStudents(): Promise<Student[]> {
               passportNo: r[16] || local.passportNo || '',
               gpa: r[17] !== undefined && r[17] !== '' ? r[17] : (local.gpa ?? ''),
               address: r[18] || local.address || '',
+              password: local.password || sheetPassword || undefined,
+              hasChangedPassword: Boolean(local.hasChangedPassword || sheetPassword),
             };
           });
       }
@@ -140,19 +143,56 @@ export async function updateStudent(studentCode: string, updates: Partial<Studen
 export async function updateStudentPassword(studentCode: string, newPassword: string): Promise<boolean> {
   const localList = readLocalJson<any[]>('students.json', []);
   const cleanCode = (studentCode || '').trim().toLowerCase();
-  const idx = localList.findIndex(
+  const codeOnly = cleanCode.replace(/@mcu\.ac\.th$/i, '').trim();
+
+  let idx = localList.findIndex(
     (s) =>
-      (s.studentCode || '').toLowerCase() === cleanCode ||
-      (s.id || '').toLowerCase() === cleanCode ||
-      (s.email || '').toLowerCase() === cleanCode
+      (s.studentCode || '').trim().toLowerCase() === cleanCode ||
+      (s.studentCode || '').trim().toLowerCase() === codeOnly ||
+      (s.id || '').trim().toLowerCase() === cleanCode ||
+      (s.email || '').trim().toLowerCase() === cleanCode
   );
-  if (idx === -1) return false;
+
+  // If student exists in Google Sheets but not yet in local students.json, hydrate from getStudents()
+  let resolvedCode = idx !== -1 ? String(localList[idx].studentCode || codeOnly).trim() : '';
+  if (idx === -1) {
+    const allStudents = await getStudents();
+    const matchedFromSheet = allStudents.find(
+      (s) =>
+        (s.studentCode || '').trim().toLowerCase() === cleanCode ||
+        (s.studentCode || '').trim().toLowerCase() === codeOnly ||
+        (s.id || '').trim().toLowerCase() === cleanCode ||
+        (s.email || '').trim().toLowerCase() === cleanCode
+    );
+    if (!matchedFromSheet) return false;
+    resolvedCode = matchedFromSheet.studentCode;
+    localList.push({ ...matchedFromSheet });
+    idx = localList.length - 1;
+  }
 
   const hashedPassword = await hashPassword(newPassword);
   localList[idx].password = hashedPassword;
   localList[idx].hasChangedPassword = true;
   localList[idx].updatedAt = new Date().toISOString();
   writeLocalJson('students.json', localList);
+
+  // Persist hashed password to Google Sheets (Column T) so it survives Vercel serverless cold starts
+  const gClient = getSheetsClient();
+  if (gClient && resolvedCode) {
+    try {
+      const rows = await gClient.getValues('Students!A1:A');
+      if (rows && rows.length > 0) {
+        const rowIndex = rows.findIndex((r) => String(r[0] || '').trim().toLowerCase() === resolvedCode.toLowerCase());
+        if (rowIndex !== -1) {
+          const sheetRowNum = rowIndex + 1;
+          await gClient.updateValues(`Students!T${sheetRowNum}`, [[hashedPassword]]);
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets update student password failed:', err);
+    }
+  }
+
   return true;
 }
 

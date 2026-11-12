@@ -281,7 +281,11 @@ function LoginForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'change-password-first-login',
-          identifier: pendingChangeUser?.id || pendingChangeUser?.studentCode || pendingChangeUser?.email || email,
+          identifier:
+            pendingChangeUser?.studentCode ||
+            pendingChangeUser?.id ||
+            pendingChangeUser?.email ||
+            email,
           role: pendingChangeUser?.role,
           newPassword,
           confirmPassword,
