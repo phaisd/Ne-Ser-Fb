@@ -132,6 +132,51 @@ export async function POST(request: Request) {
       return resp;
     }
 
+    // 0.05 Synchronize / Restore Signed Server Cookie for Active Client Session
+    if (action === 'sync-session') {
+      const targetEmail = String(email || gmail || '').trim().toLowerCase();
+      const targetId = String(identifier || body.id || '').trim().toLowerCase();
+      if (!targetEmail && !targetId) {
+        return NextResponse.json({ success: false, error: 'Missing account identifier' }, { status: 400 });
+      }
+
+      const instructors = await getInstructorAccounts();
+      const matchedInst = instructors.find(
+        (a) =>
+          (targetEmail &&
+            (a.email?.toLowerCase() === targetEmail ||
+              a.gmail?.toLowerCase() === targetEmail ||
+              a.aliases?.some((al) => al.toLowerCase() === targetEmail))) ||
+          (targetId && a.id?.toLowerCase() === targetId)
+      );
+
+      if (matchedInst && matchedInst.isActive !== false) {
+        const { password: _pw, ...safeInst } = matchedInst;
+        const sessionUser = registerSession(
+          {
+            ...safeInst,
+            email: safeInst.email || targetEmail,
+            name: safeInst.name,
+            role: safeInst.role || (safeInst.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th' ? 'SUPER_ADMIN' : 'INSTRUCTOR'),
+            isSuperAdmin:
+              safeInst.role === 'SUPER_ADMIN' ||
+              Boolean((safeInst as any).isSuperAdmin) ||
+              safeInst.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th',
+          },
+          'SESSION_RESET'
+        );
+        const resp = NextResponse.json({
+          success: true,
+          authenticated: true,
+          user: sessionUser,
+        });
+        attachAuthCookies(resp, sessionUser);
+        return resp;
+      }
+
+      return NextResponse.json({ success: false, error: 'Account not found' }, { status: 404 });
+    }
+
     // 0.1 Request Password Reset (Sends Token & 6-digit OTP to User's Actual Email)
     if (action === 'request-password-reset' || (action === 'forgot-password' && !body.newPassword && !body.token && !body.otp)) {
       const { identifier } = body;

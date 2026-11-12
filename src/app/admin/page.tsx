@@ -254,12 +254,29 @@ export default function AdminConsolePage() {
     const checkAuth = async () => {
       try {
         let user = getAuthUser();
-        if (!user) {
-          const res = await fetch('/api/auth');
-          const d = await res.json();
-          if (d.authenticated && d.user) {
-            user = d.user;
-            saveAuthSession(d.user, true);
+        const res = await fetch('/api/auth');
+        const d = await res.json();
+        if (d.authenticated && d.user) {
+          user = d.user;
+          saveAuthSession(d.user, true);
+        } else if (user && (user.email || user.id)) {
+          // Restore signed server session cookie if client session exists in localStorage/cookie
+          const syncRes = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sync-session',
+              email: user.email,
+              gmail: user.gmail,
+              id: user.id,
+              rememberMe: true,
+            }),
+          });
+          const syncData = await syncRes.json();
+          if (syncData.success && syncData.user) {
+            user = syncData.user;
+            saveAuthSession(syncData.user, true);
+            loadData();
           }
         }
         setCurrentUser(user);

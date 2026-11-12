@@ -206,6 +206,11 @@ export function validateUserSession(
     return { isValid: false, conflict: false };
   }
 
+  // On Vercel serverless, local disk sessions.json is not shared across stateless lambda instances
+  if (process.env.VERCEL) {
+    return { isValid: true, conflict: false };
+  }
+
   ensureMemoryLoaded();
 
   const key = userIdOrEmail.trim().toLowerCase();

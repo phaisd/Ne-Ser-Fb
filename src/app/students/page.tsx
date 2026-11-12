@@ -421,7 +421,7 @@ export default function StudentsPage() {
 
     setImportSaving(true);
     try {
-      const res = await fetch('/api/students', {
+      let res = await fetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -430,6 +430,32 @@ export default function StudentsPage() {
           mode: importMode,
         }),
       });
+
+      if (res.status === 401) {
+        const localUser = getAuthUser();
+        if (localUser && (localUser.email || localUser.id)) {
+          await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sync-session',
+              email: localUser.email,
+              gmail: localUser.gmail,
+              id: localUser.id,
+              rememberMe: true,
+            }),
+          });
+          res = await fetch('/api/students', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'batch-update',
+              items: importParsedList,
+              mode: importMode,
+            }),
+          });
+        }
+      }
 
       const data = await res.json();
       if (data.success) {

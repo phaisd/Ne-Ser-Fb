@@ -266,7 +266,8 @@ export function parseCSVToStudents(rawText: string): Partial<Student>[] {
 
     const title = getVal(['คำนำหน้า', 'title', 'prefix']);
     let firstName = getVal(['ชื่อ', 'firstname', 'ชื่อตัว']);
-    const lastName = getVal(['นามสกุล', 'lastname', 'สกุล']);
+    const rawLastName = getVal(['นามสกุล', 'lastname', 'สกุล']);
+    const lastName = rawLastName === '-' ? '' : rawLastName;
     let fullName = getVal(['ชื่อเต็ม', 'ชื่อนามสกุล', 'ชื่อสกุล', 'ชื่อและนามสกุล', 'fullname', 'name']);
 
     if (!firstName && fullName) {

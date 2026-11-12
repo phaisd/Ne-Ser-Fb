@@ -16,35 +16,44 @@ export async function getStudents(): Promise<Student[]> {
 
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Students!A1:O');
+      const rows = await gClient.getValues('Students!A1:S');
       if (rows && rows.length > 0) {
-        const startIndex = rows[0][0]?.toLowerCase().includes('code') ? 1 : 0;
+        const firstCell = String(rows[0][0] || '').trim().toLowerCase();
+        const startIndex = firstCell.includes('code') || firstCell.includes('รหัส') ? 1 : 0;
         const dataRows = rows.slice(startIndex);
-        students = dataRows.map((r) => {
-          const code = (r[0] || '').trim();
-          const local = localMap.get(code) || {};
-          const isThaiNat = (local.nationality === 'ไทย' || local.nationality === 'Thai');
-          const programFromSheet = r[13] ? (r[13].includes('ENG') ? 'ENGLISH' : 'THAI') : undefined;
+        students = dataRows
+          .filter((r) => r && r[0] && String(r[0]).trim() !== '')
+          .map((r) => {
+            const code = (r[0] || '').trim();
+            const local = localMap.get(code) || {};
+            const sheetNat = r[15] || local.nationality || '';
+            const isThaiNat = sheetNat === 'ไทย' || sheetNat === 'Thai';
+            const programFromSheet = r[13] ? (r[13].includes('ENG') ? 'ENGLISH' : 'THAI') : undefined;
+            const cleanLast = (r[3] || local.lastName || '') === '-' ? '' : (r[3] || local.lastName || '');
 
-          return {
-            ...local,
-            studentCode: code,
-            title: r[1] || local.title || '',
-            firstName: r[2] || local.firstName || '',
-            lastName: r[3] || local.lastName || '',
-            fullName: r[4] || `${r[1] || ''} ${r[2] || ''} ${r[3] || ''}`.trim(),
-            yearLevel: r[5] ? parseInt(r[5], 10) : (local.yearLevel || 1),
-            degree: r[6] || local.degree || '',
-            department: r[7] || local.department || '',
-            major: r[8] || local.major || '',
-            studyStatus: r[9] || local.studyStatus || 'ปกติ',
-            faculty: r[10] || local.faculty || '',
-            phoneNumber: r[11] || local.phoneNumber || '',
-            email: r[12] || local.email || '',
-            programType: programFromSheet || local.programType || (isThaiNat ? 'THAI' : 'ENGLISH'),
-            remarks: r[14] !== undefined && r[14] !== '' ? r[14] : (local.remarks || ''),
-          };
-        });
+            return {
+              ...local,
+              studentCode: code,
+              title: r[1] || local.title || '',
+              firstName: r[2] || local.firstName || '',
+              lastName: cleanLast,
+              fullName: r[4] || `${r[1] || ''} ${r[2] || ''} ${cleanLast}`.replace(/\s+/g, ' ').trim(),
+              yearLevel: r[5] ? parseInt(r[5], 10) : (local.yearLevel || 1),
+              degree: r[6] || local.degree || 'ปริญญาตรี',
+              department: r[7] || local.department || '',
+              major: r[8] || local.major || '',
+              studyStatus: r[9] || local.studyStatus || 'ปกติ',
+              faculty: r[10] || local.faculty || '',
+              phoneNumber: r[11] || local.phoneNumber || '',
+              email: r[12] || local.email || '',
+              programType: programFromSheet || local.programType || (isThaiNat ? 'THAI' : 'ENGLISH'),
+              remarks: r[14] !== undefined && r[14] !== '' ? r[14] : (local.remarks || ''),
+              nationality: sheetNat || (programFromSheet === 'ENGLISH' ? 'ต่างชาติ' : 'ไทย'),
+              passportNo: r[16] || local.passportNo || '',
+              gpa: r[17] !== undefined && r[17] !== '' ? r[17] : (local.gpa ?? ''),
+              address: r[18] || local.address || '',
+            };
+          });
       }
     } catch (err) {
       console.warn('Google Sheets read error for Students, falling back to local file:', err);
@@ -54,18 +63,19 @@ export async function getStudents(): Promise<Student[]> {
   if (students.length === 0) {
     students = localList.map((s) => ({
       ...s,
-      fullName: `${s.title || ''} ${s.firstName || ''} ${s.lastName || ''}`.trim(),
+      fullName: `${s.title || ''} ${s.firstName || ''} ${s.lastName === '-' ? '' : (s.lastName || '')}`.trim(),
       programType: s.programType || (s.nationality === 'ไทย' || s.nationality === 'Thai' ? 'THAI' : 'ENGLISH'),
       remarks: s.remarks || '',
     }));
   }
 
-  // Deduplicate by studentCode to prevent duplicate entries and React key collisions
+  // Filter out empty studentCodes and deduplicate by studentCode
   const seen = new Set<string>();
   return students.filter((s) => {
-    if (!s.studentCode) return true;
-    if (seen.has(s.studentCode)) return false;
-    seen.add(s.studentCode);
+    const cleanCode = String(s.studentCode || '').trim();
+    if (!cleanCode) return false;
+    if (seen.has(cleanCode)) return false;
+    seen.add(cleanCode);
     return true;
   });
 }
@@ -96,14 +106,14 @@ export async function updateStudent(studentCode: string, updates: Partial<Studen
         const rowIndex = rows.findIndex((r) => r[0] === studentCode);
         if (rowIndex !== -1) {
           const sheetRowNum = rowIndex + 2;
-          await gClient.updateValues(`Students!A${sheetRowNum}:O${sheetRowNum}`, [[
+          await gClient.updateValues(`Students!A${sheetRowNum}:S${sheetRowNum}`, [[
             updated.studentCode,
             updated.title || '',
             updated.firstName,
             updated.lastName,
             updated.fullName,
             String(updated.yearLevel || 1),
-            updated.degree || '',
+            updated.degree || 'ปริญญาตรี',
             updated.department || '',
             updated.major || '',
             updated.studyStatus || 'ปกติ',
@@ -112,6 +122,10 @@ export async function updateStudent(studentCode: string, updates: Partial<Studen
             updated.email || '',
             updated.programType === 'ENGLISH' ? 'หลักสูตรภาคภาษาอังกฤษ (ENGLISH)' : 'หลักสูตรภาคภาษาไทย (THAI)',
             updated.remarks || '',
+            updated.nationality || '',
+            updated.passportNo || '',
+            updated.gpa !== undefined && updated.gpa !== null ? String(updated.gpa) : '',
+            updated.address || '',
           ]]);
         }
       }
@@ -209,68 +223,67 @@ export async function batchUpdateStudents(
 
   writeLocalJson('students.json', localList);
 
-  // Sync to Google Sheets if available
+  // Sync to Google Sheets if available (Single Batch Update to avoid API rate limits & Vercel timeouts)
   const gClient = getSheetsClient();
   if (gClient && (updatedCount > 0 || addedCount > 0)) {
     try {
-      const rows = await gClient.getValues('Students!A2:A');
-      const codeToRowMap = new Map<string, number>();
-      if (rows && rows.length > 0) {
-        rows.forEach((r, i) => {
-          if (r[0]) codeToRowMap.set(r[0].trim(), i + 2);
-        });
+      const toSheetRow = (student: Student) => [
+        student.studentCode,
+        student.title || '',
+        student.firstName || '',
+        student.lastName || '',
+        student.fullName || '',
+        String(student.yearLevel || 1),
+        student.degree || 'ปริญญาตรี',
+        student.department || '',
+        student.major || 'พระพุทธศาสนา',
+        student.studyStatus || 'ปกติ',
+        student.faculty || 'คณะพุทธศาสตร์',
+        student.phoneNumber || '',
+        student.email || '',
+        student.programType === 'ENGLISH' ? 'หลักสูตรภาคภาษาอังกฤษ (ENGLISH)' : 'หลักสูตรภาคภาษาไทย (THAI)',
+        student.remarks || '',
+        student.nationality || '',
+        student.passportNo || '',
+        student.gpa !== undefined && student.gpa !== null ? String(student.gpa) : '',
+        student.address || '',
+      ];
 
-        for (const code of matchedCodes) {
-          const rowNum = codeToRowMap.get(code);
-          if (rowNum) {
-            const student = localList.find((s) => s.studentCode === code);
-            if (student) {
-              await gClient.updateValues(`Students!A${rowNum}:O${rowNum}`, [[
-                student.studentCode,
-                student.title || '',
-                student.firstName,
-                student.lastName,
-                student.fullName,
-                String(student.yearLevel || 1),
-                student.degree || '',
-                student.department || '',
-                student.major || '',
-                student.studyStatus || 'ปกติ',
-                student.faculty || '',
-                student.phoneNumber || '',
-                student.email || '',
-                student.programType === 'ENGLISH' ? 'หลักสูตรภาคภาษาอังกฤษ (ENGLISH)' : 'หลักสูตรภาคภาษาไทย (THAI)',
-                student.remarks || '',
-              ]]);
+      const studentByCode = new Map<string, Student>();
+      localList.forEach((s) => {
+        if (s.studentCode) studentByCode.set(s.studentCode.trim(), s);
+      });
+
+      const existingSheetRows = await gClient.getValues('Students!A2:S');
+      const codeToRowMap = new Map<string, number>();
+
+      if (existingSheetRows && existingSheetRows.length > 0) {
+        const mergedSheetRows = existingSheetRows.map((row, i) => {
+          const code = (row[0] || '').trim();
+          if (code) {
+            codeToRowMap.set(code, i + 2);
+            const updatedStudent = studentByCode.get(code);
+            if (updatedStudent && matchedCodes.includes(code)) {
+              return toSheetRow(updatedStudent);
             }
           }
-        }
+          // Pad existing row to 19 columns (A:S)
+          const padded = [...row];
+          while (padded.length < 19) padded.push('');
+          return padded.slice(0, 19);
+        });
+
+        await gClient.updateValues(`Students!A2:S${mergedSheetRows.length + 1}`, mergedSheetRows);
       }
 
-      // Append any newly added students (mode === 'UPSERT') to Google Sheets Students!A:O
+      // Append any newly added students (mode === 'UPSERT') to Google Sheets Students!A:S
       if (addedCount > 0) {
         const newStudentsToAppend = localList
           .slice(-addedCount)
           .filter((s) => !codeToRowMap.has(s.studentCode));
         if (newStudentsToAppend.length > 0) {
-          const appendValues = newStudentsToAppend.map((student) => [
-            student.studentCode,
-            student.title || '',
-            student.firstName || '',
-            student.lastName || '',
-            student.fullName || '',
-            String(student.yearLevel || 1),
-            student.degree || 'ปริญญาตรี',
-            student.department || '',
-            student.major || 'พระพุทธศาสนา',
-            student.studyStatus || 'ปกติ (เทียบโอน/เดินเรียน)',
-            student.faculty || 'คณะพุทธศาสตร์',
-            student.phoneNumber || '',
-            student.email || '',
-            student.programType === 'ENGLISH' ? 'หลักสูตรภาคภาษาอังกฤษ (ENGLISH)' : 'หลักสูตรภาคภาษาไทย (THAI)',
-            student.remarks || '',
-          ]);
-          await gClient.appendValues('Students!A:O', appendValues);
+          const appendValues = newStudentsToAppend.map(toSheetRow);
+          await gClient.appendValues('Students!A:S', appendValues);
         }
       }
     } catch (err) {
