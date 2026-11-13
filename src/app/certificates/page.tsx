@@ -255,6 +255,11 @@ export default function CertificatesPage() {
   const handleRequestSuccess = (newReq: CertificateRequest, msg: string) => {
     setSubmitSuccess(msg);
     setRequests((prev) => [newReq, ...prev]);
+    // Switch to TRACK tab and auto-fill student code so user immediately sees their request status
+    if (newReq.studentCode) {
+      setTrackCode(newReq.studentCode);
+    }
+    setActiveTab('TRACK');
     setRequestStep(1);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });

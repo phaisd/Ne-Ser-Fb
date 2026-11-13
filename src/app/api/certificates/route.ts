@@ -130,20 +130,25 @@ export async function POST(request: Request) {
 
     const programLanguage = resolveProgramLanguage(rest.targetAudience, rest.nationality);
 
-    // Trigger Notification for new request with rich details
-    sendNotification({
-      toEmail: email,
-      studentName: fullName,
-      studentCode,
-      certType,
-      programLanguage,
-      degreeLevel: degreeLevel || '',
-      major: major || '',
-      requestPurpose: requestPurpose || certType,
-      phone: phone || '',
-      status: 'PENDING',
-      actionUrl: process.env.NEXTAUTH_URL || 'https://ne-ser-fb.vercel.app/admin',
-    }).catch((e) => console.error('Notification error on POST:', e));
+    // Trigger Notification for new request with rich details (await so serverless functions don't terminate prematurely)
+    try {
+      const notifRes = await sendNotification({
+        toEmail: email,
+        studentName: fullName,
+        studentCode,
+        certType,
+        programLanguage,
+        degreeLevel: degreeLevel || '',
+        major: major || '',
+        requestPurpose: requestPurpose || certType,
+        phone: phone || '',
+        status: 'PENDING',
+        actionUrl: process.env.NEXTAUTH_URL || 'https://ne-ser-fb.vercel.app/admin',
+      });
+      console.log('[POST /api/certificates] Notification sent result:', notifRes);
+    } catch (e) {
+      console.error('[POST /api/certificates] Notification error on POST:', e);
+    }
 
     return NextResponse.json({ success: true, data: newReq });
   } catch (err: unknown) {

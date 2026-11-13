@@ -138,7 +138,8 @@ export function convertGoogleDriveUrl(url?: string): string {
 }
 
 export async function getSystemSettings(): Promise<SystemSettings> {
-  let settings = readLocalJson<SystemSettings | null>('system_settings.json', null);
+  const localSettings = readLocalJson<SystemSettings | null>('system_settings.json', null);
+  let settings = localSettings;
   const gClient = getSheetsClient();
   if (gClient) {
     try {
@@ -146,7 +147,31 @@ export async function getSystemSettings(): Promise<SystemSettings> {
       if (rows && rows.length > 0 && rows[0][1]) {
         const parsedFromSheet = JSON.parse(String(rows[0][1]));
         if (parsedFromSheet && typeof parsedFromSheet === 'object') {
-          settings = { ...(settings || {}), ...parsedFromSheet };
+          // If sheet is missing sensitive tokens, keep local token values
+          settings = {
+            ...(localSettings || {}),
+            ...parsedFromSheet,
+            lineChannelAccessToken:
+              parsedFromSheet.lineChannelAccessToken ||
+              localSettings?.lineChannelAccessToken ||
+              process.env.LINE_CHANNEL_ACCESS_TOKEN ||
+              '',
+            lineTargetUserId:
+              parsedFromSheet.lineTargetUserId ||
+              localSettings?.lineTargetUserId ||
+              process.env.LINE_TARGET_USER_ID ||
+              '',
+            lineNotifyToken:
+              parsedFromSheet.lineNotifyToken ||
+              localSettings?.lineNotifyToken ||
+              process.env.LINE_NOTIFY_TOKEN ||
+              '',
+            lineWebhookUrl:
+              parsedFromSheet.lineWebhookUrl ||
+              localSettings?.lineWebhookUrl ||
+              process.env.LINE_WEBHOOK_URL ||
+              '',
+          };
         }
       }
     } catch {
