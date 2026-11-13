@@ -74,4 +74,5 @@ export interface SignatoryItem {
   name: string;
   title: string;
   isDefault?: boolean;
+  enabled?: boolean;
 }

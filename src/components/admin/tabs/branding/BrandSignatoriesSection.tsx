@@ -8,6 +8,8 @@ import {
   RefreshCw,
   Edit,
   Trash2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { SystemSettings, SignatoryItem } from '@/types';
 
@@ -46,6 +48,13 @@ export function BrandSignatoriesSection({
   handleSaveEditSignatory,
   handleDeleteSignatory,
 }: BrandSignatoriesSectionProps) {
+  const handleToggleSignatory = (id: string) => {
+    const currentList = settings.signatories || activeSignatoriesList;
+    const updated = currentList.map((item) =>
+      item.id === id ? { ...item, enabled: item.enabled === false ? true : false } : item
+    );
+    setSettings({ ...settings, signatories: updated });
+  };
   return (
     <div className="space-y-5">
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
@@ -279,10 +288,15 @@ export function BrandSignatoriesSection({
                       <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-3 font-semibold text-slate-900">
                           <div className="flex items-center gap-1.5">
-                            <span>{item.label}</span>
+                            <span className={item.enabled === false ? 'line-through text-slate-400' : ''}>{item.label}</span>
                             {(item as any).isDefault && (
                               <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">
                                 เริ่มต้น
+                              </span>
+                            )}
+                            {item.enabled === false && (
+                              <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">
+                                ปิดแสดงผล
                               </span>
                             )}
                             {!item.name && (
@@ -299,6 +313,18 @@ export function BrandSignatoriesSection({
                           {item.title}
                         </td>
                         <td className="p-3 text-right whitespace-nowrap space-x-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSignatory(item.id)}
+                            className={`p-1.5 rounded-lg transition cursor-pointer ${
+                              item.enabled !== false
+                                ? 'text-emerald-600 hover:bg-emerald-50'
+                                : 'text-slate-400 hover:bg-slate-100'
+                            }`}
+                            title={item.enabled !== false ? 'เปิดอยู่ (คลิกเพื่อปิดการแสดงผล)' : 'ปิดอยู่ (คลิกเพื่อเปิดการแสดงผล)'}
+                          >
+                            {item.enabled !== false ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                          </button>
                           <button
                             type="button"
                             onClick={() => {

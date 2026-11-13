@@ -49,6 +49,17 @@ export interface SystemSettings {
   footerCustomNote?: string;
   devCreditText?: string;
   devCreditEnabled?: boolean;
+  // Social Media & Facebook Configuration (ช่องทางโซเชียลมีเดียและการเปิด/ปิดแสดงผล)
+  showSocialLinks?: boolean;
+  facebookUrl?: string;
+  facebookTitle?: string;
+  showFacebook?: boolean;
+  lineOaUrl?: string;
+  showLineOa?: boolean;
+  youtubeUrl?: string;
+  showYoutube?: boolean;
+  tiktokUrl?: string;
+  showTiktok?: boolean;
   // Feature Visibility Toggles for Public Portal (เปิด/ปิดระบบและเมนูหน้าหลัก)
   showEventsMenu?: boolean; // เปิด/ปิด ระบบกิจกรรมนิสิต (/events)
   showStudentsSearch?: boolean; // เปิด/ปิด ระบบค้นหาทะเบียนนิสิต (/students)

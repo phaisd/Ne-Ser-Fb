@@ -626,6 +626,115 @@ export default function SettingsPage() {
                     * ลิงก์นี้จะนำไปแสดงเป็นบรรทัดต่อจาก fb.mcu.ac.th ในส่วนท้ายเอกสารรับรองทุกฉบับอัตโนมัติ
                   </p>
                 </div>
+
+                {/* Social Media & Facebook Settings */}
+                <div className="sm:col-span-2 p-4 rounded-xl border border-blue-200 bg-blue-50/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-blue-950 text-xs flex items-center gap-2">
+                      <span>🌐</span>
+                      <span>ช่องทางโซเชียลมีเดีย & Facebook ของคณะ:</span>
+                    </span>
+                    <label className="flex items-center gap-1.5 cursor-pointer font-bold text-[11px] text-blue-900">
+                      <input
+                        type="checkbox"
+                        checked={settings.showSocialLinks !== false}
+                        onChange={(e) => setSettings({ ...settings, showSocialLinks: e.target.checked })}
+                        className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                      />
+                      <span>เปิดแสดงโซเชียล</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="font-semibold text-slate-700">Facebook URL:</label>
+                        <label className="flex items-center gap-1 cursor-pointer text-[10px] text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={settings.showFacebook !== false}
+                            onChange={(e) => setSettings({ ...settings, showFacebook: e.target.checked })}
+                            className="rounded border-slate-300 text-blue-600 w-3 h-3"
+                          />
+                          <span>แสดง</span>
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        value={settings.facebookUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, facebookUrl: e.target.value })}
+                        placeholder="https://www.facebook.com/buddhism.mcu"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="font-semibold text-slate-700">LINE Official Account (LINE OA):</label>
+                        <label className="flex items-center gap-1 cursor-pointer text-[10px] text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={settings.showLineOa === true}
+                            onChange={(e) => setSettings({ ...settings, showLineOa: e.target.checked })}
+                            className="rounded border-slate-300 text-emerald-600 w-3 h-3"
+                          />
+                          <span>แสดง</span>
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        value={settings.lineOaUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, lineOaUrl: e.target.value })}
+                        placeholder="https://line.me/ti/p/... หรือ @buddhism.mcu"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="font-semibold text-slate-700">YouTube Channel:</label>
+                        <label className="flex items-center gap-1 cursor-pointer text-[10px] text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={settings.showYoutube === true}
+                            onChange={(e) => setSettings({ ...settings, showYoutube: e.target.checked })}
+                            className="rounded border-slate-300 text-rose-600 w-3 h-3"
+                          />
+                          <span>แสดง</span>
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        value={settings.youtubeUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, youtubeUrl: e.target.value })}
+                        placeholder="https://www.youtube.com/@buddhism_mcu"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="font-semibold text-slate-700">TikTok:</label>
+                        <label className="flex items-center gap-1 cursor-pointer text-[10px] text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={settings.showTiktok === true}
+                            onChange={(e) => setSettings({ ...settings, showTiktok: e.target.checked })}
+                            className="rounded border-slate-300 text-slate-900 w-3 h-3"
+                          />
+                          <span>แสดง</span>
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        value={settings.tiktokUrl || ''}
+                        onChange={(e) => setSettings({ ...settings, tiktokUrl: e.target.value })}
+                        placeholder="https://www.tiktok.com/@buddhism_mcu"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-slate-500/20"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

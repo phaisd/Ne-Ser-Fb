@@ -333,6 +333,64 @@ export default function Footer() {
                   </p>
                 )}
 
+                {settings.showSocialLinks !== false && (settings.showFacebook !== false || settings.showLineOa || settings.showYoutube || settings.showTiktok) && (
+                  <div className="pt-2 border-t border-slate-200/70 space-y-1.5">
+                    <span className="text-[11px] font-bold text-slate-700 block">
+                      ช่องทางโซเชียลมีเดีย (Social Media):
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {settings.showFacebook !== false && settings.facebookUrl && (
+                        <a
+                          href={settings.facebookUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shadow-xs transition hover:scale-105"
+                          title={settings.facebookTitle || 'Facebook คณะพุทธศาสตร์'}
+                        >
+                          <span className="w-3.5 h-3.5 rounded-full bg-white text-blue-600 flex items-center justify-center font-black text-[9px] leading-none">f</span>
+                          <span>Facebook คณะ</span>
+                        </a>
+                      )}
+                      {settings.showLineOa && settings.lineOaUrl && (
+                        <a
+                          href={settings.lineOaUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] shadow-xs transition hover:scale-105"
+                          title="LINE Official Account"
+                        >
+                          <span className="font-bold text-[10px]">LINE</span>
+                          <span>LINE OA</span>
+                        </a>
+                      )}
+                      {settings.showYoutube && settings.youtubeUrl && (
+                        <a
+                          href={settings.youtubeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] shadow-xs transition hover:scale-105"
+                          title="YouTube Channel"
+                        >
+                          <span className="text-[10px]">▶</span>
+                          <span>YouTube</span>
+                        </a>
+                      )}
+                      {settings.showTiktok && settings.tiktokUrl && (
+                        <a
+                          href={settings.tiktokUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-black text-white font-bold text-[11px] shadow-xs transition hover:scale-105"
+                          title="TikTok"
+                        >
+                          <span className="text-[10px]">♪</span>
+                          <span>TikTok</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {settings.showVisitorCounter !== false && (
                   <div className="pt-2">
                     <div className="inline-flex items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-[#161f30] border border-slate-700/80 shadow-md">
