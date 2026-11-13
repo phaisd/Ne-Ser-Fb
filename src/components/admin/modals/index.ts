@@ -18,5 +18,7 @@ export * from './CertificateTypesRepoModal';
 export * from './EventGroupImportModal';
 export * from './EventFormModal';
 export * from './CourseHistoryAndCloneModals';
+export * from './StudentAccessSlipModal';
+export * from './BatchStudentAccessSlipsModal';
 
 

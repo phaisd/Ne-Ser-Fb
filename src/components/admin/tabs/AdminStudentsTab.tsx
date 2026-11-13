@@ -17,9 +17,14 @@ import {
   Check,
   Archive,
 } from 'lucide-react';
-import { Student } from '@/types';
+import { Student, SystemSettings } from '@/types';
 import { maskPassport } from '@/lib/utils';
-import { StudentImportModal, ArchivedStudentsModal } from '../modals';
+import {
+  StudentImportModal,
+  ArchivedStudentsModal,
+  StudentAccessSlipModal,
+  BatchStudentAccessSlipsModal,
+} from '../modals';
 import { downloadStudentsCSV } from '@/components/students/studentCsvParser';
 
 interface AdminStudentsTabProps {
@@ -45,6 +50,7 @@ interface AdminStudentsTabProps {
   openPromotionModal: () => void;
   openDeleteBulkStudentsModal: () => void;
   openDeleteSingleStudentModal: (student: Student) => void;
+  settings?: Partial<SystemSettings>;
 }
 
 export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
@@ -70,11 +76,14 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
   openPromotionModal,
   openDeleteBulkStudentsModal,
   openDeleteSingleStudentModal,
+  settings,
 }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [isSweepingInactive, setIsSweepingInactive] = useState(false);
+  const [selectedStudentForSlip, setSelectedStudentForSlip] = useState<Student | null>(null);
+  const [isBatchSlipsOpen, setIsBatchSlipsOpen] = useState(false);
 
   const sourceList = allStudents.length > 0 ? allStudents : filteredStudents;
   const inactiveStudentsInRegistry = sourceList.filter((s) => {
@@ -222,6 +231,16 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
           >
             <Archive className="w-3.5 h-3.5 text-amber-700" />
             <span>📁 แฟ้มประวัตินิสิต (จบ/พ้นสภาพ/ลาออก)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsBatchSlipsOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-500/20 transition cursor-pointer"
+            title="พิมพ์บัตรแจ้งรหัสผ่านเข้าระบบสำหรับนิสิต ยกชั้นปี (เช่น นิสิตปี 1 เข้าใหม่) หรือตามตัวกรอง"
+          >
+            <span>🪪</span>
+            <span>พิมพ์บัตรเข้าระบบ (ยกชั้นปี)</span>
           </button>
 
           <button
@@ -501,6 +520,15 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
                       </td>
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedStudentForSlip(s)}
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200 transition inline-flex items-center gap-1 cursor-pointer"
+                            title="พิมพ์บัตรแจ้งรหัสผ่านเข้าระบบสำหรับนิสิตรายนี้"
+                          >
+                            <span>🪪</span>
+                            <span>บัตร</span>
+                          </button>
                           <Link
                             href={`/students?search=${s.studentCode}&edit=true`}
                             className="px-2.5 py-1 rounded-lg text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 transition inline-flex items-center gap-1"
@@ -550,6 +578,22 @@ export const AdminStudentsTab: React.FC<AdminStudentsTabProps> = ({
         onStudentRestored={() => {
           if (onRefresh) onRefresh();
         }}
+      />
+
+      {/* Single Student Access Slip Modal */}
+      <StudentAccessSlipModal
+        student={selectedStudentForSlip}
+        onClose={() => setSelectedStudentForSlip(null)}
+        settings={settings}
+      />
+
+      {/* Batch Student Access Slips Modal */}
+      <BatchStudentAccessSlipsModal
+        isOpen={isBatchSlipsOpen}
+        onClose={() => setIsBatchSlipsOpen(false)}
+        students={allStudents.length > 0 ? allStudents : filteredStudents}
+        selectedStudentCodes={adminSelectedStudentCodes}
+        settings={settings}
       />
     </div>
   );

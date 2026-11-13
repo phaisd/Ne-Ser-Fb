@@ -787,6 +787,7 @@ export default function AdminConsolePage() {
               openPromotionModal={adminStudents.openPromotionModal}
               openDeleteBulkStudentsModal={adminStudents.openDeleteBulkStudentsModal}
               openDeleteSingleStudentModal={adminStudents.openDeleteSingleStudentModal}
+              settings={adminSettings.settings}
             />
           )}
 
