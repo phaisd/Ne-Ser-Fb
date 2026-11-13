@@ -93,6 +93,12 @@ export interface AdmissionPortalConfig {
   applyFormTitle?: string;
   applyFormSubtitle?: string;
   showDocumentUploadField: boolean;
+  showGpaField?: boolean;
+  showEmailField?: boolean;
+  showLineIdField?: boolean;
+  applicantTypeOptions?: AdmissionSelectOptionItem[];
+  nationalityTypeOptions?: AdmissionSelectOptionItem[];
+  programLanguageOptions?: AdmissionSelectOptionItem[];
   degreeOptions: AdmissionSelectOptionItem[];
   majorOptions: AdmissionSelectOptionItem[];
   studyPlanOptions: AdmissionSelectOptionItem[];

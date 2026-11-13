@@ -84,6 +84,51 @@ export const DEFAULT_ADMISSION_PORTAL_CONFIG: AdmissionPortalConfig = {
   applyFormSubtitle:
     'กรอกข้อมูลผู้สมัครให้ครบถ้วน ระบบจะออกรหัสใบสมัครเพื่อใช้ตรวจสอบสถานะและขึ้นทะเบียนนิสิตออนไลน์ทันที',
   showDocumentUploadField: true,
+  showGpaField: true,
+  showEmailField: true,
+  showLineIdField: true,
+  applicantTypeOptions: [
+    {
+      id: 'app-type-monk',
+      value: 'MONK',
+      label: 'พระภิกษุ / สามเณร (บรรพชิต)',
+      enabled: true,
+    },
+    {
+      id: 'app-type-layman',
+      value: 'LAYMAN',
+      label: 'บุคคลทั่วไป (คฤหัสถ์ ชาย-หญิง)',
+      enabled: true,
+    },
+  ],
+  nationalityTypeOptions: [
+    {
+      id: 'nat-type-thai',
+      value: 'THAI',
+      label: '🇹🇭 สัญชาติไทย (บัตรประชาชน 13 หลัก)',
+      enabled: true,
+    },
+    {
+      id: 'nat-type-inter',
+      value: 'INTERNATIONAL',
+      label: '🌐 ชาวต่างชาติ / International (Passport No.)',
+      enabled: true,
+    },
+  ],
+  programLanguageOptions: [
+    {
+      id: 'lang-thai',
+      value: 'THAI',
+      label: '🇹🇭 หลักสูตรภาษาไทย (Thai Program)',
+      enabled: true,
+    },
+    {
+      id: 'lang-eng',
+      value: 'ENGLISH',
+      label: '🌐 หลักสูตรภาษาอังกฤษ (International Program)',
+      enabled: true,
+    },
+  ],
   degreeOptions: [
     {
       id: 'deg-ba',
@@ -406,6 +451,18 @@ export function resolveAdmissionPortalConfig(
     applyFormTitle: c.applyFormTitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.applyFormTitle,
     applyFormSubtitle: c.applyFormSubtitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.applyFormSubtitle,
     showDocumentUploadField: c.showDocumentUploadField !== false,
+    showGpaField: c.showGpaField !== false,
+    showEmailField: c.showEmailField !== false,
+    showLineIdField: c.showLineIdField !== false,
+    applicantTypeOptions: Array.isArray(c.applicantTypeOptions)
+      ? c.applicantTypeOptions
+      : DEFAULT_ADMISSION_PORTAL_CONFIG.applicantTypeOptions,
+    nationalityTypeOptions: Array.isArray(c.nationalityTypeOptions)
+      ? c.nationalityTypeOptions
+      : DEFAULT_ADMISSION_PORTAL_CONFIG.nationalityTypeOptions,
+    programLanguageOptions: Array.isArray(c.programLanguageOptions)
+      ? c.programLanguageOptions
+      : DEFAULT_ADMISSION_PORTAL_CONFIG.programLanguageOptions,
     degreeOptions: Array.isArray(c.degreeOptions)
       ? c.degreeOptions
       : DEFAULT_ADMISSION_PORTAL_CONFIG.degreeOptions,

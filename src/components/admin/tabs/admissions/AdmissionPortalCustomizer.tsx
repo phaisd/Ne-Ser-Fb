@@ -39,6 +39,15 @@ interface AdmissionPortalCustomizerProps {
 
 type CustomizerSection = 'VISIBILITY' | 'SECTION1' | 'SECTION2' | 'SECTION3' | 'SECTION4';
 
+type SelectOptionKey =
+  | 'degreeOptions'
+  | 'majorOptions'
+  | 'studyPlanOptions'
+  | 'previousEducationOptions'
+  | 'applicantTypeOptions'
+  | 'nationalityTypeOptions'
+  | 'programLanguageOptions';
+
 type EditModalState =
   | {
       type: 'qualification';
@@ -57,7 +66,7 @@ type EditModalState =
     }
   | {
       type: 'selectOption';
-      key: 'degreeOptions' | 'majorOptions' | 'studyPlanOptions' | 'previousEducationOptions';
+      key: SelectOptionKey;
       categoryTitle: string;
       id: string;
       label: string;
@@ -142,16 +151,17 @@ export function AdmissionPortalCustomizer({
   };
 
   const addSelectOption = (
-    key: 'degreeOptions' | 'majorOptions' | 'studyPlanOptions' | 'previousEducationOptions',
-    defaultLabel: string
+    key: SelectOptionKey,
+    defaultLabel: string,
+    defaultValue?: string
   ) => {
     const newItem: AdmissionSelectOptionItem = {
       id: `opt-${Date.now().toString(36)}`,
-      value: defaultLabel,
+      value: defaultValue || defaultLabel,
       label: defaultLabel,
       enabled: true,
     };
-    updateConfig((prev) => ({ ...prev, [key]: [...prev[key], newItem] }));
+    updateConfig((prev) => ({ ...prev, [key]: [...(prev[key] || []), newItem] }));
   };
 
   const addCourseForDegree = (
@@ -226,7 +236,7 @@ export function AdmissionPortalCustomizer({
     } else if (editingItem.type === 'selectOption') {
       updateConfig((prev) => ({
         ...prev,
-        [editingItem.key]: prev[editingItem.key].map((item) =>
+        [editingItem.key]: (prev[editingItem.key] || []).map((item) =>
           item.id === editingItem.id
             ? {
                 ...item,
@@ -273,10 +283,11 @@ export function AdmissionPortalCustomizer({
 
   const renderSelectOptionEditor = (
     title: string,
-    key: 'degreeOptions' | 'majorOptions' | 'studyPlanOptions' | 'previousEducationOptions',
-    addPlaceholder: string
+    key: SelectOptionKey,
+    addPlaceholder: string,
+    addDefaultValue?: string
   ) => {
-    const list = config[key];
+    const list = config[key] || [];
     return (
       <div className="bg-slate-50/80 rounded-2xl border border-slate-200 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -285,7 +296,7 @@ export function AdmissionPortalCustomizer({
           </h4>
           <button
             type="button"
-            onClick={() => addSelectOption(key, addPlaceholder)}
+            onClick={() => addSelectOption(key, addPlaceholder, addDefaultValue)}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -308,11 +319,16 @@ export function AdmissionPortalCustomizer({
                   value={opt.label}
                   onChange={(e) => {
                     const val = e.target.value;
+                    const preserveValue =
+                      key === 'degreeOptions' ||
+                      key === 'applicantTypeOptions' ||
+                      key === 'nationalityTypeOptions' ||
+                      key === 'programLanguageOptions';
                     updateConfig((prev) => ({
                       ...prev,
-                      [key]: prev[key].map((item) =>
+                      [key]: (prev[key] || []).map((item) =>
                         item.id === opt.id
-                          ? { ...item, label: val, value: key === 'degreeOptions' ? item.value : val }
+                          ? { ...item, label: val, value: preserveValue ? item.value : val }
                           : item
                       ),
                     }));
@@ -327,7 +343,7 @@ export function AdmissionPortalCustomizer({
                     const val = e.target.value;
                     updateConfig((prev) => ({
                       ...prev,
-                      [key]: prev[key].map((item) =>
+                      [key]: (prev[key] || []).map((item) =>
                         item.id === opt.id ? { ...item, value: val } : item
                       ),
                     }));
@@ -343,7 +359,7 @@ export function AdmissionPortalCustomizer({
                   onClick={() =>
                     updateConfig((prev) => ({
                       ...prev,
-                      [key]: prev[key].map((item) =>
+                      [key]: (prev[key] || []).map((item) =>
                         item.id === opt.id ? { ...item, enabled: !item.enabled } : item
                       ),
                     }))
@@ -378,12 +394,14 @@ export function AdmissionPortalCustomizer({
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    updateConfig((prev) => ({
-                      ...prev,
-                      [key]: prev[key].filter((item) => item.id !== opt.id),
-                    }))
-                  }
+                  onClick={() => {
+                    if (window.confirm(`ต้องการลบตัวเลือก "${opt.label}" หรือไม่?`)) {
+                      updateConfig((prev) => ({
+                        ...prev,
+                        [key]: (prev[key] || []).filter((item) => item.id !== opt.id),
+                      }));
+                    }
+                  }}
                   className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer"
                   title="ลบรายการนี้"
                 >
@@ -1077,44 +1095,119 @@ export function AdmissionPortalCustomizer({
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900"
               />
             </div>
-            <div className="md:col-span-2 flex items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
-              <div>
-                <div className="font-bold text-slate-900">📎 เปิดแสดงช่องแนบไฟล์ / ลิงก์เอกสารเบื้องต้นในแบบฟอร์ม</div>
-                <div className="text-[11px] text-slate-500">ผู้สมัครสามารถอัปโหลด PDF/รูปภาพ หรือวางลิงก์ Google Drive ในขั้นตอนยื่นใบสมัครได้</div>
+            {/* Field Display Switches */}
+            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
+                <div>
+                  <div className="font-bold text-slate-900">📎 เปิดแสดงช่องแนบไฟล์ / ลิงก์เอกสารเบื้องต้น</div>
+                  <div className="text-[11px] text-slate-500">ผู้สมัครสามารถอัปโหลด PDF หรือใส่ลิงก์ Drive ได้</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={config.showDocumentUploadField !== false}
+                    onChange={(e) =>
+                      updateConfig((prev) => ({ ...prev, showDocumentUploadField: e.target.checked }))
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input
-                  type="checkbox"
-                  checked={config.showDocumentUploadField !== false}
-                  onChange={(e) =>
-                    updateConfig((prev) => ({ ...prev, showDocumentUploadField: e.target.checked }))
-                  }
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-              </label>
+
+              <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
+                <div>
+                  <div className="font-bold text-slate-900">📊 เปิดแสดงช่อง เกรดเฉลี่ยสะสม (GPAX - ข้อ ๑๒)</div>
+                  <div className="text-[11px] text-slate-500">เปิดหรือปิดการแสดงช่องเกรดสะสมในแบบฟอร์ม</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={config.showGpaField !== false}
+                    onChange={(e) =>
+                      updateConfig((prev) => ({ ...prev, showGpaField: e.target.checked }))
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
+                <div>
+                  <div className="font-bold text-slate-900">✉️ เปิดแสดงช่อง อีเมล (Email - ข้อ ๑๔)</div>
+                  <div className="text-[11px] text-slate-500">เปิดหรือปิดการแสดงช่องกรอกอีเมลในแบบฟอร์ม</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={config.showEmailField !== false}
+                    onChange={(e) =>
+                      updateConfig((prev) => ({ ...prev, showEmailField: e.target.checked }))
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
+                <div>
+                  <div className="font-bold text-slate-900">💬 เปิดแสดงช่อง LINE ID (ข้อ ๑๕)</div>
+                  <div className="text-[11px] text-slate-500">เปิดหรือปิดช่อง LINE ID สำหรับแจ้งเตือนสัมภาษณ์</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={config.showLineIdField !== false}
+                    onChange={(e) =>
+                      updateConfig((prev) => ({ ...prev, showLineIdField: e.target.checked }))
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+              </div>
             </div>
           </div>
 
           {renderSelectOptionEditor(
-            'ระดับหลักสูตรที่เปิดรับสมัคร (Degree Levels)',
+            '๑. ตัวเลือกสถานภาพผู้สมัคร (ข้อ ๑: พระภิกษุ-สามเณร / บุคคลทั่วไป)',
+            'applicantTypeOptions',
+            'สถานภาพใหม่',
+            'MONK'
+          )}
+          {renderSelectOptionEditor(
+            '๒. ตัวเลือกประเภทผู้สมัคร (ข้อ ๒: สัญชาติไทย / ชาวต่างชาติ)',
+            'nationalityTypeOptions',
+            'ประเภทผู้สมัครใหม่',
+            'THAI'
+          )}
+          {renderSelectOptionEditor(
+            '๗. ระดับหลักสูตรที่เปิดรับสมัคร (ข้อ ๗: ปริญญาตรี / โท / เอก / ป.บัณฑิต)',
             'degreeOptions',
             'หลักสูตรใหม่'
           )}
           {renderSelectOptionEditor(
-            'สาขาวิชาที่เปิดรับสมัคร (Majors / Programs)',
+            '๘. ตัวเลือกหลักสูตรภาษา (ข้อ ๘: ภาษาไทย / ภาษาอังกฤษ)',
+            'programLanguageOptions',
+            'หลักสูตรภาษาใหม่',
+            'THAI'
+          )}
+          {renderSelectOptionEditor(
+            '๙. สาขาวิชาที่เปิดรับสมัคร (ข้อ ๙)',
             'majorOptions',
             'สาขาวิชาใหม่'
           )}
           {renderSelectOptionEditor(
-            'แผนการเรียนที่เปิดรับสมัคร (Study Plans)',
-            'studyPlanOptions',
-            'แผนการเรียนใหม่'
-          )}
-          {renderSelectOptionEditor(
-            'ตัวเลือกวุฒิการศึกษาเดิม (Previous Education)',
+            '๑๐. ตัวเลือกวุฒิการศึกษาเดิม (ข้อ ๑๐)',
             'previousEducationOptions',
             'วุฒิการศึกษาอื่น ๆ'
+          )}
+          {renderSelectOptionEditor(
+            '๑๑. แผนการเรียนที่เปิดรับสมัคร (ข้อ ๑๑: ภาคปกติ / ภาคพิเศษ)',
+            'studyPlanOptions',
+            'แผนการเรียนใหม่'
           )}
 
           <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 space-y-1.5">

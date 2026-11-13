@@ -62,6 +62,27 @@ export function EnrollApplyFormTab({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submittedApp, setSubmittedApp] = useState<AdmissionApplication | null>(null);
 
+  const enabledApplicantTypeOptions = useMemo(
+    () =>
+      (portalConfig.applicantTypeOptions || DEFAULT_ADMISSION_PORTAL_CONFIG.applicantTypeOptions || []).filter(
+        (o) => o.enabled !== false
+      ),
+    [portalConfig.applicantTypeOptions]
+  );
+  const enabledNationalityTypeOptions = useMemo(
+    () =>
+      (portalConfig.nationalityTypeOptions || DEFAULT_ADMISSION_PORTAL_CONFIG.nationalityTypeOptions || []).filter(
+        (o) => o.enabled !== false
+      ),
+    [portalConfig.nationalityTypeOptions]
+  );
+  const enabledProgramLanguageOptions = useMemo(
+    () =>
+      (portalConfig.programLanguageOptions || DEFAULT_ADMISSION_PORTAL_CONFIG.programLanguageOptions || []).filter(
+        (o) => o.enabled !== false
+      ),
+    [portalConfig.programLanguageOptions]
+  );
   const enabledDegreeOptions = useMemo(
     () => portalConfig.degreeOptions.filter((o) => o.enabled !== false),
     [portalConfig.degreeOptions]
@@ -78,6 +99,33 @@ export function EnrollApplyFormTab({
     () => portalConfig.previousEducationOptions.filter((o) => o.enabled !== false),
     [portalConfig.previousEducationOptions]
   );
+
+  useEffect(() => {
+    if (
+      enabledApplicantTypeOptions.length > 0 &&
+      !enabledApplicantTypeOptions.some((o) => o.value === applicantType)
+    ) {
+      setApplicantType(enabledApplicantTypeOptions[0].value as 'MONK' | 'LAYMAN');
+    }
+  }, [enabledApplicantTypeOptions, applicantType]);
+
+  useEffect(() => {
+    if (
+      enabledNationalityTypeOptions.length > 0 &&
+      !enabledNationalityTypeOptions.some((o) => o.value === nationalityType)
+    ) {
+      setNationalityType(enabledNationalityTypeOptions[0].value as 'THAI' | 'INTERNATIONAL');
+    }
+  }, [enabledNationalityTypeOptions, nationalityType]);
+
+  useEffect(() => {
+    if (
+      enabledProgramLanguageOptions.length > 0 &&
+      !enabledProgramLanguageOptions.some((o) => o.value === programType)
+    ) {
+      setProgramType(enabledProgramLanguageOptions[0].value as 'THAI' | 'ENGLISH');
+    }
+  }, [enabledProgramLanguageOptions, programType]);
 
   useEffect(() => {
     if (enabledDegreeOptions.length > 0 && !enabledDegreeOptions.some((o) => o.value === degreeLevel)) {
@@ -321,8 +369,11 @@ export function EnrollApplyFormTab({
                     }}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 font-bold text-slate-900"
                   >
-                    <option value="MONK">พระภิกษุ / สามเณร (บรรพชิต)</option>
-                    <option value="LAYMAN">บุคคลทั่วไป (คฤหัสถ์ ชาย-หญิง)</option>
+                    {enabledApplicantTypeOptions.map((opt) => (
+                      <option key={opt.id} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -344,8 +395,11 @@ export function EnrollApplyFormTab({
                     }}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 font-bold text-slate-900"
                   >
-                    <option value="THAI">🇹🇭 สัญชาติไทย (บัตรประชาชน 13 หลัก)</option>
-                    <option value="INTERNATIONAL">🌐 ชาวต่างชาติ / International (Passport No.)</option>
+                    {enabledNationalityTypeOptions.map((opt) => (
+                      <option key={opt.id} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -449,8 +503,11 @@ export function EnrollApplyFormTab({
                     onChange={(e) => setProgramType(e.target.value as 'THAI' | 'ENGLISH')}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 font-bold text-slate-900"
                   >
-                    <option value="THAI">🇹🇭 หลักสูตรภาษาไทย (Thai Program)</option>
-                    <option value="ENGLISH">🌐 หลักสูตรภาษาอังกฤษ (International Program)</option>
+                    {enabledProgramLanguageOptions.map((opt) => (
+                      <option key={opt.id} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -491,7 +548,7 @@ export function EnrollApplyFormTab({
                   </select>
                 </div>
 
-                <div>
+                <div className={portalConfig.showGpaField === false ? 'md:col-span-2' : ''}>
                   <label className="block font-bold text-slate-800 mb-1.5">
                     ๑๑. แผนการเรียนที่ประสงค์สมัคร <span className="text-rose-600">*</span>
                   </label>
@@ -508,23 +565,33 @@ export function EnrollApplyFormTab({
                   </select>
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1.5">
-                    ๑๒. เกรดเฉลี่ยสะสม (GPAX) (ถ้ามี)
-                  </label>
-                  <input
-                    type="text"
-                    value={gpa}
-                    onChange={(e) => setGpa(e.target.value)}
-                    placeholder="เช่น 3.25"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900"
-                  />
-                </div>
+                {portalConfig.showGpaField !== false && (
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1.5">
+                      ๑๒. เกรดเฉลี่ยสะสม (GPAX) (ถ้ามี)
+                    </label>
+                    <input
+                      type="text"
+                      value={gpa}
+                      onChange={(e) => setGpa(e.target.value)}
+                      placeholder="เช่น 3.25"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Row 5: Phone, Email, LINE ID */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
+                <div
+                  className={
+                    portalConfig.showEmailField === false && portalConfig.showLineIdField === false
+                      ? 'md:col-span-3'
+                      : portalConfig.showEmailField === false || portalConfig.showLineIdField === false
+                      ? 'md:col-span-2'
+                      : ''
+                  }
+                >
                   <label className="block font-bold text-slate-800 mb-1.5">
                     ๑๓. หมายเลขโทรศัพท์ติดต่อ <span className="text-rose-600">*</span>
                   </label>
@@ -538,31 +605,35 @@ export function EnrollApplyFormTab({
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1.5">
-                    ๑๔. อีเมล (Email)
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="example@gmail.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900"
-                  />
-                </div>
+                {portalConfig.showEmailField !== false && (
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1.5">
+                      ๑๔. อีเมล (Email)
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="example@gmail.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900"
+                    />
+                  </div>
+                )}
 
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1.5">
-                    ๑๕. LINE ID (สำหรับรับแจ้งเตือนสัมภาษณ์)
-                  </label>
-                  <input
-                    type="text"
-                    value={lineId}
-                    onChange={(e) => setLineId(e.target.value)}
-                    placeholder="ระบุไอดีไลน์ (ถ้ามี)"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900"
-                  />
-                </div>
+                {portalConfig.showLineIdField !== false && (
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1.5">
+                      ๑๕. LINE ID (สำหรับรับแจ้งเตือนสัมภาษณ์)
+                    </label>
+                    <input
+                      type="text"
+                      value={lineId}
+                      onChange={(e) => setLineId(e.target.value)}
+                      placeholder="ระบุไอดีไลน์ (ถ้ามี)"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Row 6: Address & Optional Document Upload */}
