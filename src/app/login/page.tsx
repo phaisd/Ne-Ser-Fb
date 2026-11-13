@@ -48,9 +48,10 @@ interface GoogleAccountsApi {
         callback: (response: { credential?: string }) => Promise<void> | void;
         auto_select?: boolean;
       }) => void;
-      prompt: () => void;
+      prompt: (notification?: (notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void;
       renderButton?: (parent: HTMLElement, options: GoogleButtonOptions) => void;
       disableAutoSelect?: () => void;
+      revoke?: (hint: string, done?: (response: unknown) => void) => void;
     };
   };
 }
@@ -76,11 +77,21 @@ function LoginForm() {
   // Active session in another tab (only valid if NOT logged out)
   const [activeBrowserUser, setActiveBrowserUser] = useState<AuthUser | null>(null);
   const [gisButtonReady, setGisButtonReady] = useState(false);
+  const [isGoogleAccountForgotten, setIsGoogleAccountForgotten] = useState(false);
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
   const isPersonalDeviceRef = useRef(isPersonalDevice);
   useEffect(() => {
     isPersonalDeviceRef.current = isPersonalDevice;
   }, [isPersonalDevice]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const forgotten = localStorage.getItem('mcu_google_account_forgotten') === 'true';
+      if (forgotten) {
+        setIsGoogleAccountForgotten(true);
+      }
+    }
+  }, []);
 
   const handleForgetSavedAccount = async () => {
     try {
@@ -90,14 +101,70 @@ function LoginForm() {
     setActiveBrowserUser(null);
     setEmail('');
     setPassword('');
+
+    // Mark as forgotten so F5 / reload will NOT re-render personalized Google iframe
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mcu_google_account_forgotten', 'true');
+    }
+    setIsGoogleAccountForgotten(true);
+
+    // Immediately remove Google iframe from DOM
+    if (googleButtonRef.current) {
+      googleButtonRef.current.innerHTML = '';
+    }
+    setGisButtonReady(false);
+
+    // Revoke Google Identity Services session if available
     const g = (window as unknown as GoogleIdentityWindow).google;
-    if (g?.accounts?.id?.disableAutoSelect) {
+    if (g?.accounts?.id) {
+      if (typeof g.accounts.id.disableAutoSelect === 'function') {
+        try {
+          g.accounts.id.disableAutoSelect();
+        } catch {}
+      }
+      const lastEmail =
+        typeof window !== 'undefined' ? localStorage.getItem('mcu_last_google_email') : null;
+      if (lastEmail && typeof g.accounts.id.revoke === 'function') {
+        try {
+          g.accounts.id.revoke(lastEmail, () => {});
+        } catch {}
+      }
+    }
+
+    setSuccess('ล้างข้อมูลบัญชีที่จำไว้เรียบร้อยแล้ว');
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
+  const handleGoogleSignInClick = () => {
+    if (activeBrowserUser && !isGoogleAccountForgotten && (activeBrowserUser.gmail || activeBrowserUser.email)) {
+      navigateAfterAuth(activeBrowserUser);
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mcu_google_account_forgotten');
+    }
+    setIsGoogleAccountForgotten(false);
+
+    const g = typeof window !== 'undefined' ? (window as unknown as GoogleIdentityWindow).google : null;
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || settings?.googleClientId;
+
+    if (g?.accounts?.id && clientId) {
       try {
-        g.accounts.id.disableAutoSelect();
+        g.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            setCustomGmail('');
+            setGooglePassword('');
+            setIsGoogleModalOpen(true);
+          }
+        });
+        return;
       } catch {}
     }
-    setSuccess('ล้างข้อมูลบัญชีที่จำไว้และตัดการเชื่อมต่อเรียบร้อยแล้ว');
-    setTimeout(() => setSuccess(null), 3000);
+
+    setCustomGmail('');
+    setGooglePassword('');
+    setIsGoogleModalOpen(true);
   };
 
   // Google Login Modal State
@@ -175,6 +242,18 @@ function LoginForm() {
       const g = (window as unknown as GoogleIdentityWindow).google;
       if (!g?.accounts?.id) return;
 
+      const forgotten =
+        typeof window !== 'undefined' &&
+        localStorage.getItem('mcu_google_account_forgotten') === 'true';
+
+      if (forgotten || isGoogleAccountForgotten) {
+        setGisButtonReady(false);
+        if (googleButtonRef.current) {
+          googleButtonRef.current.innerHTML = '';
+        }
+        return;
+      }
+
       g.accounts.id.initialize({
         client_id: clientId,
         callback: async (response: { credential?: string }) => {
@@ -194,6 +273,12 @@ function LoginForm() {
               });
               const data = await res.json();
               if (data.success && data.user) {
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('mcu_google_account_forgotten');
+                  if (data.user.email) {
+                    localStorage.setItem('mcu_last_google_email', data.user.email);
+                  }
+                }
                 saveAuthSession(data.user, rememberMe);
                 setSuccess(`เข้าสู่ระบบด้วย Google สำเร็จ: ยินดีต้อนรับ ${data.user.name}`);
                 setTimeout(() => navigateAfterAuth(data.user), 600);
@@ -241,7 +326,7 @@ function LoginForm() {
     script.defer = true;
     script.onload = initGoogleIdentity;
     document.body.appendChild(script);
-  }, [settings?.googleClientId, activeBrowserUser]);
+  }, [settings?.googleClientId, activeBrowserUser, isGoogleAccountForgotten]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -700,64 +785,48 @@ function LoginForm() {
           </span>
         </div>
 
-        {/* ปุ่มลงชื่อเข้าใช้ด้วย Google / Gmail & ปุ่มล้างบัญชีค้าง */}
-        <div className="space-y-3">
-          {/* ปุ่ม Google แบบเต็มแถวเพื่อความสมดุลทั้งจอมือถือและคอมพิวเตอร์ */}
-          {!activeBrowserUser && (
-            <div
-              ref={googleButtonRef}
-              className={gisButtonReady ? 'w-full flex justify-center min-h-[44px]' : 'hidden'}
-            />
-          )}
-          {(activeBrowserUser || !gisButtonReady) && (
-            <button
-              type="button"
-              onClick={() => {
-                // 1. If already signed in on this browser (active session not logged out), continue immediately
-                if (activeBrowserUser && (activeBrowserUser.gmail || activeBrowserUser.email)) {
-                  navigateAfterAuth(activeBrowserUser);
-                  return;
-                }
-                // 2. If Google Identity Services (One-Tap) is initialized, trigger real OAuth token prompt
-                const g = typeof window !== 'undefined' ? (window as unknown as GoogleIdentityWindow).google : null;
-                if (g?.accounts?.id && (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || settings?.googleClientId)) {
-                  g.accounts.id.prompt();
-                  return;
-                }
-                // 3. Otherwise open the password-required verification modal (with autofill disabled)
-                setCustomGmail('');
-                setGooglePassword('');
-                setIsGoogleModalOpen(true);
-              }}
-              disabled={loading}
-              className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-700 rounded-xl text-sm font-semibold shadow-xs transition flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50 min-h-[44px]"
-            >
-              <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-              </svg>
-              <span className="truncate">
-                {activeBrowserUser
-                  ? `เข้าสู่ระบบต่อในชื่อ ${activeBrowserUser.name}`
-                  : 'ดำเนินการต่อโดยใช้ Google'}
-              </span>
-            </button>
-          )}
-
-          {/* ปุ่มล้างบัญชีค้าง / ไม่จดจำ จัดวางตรงกลาง ให้ดูเป็นระเบียบ ไม่ล้นหรือเบียดกับปุ่ม Google */}
-          <div className="flex items-center justify-center pt-0.5">
-            <button
-              type="button"
-              onClick={handleForgetSavedAccount}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
-              title="ล้างข้อมูลบัญชีที่จำไว้และตัดการเชื่อมต่อ Google ชั่วคราว"
-            >
-              <UserX className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-              <span>ล้างบัญชีค้าง / ไม่จดจำบัญชีนี้</span>
-            </button>
+        {/* แถวปุ่ม Google และปุ่มไอคอนล้างบัญชีค้าง */}
+        <div className="flex items-center gap-2.5 w-full">
+          {/* ปุ่ม Google (ใช้ flex-1 เต็มพื้นที่ด้านซ้าย) */}
+          <div className="flex-1 min-w-0">
+            {!isGoogleAccountForgotten && !activeBrowserUser && (
+              <div
+                ref={googleButtonRef}
+                className={gisButtonReady ? 'w-full flex justify-center min-h-[44px]' : 'hidden'}
+              />
+            )}
+            {(isGoogleAccountForgotten || activeBrowserUser || !gisButtonReady) && (
+              <button
+                type="button"
+                onClick={handleGoogleSignInClick}
+                disabled={loading}
+                className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-700 rounded-xl text-sm font-semibold shadow-xs transition flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50 min-h-[44px]"
+              >
+                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+                <span className="truncate">
+                  {activeBrowserUser && !isGoogleAccountForgotten
+                    ? `เข้าสู่ระบบต่อในชื่อ ${activeBrowserUser.name}`
+                    : 'ดำเนินการต่อโดยใช้ Google'}
+                </span>
+              </button>
+            )}
           </div>
+
+          {/* ปุ่มไอคอนล้างบัญชีค้าง / สลับบัญชี (ใช้ไอคอนสื่อความหมายแทนข้อความยาว) */}
+          <button
+            type="button"
+            onClick={handleForgetSavedAccount}
+            className="h-[44px] w-[44px] shrink-0 rounded-xl bg-white hover:bg-rose-50 border border-slate-300 hover:border-rose-400 text-slate-400 hover:text-rose-600 transition flex items-center justify-center shadow-xs cursor-pointer group"
+            title="ล้างบัญชีค้าง / ไม่จดจำบัญชีนี้ (สลับบัญชี Google)"
+            aria-label="ล้างบัญชีค้าง / ไม่จดจำบัญชีนี้"
+          >
+            <UserX className="w-5 h-5 text-slate-400 group-hover:text-rose-600 transition" />
+          </button>
         </div>
       </div>
 

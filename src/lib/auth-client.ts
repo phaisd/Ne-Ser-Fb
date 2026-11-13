@@ -195,17 +195,35 @@ export function clearAuthSession() {
   if (typeof window === 'undefined') return;
 
   try {
+    const lastUserStr = localStorage.getItem('mcu_current_user');
+    let lastEmail = '';
+    if (lastUserStr) {
+      try {
+        const parsed = JSON.parse(lastUserStr);
+        lastEmail = parsed.email || parsed.gmail || '';
+      } catch {}
+    }
+
     localStorage.removeItem('mcu_current_user');
     localStorage.removeItem('mcu_remember_me');
     localStorage.removeItem(SAVED_ACCOUNTS_KEY);
+    localStorage.setItem('mcu_google_account_forgotten', 'true');
     document.cookie = 'mcu_auth_user=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'mcu_session_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    // If Google Identity is loaded in window, disable auto-select on next login
+
+    // If Google Identity is loaded in window, disable auto-select and revoke session on logout
     const g = (window as any).google;
-    if (g?.accounts?.id?.disableAutoSelect) {
-      try {
-        g.accounts.id.disableAutoSelect();
-      } catch {}
+    if (g?.accounts?.id) {
+      if (typeof g.accounts.id.disableAutoSelect === 'function') {
+        try {
+          g.accounts.id.disableAutoSelect();
+        } catch {}
+      }
+      if (lastEmail && typeof g.accounts.id.revoke === 'function') {
+        try {
+          g.accounts.id.revoke(lastEmail, () => {});
+        } catch {}
+      }
     }
     window.dispatchEvent(new Event('mcu_user_logged_out'));
   } catch (e) {}
