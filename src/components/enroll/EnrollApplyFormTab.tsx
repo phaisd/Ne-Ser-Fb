@@ -270,8 +270,7 @@ export function EnrollApplyFormTab({
             <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
               <FileText className="w-5 h-5 text-orange-600" />
               <span>
-                {portalConfig.applyFormTitle || 'แบบฟอร์มยื่นใบสมัครเข้าศึกษาออนไลน์ คณะพุทธศาสตร์ มจร'}{' '}
-                (ปีการศึกษา {academicYear})
+                {portalConfig.applyFormTitle || 'แบบฟอร์มยื่นใบสมัครเข้าศึกษาออนไลน์ คณะพุทธศาสตร์ มจร'}
               </span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
