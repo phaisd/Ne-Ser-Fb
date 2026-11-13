@@ -11,6 +11,7 @@ import {
   deleteCertificateRequest,
   clearMockApprovedRequests,
   syncCertificateRequestsToSheets,
+  updateStudent,
 } from '@/lib/data-store';
 import { sendNotification, type NotificationPayload } from '@/lib/notifier';
 import {
@@ -148,6 +149,36 @@ export async function POST(request: Request) {
       console.log('[POST /api/certificates] Notification sent result:', notifRes);
     } catch (e) {
       console.error('[POST /api/certificates] Notification error on POST:', e);
+    }
+
+    // Sync/update student profile fields in registry if provided (except Full Name which is locked)
+    if (rest.applicantType !== 'STAFF' && studentCode && !studentCode.startsWith('STAFF')) {
+      const studentUpdates: Record<string, any> = {};
+      if (rest.age) studentUpdates.age = rest.age;
+      if (rest.vassa) studentUpdates.vassa = rest.vassa;
+      if (rest.gender) studentUpdates.gender = rest.gender;
+      if (rest.nationality) studentUpdates.nationality = rest.nationality;
+      if (rest.country) studentUpdates.country = rest.country;
+      if (rest.passportNo) studentUpdates.passportNo = rest.passportNo;
+      if (rest.passportExpireDate) studentUpdates.passportExpireDate = rest.passportExpireDate;
+      if (rest.visaType) studentUpdates.visaType = rest.visaType;
+      if (rest.visaExpireDate) studentUpdates.visaExpireDate = rest.visaExpireDate;
+      if (rest.gpa) studentUpdates.gpa = rest.gpa;
+      if (rest.address) studentUpdates.address = rest.address;
+      if (rest.subdistrict) studentUpdates.subdistrict = rest.subdistrict;
+      if (rest.district) studentUpdates.district = rest.district;
+      if (rest.province) studentUpdates.province = rest.province;
+      if (rest.postalCode) studentUpdates.postalCode = rest.postalCode;
+      if (major) studentUpdates.major = major;
+      if (degreeLevel) studentUpdates.degree = degreeLevel;
+      if (email) studentUpdates.email = email;
+      if (phone) studentUpdates.phoneNumber = phone;
+
+      if (Object.keys(studentUpdates).length > 0) {
+        updateStudent(studentCode, studentUpdates).catch((err) =>
+          console.warn('[POST /api/certificates] updateStudent warning:', err)
+        );
+      }
     }
 
     return NextResponse.json({ success: true, data: newReq });

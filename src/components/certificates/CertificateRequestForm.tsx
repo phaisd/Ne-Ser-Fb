@@ -351,6 +351,35 @@ export function CertificateRequestForm({
 
     const isStaffCert = selectedCert.targetAudience === 'STAFF';
     const isCandidateCert = selectedCert.targetAudience === 'CANDIDATE' || selectedCert.category === 'ADMISSION';
+    const isInterCert = selectedCert.targetAudience === 'INTERNATIONAL';
+
+    // Check mandatory fields for International students (หรือเมื่อยื่นคำร้องหลักสูตรนานาชาติ)
+    if (!isStaffCert && isInterCert) {
+      if (!nationality.trim()) {
+        alert('กรุณากรอกสัญชาติ (Nationality)');
+        return;
+      }
+      if (!country.trim()) {
+        alert('กรุณากรอกประเทศ (Country)');
+        return;
+      }
+      if (!passportNo.trim()) {
+        alert('กรุณากรอกเลขที่หนังสือเดินทาง (Passport No.)');
+        return;
+      }
+      if (!passportExpireDate.trim()) {
+        alert('กรุณาระบุวันหมดอายุหนังสือเดินทาง (Passport Expire Date)');
+        return;
+      }
+      if (!visaType.trim()) {
+        alert('กรุณากรอกประเภทวีซ่า (Visa Type)');
+        return;
+      }
+      if (!visaExpireDate.trim()) {
+        alert('กรุณาระบุวันหมดอายุวีซ่า (Visa Expire Date)');
+        return;
+      }
+    }
 
     // 1. Staff Access Check: Must be authenticated instructor, officer or admin
     if (isStaffCert) {
@@ -689,9 +718,12 @@ export function CertificateRequestForm({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1">สัญชาติ (Nationality)</label>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">
+                    สัญชาติ (Nationality) {selectedCert?.targetAudience === 'INTERNATIONAL' && <span className="text-red-500 font-bold">*</span>}
+                  </label>
                   <input
                     type="text"
+                    required={selectedCert?.targetAudience === 'INTERNATIONAL'}
                     placeholder="ไทย / Myanmar / Vietnamese ฯลฯ"
                     value={nationality}
                     onChange={(e) => setNationality(e.target.value)}
@@ -700,9 +732,12 @@ export function CertificateRequestForm({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1">ประเทศ (Country)</label>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">
+                    ประเทศ (Country) {selectedCert?.targetAudience === 'INTERNATIONAL' && <span className="text-red-500 font-bold">*</span>}
+                  </label>
                   <input
                     type="text"
+                    required={selectedCert?.targetAudience === 'INTERNATIONAL'}
                     placeholder="เช่น Thailand / Myanmar / Vietnam"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
@@ -714,9 +749,12 @@ export function CertificateRequestForm({
               {/* Passport & Visa Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2 border-t border-slate-200/60">
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1">เลขที่หนังสือเดินทาง (Passport No.)</label>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">
+                    เลขที่หนังสือเดินทาง (Passport No.) {selectedCert?.targetAudience === 'INTERNATIONAL' && <span className="text-red-500 font-bold">*</span>}
+                  </label>
                   <input
                     type="text"
+                    required={selectedCert?.targetAudience === 'INTERNATIONAL'}
                     placeholder="เช่น A11511416 / MF772427"
                     value={passportNo}
                     onChange={(e) => setPassportNo(e.target.value)}
@@ -725,9 +763,12 @@ export function CertificateRequestForm({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1">วันหมดอายุ Passport</label>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">
+                    วันหมดอายุ Passport {selectedCert?.targetAudience === 'INTERNATIONAL' && <span className="text-red-500 font-bold">*</span>}
+                  </label>
                   <input
                     type="date"
+                    required={selectedCert?.targetAudience === 'INTERNATIONAL'}
                     value={passportExpireDate}
                     onChange={(e) => setPassportExpireDate(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-purple-500 cursor-pointer"
@@ -735,9 +776,12 @@ export function CertificateRequestForm({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1">ประเภทวีซ่า (Visa Type)</label>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">
+                    ประเภทวีซ่า (Visa Type) {selectedCert?.targetAudience === 'INTERNATIONAL' && <span className="text-red-500 font-bold">*</span>}
+                  </label>
                   <input
                     type="text"
+                    required={selectedCert?.targetAudience === 'INTERNATIONAL'}
                     placeholder="Non-Immigrant Visa"
                     value={visaType}
                     onChange={(e) => setVisaType(e.target.value)}
@@ -746,9 +790,12 @@ export function CertificateRequestForm({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1">วันหมดอายุวีซ่า</label>
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">
+                    วันหมดอายุวีซ่า {selectedCert?.targetAudience === 'INTERNATIONAL' && <span className="text-red-500 font-bold">*</span>}
+                  </label>
                   <input
                     type="date"
+                    required={selectedCert?.targetAudience === 'INTERNATIONAL'}
                     value={visaExpireDate}
                     onChange={(e) => setVisaExpireDate(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:border-purple-500 cursor-pointer"
