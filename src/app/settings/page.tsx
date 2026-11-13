@@ -768,6 +768,15 @@ export default function SettingsPage() {
             onClick={async () => {
               setTestingNotification(true);
               setNotificationTestResult(null);
+              if (
+                !settings.lineChannelAccessToken?.trim() &&
+                !settings.lineNotifyToken?.trim() &&
+                !settings.lineWebhookUrl?.trim()
+              ) {
+                setNotificationTestResult('⚠️ ยังไม่ได้ระบุ Channel Access Token หรือ LINE Notify Token กรุณากรอกข้อมูลก่อนกดทดสอบ');
+                setTestingNotification(false);
+                return;
+              }
               try {
                 const res = await fetch('/api/notifications', {
                   method: 'POST',
@@ -776,6 +785,10 @@ export default function SettingsPage() {
                     studentName: 'ทดสอบแจ้งเตือน (Test Alert)',
                     certType: 'หนังสือรับรองสถานภาพนิสิต',
                     toEmail: settings.contactEmail || 'buddhism@mcu.ac.th',
+                    lineChannelAccessToken: settings.lineChannelAccessToken,
+                    lineTargetUserId: settings.lineTargetUserId,
+                    lineNotifyToken: settings.lineNotifyToken,
+                    lineWebhookUrl: settings.lineWebhookUrl,
                   }),
                 });
                 const d = await res.json();
@@ -826,14 +839,14 @@ export default function SettingsPage() {
               <span className="text-[11px] font-semibold text-slate-700 block mb-1">Target User ID หรือ Group ID:</span>
               <input
                 type="text"
-                placeholder="เช่น U8a91bc... หรือ C821948..."
+                placeholder="เช่น U8a91bc1234567890abcdef1234567890 (ต้องขึ้นต้นด้วย U)"
                 value={settings.lineTargetUserId || ''}
                 onChange={(e) => setSettings({ ...settings, lineTargetUserId: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              นำ Token และ User/Group ID จาก LINE Developers เพื่อให้บอทส่งข้อความแจ้งเตือนคำร้องเข้า LINE ส่วนตัวหรือกลุ่มเจ้าหน้าที่
+              ⚠️ <b>Target User ID</b> ต้องเป็นรหัสเฉพาะขึ้นต้นด้วยตัว <b>U</b> จาก LINE Developers (หรือทักบอทผ่าน Webhook: <code>https://ne-ser-fb.vercel.app/api/line-webhook</code> เพื่อดูรหัส) ไม่ใช่ชื่อบัญชี LINE
             </p>
           </div>
 

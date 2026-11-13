@@ -87,7 +87,15 @@ export function buildNotificationMessage(payload: NotificationPayload): string {
 /**
  * Sends a notification via LINE (Messaging API, Notify, Webhook) and Email.
  */
-export async function sendNotification(payload: NotificationPayload): Promise<{
+export async function sendNotification(
+  payload: NotificationPayload,
+  overrideConfig?: {
+    lineChannelAccessToken?: string;
+    lineTargetUserId?: string;
+    lineNotifyToken?: string;
+    lineWebhookUrl?: string;
+  }
+): Promise<{
   lineSuccess: boolean;
   emailSuccess: boolean;
   message: string;
@@ -100,8 +108,14 @@ export async function sendNotification(payload: NotificationPayload): Promise<{
   const notificationText = buildNotificationMessage(payload);
 
   // 1. Try LINE Messaging API Push Message if Channel Access Token & Target User/Group ID are configured
-  const lineChannelToken = settings.lineChannelAccessToken || process.env.LINE_CHANNEL_ACCESS_TOKEN;
-  const lineTargetUser = settings.lineTargetUserId || process.env.LINE_TARGET_USER_ID;
+  const lineChannelToken =
+    overrideConfig?.lineChannelAccessToken ||
+    settings.lineChannelAccessToken ||
+    process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  const lineTargetUser =
+    overrideConfig?.lineTargetUserId ||
+    settings.lineTargetUserId ||
+    process.env.LINE_TARGET_USER_ID;
   if (lineChannelToken && lineTargetUser) {
     try {
       const res = await fetch('https://api.line.me/v2/bot/message/push', {
@@ -129,7 +143,10 @@ export async function sendNotification(payload: NotificationPayload): Promise<{
   }
 
   // 2. Try LINE Notify if token is configured (as backup or standalone)
-  const lineToken = settings.lineNotifyToken || process.env.LINE_NOTIFY_TOKEN;
+  const lineToken =
+    overrideConfig?.lineNotifyToken ||
+    settings.lineNotifyToken ||
+    process.env.LINE_NOTIFY_TOKEN;
   if (lineToken && lineToken.trim() && !lineSuccess) {
     try {
       const res = await fetch('https://notify-api.line.me/api/notify', {
@@ -154,7 +171,10 @@ export async function sendNotification(payload: NotificationPayload): Promise<{
   }
 
   // 3. Try LINE / Custom Webhook (Google Apps Script, Make, Discord, etc.)
-  const webhookUrl = settings.lineWebhookUrl || process.env.LINE_WEBHOOK_URL;
+  const webhookUrl =
+    overrideConfig?.lineWebhookUrl ||
+    settings.lineWebhookUrl ||
+    process.env.LINE_WEBHOOK_URL;
   if (webhookUrl && webhookUrl.trim() && !lineSuccess) {
     try {
       const res = await fetch(webhookUrl.trim(), {

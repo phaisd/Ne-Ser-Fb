@@ -34,6 +34,18 @@ export function BrandSecuritySection({
     setTestingNotification(true);
     setTestResult(null);
     setTestSuccess(null);
+
+    if (
+      !settings.lineChannelAccessToken?.trim() &&
+      !settings.lineNotifyToken?.trim() &&
+      !settings.lineWebhookUrl?.trim()
+    ) {
+      setTestSuccess(false);
+      setTestResult('⚠️ ยังไม่ได้ระบุ Channel Access Token หรือ LINE Notify Token กรุณากรอกข้อมูลและกดบันทึกการตั้งค่าก่อนทดสอบ');
+      setTestingNotification(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/notifications', {
         method: 'POST',
@@ -47,6 +59,10 @@ export function BrandSecuritySection({
           certType: 'หนังสือรับรองสถานภาพนิสิต',
           requestPurpose: 'เพื่อเปิดบัญชีธนาคารและ Mobile Banking',
           phone: '081-234-5678',
+          lineChannelAccessToken: settings.lineChannelAccessToken,
+          lineTargetUserId: settings.lineTargetUserId,
+          lineNotifyToken: settings.lineNotifyToken,
+          lineWebhookUrl: settings.lineWebhookUrl,
         }),
       });
       const data = await res.json();
@@ -204,6 +220,9 @@ export function BrandSecuritySection({
                 }
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
+              <p className="text-[10px] text-slate-500">
+                รับจาก <a href="https://developers.line.biz" target="_blank" rel="noreferrer" className="text-emerald-700 underline font-semibold">LINE Developers</a> &gt; Channel ของท่าน &gt; แท็บ Messaging API &gt; Channel access token (long-lived)
+              </p>
             </div>
 
             <div className="space-y-1.5">
@@ -212,13 +231,26 @@ export function BrandSecuritySection({
               </label>
               <input
                 type="text"
-                placeholder="เช่น U8a91bc... หรือ C821948..."
+                placeholder="เช่น U8a91bc1234567890abcdef1234567890 (ต้องขึ้นต้นด้วย U)"
                 value={settings.lineTargetUserId || ''}
                 onChange={(e) =>
                   setSettings({ ...settings, lineTargetUserId: e.target.value })
                 }
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
+              <div className="p-2 bg-emerald-100/60 rounded-lg text-[10px] text-emerald-900 leading-relaxed space-y-1">
+                <div>
+                  <span className="font-bold">⚠️ สำคัญ:</span> ต้องเป็นรหัสเฉพาะขึ้นต้นด้วยตัว <b>U</b> (เช่น <code>U8a9...</code> ความยาว 33 ตัวอักษร) <u>ไม่ใช่</u>ชื่อแสดงใน LINE (phais01Vis)
+                </div>
+                <div>
+                  <span className="font-bold">💡 วิธีดูรหัส User ID ง่ายที่สุด:</span> นำ Webhook URL ด้านล่างไปใส่ที่ LINE Developers &gt; Messaging API &gt; Webhook URL แล้วทักแชทหาบอท บอทจะส่งรหัส <code>U...</code> ให้ทันที!
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <code className="bg-white/80 px-2 py-0.5 rounded border border-emerald-300 text-[10px] select-all font-mono">
+                    https://ne-ser-fb.vercel.app/api/line-webhook
+                  </code>
+                </div>
+              </div>
             </div>
           </div>
 

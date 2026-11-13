@@ -28,21 +28,33 @@ export async function POST(request: Request) {
       requestPurpose,
       toEmail,
       phone,
+      lineChannelAccessToken,
+      lineTargetUserId,
+      lineNotifyToken,
+      lineWebhookUrl,
     } = body || {};
 
-    const result = await sendNotification({
-      toEmail: toEmail || undefined,
-      studentName: studentName || 'พระมหาทดสอบ ญาณวโร',
-      studentCode: studentCode || '6501501001',
-      programLanguage: programLanguage || 'หลักสูตรภาษาไทย (Thai Program)',
-      degreeLevel: degreeLevel || 'ปริญญาตรี',
-      major: major || 'สาขาวิชาพระพุทธศาสนา',
-      certType: certType || 'หนังสือรับรองสถานภาพนิสิต',
-      requestPurpose: requestPurpose || 'เพื่อเปิดบัญชีธนาคารและ Mobile Banking',
-      phone: phone || '081-234-5678',
-      status: 'PENDING',
-      actionUrl: process.env.NEXTAUTH_URL || 'https://ne-ser-fb.vercel.app/admin',
-    });
+    const result = await sendNotification(
+      {
+        toEmail: toEmail || undefined,
+        studentName: studentName || 'พระมหาทดสอบ ญาณวโร',
+        studentCode: studentCode || '6501501001',
+        programLanguage: programLanguage || 'หลักสูตรภาษาไทย (Thai Program)',
+        degreeLevel: degreeLevel || 'ปริญญาตรี',
+        major: major || 'สาขาวิชาพระพุทธศาสนา',
+        certType: certType || 'หนังสือรับรองสถานภาพนิสิต',
+        requestPurpose: requestPurpose || 'เพื่อเปิดบัญชีธนาคารและ Mobile Banking',
+        phone: phone || '081-234-5678',
+        status: 'PENDING',
+        actionUrl: process.env.NEXTAUTH_URL || 'https://ne-ser-fb.vercel.app/admin',
+      },
+      {
+        lineChannelAccessToken: typeof lineChannelAccessToken === 'string' ? lineChannelAccessToken : undefined,
+        lineTargetUserId: typeof lineTargetUserId === 'string' ? lineTargetUserId : undefined,
+        lineNotifyToken: typeof lineNotifyToken === 'string' ? lineNotifyToken : undefined,
+        lineWebhookUrl: typeof lineWebhookUrl === 'string' ? lineWebhookUrl : undefined,
+      }
+    );
 
     return NextResponse.json({ success: true, result });
   } catch (err: unknown) {
