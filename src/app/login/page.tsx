@@ -67,7 +67,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isPersonalDevice, setIsPersonalDevice] = useState(true);
+  const [isPersonalDevice, setIsPersonalDevice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
