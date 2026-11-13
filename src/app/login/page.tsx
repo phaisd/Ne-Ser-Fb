@@ -7,6 +7,7 @@ import {
   type AuthUser,
   getAuthUser,
   saveAuthSession,
+  clearAuthSession,
 } from '@/lib/auth-client';
 import type { SystemSettings } from '@/types';
 import { getErrorMessage } from '@/lib/utils/error';
@@ -24,6 +25,8 @@ import {
   CheckCircle2,
   AlertCircle,
   School,
+  LogOut,
+  UserX,
 } from 'lucide-react';
 
 interface GoogleButtonOptions {
@@ -47,6 +50,7 @@ interface GoogleAccountsApi {
       }) => void;
       prompt: () => void;
       renderButton?: (parent: HTMLElement, options: GoogleButtonOptions) => void;
+      disableAutoSelect?: () => void;
     };
   };
 }
@@ -77,6 +81,24 @@ function LoginForm() {
   useEffect(() => {
     isPersonalDeviceRef.current = isPersonalDevice;
   }, [isPersonalDevice]);
+
+  const handleForgetSavedAccount = async () => {
+    try {
+      await fetch('/api/auth', { method: 'DELETE' });
+    } catch {}
+    clearAuthSession();
+    setActiveBrowserUser(null);
+    setEmail('');
+    setPassword('');
+    const g = (window as unknown as GoogleIdentityWindow).google;
+    if (g?.accounts?.id?.disableAutoSelect) {
+      try {
+        g.accounts.id.disableAutoSelect();
+      } catch {}
+    }
+    setSuccess('ล้างข้อมูลบัญชีที่จำไว้และตัดการเชื่อมต่อเรียบร้อยแล้ว');
+    setTimeout(() => setSuccess(null), 3000);
+  };
 
   // Google Login Modal State
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -185,7 +207,7 @@ function LoginForm() {
             }
           }
         },
-        auto_select: true,
+        auto_select: false,
       });
 
       const container = googleButtonRef.current;
@@ -204,8 +226,6 @@ function LoginForm() {
         });
         setGisButtonReady(true);
       }
-
-      g.accounts.id.prompt();
     };
 
     const existingScript = document.getElementById('google-gsi-client-script');
@@ -530,7 +550,7 @@ function LoginForm() {
           </div>
         )}
 
-        {/* Active Session in Another Tab: 1-Click Continue */}
+        {/* Active Session in Another Tab: 1-Click Continue & Forget Option */}
         {activeBrowserUser && (
           <div className="p-3.5 bg-emerald-50/90 border border-emerald-200 rounded-2xl space-y-2.5">
             <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800">
@@ -542,24 +562,36 @@ function LoginForm() {
                 {getRoleBadgeText(activeBrowserUser.role)}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => navigateAfterAuth(activeBrowserUser)}
-              className="w-full p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-between cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5 text-left min-w-0">
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-black text-sm shrink-0">
-                  {(activeBrowserUser.name || activeBrowserUser.email || 'U').charAt(0).toUpperCase()}
-                </div>
-                <div className="truncate">
-                  <div className="truncate font-bold">ดำเนินการต่อในชื่อ {activeBrowserUser.name}</div>
-                  <div className="text-[10px] text-emerald-100 truncate">
-                    {activeBrowserUser.gmail || activeBrowserUser.email}
+            <div className="flex items-stretch gap-2">
+              <button
+                type="button"
+                onClick={() => navigateAfterAuth(activeBrowserUser)}
+                className="flex-1 p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-between cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 text-left min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-black text-sm shrink-0">
+                    {(activeBrowserUser.name || activeBrowserUser.email || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="truncate">
+                    <div className="truncate font-bold">ดำเนินการต่อในชื่อ {activeBrowserUser.name}</div>
+                    <div className="text-[10px] text-emerald-100 truncate">
+                      {activeBrowserUser.gmail || activeBrowserUser.email}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <ArrowRight className="w-4 h-4 shrink-0 ml-2" />
-            </button>
+                <ArrowRight className="w-4 h-4 shrink-0 ml-2" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleForgetSavedAccount}
+                className="px-3 py-2 bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-300 rounded-xl text-xs font-semibold transition flex flex-col items-center justify-center gap-1 shrink-0 cursor-pointer shadow-2xs"
+                title="ล้างข้อมูลบัญชีนี้ออกจากเครื่อง ไม่จดจำไว้"
+              >
+                <UserX className="w-4 h-4 text-rose-500" />
+                <span className="text-[10px] whitespace-nowrap">ล้างบัญชีนี้</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -712,6 +744,19 @@ function LoginForm() {
               </span>
             </button>
           )}
+
+          {/* ปุ่มล้างบัญชี Google ที่จดจำไว้ในเบราว์เซอร์ เพื่อเปลี่ยนบัญชีหรือป้องกันการล็อกอินค้าง */}
+          <div className="flex justify-center pt-1">
+            <button
+              type="button"
+              onClick={handleForgetSavedAccount}
+              className="text-[11px] text-slate-400 hover:text-rose-600 font-medium inline-flex items-center gap-1.5 transition py-1 px-2 rounded-lg hover:bg-rose-50 cursor-pointer"
+              title="ล้างการเชื่อมต่อ Google / คุกกี้ที่จดจำไว้ เพื่อเลือกบัญชี Google อื่น"
+            >
+              <UserX className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-500" />
+              <span>ไม่จดจำบัญชีนี้ / ล้างการเชื่อมต่อ Google เดิม</span>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -198,7 +198,15 @@ export function clearAuthSession() {
     localStorage.removeItem('mcu_current_user');
     localStorage.removeItem('mcu_remember_me');
     localStorage.removeItem(SAVED_ACCOUNTS_KEY);
-    document.cookie = 'mcu_auth_user=; path=/; max-age=0';
+    document.cookie = 'mcu_auth_user=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'mcu_session_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    // If Google Identity is loaded in window, disable auto-select on next login
+    const g = (window as any).google;
+    if (g?.accounts?.id?.disableAutoSelect) {
+      try {
+        g.accounts.id.disableAutoSelect();
+      } catch {}
+    }
     window.dispatchEvent(new Event('mcu_user_logged_out'));
   } catch (e) {}
 }

@@ -87,8 +87,6 @@ export function AdminCertificatesTab({
 }: AdminCertificatesTabProps) {
   const [requestToDelete, setRequestToDelete] = useState<CertificateRequest | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showClearMockModal, setShowClearMockModal] = useState(false);
-  const [isClearingMock, setIsClearingMock] = useState(false);
   const [isSyncingSheets, setIsSyncingSheets] = useState(false);
   const [quickApprovePrefix, setQuickApprovePrefix] = useState<'8002' | '8002.1'>('8002');
   const [showTypesRepoModal, setShowTypesRepoModal] = useState(false);
@@ -366,30 +364,6 @@ export function AdminCertificatesTab({
       setIsDeleting(false);
     }
   };
-
-  // Confirm clear mock data
-  const handleConfirmClearMock = async () => {
-    setIsClearingMock(true);
-    try {
-      const res = await fetch('/api/certificates?action=clear_mock', { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        if (onSuccessMessage) {
-          onSuccessMessage(data.message || 'ล้างข้อมูลทดสอบเรียบร้อยแล้ว');
-        } else {
-          alert(data.message || 'ล้างข้อมูลทดสอบเรียบร้อยแล้ว');
-        }
-        setShowClearMockModal(false);
-        if (onRefreshData) onRefreshData();
-      } else {
-        alert('ล้างข้อมูลไม่สำเร็จ: ' + data.error);
-      }
-    } catch (err: unknown) {
-      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
-    } finally {
-      setIsClearingMock(false);
-    }
-  };
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 space-y-3">
@@ -634,18 +608,6 @@ export function AdminCertificatesTab({
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
               <span>CSV (.csv)</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowClearMockModal(true)}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-amber-300 bg-white hover:bg-amber-50 text-slate-600 hover:text-amber-800 text-xs font-medium flex items-center gap-1.5 transition cursor-pointer"
-              title="ล้างข้อมูลจำลอง/ทดสอบที่ตกค้างในระบบ (สำรองไฟล์ก่อนล้างอัตโนมัติ)"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>ล้างข้อมูลทดสอบ</span>
             </button>
           </div>
         </div>
@@ -932,52 +894,6 @@ export function AdminCertificatesTab({
               >
                 {isDeleting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 <span>{isDeleting ? 'กำลังลบ...' : 'ยืนยันลบคำร้อง'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Clear Mock Data Modal */}
-      {showClearMockModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-amber-100 text-amber-700">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-slate-900 text-base">
-                  ล้างข้อมูลทดสอบ (Mock Data)
-                </h3>
-                <p className="text-xs text-slate-500">
-                  ลบรายการคำร้องทดสอบเดิมออกจากตารางอนุมัติ
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs space-y-1 leading-relaxed">
-              <p>ระบบจะทำการสำรองข้อมูลเดิมทั้งหมดไว้ที่ไฟล์ <code>certificate_requests.backup.json</code> โดยอัตโนมัติก่อนล้าง</p>
-              <p className="text-slate-500">รายการคำร้องจริงที่ยื่นเข้ามาจะไม่ได้รับผลกระทบ</p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowClearMockModal(false)}
-                disabled={isClearingMock}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmClearMock}
-                disabled={isClearingMock}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-              >
-                {isClearingMock ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                <span>{isClearingMock ? 'กำลังล้าง...' : 'ยืนยันล้างข้อมูลทดสอบ'}</span>
               </button>
             </div>
           </div>

@@ -13,6 +13,8 @@ import {
   HelpCircle,
   Calendar,
   GraduationCap,
+  Trash2,
+  RefreshCw,
 } from 'lucide-react';
 import { SystemSettings } from '@/types';
 
@@ -29,6 +31,30 @@ export function BrandSecuritySection({
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testSuccess, setTestSuccess] = useState<boolean | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+
+  // Clear mock data state
+  const [showClearMockModal, setShowClearMockModal] = useState(false);
+  const [isClearingMock, setIsClearingMock] = useState(false);
+  const [clearMockMsg, setClearMockMsg] = useState<string | null>(null);
+
+  const handleConfirmClearMock = async () => {
+    setIsClearingMock(true);
+    setClearMockMsg(null);
+    try {
+      const res = await fetch('/api/certificates?action=clear_mock', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setClearMockMsg(data.message || 'ล้างข้อมูลทดสอบเรียบร้อยแล้ว');
+        setShowClearMockModal(false);
+      } else {
+        alert('ล้างข้อมูลไม่สำเร็จ: ' + data.error);
+      }
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsClearingMock(false);
+    }
+  };
 
   const handleTestNotification = async () => {
     setTestingNotification(true);
@@ -683,6 +709,97 @@ export function BrandSecuritySection({
           </label>
         </div>
       </div>
+
+      {/* Advanced Maintenance & Clean Data Section (ย้ายมาจากหน้ารับคำร้องเพื่อความปลอดภัย) */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              การบำรุงรักษาระบบขั้นสูง (System Maintenance & Safe Reset)
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              เครื่องมือสำหรับผู้ดูแลระบบสูงสุดในการล้างข้อมูลจำลองแรกเริ่ม (Mock Data) โดยไม่กระทบคำร้องจริง
+            </p>
+          </div>
+        </div>
+
+        {clearMockMsg && (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{clearMockMsg}</span>
+          </div>
+        )}
+
+        <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
+              <span>ล้างข้อมูลทดสอบคำร้องหนังสือรับรอง (Clear Mock Certificate Requests)</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                Super Admin Only
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              ลบเฉพาะข้อมูลคำร้องจำลองแรกเริ่มที่ระบบสร้างขึ้นตอนติดตั้ง ระบบจะสำรองข้อมูลเดิมไว้ที่ไฟล์ <code>certificate_requests.backup.json</code> อัตโนมัติก่อนล้าง และคำร้องจริงจะไม่ได้รับผลกระทบ
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowClearMockModal(true)}
+            className="px-4 py-2 rounded-xl border border-amber-300 hover:border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs shrink-0 self-start sm:self-auto"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span>ล้างข้อมูลทดสอบ (Mock Data)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Clear Mock Data Modal */}
+      {showClearMockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-amber-100 text-amber-700">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-900 text-base">
+                  ล้างข้อมูลทดสอบ (Mock Data)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  ลบรายการคำร้องทดสอบเดิมออกจากตารางอนุมัติ
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs space-y-1 leading-relaxed">
+              <p>ระบบจะทำการสำรองข้อมูลเดิมทั้งหมดไว้ที่ไฟล์ <code>certificate_requests.backup.json</code> โดยอัตโนมัติก่อนล้าง</p>
+              <p className="text-slate-500">รายการคำร้องจริงที่ยื่นเข้ามาจะไม่ได้รับผลกระทบ</p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowClearMockModal(false)}
+                disabled={isClearingMock}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmClearMock}
+                disabled={isClearingMock}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                {isClearingMock ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                <span>{isClearingMock ? 'กำลังล้าง...' : 'ยืนยันล้างข้อมูลทดสอบ'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
