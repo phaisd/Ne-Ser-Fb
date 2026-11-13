@@ -224,7 +224,7 @@ export default function StudentsPage() {
     setEditingStudent(student);
     setEditForm({
       ...student,
-      programType: student.programType || (student.nationality === 'ไทย' || student.nationality === 'Thai' ? 'THAI' : 'ENGLISH'),
+      programType: student.programType || 'THAI',
       studyStatus: student.studyStatus || 'ปกติ',
       remarks: student.remarks || '',
     });

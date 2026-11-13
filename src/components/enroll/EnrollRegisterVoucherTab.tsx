@@ -47,6 +47,40 @@ export function EnrollRegisterVoucherTab({
   onSearch,
   onConfirmEnrollment,
 }: EnrollRegisterVoucherTabProps) {
+  // Resolve degree-specific course plan if applicant degree is known
+  const degreePlan = React.useMemo(() => {
+    const level = (matchedApp?.degreeLevel || '').toLowerCase();
+    if (level.includes('โท') || level.includes('master')) {
+      const courses = (portalConfig.firstYearCoursesMaster || []).filter((c) => c.enabled !== false);
+      const total = courses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+      const title =
+        portalConfig.firstYearCourseTitleMaster ||
+        'ตารางแผนการลงทะเบียนเรียน ภาคการศึกษาที่ ๑ ชั้นปีที่ ๑ (ระดับปริญญาโท)';
+      return { title, courses, totalCredits: total };
+    }
+    if (level.includes('เอก') || level.includes('doctor') || level.includes('ph.d')) {
+      const courses = (portalConfig.firstYearCoursesDoctoral || []).filter((c) => c.enabled !== false);
+      const total = courses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+      const title =
+        portalConfig.firstYearCourseTitleDoctoral ||
+        'ตารางแผนการลงทะเบียนเรียน ภาคการศึกษาที่ ๑ ชั้นปีที่ ๑ (ระดับปริญญาเอก)';
+      return { title, courses, totalCredits: total };
+    }
+    if (level.includes('ประกาศนียบัตร') || level.includes('cert')) {
+      const courses = (portalConfig.firstYearCoursesCertificate || []).filter((c) => c.enabled !== false);
+      const total = courses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+      const title =
+        portalConfig.firstYearCourseTitleCertificate ||
+        'ตารางแผนการลงทะเบียนเรียน ภาคการศึกษาที่ ๑ ชั้นปีที่ ๑ (ระดับประกาศนียบัตรบัณฑิต)';
+      return { title, courses, totalCredits: total };
+    }
+    // Default to Bachelor
+    const title =
+      portalConfig.firstYearCourseTitleBachelor ||
+      'ตารางแผนการลงทะเบียนเรียน ภาคการศึกษาที่ ๑ ชั้นปีที่ ๑ (ระดับปริญญาตรี)';
+    return { title, courses: enabledFirstYearCourses, totalCredits: totalFirstYearCredits };
+  }, [matchedApp?.degreeLevel, portalConfig, enabledFirstYearCourses, totalFirstYearCredits]);
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-5 print:hidden">
@@ -204,10 +238,10 @@ export function EnrollRegisterVoucherTab({
           </div>
 
           {/* First Semester Course Plan Table */}
-          {portalConfig.showFirstYearCoursePlan && enabledFirstYearCourses.length > 0 && (
+          {portalConfig.showFirstYearCoursePlan && degreePlan.courses.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-xs sm:text-sm font-extrabold text-slate-900">
-                ตารางแผนการลงทะเบียนเรียน ภาคการศึกษาที่ ๑ ชั้นปีที่ ๑ (รวม {totalFirstYearCredits} หน่วยกิต)
+                {degreePlan.title} (รวม {degreePlan.totalCredits} หน่วยกิต)
               </h4>
               <div className="overflow-x-auto rounded-xl border border-slate-300">
                 <table className="w-full text-xs text-left border-collapse">
@@ -221,7 +255,7 @@ export function EnrollRegisterVoucherTab({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {enabledFirstYearCourses.map((c, idx) => (
+                    {degreePlan.courses.map((c, idx) => (
                       <tr key={c.id}>
                         <td className="py-2 px-3 text-center font-semibold">{idx + 1}</td>
                         <td className="py-2 px-3 font-mono font-bold text-indigo-900">{c.code}</td>
@@ -235,7 +269,7 @@ export function EnrollRegisterVoucherTab({
                         รวมหน่วยกิตลงทะเบียนประจำภาคการศึกษาที่ ๑
                       </td>
                       <td className="py-2.5 px-3 text-center text-emerald-800">
-                        {totalFirstYearCredits} หน่วยกิต
+                        {degreePlan.totalCredits} หน่วยกิต
                       </td>
                     </tr>
                   </tbody>

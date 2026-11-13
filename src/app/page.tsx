@@ -47,10 +47,10 @@ export default async function HomePage() {
   const pendingRequests = certRequests.filter((r) => r.status === 'PENDING');
   const approvedRequests = certRequests.filter((r) => r.status === 'APPROVED');
 
-  // Student Breakdown
+  // Student Breakdown (หลักสูตรภาคภาษาไทย vs หลักสูตรภาคภาษาอังกฤษ)
   const totalStudents = students.length;
   const intlStudents = students.filter(
-    (s) => s.programType === 'ENGLISH' || (s.nationality && s.nationality !== 'ไทย' && s.nationality !== 'Thai')
+    (s) => s.programType === 'ENGLISH'
   ).length;
   const thaiStudents = totalStudents - intlStudents;
   const year1Count = students.filter((s) => Number(s.yearLevel || 1) === 1).length;

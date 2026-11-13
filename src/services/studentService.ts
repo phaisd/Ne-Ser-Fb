@@ -27,8 +27,15 @@ export async function getStudents(): Promise<Student[]> {
             const code = (r[0] || '').trim();
             const local = localMap.get(code) || {};
             const sheetNat = r[15] || local.nationality || '';
-            const isThaiNat = sheetNat === 'ไทย' || sheetNat === 'Thai';
-            const programFromSheet = r[13] ? (r[13].includes('ENG') ? 'ENGLISH' : 'THAI') : undefined;
+            const rawProg = String(r[13] || '').trim();
+            const rawProgUpper = rawProg.toUpperCase();
+            const programFromSheet = r[13] && rawProg !== ''
+              ? (rawProgUpper.includes('ENG') || rawProgUpper.includes('อังกฤษ') || rawProgUpper.includes('INTER') || rawProgUpper.includes('นานาชาติ')
+                  ? 'ENGLISH'
+                  : 'THAI')
+              : undefined;
+            const curLower = String(r[6] || local.degree || '').toLowerCase() + ' ' + String(r[8] || local.major || '').toLowerCase();
+            const isEngCur = curLower.includes('english') || curLower.includes('inter') || curLower.includes('นานาชาติ') || curLower.includes('ภาษาอังกฤษ');
             const cleanLast = (r[3] || local.lastName || '') === '-' ? '' : (r[3] || local.lastName || '');
             const sheetPassword = r[19] ? String(r[19]).trim() : '';
             const sheetActingOfficer = r[20] !== undefined && r[20] !== '' ? String(r[20]).trim().toUpperCase() : undefined;
@@ -48,9 +55,9 @@ export async function getStudents(): Promise<Student[]> {
               faculty: r[10] || local.faculty || '',
               phoneNumber: r[11] || local.phoneNumber || '',
               email: r[12] || local.email || '',
-              programType: programFromSheet || local.programType || (isThaiNat ? 'THAI' : 'ENGLISH'),
+              programType: programFromSheet || local.programType || (isEngCur ? 'ENGLISH' : 'THAI'),
               remarks: r[14] !== undefined && r[14] !== '' ? r[14] : (local.remarks || ''),
-              nationality: sheetNat || (programFromSheet === 'ENGLISH' ? 'ต่างชาติ' : 'ไทย'),
+              nationality: sheetNat || 'ไทย',
               passportNo: r[16] || local.passportNo || '',
               gpa: r[17] !== undefined && r[17] !== '' ? r[17] : (local.gpa ?? ''),
               address: r[18] || local.address || '',
@@ -74,7 +81,7 @@ export async function getStudents(): Promise<Student[]> {
     students = localList.map((s) => ({
       ...s,
       fullName: `${s.title || ''} ${s.firstName || ''} ${s.lastName === '-' ? '' : (s.lastName || '')}`.trim(),
-      programType: s.programType || (s.nationality === 'ไทย' || s.nationality === 'Thai' ? 'THAI' : 'ENGLISH'),
+      programType: s.programType || 'THAI',
       remarks: s.remarks || '',
     }));
   }
@@ -133,7 +140,7 @@ export async function updateStudent(studentCode: string, updates: Partial<Studen
     ...current,
     ...updates,
     fullName: updates.fullName || `${updates.title || current.title || ''} ${updates.firstName || current.firstName || ''} ${updates.lastName || current.lastName || ''}`.trim(),
-    programType: updates.programType || current.programType || (updates.nationality === 'ไทย' || current.nationality === 'ไทย' ? 'THAI' : 'ENGLISH'),
+    programType: updates.programType || current.programType || 'THAI',
     remarks: updates.remarks !== undefined ? updates.remarks : (current.remarks || ''),
   };
 
@@ -283,7 +290,7 @@ export async function batchUpdateStudents(
           ? `${item.title || current.title || ''} ${item.firstName || current.firstName || ''} ${item.lastName || current.lastName || ''}`.trim()
           : current.fullName),
         degree: item.degree || current.degree || 'ปริญญาตรี',
-        programType: item.programType || current.programType || (current.nationality === 'ไทย' || current.nationality === 'Thai' ? 'THAI' : 'ENGLISH'),
+        programType: item.programType || current.programType || 'THAI',
         studyStatus: item.studyStatus || current.studyStatus || 'ปกติ',
         remarks: item.remarks !== undefined ? item.remarks : (current.remarks || ''),
         yearLevel: item.yearLevel !== undefined ? Number(item.yearLevel) : current.yearLevel,

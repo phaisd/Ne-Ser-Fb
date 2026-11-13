@@ -107,5 +107,12 @@ export interface AdmissionPortalConfig {
   registerSectionTitle?: string;
   registerSectionSubtitle?: string;
   showFirstYearCoursePlan: boolean;
+  firstYearCourseTitleBachelor?: string;
   firstYearCourses: AdmissionFirstYearCourseItem[];
+  firstYearCourseTitleMaster?: string;
+  firstYearCoursesMaster?: AdmissionFirstYearCourseItem[];
+  firstYearCourseTitleDoctoral?: string;
+  firstYearCoursesDoctoral?: AdmissionFirstYearCourseItem[];
+  firstYearCourseTitleCertificate?: string;
+  firstYearCoursesCertificate?: AdmissionFirstYearCourseItem[];
 }

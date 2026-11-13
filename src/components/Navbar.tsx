@@ -388,32 +388,6 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Navigation Items */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {(isAdminRoute ? adminNavItems : publicNavItems).map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    isAdminRoute
-                      ? isActive
-                        ? 'bg-emerald-600 text-white shadow-sm'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                      : isActive
-                        ? 'bg-orange-50 text-orange-700 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? (isAdminRoute ? 'text-white' : 'text-orange-600') : 'opacity-70'}`} />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
           {/* User Auth & Portal Switcher & Language Toggle */}
           <div className="flex items-center gap-2">
             {/* Language Switcher Pill + Dropdown */}
@@ -723,7 +697,54 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-      </header>
+
+      {/* Tier 2: Dedicated Navigation Menu Bar (Desktop & Tablet) */}
+      <div
+        className={`hidden lg:block border-t transition-colors duration-200 ${
+          isAdminRoute
+            ? 'bg-slate-950/70 border-slate-800/80 text-slate-200'
+            : 'bg-slate-50/90 border-slate-200/60 text-slate-700'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex flex-wrap items-center gap-1 sm:gap-1.5 py-1.5">
+            {(isAdminRoute ? adminNavItems : publicNavItems).map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                item.href === '/'
+                  ? pathname === '/'
+                  : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                    isAdminRoute
+                      ? isActive
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/90 border border-transparent hover:border-slate-700'
+                      : isActive
+                        ? 'bg-orange-500 text-white shadow-xs'
+                        : 'text-slate-700 hover:text-slate-950 hover:bg-white border border-transparent hover:border-slate-200/80 hover:shadow-2xs'
+                  }`}
+                >
+                  <Icon
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      isActive
+                        ? 'text-white'
+                        : isAdminRoute
+                        ? 'text-emerald-400'
+                        : 'text-orange-600'
+                    }`}
+                  />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+    </header>
 
       {/* Mobile & Tablet Drawer Menu */}
       {isMobileMenuOpen && (

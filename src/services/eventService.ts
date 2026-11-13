@@ -182,7 +182,7 @@ export async function getEventRegistrations(
   let list: EventRegistration[] = raw.map((r) => {
     const sInfo = studentMap.get((r.studentCode || '').trim().toLowerCase()) || {};
     const degree = r.degreeLevel || sInfo.degree || (sInfo.yearLevel ? 'ปริญญาตรี' : 'ปริญญาตรี');
-    const prog = r.programType || r.program || sInfo.programType || ((sInfo.nationality === 'ไทย' || sInfo.nationality === 'Thai') ? 'THAI' : 'ENGLISH');
+    const prog = r.programType || r.program || sInfo.programType || 'THAI';
 
     return {
       id: r.id,

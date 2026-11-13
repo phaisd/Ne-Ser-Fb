@@ -217,6 +217,7 @@ export const DEFAULT_ADMISSION_PORTAL_CONFIG: AdmissionPortalConfig = {
   registerSectionSubtitle:
     'สำหรับผู้สมัครที่ผ่านการสอบสัมภาษณ์แล้ว กรอกเลขบัตรประชาชน/พาสปอร์ต หรือรหัสใบสมัคร เพื่อยืนยันสิทธิ์และสั่งพิมพ์ใบรายงานตัวนิสิตใหม่',
   showFirstYearCoursePlan: true,
+  firstYearCourseTitleBachelor: 'รายวิชาแผนการเรียนชั้นปีที่ ๑ ภาคเรียนที่ ๑ (ระดับปริญญาตรี)',
   firstYearCourses: [
     {
       id: 'fyc-1',
@@ -275,6 +276,111 @@ export const DEFAULT_ADMISSION_PORTAL_CONFIG: AdmissionPortalConfig = {
       enabled: true,
     },
   ],
+  firstYearCourseTitleMaster: 'รายวิชาแผนการเรียนชั้นปีที่ ๑ ภาคเรียนที่ ๑ (ระดับปริญญาโท)',
+  firstYearCoursesMaster: [
+    {
+      id: 'fyc-m-1',
+      code: '600 101',
+      nameTh: 'วิธีวิทยาการวิจัยทางพระพุทธศาสนา (Research Methodology in Buddhist Studies)',
+      type: 'วิชาแกน',
+      credits: 3,
+      enabled: true,
+    },
+    {
+      id: 'fyc-m-2',
+      code: '600 102',
+      nameTh: 'สัมมนาพระไตรปิฎกศึกษา (Seminar on Tipitaka Studies)',
+      type: 'วิชาแกน',
+      credits: 3,
+      enabled: true,
+    },
+    {
+      id: 'fyc-m-3',
+      code: '600 103',
+      nameTh: 'บาลีไวยากรณ์และวรรณกรรมบาลีชั้นสูง (Advanced Pali Grammar and Literature)',
+      type: 'วิชาเอกบังคับ',
+      credits: 3,
+      enabled: true,
+    },
+    {
+      id: 'fyc-m-4',
+      code: '600 104',
+      nameTh: 'สมาธิและวิปัสสนาชั้นสูง (Advanced Meditation & Vipassana)',
+      type: 'วิชาปฏิบัติการ',
+      credits: 2,
+      enabled: true,
+    },
+  ],
+  firstYearCourseTitleDoctoral: 'รายวิชาแผนการเรียนชั้นปีที่ ๑ ภาคเรียนที่ ๑ (ระดับปริญญาเอก)',
+  firstYearCoursesDoctoral: [
+    {
+      id: 'fyc-d-1',
+      code: '700 101',
+      nameTh: 'ระเบียบวิธีวิจัยขั้นสูงทางพระพุทธศาสนา (Advanced Research Methodology in Buddhist Studies)',
+      type: 'วิชาสัมมนาขั้นสูง',
+      credits: 3,
+      enabled: true,
+    },
+    {
+      id: 'fyc-d-2',
+      code: '700 102',
+      nameTh: 'สัมมนาพุทธปรัชญาและพุทธญาณวิทยา (Seminar on Buddhist Philosophy and Epistemology)',
+      type: 'วิชาแกนดุษฎีบัณฑิต',
+      credits: 3,
+      enabled: true,
+    },
+    {
+      id: 'fyc-d-3',
+      code: '700 103',
+      nameTh: 'พระพุทธศาสนากับสังคมศาสตร์ร่วมสมัย (Buddhism and Contemporary Social Sciences)',
+      type: 'วิชาเอกบังคับ',
+      credits: 3,
+      enabled: true,
+    },
+    {
+      id: 'fyc-d-4',
+      code: '700 104',
+      nameTh: 'การปฏิบัติวิปัสสนากรรมฐานระดับดุษฎีบัณฑิต (Doctoral Vipassana Practice)',
+      type: 'วิชาปฏิบัติการ',
+      credits: 2,
+      enabled: true,
+    },
+  ],
+  firstYearCourseTitleCertificate: 'รายวิชาแผนการเรียนชั้นปีที่ ๑ ภาคเรียนที่ ๑ (ระดับประกาศนียบัตรบัณฑิต)',
+  firstYearCoursesCertificate: [
+    {
+      id: 'fyc-c-1',
+      code: '500 101',
+      nameTh: 'พระไตรปิฎกวิเคราะห์ (Tipitaka Analysis)',
+      type: 'วิชาบังคับ',
+      credits: 3,
+      enabled: true,
+    },
+    {
+      id: 'fyc-c-2',
+      code: '500 102',
+      nameTh: 'เทคนิคการเผยแผ่พระพุทธศาสนา (Buddhist Propagation Techniques)',
+      type: 'วิชาชีพ',
+      credits: 3,
+      enabled: true,
+    },
+    {
+      id: 'fyc-c-3',
+      code: '500 103',
+      nameTh: 'ปฏิบัติการเจริญสติภาวนา (Mindfulness & Meditation Workshop)',
+      type: 'วิชาปฏิบัติการ',
+      credits: 2,
+      enabled: true,
+    },
+    {
+      id: 'fyc-c-4',
+      code: '500 104',
+      nameTh: 'ศาสนาเปรียบเทียบเบื้องต้น (Introduction to Comparative Religion)',
+      type: 'วิชาเลือก',
+      credits: 3,
+      enabled: true,
+    },
+  ],
 };
 
 export function resolveAdmissionPortalConfig(
@@ -322,8 +428,26 @@ export function resolveAdmissionPortalConfig(
     registerSectionSubtitle:
       c.registerSectionSubtitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.registerSectionSubtitle,
     showFirstYearCoursePlan: c.showFirstYearCoursePlan !== false,
+    firstYearCourseTitleBachelor:
+      c.firstYearCourseTitleBachelor ?? DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCourseTitleBachelor,
     firstYearCourses: Array.isArray(c.firstYearCourses)
       ? c.firstYearCourses
       : DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCourses,
+    firstYearCourseTitleMaster:
+      c.firstYearCourseTitleMaster ?? DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCourseTitleMaster,
+    firstYearCoursesMaster: Array.isArray(c.firstYearCoursesMaster)
+      ? c.firstYearCoursesMaster
+      : DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCoursesMaster,
+    firstYearCourseTitleDoctoral:
+      c.firstYearCourseTitleDoctoral ?? DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCourseTitleDoctoral,
+    firstYearCoursesDoctoral: Array.isArray(c.firstYearCoursesDoctoral)
+      ? c.firstYearCoursesDoctoral
+      : DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCoursesDoctoral,
+    firstYearCourseTitleCertificate:
+      c.firstYearCourseTitleCertificate ??
+      DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCourseTitleCertificate,
+    firstYearCoursesCertificate: Array.isArray(c.firstYearCoursesCertificate)
+      ? c.firstYearCoursesCertificate
+      : DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCoursesCertificate,
   };
 }

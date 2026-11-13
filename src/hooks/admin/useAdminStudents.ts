@@ -157,13 +157,30 @@ export function useAdminStudents({
         setStudentsList((prev) => {
           const next = prev.filter((s) => !deletedSet.has(String(s.studentCode).toLowerCase()));
           const total = next.length;
-          const thai = next.filter(
-            (s) =>
-              s.programType === 'THAI' ||
-              s.nationality === 'ไทย' ||
-              s.nationality === 'Thai'
-          ).length;
-          setStudentsCount({ total, thai, intl: total - thai });
+          const eng = next.filter((s) => {
+            const p = String(s.programType || '').toUpperCase().trim();
+            if (p === 'ENGLISH') return true;
+            if (p === 'THAI') return false;
+            const cName = String(s.curriculumName || '').toLowerCase();
+            const major = String(s.major || '').toLowerCase();
+            const remarks = String(s.remarks || '').toLowerCase();
+            return (
+              cName.includes('english') ||
+              cName.includes('international') ||
+              cName.includes('inter') ||
+              cName.includes('ภาษาอังกฤษ') ||
+              cName.includes('นานาชาติ') ||
+              major.includes('english') ||
+              major.includes('international') ||
+              major.includes('ภาษาอังกฤษ') ||
+              major.includes('นานาชาติ') ||
+              remarks.includes('english') ||
+              remarks.includes('inter') ||
+              remarks.includes('ภาษาอังกฤษ')
+            );
+          }).length;
+          const thai = total - eng;
+          setStudentsCount({ total, thai, intl: eng });
           return next;
         });
 

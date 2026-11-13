@@ -159,11 +159,17 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
               {studentsCount.total} <span className="text-xs font-semibold text-slate-400">รูป/คน</span>
             </div>
             <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px]">
-              <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-200/60">
-                🇹🇭 ไทย: {studentsCount.thai}
+              <span
+                className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-200/60"
+                title="นิสิตที่เรียนหลักสูตรภาคภาษาไทย"
+              >
+                🇹🇭 ภาคไทย: {studentsCount.thai}
               </span>
-              <span className="px-2 py-1 rounded-lg bg-purple-50 text-purple-800 font-bold border border-purple-200/60">
-                🌐 อังกฤษ: {studentsCount.intl}
+              <span
+                className="px-2 py-1 rounded-lg bg-purple-50 text-purple-800 font-bold border border-purple-200/60"
+                title="นิสิตที่เรียนหลักสูตรภาคภาษาอังกฤษ"
+              >
+                🌐 ภาคอังกฤษ: {studentsCount.intl}
               </span>
             </div>
           </div>
