@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   FileText,
@@ -92,6 +92,56 @@ export function AdminCertificatesTab({
   const [isSyncingSheets, setIsSyncingSheets] = useState(false);
   const [quickApprovePrefix, setQuickApprovePrefix] = useState<'8002' | '8002.1'>('8002');
   const [showTypesRepoModal, setShowTypesRepoModal] = useState(false);
+  const [audienceFilter, setAudienceFilter] = useState<'ALL' | 'STAFF' | 'STUDENTS' | 'INTERNATIONAL'>('ALL');
+
+  const isStaffRequest = (r: CertificateRequest) => {
+    return (
+      r.applicantType === 'STAFF' ||
+      r.targetAudience === 'STAFF' ||
+      Boolean(r.position) ||
+      Boolean(r.certType?.includes('อาจารย์')) ||
+      Boolean(r.certType?.includes('บุคลากร')) ||
+      Boolean(r.certType?.includes('ปฏิบัติงาน')) ||
+      Boolean(r.certType?.includes('ภาระงานสอน')) ||
+      Boolean(r.certType?.includes('เงินเดือน')) ||
+      Boolean(r.certType?.includes('ปฏิบัติราชการ'))
+    );
+  };
+
+  const isInterRequest = (r: CertificateRequest) => {
+    return (
+      r.targetAudience === 'INTERNATIONAL' ||
+      (Boolean(r.nationality) && !['ไทย', 'Thai', 'th', 'TH'].includes(String(r.nationality).trim())) ||
+      Boolean(r.certType?.includes('ต่างประเทศ')) ||
+      Boolean(r.certType?.includes('Visa')) ||
+      Boolean(r.certType?.includes('ED')) ||
+      Boolean(r.passportNo)
+    );
+  };
+
+  const staffRequestsCount = useMemo(
+    () => requests.filter((r) => isStaffRequest(r)).length,
+    [requests]
+  );
+
+  const studentRequestsCount = useMemo(
+    () => requests.filter((r) => !isStaffRequest(r)).length,
+    [requests]
+  );
+
+  const internationalRequestsCount = useMemo(
+    () => requests.filter((r) => isInterRequest(r)).length,
+    [requests]
+  );
+
+  const displayRequests = useMemo(() => {
+    return filteredRequests.filter((r) => {
+      if (audienceFilter === 'STAFF') return isStaffRequest(r);
+      if (audienceFilter === 'STUDENTS') return !isStaffRequest(r);
+      if (audienceFilter === 'INTERNATIONAL') return isInterRequest(r);
+      return true;
+    });
+  }, [filteredRequests, audienceFilter]);
 
   // Sync to Google Sheets
   const handleSyncSheets = async () => {
@@ -117,10 +167,20 @@ export function AdminCertificatesTab({
 
   // Export to Excel (.xls)
   const handleExportExcel = () => {
-    if (requests.length === 0) {
+    const exportData = displayRequests;
+    if (exportData.length === 0) {
       alert('ไม่มีรายการคำร้องที่จะส่งออก');
       return;
     }
+
+    const titleSuffix =
+      audienceFilter === 'STAFF'
+        ? '(อาจารย์และบุคลากร)'
+        : audienceFilter === 'STUDENTS'
+        ? '(นิสิตทั่วไป)'
+        : audienceFilter === 'INTERNATIONAL'
+        ? '(ไปต่างประเทศ / ตม.)'
+        : 'ทั้งหมด';
 
     const tableHtml = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -151,22 +211,21 @@ export function AdminCertificatesTab({
         </style>
       </head>
       <body>
-        <h3>รายงานคำร้องขอหนังสือรับรอง คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</h3>
-        <p>ส่งออกข้อมูล ณ วันที่: ${new Date().toLocaleString('th-TH')} | จำนวน: ${requests.length} รายการ</p>
+        <h3>รายงานคำร้องขอหนังสือรับรอง ${titleSuffix} คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</h3>
+        <p>ส่งออกข้อมูล ณ วันที่: ${new Date().toLocaleString('th-TH')} | จำนวน: ${exportData.length} รายการ</p>
         <table border="1">
           <thead>
             <tr>
               <th>ลำดับ</th>
               <th>เลขที่หนังสือ อว.</th>
               <th>วันที่ยื่นคำร้อง</th>
-              <th>รหัสนิสิต / บุคลากร</th>
+              <th>รหัสบุคลากร/นิสิต</th>
               <th>ชื่อ - นามสกุล</th>
               <th>กลุ่มผู้ขอ</th>
-              <th>สัญชาติ</th>
+              <th>ตำแหน่ง / ระดับการศึกษา</th>
+              <th>สังกัด / สาขาวิชา</th>
               <th>ประเภทหนังสือรับรอง</th>
-              <th>ระดับการศึกษา</th>
-              <th>สาขาวิชา</th>
-              <th>วัตถุประสงค์</th>
+              <th>วัตถุประสงค์ (เช่น ขอเดินทางไปต่างประเทศ)</th>
               <th>เลขพาสปอร์ต</th>
               <th>อีเมล</th>
               <th>เบอร์โทรศัพท์</th>
@@ -174,26 +233,25 @@ export function AdminCertificatesTab({
             </tr>
           </thead>
           <tbody>
-            ${requests
+            ${exportData
               .map(
-                (r, idx) => `
+                (r: CertificateRequest, idx: number) => `
               <tr>
                 <td class="center">${idx + 1}</td>
                 <td class="text-num">${r.docNo || '-'}</td>
                 <td class="center">${new Date(r.createdAt).toLocaleDateString('th-TH')}</td>
-                <td class="text-num">${r.studentCode || '-'}</td>
+                <td class="text-num">${r.studentCode || r.email || '-'}</td>
                 <td>${r.fullName || '-'}</td>
                 <td class="center">${
-                  r.targetAudience === 'STAFF'
+                  isStaffRequest(r)
                     ? 'อาจารย์/บุคลากร'
-                    : r.targetAudience === 'INTERNATIONAL'
-                    ? 'นิสิตต่างชาติ'
+                    : isInterRequest(r)
+                    ? 'ต่างประเทศ/ต่างชาติ'
                     : 'นิสิตไทย'
                 }</td>
-                <td class="center">${r.nationality || '-'}</td>
+                <td>${r.position || r.degreeLevel || '-'}</td>
+                <td>${r.department || r.major || '-'}</td>
                 <td>${r.certType || '-'}</td>
-                <td>${r.degreeLevel || '-'}</td>
-                <td>${r.major || '-'}</td>
                 <td>${r.requestPurpose || '-'}</td>
                 <td class="text-num">${r.passportNo || '-'}</td>
                 <td>${r.email || '-'}</td>
@@ -221,7 +279,10 @@ export function AdminCertificatesTab({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `certificate_requests_${new Date().toISOString().slice(0, 10)}.xls`);
+    link.setAttribute(
+      'download',
+      `certificate_requests_${audienceFilter.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.xls`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -230,18 +291,20 @@ export function AdminCertificatesTab({
 
   // Export to CSV
   const handleExportCsv = () => {
-    if (requests.length === 0) {
+    const exportData = displayRequests;
+    if (exportData.length === 0) {
       alert('ไม่มีรายการคำร้องที่จะส่งออก');
       return;
     }
     const headers = [
       'ID',
       'วันที่ยื่น',
-      'รหัสนิสิต',
+      'รหัสบุคลากร_นิสิต',
       'ชื่อ-สกุล',
+      'กลุ่มผู้ยื่น',
+      'ตำแหน่ง_ระดับการศึกษา',
+      'สังกัด_สาขาวิชา',
       'ประเภทหนังสือ',
-      'ระดับการศึกษา',
-      'สาขาวิชา',
       'วัตถุประสงค์',
       'สถานะ',
       'เลขที่หนังสือ อว',
@@ -250,14 +313,15 @@ export function AdminCertificatesTab({
       'สัญชาติ',
       'พาสปอร์ต',
     ];
-    const rows = requests.map((r) => [
+    const rows = exportData.map((r: CertificateRequest) => [
       `"${r.id}"`,
       `"${new Date(r.createdAt).toLocaleDateString('th-TH')}"`,
-      `"${r.studentCode}"`,
+      `"${r.studentCode || r.email || ''}"`,
       `"${(r.fullName || '').replace(/"/g, '""')}"`,
+      `"${isStaffRequest(r) ? 'อาจารย์/บุคลากร' : isInterRequest(r) ? 'ต่างประเทศ/ต่างชาติ' : 'นิสิต'}"`,
+      `"${(r.position || r.degreeLevel || '').replace(/"/g, '""')}"`,
+      `"${(r.department || r.major || '').replace(/"/g, '""')}"`,
       `"${(r.certType || '').replace(/"/g, '""')}"`,
-      `"${r.degreeLevel || ''}"`,
-      `"${r.major || ''}"`,
       `"${(r.requestPurpose || '').replace(/"/g, '""')}"`,
       `"${r.status}"`,
       `"${r.docNo || ''}"`,
@@ -266,12 +330,15 @@ export function AdminCertificatesTab({
       `"${r.nationality || ''}"`,
       `"${r.passportNo || ''}"`,
     ]);
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e: string[]) => e.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `certificate_requests_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      'download',
+      `certificate_requests_${audienceFilter.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -423,6 +490,69 @@ export function AdminCertificatesTab({
           </div>
         </div>
 
+        {/* Audience Segment Switcher Tabs */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
+            <span className="text-slate-500 font-semibold pr-1">กลุ่มผู้ยื่นคำร้อง:</span>
+            <button
+              type="button"
+              onClick={() => setAudienceFilter('ALL')}
+              className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                audienceFilter === 'ALL'
+                  ? 'bg-purple-700 text-white shadow-xs font-extrabold'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <span>คำร้องทั้งหมด ({requests.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAudienceFilter('STAFF')}
+              className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                audienceFilter === 'STAFF'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-sm font-extrabold ring-2 ring-amber-400/40'
+                  : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
+              }`}
+            >
+              <span className="text-sm">👔</span>
+              <span>อาจารย์ &amp; บุคลากร ({staffRequestsCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAudienceFilter('STUDENTS')}
+              className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                audienceFilter === 'STUDENTS'
+                  ? 'bg-blue-600 text-white shadow-sm font-extrabold ring-2 ring-blue-400/40'
+                  : 'bg-blue-50 text-blue-900 border border-blue-200 hover:bg-blue-100'
+              }`}
+            >
+              <span className="text-sm">🎓</span>
+              <span>นิสิตทั่วไป ({studentRequestsCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAudienceFilter('INTERNATIONAL')}
+              className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+                audienceFilter === 'INTERNATIONAL'
+                  ? 'bg-emerald-600 text-white shadow-sm font-extrabold ring-2 ring-emerald-400/40'
+                  : 'bg-emerald-50 text-emerald-900 border border-emerald-200 hover:bg-emerald-100'
+              }`}
+            >
+              <span className="text-sm">🌐</span>
+              <span>ไปต่างประเทศ / ตม. ({internationalRequestsCount})</span>
+            </button>
+          </div>
+        </div>
+
+        {audienceFilter === 'STAFF' && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-center gap-2">
+            <span className="text-base">👔</span>
+            <span>
+              <strong>หมวดคำร้องของอาจารย์และบุคลากร:</strong> แสดงคำร้องขอหนังสือรับรองการปฏิบัติงาน, หนังสือขออนุญาตเดินทางไปต่างประเทศ, รับรองเงินเดือน ฯลฯ โดยระบบจัดเก็บแยกส่วนเป็นเอกเทศ ไม่ปะปนกับทะเบียนนิสิต
+            </span>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -528,7 +658,9 @@ export function AdminCertificatesTab({
             <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b">
               <tr>
                 <th className="px-5 py-3.5">วันที่ยื่น</th>
-                <th className="px-5 py-3.5">รหัสนิสิต</th>
+                <th className="px-5 py-3.5">
+                  {audienceFilter === 'STAFF' ? 'รหัสบุคลากร / ตำแหน่ง' : 'รหัสผู้ยื่น / กลุ่ม'}
+                </th>
                 <th className="px-5 py-3.5">ชื่อ - นามสกุล</th>
                 <th className="px-5 py-3.5">ประเภทหนังสือรับรอง</th>
                 <th className="px-5 py-3.5">เลขที่หนังสือราชการ</th>
@@ -537,15 +669,16 @@ export function AdminCertificatesTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredRequests.length === 0 ? (
+              {displayRequests.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-10 text-slate-400 text-xs">
                     ไม่พบรายการคำร้องตามเงื่อนไขที่เลือก
                   </td>
                 </tr>
               ) : (
-                filteredRequests.map((r) => {
+                displayRequests.map((r: CertificateRequest) => {
                   const isApprovingThis = approvingId === r.id;
+                  const isStaff = isStaffRequest(r);
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
@@ -553,12 +686,24 @@ export function AdminCertificatesTab({
                         {new Date(r.createdAt).toLocaleDateString('th-TH')}
                       </td>
                       <td className="px-5 py-4 font-mono font-bold text-purple-700">
-                        {r.applicantType === 'STAFF' || r.targetAudience === 'STAFF' ? (
+                        {isStaff ? (
                           <div className="space-y-0.5">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
                               👔 อาจารย์/บุคลากร
                             </span>
-                            <div className="text-[11px] text-slate-500 font-mono">{r.studentCode || 'STAFF'}</div>
+                            <div className="text-[11px] text-slate-700 font-mono font-bold">
+                              {r.studentCode || r.email || 'STAFF'}
+                            </div>
+                            {r.position && (
+                              <div className="text-[10px] text-amber-800 font-medium">
+                                {r.position}
+                              </div>
+                            )}
+                            {r.department && (
+                              <div className="text-[9.5px] text-slate-500">
+                                {r.department}
+                              </div>
+                            )}
                           </div>
                         ) : r.applicantType === 'CANDIDATE' || r.targetAudience === 'CANDIDATE' ? (
                           <div className="space-y-0.5">
@@ -568,7 +713,12 @@ export function AdminCertificatesTab({
                             <div className="text-[11px] text-emerald-800 font-mono font-bold">{r.studentCode}</div>
                           </div>
                         ) : (
-                          r.studentCode
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                              🎓 นิสิต
+                            </span>
+                            <div className="text-[11px] text-slate-700 font-mono font-bold">{r.studentCode}</div>
+                          </div>
                         )}
                       </td>
                       <td className="px-5 py-4 font-medium text-slate-900">
@@ -579,18 +729,25 @@ export function AdminCertificatesTab({
                             : `🌐 สัญชาติ ${r.nationality || 'ต่างชาติ'} (Pass: ${formatPassport(r.passportNo)})`}
                         </div>
                         <div className="flex flex-wrap items-center gap-1 mt-1">
-                          {r.enrollmentSlipUrl ? (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200" title="มีสำเนาการลงทะเบียนเรียนแนบมาแล้ว">
-                              <FileCheck2 className="w-3 h-3 text-emerald-600" /> สำเนาลงเรียน ✓
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title="ยังไม่มีสำเนาการลงทะเบียนเรียน">
-                              ⚠️ ขาดสำเนาลงเรียน
-                            </span>
+                          {!isStaff && (
+                            r.enrollmentSlipUrl ? (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200" title="มีสำเนาการลงทะเบียนเรียนแนบมาแล้ว">
+                                <FileCheck2 className="w-3 h-3 text-emerald-600" /> สำเนาลงเรียน ✓
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title="ยังไม่มีสำเนาการลงทะเบียนเรียน">
+                                ⚠️ ขาดสำเนาลงเรียน
+                              </span>
+                            )
                           )}
                           {r.passportCopyUrl && (
                             <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
                               <Paperclip className="w-2.5 h-2.5" /> สำเนาพาสปอร์ต
+                            </span>
+                          )}
+                          {r.attachmentUrl && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200" title="มีเอกสารประกอบคำร้อง/ภารกิจราชการ">
+                              <Paperclip className="w-2.5 h-2.5" /> เอกสารประกอบ
                             </span>
                           )}
                         </div>
