@@ -67,8 +67,8 @@ export const DEFAULT_ROLE_COLUMNS: RoleColumnConfig[] = [
   },
   {
     key: 'OFFICER',
-    title: 'เจ้าหน้าที่ทะเบียน / คณะ',
-    shortHeader: '👮 เจ้าหน้าที่หลัก (Officer)',
+    title: 'เจ้าหน้าที่ดูแลระบบ',
+    shortHeader: '👮 เจ้าหน้าที่ดูแลระบบ (Officer)',
     badge: 'OFFICER',
     desc: 'ตรวจสอบคำร้อง แก้ไข/เลื่อนชั้นปีนิสิต จัดการรายวิชา/ตารางสอน และออกบัตรภาระงานอาจารย์',
     colorTheme: 'sky',

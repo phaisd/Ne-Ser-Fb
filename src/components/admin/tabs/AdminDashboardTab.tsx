@@ -402,7 +402,7 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
               <span>2. จำกัดสิทธิ์ (Access Control)</span>
             </div>
             <p className="text-[11px] text-slate-300 leading-relaxed">
-              เฉพาะ Admin และเจ้าหน้าที่ทะเบียนที่มีสิทธิ์เท่านั้น ที่สามารถเปิดดูเลขหนังสือเดินทางฉบับเต็มได้
+              เฉพาะ Admin และเจ้าหน้าที่ดูแลระบบที่มีสิทธิ์เท่านั้น ที่สามารถเปิดดูเลขหนังสือเดินทางฉบับเต็มได้
             </p>
           </div>
           <div className="p-3 bg-white/10 rounded-xl border border-white/10 space-y-1">

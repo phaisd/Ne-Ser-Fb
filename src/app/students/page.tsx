@@ -494,7 +494,7 @@ export default function StudentsPage() {
           พื้นที่สงวนสิทธิ์เฉพาะผู้ดูแลระบบ (Admin Only)
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-          ระบบฐานข้อมูลทะเบียนนิสิต (Directory) สงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบและเจ้าหน้าที่ทะเบียน คณะพุทธศาสตร์ เท่านั้น เพื่อคุ้มครองข้อมูลส่วนบุคคลของนิสิต
+          ระบบฐานข้อมูลทะเบียนนิสิต (Directory) สงวนสิทธิ์การเข้าถึงเฉพาะผู้ดูแลระบบและเจ้าหน้าที่ดูแลระบบ คณะพุทธศาสตร์ เท่านั้น เพื่อคุ้มครองข้อมูลส่วนบุคคลของนิสิต
         </p>
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link

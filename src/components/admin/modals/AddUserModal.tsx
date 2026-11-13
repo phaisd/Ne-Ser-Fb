@@ -166,7 +166,7 @@ export function AddUserModal({
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                 >
                   <option value="INSTRUCTOR">อาจารย์ผู้สอน (เช็คชื่อ / ตารางสอน)</option>
-                  <option value="OFFICER">เจ้าหน้าที่ทะเบียน (พิจารณาคำร้อง)</option>
+                  <option value="OFFICER">เจ้าหน้าที่ดูแลระบบ (พิจารณาคำร้อง)</option>
                   <option value="ADMIN">ผู้ดูแลระบบ (Admin Access)</option>
                 </select>
               )}

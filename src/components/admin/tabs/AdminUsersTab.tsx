@@ -331,7 +331,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
           <p className="text-xs text-slate-500 mt-0.5">
             {isOfficer
               ? 'ตรวจสอบ แก้ไขไอดี-อีเมล ออกบัตรแจ้งภาระงานสอน และรีเซ็ตรหัสผ่านสำหรับอาจารย์ผู้สอน'
-              : 'กำหนดสิทธิ์การใช้งานระบบ เช่น ผู้ดูแลระบบ (ADMIN), เจ้าหน้าที่ทะเบียน (OFFICER), และอาจารย์ผู้สอน (INSTRUCTOR)'}
+              : 'กำหนดสิทธิ์การใช้งานระบบ เช่น ผู้ดูแลระบบ (ADMIN), เจ้าหน้าที่ดูแลระบบ (OFFICER), และอาจารย์ผู้สอน (INSTRUCTOR)'}
           </p>
         </div>
 
@@ -923,7 +923,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                             >
                               {isSuper && <option value="SUPER_ADMIN">👑 Super Admin</option>}
                               <option value="INSTRUCTOR">อาจารย์ผู้สอน</option>
-                              <option value="OFFICER">เจ้าหน้าที่</option>
+                              <option value="OFFICER">เจ้าหน้าที่ดูแลระบบ</option>
                               <option value="ADMIN">ผู้ดูแลระบบ</option>
                             </select>
                           )}

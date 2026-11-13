@@ -380,7 +380,7 @@ function VerifyContent() {
             </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
               <strong className="text-slate-800 block mb-1">3. การจำกัดสิทธิ์เข้าถึง (Role-Based Access)</strong>
-              เฉพาะเจ้าหน้าที่ทะเบียนและผู้ดูแลระบบที่มีสิทธิ์เท่านั้น จึงจะสามารถเข้าถึงและแก้ไขข้อมูลหนังสือเดินทางได้
+              เฉพาะเจ้าหน้าที่ดูแลระบบและผู้ดูแลระบบที่มีสิทธิ์เท่านั้น จึงจะสามารถเข้าถึงและแก้ไขข้อมูลหนังสือเดินทางได้
             </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
               <strong className="text-slate-800 block mb-1">4. นโยบายการเก็บรักษาข้อมูล (Data Retention)</strong>
