@@ -312,6 +312,143 @@ export function buildNotificationFlexMessage(payload: NotificationPayload): Reco
 }
 
 /**
+ * Builds a professional, interactive LINE Flex Message for staff request acknowledgment (กรณี ก).
+ */
+export function buildAcknowledgeFlexMessage(payload: {
+  staffName: string;
+  studentName: string;
+  studentCode: string;
+  timeBkk?: string;
+  adminUrl?: string;
+}): Record<string, unknown> {
+  const bangkokTime =
+    payload.timeBkk ||
+    new Date().toLocaleString('th-TH', {
+      timeZone: 'Asia/Bangkok',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+  const adminUrl = payload.adminUrl || 'https://ne-ser-fb.vercel.app/admin';
+
+  return {
+    type: 'flex',
+    altText: `✅ [รับเรื่องแล้ว] ${payload.staffName} รับเรื่องคำร้องของ ${payload.studentName || payload.studentCode} เรียบร้อยแล้ว`,
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#059669',
+        paddingAll: '16px',
+        contents: [
+          {
+            type: 'text',
+            text: '🏛️ คณะพุทธศาสตร์ มจร วังน้อย',
+            color: '#FFFFFF',
+            size: 'xs',
+            weight: 'bold',
+            opacity: 0.85,
+          },
+          {
+            type: 'text',
+            text: '✅ เจ้าหน้าที่รับเรื่องแล้ว',
+            color: '#FFFFFF',
+            size: 'md',
+            weight: 'bold',
+            margin: 'sm',
+          },
+        ],
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '16px',
+        spacing: 'md',
+        contents: [
+          {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'sm',
+            contents: [
+              {
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  { type: 'text', text: '👮 ผู้รับเรื่อง:', size: 'xs', color: '#6B7280', flex: 2 },
+                  { type: 'text', text: payload.staffName, size: 'xs', color: '#047857', weight: 'bold', flex: 5, wrap: true },
+                ],
+              },
+              {
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  { type: 'text', text: '👤 ผู้ยื่นคำร้อง:', size: 'xs', color: '#6B7280', flex: 2 },
+                  { type: 'text', text: payload.studentName || payload.studentCode, size: 'xs', color: '#111827', weight: 'bold', flex: 5, wrap: true },
+                ],
+              },
+              {
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  { type: 'text', text: '🆔 รหัสนิสิต:', size: 'xs', color: '#6B7280', flex: 2 },
+                  { type: 'text', text: payload.studentCode, size: 'xs', color: '#111827', weight: 'bold', flex: 5 },
+                ],
+              },
+              {
+                type: 'box',
+                layout: 'baseline',
+                contents: [
+                  { type: 'text', text: '📊 สถานะ:', size: 'xs', color: '#6B7280', flex: 2 },
+                  { type: 'text', text: 'รับเรื่องแล้ว กำลังตรวจสอบเอกสาร', size: 'xs', color: '#059669', weight: 'bold', flex: 5, wrap: true },
+                ],
+              },
+            ],
+          },
+          { type: 'separator', color: '#E5E7EB' },
+          {
+            type: 'text',
+            text: `⏰ เวลารับเรื่อง: ${bangkokTime} น.`,
+            size: 'xxs',
+            color: '#9CA3AF',
+          },
+          {
+            type: 'text',
+            text: '📌 บันทึกผู้รับเรื่องเรียบร้อยแล้ว กำลังดำเนินการตรวจสอบเอกสารในระบบ ขอบคุณครับ 🙏',
+            size: 'xxs',
+            color: '#4B5563',
+            wrap: true,
+          },
+        ],
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        paddingAll: '16px',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#059669',
+            height: 'sm',
+            action: {
+              type: 'uri',
+              label: '📄 เปิดดูในระบบ Admin',
+              uri: adminUrl,
+            },
+          },
+        ],
+      },
+    },
+  };
+}
+
+/**
  * Sends a notification via LINE (Messaging API, Notify, Webhook) and Email.
  */
 export async function sendNotification(

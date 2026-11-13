@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSystemSettings, updateSystemSettings } from '@/lib/data-store';
+import { buildAcknowledgeFlexMessage } from '@/lib/notifier';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,10 +88,16 @@ export async function POST(request: Request) {
             }
           }
 
-          const replyMsg = `✅ [รับเรื่องเรียบร้อยแล้ว]\n━━━━━━━━━━━━━━━━━━━━\n👮 ผู้รับเรื่อง: ${staffName}\n👤 คำร้องของ: ${studentName || studentCode}\n🆔 รหัสนิสิต: ${studentCode}\n⏰ เวลารับเรื่อง: ${nowBkk} น.\n━━━━━━━━━━━━━━━━━━━━\n📌 บันทึกผู้รับเรื่องเรียบร้อยแล้ว กำลังดำเนินการตรวจสอบเอกสารในระบบครับ ขอบคุณครับ 🙏`;
+          const flexMsg = buildAcknowledgeFlexMessage({
+            staffName,
+            studentName,
+            studentCode,
+            timeBkk: nowBkk,
+            adminUrl: 'https://ne-ser-fb.vercel.app/admin',
+          });
 
           try {
-            await fetch('https://api.line.me/v2/bot/message/reply', {
+            const replyRes = await fetch('https://api.line.me/v2/bot/message/reply', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -98,9 +105,14 @@ export async function POST(request: Request) {
               },
               body: JSON.stringify({
                 replyToken,
-                messages: [{ type: 'text', text: replyMsg }],
+                messages: [flexMsg],
               }),
             });
+
+            if (!replyRes.ok) {
+              const errBody = await replyRes.text().catch(() => '');
+              console.error('[LINE Webhook] Failed to reply acknowledge flex message:', errBody);
+            }
           } catch (fetchErr) {
             console.error('[LINE Webhook] Failed to reply acknowledge postback:', fetchErr);
           }

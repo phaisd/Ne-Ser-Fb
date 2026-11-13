@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildNotificationMessage, sendNotification } from './notifier';
+import {
+  buildNotificationMessage,
+  buildNotificationFlexMessage,
+  buildAcknowledgeFlexMessage,
+  sendNotification,
+} from './notifier';
 
 describe('notifier utility (LINE & Real-Time Alerts)', () => {
   it('formats rich certificate request notification text correctly', () => {
@@ -57,5 +62,26 @@ describe('notifier utility (LINE & Real-Time Alerts)', () => {
 
     expect(text).toContain('สถานะ: ✅ อนุมัติคำร้องหนังสือรับรองเรียบร้อยแล้ว');
     expect(text).toContain('📜 เลขที่หนังสือ: อว 8002/012/2569');
+  });
+
+  it('builds valid acknowledge Flex Message card with staff and student details (กรณี ก)', () => {
+    const flex = buildAcknowledgeFlexMessage({
+      staffName: 'คุณ phais01Vis',
+      studentName: 'พระมหาทดสอบ ญาณวโร',
+      studentCode: '6501501001',
+      timeBkk: '13 พ.ย. 2569, 11:19:38',
+      adminUrl: 'https://ne-ser-fb.vercel.app/admin',
+    });
+
+    expect(flex.type).toBe('flex');
+    expect(flex.altText).toContain('คุณ phais01Vis');
+    expect(flex.altText).toContain('พระมหาทดสอบ ญาณวโร');
+    const contents = flex.contents as Record<string, unknown>;
+    expect(contents.type).toBe('bubble');
+    expect(contents.size).toBe('mega');
+    expect(JSON.stringify(contents)).toContain('เจ้าหน้าที่รับเรื่องแล้ว');
+    expect(JSON.stringify(contents)).toContain('6501501001');
+    expect(JSON.stringify(contents)).toContain('คุณ phais01Vis');
+    expect(JSON.stringify(contents)).toContain('https://ne-ser-fb.vercel.app/admin');
   });
 });
