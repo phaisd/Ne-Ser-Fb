@@ -40,10 +40,13 @@ export default function Footer() {
     totalVisits: number;
     todayVisits: number;
     uniqueVisitors: number;
+    onlineCount?: number;
+    onlineUsers?: number;
   } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
+    let pingTimer: ReturnType<typeof setInterval> | null = null;
 
     const loadSettings = () => {
       fetch('/api/system-settings')
@@ -79,6 +82,24 @@ export default function Footer() {
 
       const lastCountedDate = localStorage.getItem('mcu_visitor_last_date');
 
+      const applyStats = (res: {
+        success?: boolean;
+        totalVisits?: number;
+        todayVisits?: number;
+        uniqueVisitors?: number;
+        onlineCount?: number;
+        onlineUsers?: number;
+      }) => {
+        if (!isMounted || !res?.success) return;
+        setVisitorStats({
+          totalVisits: Number(res.totalVisits ?? 0),
+          todayVisits: Number(res.todayVisits ?? 0),
+          uniqueVisitors: Number(res.uniqueVisitors ?? 0),
+          onlineCount: Number(res.onlineCount ?? res.onlineUsers ?? 1),
+          onlineUsers: Number(res.onlineUsers ?? res.onlineCount ?? 1),
+        });
+      };
+
       if (lastCountedDate !== todayBkk) {
         fetch('/api/visitors', {
           method: 'POST',
@@ -89,34 +110,30 @@ export default function Footer() {
           .then((res) => {
             if (res?.success) {
               localStorage.setItem('mcu_visitor_last_date', todayBkk);
-              if (isMounted) {
-                setVisitorStats({
-                  totalVisits: Number(res.totalVisits ?? 0),
-                  todayVisits: Number(res.todayVisits ?? 0),
-                  uniqueVisitors: Number(res.uniqueVisitors ?? 0),
-                });
-              }
+              applyStats(res);
             }
           })
           .catch(() => {});
       } else {
-        fetch('/api/visitors')
+        fetch(`/api/visitors?visitorId=${encodeURIComponent(visitorId)}`)
           .then((r) => r.json())
-          .then((res) => {
-            if (isMounted && res?.success) {
-              setVisitorStats({
-                totalVisits: Number(res.totalVisits ?? 0),
-                todayVisits: Number(res.todayVisits ?? 0),
-                uniqueVisitors: Number(res.uniqueVisitors ?? 0),
-              });
-            }
-          })
+          .then(applyStats)
           .catch(() => {});
       }
+
+      // Heartbeat ping every 60 seconds to keep online user count accurate and live
+      pingTimer = setInterval(() => {
+        if (!isMounted || !visitorId) return;
+        fetch(`/api/visitors?visitorId=${encodeURIComponent(visitorId)}`)
+          .then((r) => r.json())
+          .then(applyStats)
+          .catch(() => {});
+      }, 60_000);
     }
 
     return () => {
       isMounted = false;
+      if (pingTimer) clearInterval(pingTimer);
       window.removeEventListener('mcu_settings_updated', loadSettings);
     };
   }, [pathname]);
@@ -394,12 +411,26 @@ export default function Footer() {
                 {settings.showVisitorCounter !== false && (
                   <div className="pt-2">
                     <div className="inline-flex items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-[#161f30] border border-slate-700/80 shadow-md">
-                      <Users className="w-6 h-6 text-amber-400 shrink-0" />
-                      <div>
-                        <div className="text-[11px] font-semibold text-slate-300 leading-tight">
-                          ผู้เข้าชมเว็บไซต์
+                      <Users className="w-6 h-6 text-amber-400 shrink-0 self-center" />
+                      <div className="min-w-[170px]">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-[11px] font-semibold text-slate-300 leading-tight">
+                            ผู้เข้าชมเว็บไซต์
+                          </span>
+                          {visitorStats && (
+                            <span
+                              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-semibold tracking-wide"
+                              title="จำนวนผู้ใช้งานที่กำลังออนไลน์ขณะนี้"
+                            >
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                              </span>
+                              <span>ออนไลน์ {visitorStats.onlineCount ?? 1}</span>
+                            </span>
+                          )}
                         </div>
-                        <div className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight leading-none mt-0.5">
+                        <div className="text-xl sm:text-2xl font-black text-amber-400 tracking-tight leading-none mt-1">
                           {visitorStats ? visitorStats.totalVisits.toLocaleString() : '...'}
                         </div>
                         {visitorStats && (

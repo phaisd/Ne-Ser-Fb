@@ -2,11 +2,11 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { computeVisitorStats, getBangkokDateStr, recordVisitorVisit } from './visitorService';
 
 vi.mock('./storageHelper', () => {
-  let stored: unknown[] = [];
+  const storeMap: Record<string, unknown> = {};
   return {
-    readLocalJson: vi.fn((_file: string, fallback: unknown[]) => stored.length ? stored : fallback),
-    writeLocalJson: vi.fn((_file: string, data: unknown[]) => {
-      stored = data;
+    readLocalJson: vi.fn((file: string, fallback: unknown) => storeMap[file] !== undefined ? storeMap[file] : fallback),
+    writeLocalJson: vi.fn((file: string, data: unknown) => {
+      storeMap[file] = data;
     }),
     getSheetsClient: vi.fn(() => null),
   };

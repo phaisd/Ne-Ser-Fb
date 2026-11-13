@@ -4,9 +4,18 @@ import { getVisitorStats, recordVisitorVisit } from '@/lib/data-store';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const stats = await getVisitorStats();
+    let visitorId = '';
+    if (request && request.url) {
+      try {
+        const { searchParams } = new URL(request.url);
+        visitorId = searchParams.get('visitorId') || '';
+      } catch {
+        // ignore malformed URL
+      }
+    }
+    const stats = await getVisitorStats(visitorId);
     return NextResponse.json({
       success: true,
       ...stats,

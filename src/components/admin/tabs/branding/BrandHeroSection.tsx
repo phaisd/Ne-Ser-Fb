@@ -27,6 +27,7 @@ export function BrandHeroSection({
     totalVisits: number;
     todayVisits: number;
     uniqueVisitors: number;
+    onlineCount?: number;
   } | null>(null);
 
   const loadVisitorStats = () => {
@@ -38,6 +39,7 @@ export function BrandHeroSection({
             totalVisits: Number(res.totalVisits ?? 0),
             todayVisits: Number(res.todayVisits ?? 0),
             uniqueVisitors: Number(res.uniqueVisitors ?? 0),
+            onlineCount: Number(res.onlineCount ?? res.onlineUsers ?? 1),
           });
         }
       })
@@ -401,6 +403,13 @@ export function BrandHeroSection({
                 </p>
                 {settings.showVisitorCounter !== false && (
                   <div className="pt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 font-bold text-emerald-800 flex items-center gap-1.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span>ออนไลน์: {liveVisitorStats ? (liveVisitorStats.onlineCount ?? 1) : '...'} คน</span>
+                    </span>
                     <span className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 font-bold text-slate-800">
                       สะสมจริง: {liveVisitorStats ? liveVisitorStats.totalVisits.toLocaleString() : '...'} ครั้ง
                     </span>

@@ -11,10 +11,74 @@ export interface VisitorStatsSummary {
   totalVisits: number;
   todayVisits: number;
   uniqueVisitors: number;
+  onlineCount?: number;
+  onlineUsers?: number;
 }
 
 const CACHE_TTL_MS = 15_000;
 let visitorCache: { logs: VisitorLogRecord[]; fetchedAt: number } | null = null;
+
+// Active online tracking (window of 5 minutes)
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+type ActiveVisitorMap = Record<string, number>;
+const memoryActiveVisitors: Map<string, number> = new Map();
+
+/**
+ * Tracks and returns real-time active online visitor count within the last 5 minutes.
+ */
+export function touchVisitorOnline(visitorId?: string): number {
+  const now = Date.now();
+  const cutoff = now - ONLINE_WINDOW_MS;
+
+  // Initialize or hydrate from local cache if in-memory map is empty
+  if (memoryActiveVisitors.size === 0) {
+    try {
+      const saved = readLocalJson<ActiveVisitorMap>('active_visitors.json', {});
+      if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
+        for (const [id, ts] of Object.entries(saved)) {
+          if (typeof ts === 'number' && ts > cutoff) {
+            memoryActiveVisitors.set(id, ts);
+          }
+        }
+      }
+    } catch {
+      // Ignore read error
+    }
+  }
+
+  // Purge expired records
+  for (const [id, ts] of memoryActiveVisitors.entries()) {
+    if (ts <= cutoff) {
+      memoryActiveVisitors.delete(id);
+    }
+  }
+
+  // Register or update active timestamp for current visitor
+  if (visitorId) {
+    const cleanId = visitorId.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+    if (cleanId) {
+      memoryActiveVisitors.set(cleanId, now);
+    }
+  }
+
+  // Persist active visitors to local JSON
+  const record: ActiveVisitorMap = {};
+  for (const [id, ts] of memoryActiveVisitors.entries()) {
+    record[id] = ts;
+  }
+  try {
+    writeLocalJson('active_visitors.json', record);
+  } catch {
+    // Non-fatal
+  }
+
+  const count = memoryActiveVisitors.size;
+  return count > 0 ? count : (visitorId ? 1 : 1);
+}
+
+export function resetActiveVisitorsForTesting(): void {
+  memoryActiveVisitors.clear();
+}
 
 /**
  * Returns today's calendar date in Asia/Bangkok timezone (YYYY-MM-DD).
@@ -86,11 +150,17 @@ export async function getVisitorLogs(forceRefresh = false): Promise<VisitorLogRe
 }
 
 /**
- * Returns real visitor summary statistics.
+ * Returns real visitor summary statistics including active online count.
  */
-export async function getVisitorStats(): Promise<VisitorStatsSummary> {
+export async function getVisitorStats(visitorId?: string): Promise<VisitorStatsSummary> {
   const logs = await getVisitorLogs();
-  return computeVisitorStats(logs);
+  const stats = computeVisitorStats(logs);
+  const online = touchVisitorOnline(visitorId);
+  return {
+    ...stats,
+    onlineCount: online,
+    onlineUsers: online,
+  };
 }
 
 /**
@@ -114,8 +184,11 @@ export async function recordVisitorVisit(
   );
 
   if (alreadyVisitedToday) {
+    const online = touchVisitorOnline(cleanId);
     return {
       ...computeVisitorStats(logs),
+      onlineCount: online,
+      onlineUsers: online,
       counted: false,
     };
   }
@@ -149,8 +222,11 @@ export async function recordVisitorVisit(
 
   visitorCache = { logs: nextLogs, fetchedAt: Date.now() };
 
+  const online = touchVisitorOnline(cleanId);
   return {
     ...computeVisitorStats(nextLogs),
+    onlineCount: online,
+    onlineUsers: online,
     counted: true,
   };
 }

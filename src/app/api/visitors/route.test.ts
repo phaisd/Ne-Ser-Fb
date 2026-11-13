@@ -21,7 +21,7 @@ describe('/api/visitors', () => {
   });
 
   it('returns visitor stats on GET', async () => {
-    const res = await GET();
+    const res = await GET(new Request('http://localhost/api/visitors?visitorId=test-1'));
     const json = await res.json();
     expect(res.status).toBe(200);
     expect(json.totalVisits).toBe(10);
