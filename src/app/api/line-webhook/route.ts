@@ -54,7 +54,40 @@ export async function POST(request: Request) {
             year: 'numeric',
           });
 
-          const replyMsg = `✅ [รับเรื่องเรียบร้อยแล้ว]\n━━━━━━━━━━━━━━━━━━━━\n👤 ผู้ขอ: ${studentName || studentCode}\n🆔 รหัสนิสิต: ${studentCode}\n⏰ เวลารับเรื่อง: ${nowBkk} น.\n━━━━━━━━━━━━━━━━━━━━\n📌 เจ้าหน้าที่ดูแลระบบได้รับเรื่องเรียบร้อยแล้ว กำลังดำเนินการตรวจสอบเอกสารในระบบครับ ขอบคุณครับ 🙏`;
+          // Fetch the staff member's display name from LINE API
+          let staffName = 'เจ้าหน้าที่ดูแลระบบ';
+          const senderUserId = event.source?.userId;
+          const groupId = event.source?.groupId || event.source?.roomId;
+
+          if (senderUserId) {
+            try {
+              let profileRes: Response | null = null;
+              if (groupId) {
+                profileRes = await fetch(
+                  `https://api.line.me/v2/bot/group/${groupId}/member/${senderUserId}`,
+                  { headers: { Authorization: `Bearer ${channelToken}` } }
+                ).catch(() => null);
+              }
+
+              if (!profileRes || !profileRes.ok) {
+                profileRes = await fetch(
+                  `https://api.line.me/v2/bot/profile/${senderUserId}`,
+                  { headers: { Authorization: `Bearer ${channelToken}` } }
+                ).catch(() => null);
+              }
+
+              if (profileRes && profileRes.ok) {
+                const profileData = await profileRes.json().catch(() => ({}));
+                if (profileData?.displayName) {
+                  staffName = `คุณ ${profileData.displayName}`;
+                }
+              }
+            } catch (pErr) {
+              console.error('[LINE Webhook] Failed to fetch staff profile:', pErr);
+            }
+          }
+
+          const replyMsg = `✅ [รับเรื่องเรียบร้อยแล้ว]\n━━━━━━━━━━━━━━━━━━━━\n👮 ผู้รับเรื่อง: ${staffName}\n👤 คำร้องของ: ${studentName || studentCode}\n🆔 รหัสนิสิต: ${studentCode}\n⏰ เวลารับเรื่อง: ${nowBkk} น.\n━━━━━━━━━━━━━━━━━━━━\n📌 บันทึกผู้รับเรื่องเรียบร้อยแล้ว กำลังดำเนินการตรวจสอบเอกสารในระบบครับ ขอบคุณครับ 🙏`;
 
           try {
             await fetch('https://api.line.me/v2/bot/message/reply', {
