@@ -85,6 +85,233 @@ export function buildNotificationMessage(payload: NotificationPayload): string {
 }
 
 /**
+ * Builds an interactive, professional LINE Flex Message with Action Buttons.
+ */
+export function buildNotificationFlexMessage(payload: NotificationPayload): Record<string, unknown> {
+  const isPending = payload.status === 'PENDING';
+  const isApproved = payload.status === 'APPROVED';
+  const isRejected = payload.status === 'REJECTED';
+
+  let headerBg = '#059669';
+  let headerTitle = '📥 มีคำร้องใหม่ (รอดำเนินการ)';
+  const headerSub = '🏛️ คณะพุทธศาสตร์ มจร วังน้อย';
+  if (isApproved) {
+    headerBg = '#2563EB';
+    headerTitle = '✅ อนุมัติคำร้องเรียบร้อยแล้ว';
+  } else if (isRejected) {
+    headerBg = '#DC2626';
+    headerTitle = '❌ คำร้องไม่ผ่านการอนุมัติ';
+  }
+
+  const bangkokTime = new Date().toLocaleString('th-TH', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const detailRows: Array<{
+    type: string;
+    layout: string;
+    contents: Array<{
+      type: string;
+      text: string;
+      size?: string;
+      color?: string;
+      weight?: string;
+      flex?: number;
+      wrap?: boolean;
+    }>;
+  }> = [
+    {
+      type: 'box',
+      layout: 'baseline',
+      contents: [
+        { type: 'text', text: '👤 ผู้ขอ:', size: 'xs', color: '#6B7280', flex: 2 },
+        { type: 'text', text: payload.studentName, size: 'xs', color: '#111827', weight: 'bold', flex: 5, wrap: true },
+      ],
+    },
+    {
+      type: 'box',
+      layout: 'baseline',
+      contents: [
+        { type: 'text', text: '🆔 รหัส:', size: 'xs', color: '#6B7280', flex: 2 },
+        { type: 'text', text: payload.studentCode, size: 'xs', color: '#111827', weight: 'bold', flex: 5 },
+      ],
+    },
+  ];
+
+  if (payload.programLanguage) {
+    detailRows.push({
+      type: 'box',
+      layout: 'baseline',
+      contents: [
+        { type: 'text', text: '🌐 ภาษา:', size: 'xs', color: '#6B7280', flex: 2 },
+        { type: 'text', text: payload.programLanguage, size: 'xs', color: '#4B5563', flex: 5, wrap: true },
+      ],
+    });
+  }
+
+  if (payload.degreeLevel || payload.major) {
+    const degMajor = [payload.degreeLevel, payload.major].filter(Boolean).join(' - ');
+    detailRows.push({
+      type: 'box',
+      layout: 'baseline',
+      contents: [
+        { type: 'text', text: '🎓 สาขา:', size: 'xs', color: '#6B7280', flex: 2 },
+        { type: 'text', text: degMajor, size: 'xs', color: '#111827', flex: 5, wrap: true },
+      ],
+    });
+  }
+
+  detailRows.push({
+    type: 'box',
+    layout: 'baseline',
+    contents: [
+      { type: 'text', text: '📄 เรื่อง:', size: 'xs', color: '#6B7280', flex: 2 },
+      { type: 'text', text: payload.certType, size: 'xs', color: '#047857', weight: 'bold', flex: 5, wrap: true },
+    ],
+  });
+
+  if (payload.requestPurpose && payload.requestPurpose !== payload.certType) {
+    detailRows.push({
+      type: 'box',
+      layout: 'baseline',
+      contents: [
+        { type: 'text', text: '🎯 เหตุผล:', size: 'xs', color: '#6B7280', flex: 2 },
+        { type: 'text', text: payload.requestPurpose, size: 'xs', color: '#374151', flex: 5, wrap: true },
+      ],
+    });
+  }
+
+  if (payload.docNo) {
+    detailRows.push({
+      type: 'box',
+      layout: 'baseline',
+      contents: [
+        { type: 'text', text: '📜 เลขที่:', size: 'xs', color: '#6B7280', flex: 2 },
+        { type: 'text', text: `อว 8002/${payload.docNo}`, size: 'xs', color: '#2563EB', weight: 'bold', flex: 5 },
+      ],
+    });
+  }
+
+  if (payload.phone) {
+    detailRows.push({
+      type: 'box',
+      layout: 'baseline',
+      contents: [
+        { type: 'text', text: '📞 โทร:', size: 'xs', color: '#6B7280', flex: 2 },
+        { type: 'text', text: payload.phone, size: 'xs', color: '#111827', flex: 5 },
+      ],
+    });
+  }
+
+  if (payload.rejectReason) {
+    detailRows.push({
+      type: 'box',
+      layout: 'baseline',
+      contents: [
+        { type: 'text', text: '⚠️ เหตุผล:', size: 'xs', color: '#DC2626', flex: 2 },
+        { type: 'text', text: payload.rejectReason, size: 'xs', color: '#DC2626', flex: 5, wrap: true },
+      ],
+    });
+  }
+
+  const footerButtons: Array<Record<string, unknown>> = [];
+
+  if (isPending) {
+    footerButtons.push({
+      type: 'button',
+      style: 'primary',
+      color: '#059669',
+      height: 'sm',
+      action: {
+        type: 'postback',
+        label: '✅ รับเรื่องแล้ว',
+        data: `action=acknowledge&studentCode=${payload.studentCode}&studentName=${encodeURIComponent(payload.studentName)}`,
+        displayText: `✅ เจ้าหน้าที่รับเรื่องคำร้องแล้ว (${payload.studentCode})`,
+      },
+    });
+  }
+
+  const adminUrl = payload.actionUrl || 'https://ne-ser-fb.vercel.app/admin';
+  footerButtons.push({
+    type: 'button',
+    style: isPending ? 'secondary' : 'primary',
+    color: isPending ? undefined : headerBg,
+    height: 'sm',
+    action: {
+      type: 'uri',
+      label: isPending ? '📄 เปิดดูในระบบ Admin' : '📄 ดูรายละเอียดในระบบ',
+      uri: adminUrl,
+    },
+  });
+
+  return {
+    type: 'flex',
+    altText: `🔔 [คณะพุทธศาสตร์ มจร] ${headerTitle}: ${payload.studentName} (${payload.studentCode})`,
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: headerBg,
+        paddingAll: '16px',
+        contents: [
+          {
+            type: 'text',
+            text: headerSub,
+            color: '#FFFFFF',
+            size: 'xs',
+            weight: 'bold',
+            opacity: 0.85,
+          },
+          {
+            type: 'text',
+            text: headerTitle,
+            color: '#FFFFFF',
+            size: 'md',
+            weight: 'bold',
+            margin: 'sm',
+          },
+        ],
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '16px',
+        spacing: 'md',
+        contents: [
+          {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'sm',
+            contents: detailRows,
+          },
+          { type: 'separator', color: '#E5E7EB' },
+          {
+            type: 'text',
+            text: `⏰ เวลา: ${bangkokTime} น.`,
+            size: 'xxs',
+            color: '#9CA3AF',
+          },
+        ],
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        paddingAll: '16px',
+        contents: footerButtons,
+      },
+    },
+  };
+}
+
+/**
  * Sends a notification via LINE (Messaging API, Notify, Webhook) and Email.
  */
 export async function sendNotification(
@@ -118,7 +345,8 @@ export async function sendNotification(
     process.env.LINE_TARGET_USER_ID;
   if (lineChannelToken && lineTargetUser) {
     try {
-      const res = await fetch('https://api.line.me/v2/bot/message/push', {
+      const flexMessage = buildNotificationFlexMessage(payload);
+      let res = await fetch('https://api.line.me/v2/bot/message/push', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,13 +354,28 @@ export async function sendNotification(
         },
         body: JSON.stringify({
           to: lineTargetUser.trim(),
-          messages: [{ type: 'text', text: notificationText }],
+          messages: [flexMessage],
         }),
       });
 
+      // If flex message was rejected, fallback to text message
+      if (!res.ok) {
+        res = await fetch('https://api.line.me/v2/bot/message/push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${lineChannelToken.trim()}`,
+          },
+          body: JSON.stringify({
+            to: lineTargetUser.trim(),
+            messages: [{ type: 'text', text: notificationText }],
+          }),
+        });
+      }
+
       if (res.ok) {
         lineSuccess = true;
-        messages.push('LINE Messaging API ส่งสำเร็จ');
+        messages.push('LINE Flex Card ส่งสำเร็จ');
       } else {
         const errJson = await res.json().catch(() => ({}));
         messages.push(`LINE Messaging API ล้มเหลว (${res.status}): ${errJson.message || 'Error'}`);

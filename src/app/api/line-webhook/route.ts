@@ -17,6 +17,10 @@ interface LineWebhookEvent {
     id: string;
     text?: string;
   };
+  postback?: {
+    data: string;
+    params?: Record<string, string>;
+  };
 }
 
 export async function POST(request: Request) {
@@ -31,6 +35,45 @@ export async function POST(request: Request) {
       const replyToken = event.replyToken;
 
       if (!replyToken || !channelToken || !userId) continue;
+
+      // Handle Postback actions (e.g. [✅ รับเรื่องแล้ว] button clicked by staff)
+      if (event.type === 'postback') {
+        const postbackData = event.postback?.data || '';
+        const params = new URLSearchParams(postbackData);
+        const action = params.get('action');
+
+        if (action === 'acknowledge') {
+          const studentCode = params.get('studentCode') || '';
+          const studentName = decodeURIComponent(params.get('studentName') || '');
+          const nowBkk = new Date().toLocaleString('th-TH', {
+            timeZone: 'Asia/Bangkok',
+            hour: '2-digit',
+            minute: '2-digit',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          });
+
+          const replyMsg = `✅ [รับเรื่องเรียบร้อยแล้ว]\n━━━━━━━━━━━━━━━━━━━━\n👤 ผู้ขอ: ${studentName || studentCode}\n🆔 รหัสนิสิต: ${studentCode}\n⏰ เวลารับเรื่อง: ${nowBkk} น.\n━━━━━━━━━━━━━━━━━━━━\n📌 เจ้าหน้าที่ดูแลระบบได้รับเรื่องเรียบร้อยแล้ว กำลังดำเนินการตรวจสอบเอกสารในระบบครับ ขอบคุณครับ 🙏`;
+
+          try {
+            await fetch('https://api.line.me/v2/bot/message/reply', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${channelToken}`,
+              },
+              body: JSON.stringify({
+                replyToken,
+                messages: [{ type: 'text', text: replyMsg }],
+              }),
+            });
+          } catch (fetchErr) {
+            console.error('[LINE Webhook] Failed to reply acknowledge postback:', fetchErr);
+          }
+          continue;
+        }
+      }
 
       if (event.type === 'follow' || event.type === 'message') {
         const text = (event.message?.text || '').trim();
