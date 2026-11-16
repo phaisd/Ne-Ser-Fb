@@ -66,7 +66,7 @@ export const CertificateTracker: React.FC<CertificateTrackerProps> = ({
               className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
                 filterCertYear === 'ALL'
                   ? 'bg-purple-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               {isEn ? 'All' : 'ทั้งหมด'}
@@ -78,7 +78,7 @@ export const CertificateTracker: React.FC<CertificateTrackerProps> = ({
                 className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
                   filterCertYear === yr
                     ? 'bg-purple-600 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 ปี {yr}

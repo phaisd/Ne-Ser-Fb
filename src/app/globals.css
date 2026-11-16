@@ -45,13 +45,16 @@
 .dark .bg-white {
   background-color: #131d31 !important;
 }
-.dark .bg-slate-50 {
+.dark .bg-slate-50,
+.dark [class*="bg-slate-50"] {
   background-color: #090d16 !important;
 }
-.dark .bg-slate-100 {
+.dark .bg-slate-100,
+.dark [class*="bg-slate-100"] {
   background-color: #0f172a !important;
 }
-.dark .bg-slate-200 {
+.dark .bg-slate-200,
+.dark [class*="bg-slate-200"] {
   background-color: #1e293b !important;
 }
 
@@ -68,27 +71,28 @@
   border-color: #1e293b !important;
 }
 
-/* Borders */
+/* Borders in Dark Mode */
 .dark .border-slate-100,
 .dark .border-slate-200,
-.dark .border-slate-200\/50,
-.dark .border-slate-200\/60,
-.dark .border-slate-200\/70,
-.dark .border-slate-200\/80,
-.dark .border-slate-200\/90 {
+.dark [class*="border-slate-100"],
+.dark [class*="border-slate-200"] {
   border-color: #1e293b !important;
 }
-.dark .border-slate-300 {
+.dark .border-slate-300,
+.dark [class*="border-slate-300"] {
   border-color: #334155 !important;
 }
 
-/* Text Colors */
+/* Text Colors in Dark Mode */
+.dark .text-slate-950,
 .dark .text-slate-900,
 .dark .text-slate-850,
 .dark .text-slate-800 {
   color: #f8fafc !important;
 }
-.dark .text-slate-700,
+.dark .text-slate-700 {
+  color: #e2e8f0 !important;
+}
 .dark .text-slate-600 {
   color: #cbd5e1 !important;
 }
@@ -96,7 +100,10 @@
   color: #94a3b8 !important;
 }
 .dark .text-slate-400 {
-  color: #64748b !important;
+  color: #94a3b8 !important;
+}
+.dark .text-slate-300 {
+  color: #cbd5e1 !important;
 }
 
 /* Form Controls (Inputs, Selects, Textareas) */
@@ -112,57 +119,185 @@
   color: #64748b !important;
 }
 
-/* Soft Badges & Light Alert Panels */
-.dark .bg-orange-50 {
+/* Soft Badges & Light Alert Panels (match standard and opacity variants) */
+.dark .bg-orange-50,
+.dark [class*="bg-orange-50"] {
   background-color: rgba(249, 115, 22, 0.15) !important;
 }
-.dark .bg-amber-50 {
+.dark .bg-amber-50,
+.dark [class*="bg-amber-50"] {
   background-color: rgba(245, 158, 11, 0.15) !important;
 }
-.dark .bg-emerald-50 {
+.dark .bg-emerald-50,
+.dark [class*="bg-emerald-50"] {
   background-color: rgba(16, 185, 129, 0.15) !important;
 }
-.dark .bg-indigo-50 {
+.dark .bg-indigo-50,
+.dark [class*="bg-indigo-50"] {
   background-color: rgba(99, 102, 241, 0.15) !important;
 }
-.dark .bg-sky-50 {
+.dark .bg-sky-50,
+.dark [class*="bg-sky-50"] {
   background-color: rgba(14, 165, 233, 0.15) !important;
 }
-.dark .bg-purple-50 {
+.dark .bg-purple-50,
+.dark [class*="bg-purple-50"] {
   background-color: rgba(168, 85, 247, 0.15) !important;
 }
-.dark .bg-rose-50 {
+.dark .bg-rose-50,
+.dark [class*="bg-rose-50"],
+.dark .bg-red-50,
+.dark [class*="bg-red-50"] {
   background-color: rgba(244, 63, 94, 0.15) !important;
 }
+.dark .bg-blue-50,
+.dark [class*="bg-blue-50"] {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
 
-/* Badge text adjustments in Dark Mode */
+/* Tinted Badge / Pill Backgrounds in Dark Mode (100 / 200 levels) */
+.dark .bg-red-100,
+.dark .bg-red-200,
+.dark [class*="bg-red-200"],
+.dark .bg-rose-100,
+.dark .bg-rose-200,
+.dark [class*="bg-rose-200"] {
+  background-color: rgba(244, 63, 94, 0.25) !important;
+}
+.dark .bg-sky-100,
+.dark .bg-sky-200,
+.dark [class*="bg-sky-200"],
+.dark .bg-blue-100,
+.dark .bg-blue-200,
+.dark [class*="bg-blue-200"] {
+  background-color: rgba(14, 165, 233, 0.25) !important;
+}
+.dark .bg-amber-100,
+.dark .bg-amber-200,
+.dark [class*="bg-amber-200"] {
+  background-color: rgba(245, 158, 11, 0.25) !important;
+}
+.dark .bg-emerald-100,
+.dark .bg-emerald-200,
+.dark [class*="bg-emerald-200"] {
+  background-color: rgba(16, 185, 129, 0.25) !important;
+}
+.dark .bg-purple-100,
+.dark .bg-purple-200,
+.dark [class*="bg-purple-200"] {
+  background-color: rgba(168, 85, 247, 0.25) !important;
+}
+
+/* Colored Alert Borders in Dark Mode */
+.dark [class*="border-red-400"],
+.dark [class*="border-red-300"],
+.dark [class*="border-red-200"],
+.dark [class*="border-rose-400"],
+.dark [class*="border-rose-300"],
+.dark [class*="border-rose-200"] {
+  border-color: rgba(244, 63, 94, 0.45) !important;
+}
+.dark [class*="border-sky-400"],
+.dark [class*="border-sky-300"],
+.dark [class*="border-sky-200"] {
+  border-color: rgba(14, 165, 233, 0.45) !important;
+}
+.dark [class*="border-amber-400"],
+.dark [class*="border-amber-300"],
+.dark [class*="border-amber-200"] {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+}
+.dark [class*="border-emerald-400"],
+.dark [class*="border-emerald-300"],
+.dark [class*="border-emerald-200"] {
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+.dark [class*="border-purple-400"],
+.dark [class*="border-purple-300"],
+.dark [class*="border-purple-200"] {
+  border-color: rgba(168, 85, 247, 0.45) !important;
+}
+.dark [class*="border-blue-400"],
+.dark [class*="border-blue-300"],
+.dark [class*="border-blue-200"] {
+  border-color: rgba(59, 130, 246, 0.45) !important;
+}
+
+/* Badge & Alert text adjustments in Dark Mode (High Contrast & Clear) */
 .dark .text-orange-950,
 .dark .text-orange-900 {
   color: #fed7aa !important;
 }
+.dark .text-orange-800,
+.dark .text-orange-700 {
+  color: #fdba74 !important;
+}
+
 .dark .text-amber-950,
 .dark .text-amber-900 {
+  color: #fef08a !important;
+}
+.dark .text-amber-800,
+.dark .text-amber-700 {
   color: #fde68a !important;
 }
+
 .dark .text-emerald-950,
 .dark .text-emerald-900 {
   color: #a7f3d0 !important;
 }
+.dark .text-emerald-800,
+.dark .text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
 .dark .text-indigo-950,
 .dark .text-indigo-900 {
   color: #c7d2fe !important;
 }
+.dark .text-indigo-800,
+.dark .text-indigo-700 {
+  color: #a5b4fc !important;
+}
+
 .dark .text-sky-950,
 .dark .text-sky-900 {
   color: #bae6fd !important;
 }
+.dark .text-sky-800,
+.dark .text-sky-700 {
+  color: #7dd3fc !important;
+}
+
+.dark .text-blue-950,
+.dark .text-blue-900 {
+  color: #bfdbfe !important;
+}
+.dark .text-blue-800,
+.dark .text-blue-700 {
+  color: #93c5fd !important;
+}
+
 .dark .text-purple-950,
 .dark .text-purple-900 {
   color: #e9d5ff !important;
 }
+.dark .text-purple-800,
+.dark .text-purple-700 {
+  color: #d8b4fe !important;
+}
+
 .dark .text-rose-950,
-.dark .text-rose-900 {
+.dark .text-rose-900,
+.dark .text-red-950,
+.dark .text-red-900 {
   color: #fecdd3 !important;
+}
+.dark .text-rose-800,
+.dark .text-rose-700,
+.dark .text-red-800,
+.dark .text-red-700 {
+  color: #fca5a5 !important;
 }
 
 /* Tables & Dividers in Dark Mode */
@@ -214,11 +349,17 @@
   }
 
   /* Optional clarity boost for muted / small text when enabled */
-  html[data-font-boost="true"] .text-slate-400 {
+  html:not(.dark)[data-font-boost="true"] .text-slate-400 {
     color: #475569 !important;
   }
-  html[data-font-boost="true"] .text-slate-500 {
+  html:not(.dark)[data-font-boost="true"] .text-slate-500 {
     color: #334155 !important;
+  }
+  html.dark[data-font-boost="true"] .text-slate-400 {
+    color: #94a3b8 !important;
+  }
+  html.dark[data-font-boost="true"] .text-slate-500 {
+    color: #cbd5e1 !important;
   }
 }
 

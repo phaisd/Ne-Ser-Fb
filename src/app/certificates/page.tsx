@@ -281,13 +281,13 @@ export default function CertificatesPage() {
         </div>
 
         {/* Tab switcher (Responsive Touch-Friendly) */}
-        <div className="w-full sm:w-auto flex flex-wrap items-center gap-1 p-1 bg-slate-200/80 rounded-2xl text-xs sm:text-sm font-semibold">
+        <div className="w-full sm:w-auto flex flex-wrap items-center gap-1 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-2xl text-xs sm:text-sm font-semibold border border-transparent dark:border-slate-700/60">
           <button
             onClick={() => setActiveTab('REQUEST')}
             className={`flex-1 sm:flex-initial text-center whitespace-nowrap min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
               activeTab === 'REQUEST'
-                ? 'bg-white text-purple-700 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-purple-700 dark:bg-purple-600 dark:text-white shadow-sm font-bold'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             {t.certTabRequest}
@@ -296,8 +296,8 @@ export default function CertificatesPage() {
             onClick={() => setActiveTab('TRACK')}
             className={`flex-1 sm:flex-initial text-center whitespace-nowrap min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
               activeTab === 'TRACK'
-                ? 'bg-white text-purple-700 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white text-purple-700 dark:bg-purple-600 dark:text-white shadow-sm font-bold'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             {t.certTabTrack}
@@ -307,8 +307,8 @@ export default function CertificatesPage() {
               onClick={() => setActiveTab('ADMIN')}
               className={`flex-1 sm:flex-initial text-center whitespace-nowrap min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer ${
                 activeTab === 'ADMIN'
-                  ? 'bg-white text-purple-700 shadow-sm font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-purple-700 dark:bg-purple-600 dark:text-white shadow-sm font-bold'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {t.certTabAdmin} ({requests.length})
@@ -318,9 +318,9 @@ export default function CertificatesPage() {
       </div>
 
       {submitSuccess && (
-        <div className="p-4 rounded-xl bg-purple-50 border border-purple-200 text-purple-800 text-sm flex items-center justify-between shadow-sm">
+        <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-purple-800 dark:text-purple-200 text-sm flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-purple-600 shrink-0" />
+            <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0" />
             <span>{submitSuccess}</span>
           </div>
           <button onClick={() => setSubmitSuccess(null)} className="text-purple-600 hover:text-purple-800 font-bold ml-4">
@@ -333,33 +333,33 @@ export default function CertificatesPage() {
       {activeTab === 'REQUEST' && (
         <div className="space-y-6">
           {/* Stepper Progress Bar (Step 1 -> Step 2) */}
-          <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between gap-2 sm:gap-4">
+          <div className="bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between gap-2 sm:gap-4">
             <button
               type="button"
               onClick={handleBackToSelect}
               className={`flex-1 flex items-center justify-center sm:justify-start gap-2.5 p-2.5 rounded-xl transition cursor-pointer ${
                 requestStep === 1
-                  ? 'bg-purple-50 text-purple-900 border border-purple-200 font-extrabold shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-bold'
+                  ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-900 dark:text-purple-200 border border-purple-200 dark:border-purple-800 font-extrabold shadow-xs'
+                  : 'text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-bold'
               }`}
             >
               <span
                 className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                  requestStep === 1 ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-700'
+                  requestStep === 1 ? 'bg-purple-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-transparent dark:border-slate-700'
                 }`}
               >
                 1
               </span>
               <div className="text-left hidden xs:block">
                 <div className="text-xs sm:text-sm font-bold">{t.certStep1}</div>
-                <div className="text-[10px] text-slate-400 font-normal hidden md:block">
+                <div className="text-[10px] text-slate-400 dark:text-slate-400 font-normal hidden md:block">
                   {isEn ? 'Select request card' : 'เลือกการ์ดประเภทคำร้องที่ต้องการ'}
                 </div>
               </div>
               <span className="xs:hidden text-xs font-bold">{t.certStep1}</span>
             </button>
 
-            <span className="text-slate-300 font-bold">➔</span>
+            <span className="text-slate-300 dark:text-slate-600 font-bold">➔</span>
 
             <button
               type="button"
@@ -367,20 +367,20 @@ export default function CertificatesPage() {
               disabled={!selectedCert}
               className={`flex-1 flex items-center justify-center sm:justify-start gap-2.5 p-2.5 rounded-xl transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                 requestStep === 2
-                  ? 'bg-purple-50 text-purple-900 border border-purple-200 font-extrabold shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-bold'
+                  ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-900 dark:text-purple-200 border border-purple-200 dark:border-purple-800 font-extrabold shadow-xs'
+                  : 'text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-bold'
               }`}
             >
               <span
                 className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                  requestStep === 2 ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-700'
+                  requestStep === 2 ? 'bg-purple-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-transparent dark:border-slate-700'
                 }`}
               >
                 2
               </span>
               <div className="text-left hidden xs:block">
                 <div className="text-xs sm:text-sm font-bold">{t.certStep2}</div>
-                <div className="text-[10px] text-slate-400 font-normal hidden md:block truncate max-w-[200px]">
+                <div className="text-[10px] text-slate-400 dark:text-slate-400 font-normal hidden md:block truncate max-w-[200px]">
                   {selectedCert ? (isEn && (selectedCert as any).titleEn ? (selectedCert as any).titleEn : selectedCert.name) : (isEn ? 'Fill details and attachments' : 'กรอกรายละเอียดและแนบเอกสาร')}
                 </div>
               </div>
