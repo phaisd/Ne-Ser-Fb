@@ -322,27 +322,27 @@ export default async function HomePage() {
           {settings?.showEnrollmentMenu !== false && (
             <Link
               href="/enroll"
-              className="group bg-gradient-to-br from-orange-50/80 via-white to-amber-50/60 p-6 rounded-2xl border border-orange-200/90 shadow-sm hover:shadow-md hover:border-orange-400 transition-all flex flex-col justify-between"
+              className="group bg-gradient-to-br from-orange-50/80 via-white to-amber-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-orange-950/30 p-6 rounded-2xl border border-orange-200/90 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-orange-400 dark:hover:border-orange-500/50 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 rounded-xl bg-orange-600 text-white flex items-center justify-center group-hover:scale-105 transition shadow-xs">
                     <GraduationCap className="w-6 h-6" />
                   </div>
-                  <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-900 border border-orange-200">
+                  <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-900 dark:text-orange-200 border border-orange-200 dark:border-orange-800">
                     เปิดรับปี {settings?.admissionAcademicYear || '2570'}
                   </span>
                 </div>
-                <h3 className="text-base font-extrabold text-slate-900">
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                   สมัครเรียน / ขึ้นทะเบียนนิสิตใหม่
                 </h3>
-                <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
                   ยื่นใบสมัครเข้าศึกษาออนไลน์ (พธ.บ., พธ.ม., พธ.ด.) ทั้งภาคภาษาไทยและนานาชาติ ตรวจสอบตารางสัมภาษณ์ และพิมพ์ใบรายงานตัวนิสิตใหม่
                 </p>
               </div>
-              <div className="mt-5 pt-3 border-t border-orange-200/60 flex items-center justify-between text-xs font-extrabold text-orange-700">
+              <div className="mt-5 pt-3 border-t border-orange-200/60 dark:border-slate-800 flex items-center justify-between text-xs font-extrabold text-orange-700 dark:text-orange-300">
                 <span>สมัครเรียนออนไลน์ &rarr;</span>
-                <span className="text-slate-500 font-normal">ครบวงจร 4 ขั้นตอน</span>
+                <span className="text-slate-500 dark:text-slate-400 font-normal">ครบวงจร 4 ขั้นตอน</span>
               </div>
             </Link>
           )}
@@ -351,26 +351,26 @@ export default async function HomePage() {
           {settings?.showCertificatesMenu !== false && (
             <Link
               href="/certificates"
-              className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-300 transition-all flex flex-col justify-between"
+              className="group bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-purple-300 dark:hover:border-purple-500/50 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center group-hover:scale-105 transition">
+                  <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center group-hover:scale-105 transition">
                     <FileText className="w-6 h-6" />
                   </div>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-transparent dark:border-purple-800/50">
                     ระบบการ์ด 16 เรื่อง
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900">ยื่นคำร้องขอหนังสือรับรอง</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">ยื่นคำร้องขอหนังสือรับรอง</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                   เลือกประเภทการ์ดเอกสารได้ตรงใจ: หนังสือรับรองสภาพนิสิต, เปิดบัญชีธนาคาร, ต่ออายุ Visa, ขอหอพัก, ทุนการศึกษา 
                   (แยกสำหรับนิสิตไทยและต่างชาติ)
                 </p>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-purple-700">
+              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-purple-700 dark:text-purple-300">
                 <span>เลือกการ์ดเอกสาร &rarr;</span>
-                <span className="text-slate-400 font-normal">Auto-fill จากรหัสนิสิต</span>
+                <span className="text-slate-400 dark:text-slate-400 font-normal">Auto-fill จากรหัสนิสิต</span>
               </div>
             </Link>
           )}
@@ -379,25 +379,25 @@ export default async function HomePage() {
           {settings?.showCoursesMenu !== false && (
             <Link
               href="/courses"
-              className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between"
+              className="group bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500/50 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center group-hover:scale-105 transition">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center group-hover:scale-105 transition">
                     <Calendar className="w-6 h-6" />
                   </div>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-transparent dark:border-blue-800/50">
                     213 รายวิชา
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900">ตารางเรียนและรายวิชา</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">ตารางเรียนและรายวิชา</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                   ดูตารางสอนรายสัปดาห์ตามชั้นปีที่ 1–4 ห้องเรียน เวลาเรียน และอาจารย์ผู้สอน พร้อมฐานข้อมูลค้นหารหัสวิชาและหน่วยกิต
                 </p>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-700">
+              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-blue-700 dark:text-blue-300">
                 <span>ดูตารางสอน &rarr;</span>
-                <span className="text-slate-400 font-normal">ทุกชั้นปี</span>
+                <span className="text-slate-400 dark:text-slate-400 font-normal">ทุกชั้นปี</span>
               </div>
             </Link>
           )}
@@ -406,25 +406,25 @@ export default async function HomePage() {
           {settings?.showStudentsSearch !== false && (
             <Link
               href="/students"
-              className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-orange-300 transition-all flex flex-col justify-between"
+              className="group bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-orange-300 dark:hover:border-orange-500/50 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center group-hover:scale-105 transition">
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 flex items-center justify-center group-hover:scale-105 transition">
                     <Users className="w-6 h-6" />
                   </div>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                     🔒 เฉพาะผู้ดูแลระบบ
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900">ระบบทะเบียนนิสิต (Admin)</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">ระบบทะเบียนนิสิต (Admin)</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                   ฐานข้อมูลทะเบียนนิสิต ตรวจสอบประวัติการศึกษา ข้อมูลสัญชาติ และการเลื่อนชั้นปี (สงวนสิทธิ์เฉพาะผู้ดูแลระบบ)
                 </p>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-700">
+              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300">
                 <span>จัดการทะเบียนนิสิต &rarr;</span>
-                <span className="text-slate-400 font-normal">นิสิต {students.length} รูป/คน</span>
+                <span className="text-slate-400 dark:text-slate-400 font-normal">นิสิต {students.length} รูป/คน</span>
               </div>
             </Link>
           )}
@@ -433,25 +433,25 @@ export default async function HomePage() {
           {settings?.showEventsMenu === true && (
             <Link
               href="/events"
-              className="group bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-amber-300 transition-all flex flex-col justify-between"
+              className="group bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-amber-300 dark:hover:border-amber-500/50 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center group-hover:scale-105 transition">
+                  <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center group-hover:scale-105 transition">
                     <Sparkles className="w-6 h-6" />
                   </div>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-transparent dark:border-amber-800/50">
                     กิจกรรมนิสิต
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900">งานกิจกรรมและโครงการนิสิต</h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">งานกิจกรรมและโครงการนิสิต</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                   ตรวจสอบและลงทะเบียนเข้าร่วมโครงการปฏิบัติวิปัสสนากัมมัฏฐาน ค่ายคุณธรรม และกิจกรรมเสริมสร้างคุณลักษณะบัณฑิต
                 </p>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-700">
+              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300">
                 <span>ดูกิจกรรมทั้งหมด &rarr;</span>
-                <span className="text-slate-400 font-normal">ทุกสาขาวิชา</span>
+                <span className="text-slate-400 dark:text-slate-400 font-normal">ทุกสาขาวิชา</span>
               </div>
             </Link>
           )}

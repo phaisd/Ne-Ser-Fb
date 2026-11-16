@@ -87,12 +87,12 @@ export function HeroWildSection({ settings: initialSettings }: HeroWildSectionPr
 
   const bgContainerClass =
     bgStyle === 'minimal'
-      ? 'bg-white border-slate-200/90'
+      ? 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800'
       : bgStyle === 'gold-glow'
-      ? 'bg-gradient-to-br from-amber-50 via-orange-50/70 to-amber-100/50 border-amber-200/90'
+      ? 'bg-gradient-to-br from-amber-50 via-orange-50/70 to-amber-100/50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 border-amber-200/90 dark:border-slate-800'
       : bgStyle === 'navy'
       ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border-slate-800 text-white'
-      : 'bg-[#f5f5f3] border-slate-200/90';
+      : 'bg-[#f5f5f3] dark:bg-slate-900 border-slate-200/90 dark:border-slate-800';
 
   const handleUploadCapsuleFile = async (file: File) => {
     setUploadingImage(true);
