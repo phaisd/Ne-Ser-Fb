@@ -16,6 +16,7 @@ import {
   ForgotPasswordModal,
   GoogleAccountChooserModal,
 } from '@/components/login/LoginModals';
+import ThemeModeToggle from '@/components/ThemeModeToggle';
 import {
   GraduationCap,
   Mail,
@@ -559,7 +560,7 @@ function LoginForm() {
 
   return (
     <div className="max-w-md w-full mx-auto space-y-6 my-4">
-      {/* Back to Home Button */}
+      {/* Back to Home Button & Day/Night Toggle */}
       <div className="flex items-center justify-between">
         <Link
           href="/"
@@ -567,11 +568,9 @@ function LoginForm() {
           title="กลับไปยังหน้าแรกระบบบริการการศึกษา"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition text-slate-500 group-hover:text-purple-600" />
-          <span>← กลับสู่หน้าหลัก (Back to Home)</span>
+          <span>← กลับสู่หน้าหลัก</span>
         </Link>
-        <span className="text-[11px] text-slate-400 font-medium">
-          ระบบบริการการศึกษา
-        </span>
+        <ThemeModeToggle variant="pill" />
       </div>
 
       {/* Brand Header */}

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { THEME_PRESETS, DEFAULT_THEME_PRESET, ThemeColorPreset } from '@/lib/theme-presets';
+import { getThemeMode, setThemeMode, THEME_MODE_EVENT } from '@/lib/theme-mode';
 
 export function applyTypographySettings(data?: {
   fontSizeScale?: string;
@@ -68,9 +69,15 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       root.style.setProperty(prop, val);
     });
 
-    // Set page body background & text color
-    document.body.style.backgroundColor = config.colors.bg;
-    document.body.style.color = config.colors.textBody;
+    // Set page body background & text color according to Day / Night mode
+    const currentMode = getThemeMode();
+    if (currentMode === 'dark') {
+      document.body.style.backgroundColor = '#090d16';
+      document.body.style.color = '#f1f5f9';
+    } else {
+      document.body.style.backgroundColor = config.colors.bg;
+      document.body.style.color = config.colors.textBody;
+    }
 
     // Apply font size & typography settings across both Public Portal & Admin Console
     applyTypographySettings(rawSettings);
@@ -90,17 +97,36 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   };
 
   useEffect(() => {
+    // Ensure active theme mode is initialized on client
+    const initialMode = getThemeMode();
+    setThemeMode(initialMode);
+
     loadThemeSettings();
 
     const handleUpdate = () => loadThemeSettings();
+    const handleModeUpdate = () => {
+      const mode = getThemeMode();
+      setThemeMode(mode);
+      if (mode === 'dark') {
+        document.body.style.backgroundColor = '#090d16';
+        document.body.style.color = '#f1f5f9';
+      } else {
+        const config = THEME_PRESETS[currentPreset] || THEME_PRESETS[DEFAULT_THEME_PRESET];
+        document.body.style.backgroundColor = config.colors.bg;
+        document.body.style.color = config.colors.textBody;
+      }
+    };
+
     window.addEventListener('mcu_settings_updated', handleUpdate);
+    window.addEventListener(THEME_MODE_EVENT, handleModeUpdate);
     window.addEventListener('storage', handleUpdate);
 
     return () => {
       window.removeEventListener('mcu_settings_updated', handleUpdate);
+      window.removeEventListener(THEME_MODE_EVENT, handleModeUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
-  }, []);
+  }, [currentPreset]);
 
   return (
     <>

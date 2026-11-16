@@ -40,6 +40,7 @@ import {
 } from '@/components/admin/modals';
 import { NewAcademicYearWorkflowModal } from '@/components/admin/NewAcademicYearWorkflowModal';
 import { AdminSidebar, AdminTab } from '@/components/admin/AdminSidebar';
+import ThemeModeToggle from '@/components/ThemeModeToggle';
 import {
   useAdminSettings,
   useAdminUsers,
@@ -601,6 +602,9 @@ export default function AdminConsolePage() {
               <span className="hidden sm:inline">ขั้นตอนเปิดปีการศึกษาใหม่</span>
               <span className="sm:hidden">เปิดปีใหม่</span>
             </button>
+
+            {/* Day / Night Mode Toggle (โหมดกลางวัน / โหมดกลางคืน) */}
+            <ThemeModeToggle variant="pill" className="shrink-0" />
 
             <Link
               href="/"

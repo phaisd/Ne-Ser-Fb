@@ -82,6 +82,9 @@ export default function SettingsPage() {
   const [logoSaveSuccess, setLogoSaveSuccess] = useState<string | null>(null);
   const [testingNotification, setTestingNotification] = useState(false);
   const [notificationTestResult, setNotificationTestResult] = useState<string | null>(null);
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [isDraggingLogo, setIsDraggingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePullSettingsFromSheets = async () => {
@@ -141,105 +144,88 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
-  // Handle Logo Upload with Auto-Save
-  const handleLogoUpload = async (file: File) => {
+  // Handle Logo File Selection (via click or drag & drop)
+  const handleLogoFileSelect = (file: File) => {
     if (!file) return;
-    setUploadingLogo(true);
-    setLogoSaveSuccess(null);
-    try {
-      let finalUrl = '';
-
-      // Step 1: Upload via FormData
-      try {
-        const formData = new FormData();
-        formData.append('scope', 'branding');
-        formData.append('file', file);
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const data = await res.json();
-        if (data.success && data.url) {
-          finalUrl = data.url;
-        }
-      } catch (e) {
-        console.warn('Direct upload failed, trying Base64 fallback', e);
-      }
-
-      // Step 2: Fallback to Base64
-      if (!finalUrl) {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve((e.target?.result as string) || '');
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-
-        if (base64) {
-          try {
-            const res = await fetch('/api/upload', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ dataUrl: base64 }),
-            });
-            const data = await res.json();
-            finalUrl = data.success && data.url ? data.url : base64;
-          } catch {
-            finalUrl = base64;
-          }
-        }
-      }
-
-      if (finalUrl) {
-        const newSettings = { ...settings, logoUrl: finalUrl };
-        setSettings(newSettings);
-
-        // Immediate Auto-Save to /api/system-settings
-        const saveRes = await fetch('/api/system-settings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newSettings),
-        });
-        const saveData = await saveRes.json();
-
-        if (saveData.success) {
-          if (saveData.data?.logoUrl) {
-            setSettings((prev) => ({ ...prev, logoUrl: saveData.data.logoUrl }));
-          }
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('mcu_settings_updated'));
-          }
-          setLogoSaveSuccess('✅ อัปโหลดและอัปเดตโลโก้ใน Navbar (Portal & Admin) สำเร็จเรียบร้อยแล้ว!');
-        } else {
-          setLogoSaveSuccess('อัปโหลดไฟล์แล้ว กรุณากดปุ่มบันทึกเพื่อยืนยัน');
-        }
-      }
-    } catch (err: unknown) {
-      alert('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + (err instanceof Error ? err.message : String(err)));
-    } finally {
-      setUploadingLogo(false);
+    if (!file.type.startsWith('image/')) {
+      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น (PNG, JPG, WEBP, GIF, SVG)');
+      return;
     }
+    setSelectedLogoFile(file);
+    const objUrl = URL.createObjectURL(file);
+    setLogoPreviewUrl(objUrl);
+    setLogoSaveSuccess(`เลือกไฟล์ "${file.name}" เรียบร้อยแล้ว — กรุณากดปุ่ม "บันทึก" เพื่อยืนยัน`);
   };
 
-  // Quick Save Logo & Branding
+  const handleClearSelectedLogoFile = () => {
+    setSelectedLogoFile(null);
+    setLogoPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setLogoSaveSuccess(null);
+  };
+
+  // Quick Save Logo & Branding (Uploads selected file if any, then saves settings)
   const handleSaveLogoOnly = async () => {
     setSavingLogo(true);
     setLogoSaveSuccess(null);
     try {
+      let finalUrl = settings.logoUrl;
+
+      // If a new file was chosen or dropped, upload it first
+      if (selectedLogoFile) {
+        setUploadingLogo(true);
+        try {
+          const formData = new FormData();
+          formData.append('scope', 'branding');
+          formData.append('file', selectedLogoFile);
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.success && uploadData.url) {
+            finalUrl = uploadData.url;
+          } else {
+            // Fallback to Base64
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve((e.target?.result as string) || '');
+              reader.onerror = reject;
+              reader.readAsDataURL(selectedLogoFile);
+            });
+            if (base64) {
+              const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dataUrl: base64, scope: 'branding' }),
+              });
+              const data = await res.json();
+              finalUrl = data.success && data.url ? data.url : base64;
+            }
+          }
+        } finally {
+          setUploadingLogo(false);
+        }
+      }
+
+      const newSettings = { ...settings, logoUrl: finalUrl };
       const res = await fetch('/api/system-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(newSettings),
       });
       const data = await res.json();
       if (data.success) {
+        setSettings(newSettings);
+        setSelectedLogoFile(null);
+        setLogoPreviewUrl(null);
         if (data.data?.logoUrl) {
           setSettings((prev) => ({ ...prev, logoUrl: data.data.logoUrl }));
         }
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('mcu_settings_updated'));
         }
-        setLogoSaveSuccess(`✅ บันทึกชื่อคณะ (${settings.facultyNameTh || 'คณะพุทธศาสตร์'}) และข้อมูลระบบเรียบร้อยแล้ว! Navbar และเอกสารได้รับการอัปเดตทันที`);
+        setLogoSaveSuccess(`✅ บันทึกโลโก้และข้อมูลระบบเรียบร้อยแล้ว! Navbar และเอกสารได้รับการอัปเดตทันที`);
       } else {
         alert(data.error);
       }
@@ -357,9 +343,9 @@ export default function SettingsPage() {
           <div className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-2xl border border-slate-200/80 text-center space-y-3">
             <div className="relative group">
               <div className="w-32 h-32 rounded-2xl bg-white border-2 border-dashed border-slate-300 shadow-sm flex items-center justify-center p-3 overflow-hidden">
-                {settings.logoUrl ? (
+                {logoPreviewUrl || settings.logoUrl ? (
                   <img
-                    src={settings.logoUrl}
+                    src={logoPreviewUrl || settings.logoUrl}
                     alt="Logo Preview"
                     className="max-h-full max-w-full object-contain"
                     onError={(e) => {
@@ -370,10 +356,13 @@ export default function SettingsPage() {
                   <span className="text-6xl">{settings.logoEmoji || '☸️'}</span>
                 )}
               </div>
-              {settings.logoUrl && (
+              {(logoPreviewUrl || settings.logoUrl) && (
                 <button
                   type="button"
-                  onClick={() => setSettings({ ...settings, logoUrl: '' })}
+                  onClick={() => {
+                    handleClearSelectedLogoFile();
+                    setSettings({ ...settings, logoUrl: '' });
+                  }}
                   className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-md hover:bg-rose-700 cursor-pointer text-xs"
                   title="ลบรูปภาพโลโก้ (ใช้ Emoji แทน)"
                 >
@@ -384,13 +373,22 @@ export default function SettingsPage() {
             <div>
               <div className="text-xs font-bold text-slate-800">ตัวอย่างโลโก้จริง</div>
               <div className="text-[10px] text-slate-500 mt-0.5">
-                แสดงผลบน Navbar ทั้งหน้าบ้านและหลังบ้านทันที
+                {selectedLogoFile ? (
+                  <span className="text-pink-600 font-bold">เลือกไฟล์แล้ว — กดปุ่มบันทึกเพื่อใช้งาน</span>
+                ) : settings.logoUrl ? (
+                  <span className="text-emerald-700 font-medium">แสดงผลบน Navbar ทั้งหน้าบ้านและหลังบ้านทันที</span>
+                ) : (
+                  'ยังไม่ได้ระบุรูปภาพโลโก้'
+                )}
               </div>
             </div>
-            {settings.logoUrl && (
+            {(logoPreviewUrl || settings.logoUrl) && (
               <button
                 type="button"
-                onClick={() => setSettings({ ...settings, logoUrl: '' })}
+                onClick={() => {
+                  handleClearSelectedLogoFile();
+                  setSettings({ ...settings, logoUrl: '' });
+                }}
                 className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 cursor-pointer"
               >
                 <Trash2 className="w-3 h-3" />
@@ -403,17 +401,20 @@ export default function SettingsPage() {
           <div className="md:col-span-2 space-y-4 text-xs">
             {/* File Upload Box */}
             <div>
-              <label className="font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-                <UploadCloud className="w-4 h-4 text-pink-600" />
-                <span>อัปโหลดรูปภาพโลโก้ใหม่ (Upload Image File):</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="font-bold text-slate-700 flex items-center gap-1.5">
+                  <UploadCloud className="w-4 h-4 text-pink-600" />
+                  <span>อัปโหลดโลโก้ (Upload Image File):</span>
+                </label>
+                <span className="text-[10px] text-slate-400">ลากวาง หรือ คลิกเลือกไฟล์</span>
+              </div>
 
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
-                    handleLogoUpload(e.target.files[0]);
+                    handleLogoFileSelect(e.target.files[0]);
                   }
                 }}
                 accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif"
@@ -424,39 +425,108 @@ export default function SettingsPage() {
                 onDragOver={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  setIsDraggingLogo(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDraggingLogo(false);
                 }}
                 onDrop={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  setIsDraggingLogo(false);
                   if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    handleLogoUpload(e.dataTransfer.files[0]);
+                    handleLogoFileSelect(e.dataTransfer.files[0]);
                   }
                 }}
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-pink-300 hover:border-pink-500 bg-pink-50/30 hover:bg-pink-50/60 rounded-2xl p-5 text-center cursor-pointer transition space-y-2 group"
+                className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition space-y-2 group ${
+                  isDraggingLogo
+                    ? 'border-pink-500 bg-pink-100/50 scale-[1.01]'
+                    : selectedLogoFile
+                    ? 'border-emerald-400 bg-emerald-50/40'
+                    : 'border-pink-300 hover:border-pink-500 bg-pink-50/30 hover:bg-pink-50/60'
+                }`}
               >
-                <div className="w-10 h-10 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center mx-auto group-hover:scale-110 transition">
-                  {uploadingLogo ? (
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Camera className="w-5 h-5" />
-                  )}
-                </div>
-                <div>
-                  <div className="font-bold text-slate-800 text-xs">
-                    {uploadingLogo ? 'กำลังอัปโหลดและบันทึก...' : 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์รูปภาพมาวางที่นี่'}
+                {selectedLogoFile ? (
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="w-16 h-16 rounded-xl bg-white border border-emerald-300 shadow-sm p-1 flex items-center justify-center overflow-hidden">
+                      <img
+                        src={logoPreviewUrl || ''}
+                        alt="Selected Preview"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-800 text-xs flex items-center justify-center gap-1">
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{selectedLogoFile.name}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">
+                        ขนาด: {(selectedLogoFile.size / 1024).toFixed(1)} KB — คลิกหรือลากไฟล์ใหม่เพื่อเปลี่ยนรูป
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">
-                    รองรับไฟล์ PNG, JPG, JPEG, SVG, WebP (แนะนำไฟล์พื้นหลังโปร่งใส PNG หรือ SVG)
-                  </div>
-                </div>
-                <div>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-sm">
-                    <UploadCloud className="w-3.5 h-3.5" />
-                    <span>เลือกรูปภาพจากเครื่อง</span>
-                  </span>
-                </div>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center mx-auto group-hover:scale-110 transition">
+                      {uploadingLogo ? (
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Camera className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-800 text-xs">
+                        {uploadingLogo ? 'กำลังประมวลผล...' : 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์รูปภาพมาวางที่นี่'}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">
+                        รองรับไฟล์ PNG, JPG, JPEG, SVG, WebP (แนะนำไฟล์พื้นหลังโปร่งใส PNG หรือ SVG)
+                      </div>
+                    </div>
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-sm">
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>เลือกรูปภาพจากเครื่อง</span>
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
+
+              {/* Inline Save Button right below the upload box */}
+              {selectedLogoFile && (
+                <div className="mt-2 flex items-center justify-between p-2.5 rounded-xl bg-pink-50 border border-pink-200">
+                  <span className="text-[11px] text-pink-900 font-semibold">
+                    เลือกรูปภาพเรียบร้อยแล้ว กดบันทึกเพื่อยืนยัน:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClearSelectedLogoFile();
+                      }}
+                      className="px-2.5 py-1 text-slate-500 hover:text-slate-700 text-xs font-semibold"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button
+                      type="button"
+                      disabled={savingLogo || uploadingLogo}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSaveLogoOnly();
+                      }}
+                      className="px-3.5 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-xs font-bold shadow-sm flex items-center gap-1.5"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>{savingLogo || uploadingLogo ? 'กำลังบันทึก...' : 'บันทึก'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Direct URL Input */}

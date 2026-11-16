@@ -33,6 +33,7 @@ import {
 import { translations, Language } from '@/lib/translations';
 import { getAuthUser, isAdminOrOfficer, clearAuthSession } from '@/lib/auth-client';
 import UserProfileModal from '@/components/UserProfileModal';
+import ThemeModeToggle from './ThemeModeToggle';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -390,6 +391,9 @@ export default function Navbar() {
 
           {/* User Auth & Portal Switcher & Language Toggle */}
           <div className="flex items-center gap-2">
+            {/* Day / Night Mode Toggle (โหมดกลางวัน / โหมดกลางคืน) */}
+            <ThemeModeToggle variant="pill" />
+
             {/* Language Switcher Pill + Dropdown */}
             <div className="relative">
               <div
@@ -862,6 +866,14 @@ export default function Navbar() {
                     </Link>
                   );
                 })}
+              </div>
+
+              {/* Display Mode (โหมดกลางวัน / โหมดกลางคืน) */}
+              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 space-y-1.5">
+                <div className="text-[11px] font-extrabold text-slate-400 px-2 uppercase tracking-wider">
+                  โหมดการแสดงผล (Display Mode)
+                </div>
+                <ThemeModeToggle variant="full" />
               </div>
 
               {/* Language Selector in Drawer */}

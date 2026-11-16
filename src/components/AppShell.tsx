@@ -15,7 +15,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (isAdmin) {
     return (
       <ThemeProvider>
-        <div className="min-h-screen bg-slate-100 text-slate-900">
+        <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
           <GoogleTranslateScript />
           <AutoLogoutManager />
           {children}
@@ -27,7 +27,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (isLoginPage) {
     return (
       <ThemeProvider>
-        <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 flex flex-col justify-center">
+        <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col justify-center transition-colors duration-200">
           <GoogleTranslateScript />
           <AutoLogoutManager />
           <main className="flex-1 flex items-center justify-center p-4 sm:p-6 my-auto">

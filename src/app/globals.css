@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode variant in Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
+  color-scheme: light;
   --background: #f8fafc;
   --foreground: #0f172a;
   --color-primary: #db2777;
@@ -15,6 +19,175 @@
   --color-nav-border: #db2777;
   --font-scale: 1.15;
   --font-family-main: "Sarabun", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* =========================================================================
+   DARK MODE (โหมดกลางคืน) - Deep Midnight Theme Variables & Global Overrides
+   ========================================================================= */
+.dark {
+  color-scheme: dark;
+  --background: #090d16;
+  --foreground: #f8fafc;
+  --color-theme-bg: #090d16;
+  --color-theme-card: #131d31;
+  --color-theme-border: #1e293b;
+  --color-theme-text: #f1f5f9;
+  --color-theme-heading: #ffffff;
+  --color-theme-muted: #94a3b8;
+}
+
+.dark body {
+  background-color: #090d16 !important;
+  color: #f1f5f9 !important;
+}
+
+/* Background overrides for standard Slate utilities in Dark Mode */
+.dark .bg-white {
+  background-color: #131d31 !important;
+}
+.dark .bg-slate-50 {
+  background-color: #090d16 !important;
+}
+.dark .bg-slate-100 {
+  background-color: #0f172a !important;
+}
+.dark .bg-slate-200 {
+  background-color: #1e293b !important;
+}
+
+/* Semi-transparent white containers (cards / glass) */
+.dark .bg-white\/90,
+.dark .bg-white\/95,
+.dark .bg-white\/80 {
+  background-color: rgba(19, 29, 49, 0.95) !important;
+}
+
+/* Navigation & Header */
+.dark header {
+  background-color: rgba(15, 23, 42, 0.96) !important;
+  border-color: #1e293b !important;
+}
+
+/* Borders */
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-200\/50,
+.dark .border-slate-200\/60,
+.dark .border-slate-200\/70,
+.dark .border-slate-200\/80,
+.dark .border-slate-200\/90 {
+  border-color: #1e293b !important;
+}
+.dark .border-slate-300 {
+  border-color: #334155 !important;
+}
+
+/* Text Colors */
+.dark .text-slate-900,
+.dark .text-slate-850,
+.dark .text-slate-800 {
+  color: #f8fafc !important;
+}
+.dark .text-slate-700,
+.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+.dark .text-slate-500 {
+  color: #94a3b8 !important;
+}
+.dark .text-slate-400 {
+  color: #64748b !important;
+}
+
+/* Form Controls (Inputs, Selects, Textareas) */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Soft Badges & Light Alert Panels */
+.dark .bg-orange-50 {
+  background-color: rgba(249, 115, 22, 0.15) !important;
+}
+.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+.dark .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.15) !important;
+}
+.dark .bg-sky-50 {
+  background-color: rgba(14, 165, 233, 0.15) !important;
+}
+.dark .bg-purple-50 {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+}
+.dark .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+}
+
+/* Badge text adjustments in Dark Mode */
+.dark .text-orange-950,
+.dark .text-orange-900 {
+  color: #fed7aa !important;
+}
+.dark .text-amber-950,
+.dark .text-amber-900 {
+  color: #fde68a !important;
+}
+.dark .text-emerald-950,
+.dark .text-emerald-900 {
+  color: #a7f3d0 !important;
+}
+.dark .text-indigo-950,
+.dark .text-indigo-900 {
+  color: #c7d2fe !important;
+}
+.dark .text-sky-950,
+.dark .text-sky-900 {
+  color: #bae6fd !important;
+}
+.dark .text-purple-950,
+.dark .text-purple-900 {
+  color: #e9d5ff !important;
+}
+.dark .text-rose-950,
+.dark .text-rose-900 {
+  color: #fecdd3 !important;
+}
+
+/* Tables & Dividers in Dark Mode */
+.dark table {
+  border-color: #1e293b !important;
+}
+.dark thead tr {
+  background-color: #0f172a !important;
+}
+.dark tbody tr {
+  border-color: #1e293b !important;
+}
+.dark tbody tr:hover {
+  background-color: rgba(30, 41, 59, 0.6) !important;
+}
+.dark .divide-slate-100,
+.dark .divide-slate-200 {
+  border-color: #1e293b !important;
+}
+
+/* Footer in Dark Mode */
+.dark footer {
+  background: #090d16 !important;
+  color: #94a3b8 !important;
+  border-color: #1e293b !important;
 }
 
 @media screen {
