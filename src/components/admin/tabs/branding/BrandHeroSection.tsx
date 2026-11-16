@@ -7,6 +7,7 @@ import {
   Camera,
   Eye,
   RefreshCw,
+  RotateCcw,
   UploadCloud,
 } from 'lucide-react';
 import { SystemSettings } from '@/types';
@@ -44,6 +45,41 @@ export function BrandHeroSection({
         }
       })
       .catch(() => {});
+  };
+
+  const [resettingVisitorStats, setResettingVisitorStats] = useState(false);
+
+  const handleResetVisitorStats = async () => {
+    const confirmed = window.confirm(
+      '⚠️ ยืนยันการรีเซ็ตตัวนับผู้เข้าชมเว็บไซต์?\n\n' +
+      'ยอดสะสมและประวัติการเข้าชมทั้งหมดจะถูกล้างกลับเป็น 0 (ทั้งในระบบและแท็บ Visitor_Logs บน Google Sheets)\n' +
+      'เพื่อเตรียมความพร้อมก่อนเปิดให้บริการจริง\n\n' +
+      'กด "ตกลง" เพื่อเริ่มนับ 0 ใหม่ทันที'
+    );
+    if (!confirmed) return;
+
+    setResettingVisitorStats(true);
+    try {
+      const res = await fetch('/api/visitors', {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLiveVisitorStats({
+          totalVisits: 0,
+          todayVisits: 0,
+          uniqueVisitors: 0,
+          onlineCount: 1,
+        });
+        alert('✅ รีเซ็ตตัวนับผู้เข้าชมเว็บไซต์กลับเป็น 0 เรียบร้อยแล้ว!');
+      } else {
+        alert('❌ ' + (data.error || 'รีเซ็ตไม่สำเร็จ'));
+      }
+    } catch (err: unknown) {
+      alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setResettingVisitorStats(false);
+    }
   };
 
   useEffect(() => {
@@ -422,11 +458,21 @@ export function BrandHeroSection({
                     <button
                       type="button"
                       onClick={loadVisitorStats}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer transition border border-slate-200"
                       title="รีเฟรชยอดผู้เข้าชมจริง"
                     >
                       <RefreshCw className="w-3 h-3" />
                       <span>รีเฟรช</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={resettingVisitorStats}
+                      onClick={handleResetVisitorStats}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 dark:text-rose-300 font-bold border border-rose-200 dark:border-rose-800 transition cursor-pointer disabled:opacity-50"
+                      title="รีเซ็ตตัวนับผู้เข้าชมทั้งหมดกลับเป็น 0 เพื่อเตรียมความพร้อมก่อนเปิดให้บริการจริง"
+                    >
+                      <RotateCcw className={`w-3 h-3 ${resettingVisitorStats ? 'animate-spin' : ''}`} />
+                      <span>{resettingVisitorStats ? 'กำลังรีเซ็ต...' : 'รีเซ็ตตัวนับเป็น 0'}</span>
                     </button>
                   </div>
                 )}

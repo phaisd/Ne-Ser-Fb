@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { computeVisitorStats, getBangkokDateStr, recordVisitorVisit } from './visitorService';
+import { computeVisitorStats, getBangkokDateStr, recordVisitorVisit, resetVisitorStats } from './visitorService';
 
 vi.mock('./storageHelper', () => {
   const storeMap: Record<string, unknown> = {};
@@ -54,5 +54,12 @@ describe('visitorService real visitor tracking', () => {
     expect(otherDevice.totalVisits).toBe(2);
     expect(otherDevice.todayVisits).toBe(2);
     expect(otherDevice.uniqueVisitors).toBe(2);
+  });
+
+  it('resets visitor stats and clears logs to 0', async () => {
+    const reset = await resetVisitorStats();
+    expect(reset.totalVisits).toBe(0);
+    expect(reset.todayVisits).toBe(0);
+    expect(reset.uniqueVisitors).toBe(0);
   });
 });

@@ -230,3 +230,36 @@ export async function recordVisitorVisit(
     counted: true,
   };
 }
+
+/**
+ * Resets all visitor statistics and logs to 0.
+ * Clears local visitor_logs.json, active_visitors.json, in-memory caches,
+ * and clears the Google Sheets Visitor_Logs tab data rows (keeping header row 1).
+ */
+export async function resetVisitorStats(): Promise<VisitorStatsSummary> {
+  writeLocalJson('visitor_logs.json', []);
+  writeLocalJson('active_visitors.json', {});
+  memoryActiveVisitors.clear();
+  visitorCache = { logs: [], fetchedAt: Date.now() };
+
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      await gClient.ensureSheetsExist(['Visitor_Logs']);
+      await gClient.clearValues('Visitor_Logs!A2:D5000');
+      await gClient.updateValues('Visitor_Logs!A1:D1', [
+        ['Timestamp', 'Date_BKK', 'Visitor_ID', 'Page_Path'],
+      ]);
+    } catch (err) {
+      console.warn('Google Sheets resetVisitorStats warning:', err);
+    }
+  }
+
+  return {
+    totalVisits: 0,
+    todayVisits: 0,
+    uniqueVisitors: 0,
+    onlineCount: 0,
+    onlineUsers: 0,
+  };
+}

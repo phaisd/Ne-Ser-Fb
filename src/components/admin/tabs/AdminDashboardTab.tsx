@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ShieldCheck,
@@ -18,6 +18,9 @@ import {
   Archive,
   GraduationCap,
   UserCheck,
+  RefreshCw,
+  RotateCcw,
+  Eye,
 } from 'lucide-react';
 import { CertificateRequest, UserAccount, Student, Course } from '@/types';
 import { AcademicYearWorkflowCard } from '../AcademicYearWorkflowCard';
@@ -71,6 +74,68 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
   // Compute Course Program Breakdown
   const englishCoursesCount = coursesList.filter((c) => c.programType === 'ENGLISH' || c.section === 'EN').length;
   const thaiCoursesCount = Math.max(0, coursesCount - englishCoursesCount);
+
+  // Live Visitor Stats & Reset state
+  const [visitorStats, setVisitorStats] = useState<{
+    totalVisits: number;
+    todayVisits: number;
+    uniqueVisitors: number;
+    onlineCount?: number;
+  } | null>(null);
+  const [resettingVisitor, setResettingVisitor] = useState(false);
+
+  const loadVisitorStats = () => {
+    fetch('/api/visitors')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res?.success) {
+          setVisitorStats({
+            totalVisits: Number(res.totalVisits ?? 0),
+            todayVisits: Number(res.todayVisits ?? 0),
+            uniqueVisitors: Number(res.uniqueVisitors ?? 0),
+            onlineCount: Number(res.onlineCount ?? res.onlineUsers ?? 1),
+          });
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadVisitorStats();
+  }, []);
+
+  const handleResetVisitor = async () => {
+    const confirmed = window.confirm(
+      '⚠️ ยืนยันการรีเซ็ตตัวนับผู้เข้าชมเว็บไซต์?\n\n' +
+      'ยอดสะสมและประวัติการเข้าชมทั้งหมดจะถูกล้างกลับเป็น 0 (ทั้งในระบบและแท็บ Visitor_Logs บน Google Sheets)\n' +
+      'เพื่อเตรียมความพร้อมก่อนเปิดให้บริการจริง\n\n' +
+      'กด "ตกลง" เพื่อเริ่มนับ 0 ใหม่ทันที'
+    );
+    if (!confirmed) return;
+
+    setResettingVisitor(true);
+    try {
+      const res = await fetch('/api/visitors', {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVisitorStats({
+          totalVisits: 0,
+          todayVisits: 0,
+          uniqueVisitors: 0,
+          onlineCount: 1,
+        });
+        alert('✅ รีเซ็ตตัวนับผู้เข้าชมเว็บไซต์กลับเป็น 0 เรียบร้อยแล้ว!');
+      } else {
+        alert('❌ ' + (data.error || 'รีเซ็ตไม่สำเร็จ'));
+      }
+    } catch (err: unknown) {
+      alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setResettingVisitor(false);
+    }
+  };
   return (
     <div className="space-y-6">
       {/* Welcome Identity Banner */}
@@ -369,6 +434,46 @@ export const AdminDashboardTab: React.FC<AdminDashboardTabProps> = ({
               </div>
               <ExternalLink className="w-4 h-4 text-purple-500" />
             </Link>
+
+            {/* Live Visitor Counter & 1-Click Reset Control */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 space-y-2 mt-3">
+              <div className="flex items-center justify-between">
+                <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                  <Eye className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span>ตัวนับผู้เข้าชมเว็บไซต์</span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>ออนไลน์: {visitorStats ? (visitorStats.onlineCount ?? 1) : '...'}</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span>สะสม: <strong className="text-slate-800 dark:text-slate-200 font-black">{visitorStats ? visitorStats.totalVisits.toLocaleString() : '...'}</strong> ครั้ง</span>
+                <span>วันนี้: <strong className="text-emerald-700 dark:text-emerald-400 font-bold">{visitorStats ? visitorStats.todayVisits.toLocaleString() : '...'}</strong></span>
+                <span>อุปกรณ์: <strong className="text-indigo-700 dark:text-indigo-400 font-bold">{visitorStats ? visitorStats.uniqueVisitors.toLocaleString() : '...'}</strong></span>
+              </div>
+              <div className="pt-1.5 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={loadVisitorStats}
+                  className="flex-1 py-1.5 px-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                  title="รีเฟรชยอดผู้เข้าชม"
+                >
+                  <RefreshCw className="w-3 h-3 text-slate-500" />
+                  <span>รีเฟรช</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={resettingVisitor}
+                  onClick={handleResetVisitor}
+                  className="flex-1 py-1.5 px-2 rounded-lg bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-bold border border-rose-200 dark:border-rose-800 transition flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                  title="ล้างยอดผู้เข้าชมทั้งหมดให้เริ่มนับ 0 ใหม่"
+                >
+                  <RotateCcw className={`w-3 h-3 ${resettingVisitor ? 'animate-spin' : ''}`} />
+                  <span>{resettingVisitor ? 'กำลังรีเซ็ต...' : 'รีเซ็ตเป็น 0'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
