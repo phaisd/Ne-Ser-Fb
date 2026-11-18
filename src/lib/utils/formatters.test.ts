@@ -3,6 +3,8 @@ import {
   formatThaiDate,
   formatEnglishDate,
   maskPassport,
+  maskCitizenId,
+  maskEmail,
   formatPhoneNumber,
   extractDocSeqNumber,
   calculateNextDocNo,
@@ -16,6 +18,16 @@ describe('formatters utility (Data Protection & Localization)', () => {
     expect(maskPassport('1234')).toBe('••••');
     expect(maskPassport(null)).toBe('-');
     expect(maskPassport('AB1234567', true)).toBe('AB1234567'); // unmasked
+
+    // Thai National Citizen ID masking
+    expect(maskCitizenId('1349900123456')).toBe('1-3499-•••••-45-6');
+    expect(maskCitizenId('1349900123456', true)).toBe('1349900123456');
+    expect(maskCitizenId(null)).toBe('-');
+
+    // Email masking
+    expect(maskEmail('phaisal.dis@mcu.ac.th')).toBe('p•••••s@mcu.ac.th');
+    expect(maskEmail('ab@mcu.ac.th')).toBe('a•@mcu.ac.th');
+    expect(maskEmail(null)).toBe('-');
   });
 
   it('formats Thai phone numbers cleanly', () => {
@@ -88,5 +100,31 @@ describe('formatters utility (Data Protection & Localization)', () => {
       admissionEndMonth: (currentMonth % 12) + 3,
     };
     expect(isAdmissionPeriodActive(inactiveSetting).isOpen).toBe(false);
+  });
+
+  it('converts to Buddhist Year correctly across numbers, strings, and Date objects', async () => {
+    const { toBuddhistYear } = await import('./formatters');
+    expect(toBuddhistYear(2026)).toBe(2569);
+    expect(toBuddhistYear('2026')).toBe(2569);
+    expect(toBuddhistYear(2569)).toBe(2569);
+    expect(toBuddhistYear('2569')).toBe(2569);
+    expect(toBuddhistYear(new Date('2026-05-15'))).toBe(2569);
+  });
+
+  it('formats Buddhist date in full, short, and month-year forms', async () => {
+    const { formatBuddhistDate } = await import('./formatters');
+    const d = new Date(2026, 10, 18); // Nov 18, 2026
+    expect(formatBuddhistDate(d, 'short')).toBe('18 พ.ย. 2569');
+    expect(formatBuddhistDate(d, 'full')).toBe('18 พฤศจิกายน พ.ศ. 2569');
+    expect(formatBuddhistDate(d, 'month-year')).toBe('พฤศจิกายน 2569');
+    expect(formatBuddhistDate(null)).toBe('-');
+  });
+
+  it('converts between Western Arabic and Thai numerals accurately', async () => {
+    const { formatNumberThaiDigits, formatThaiDigitsToNumber } = await import('./formatters');
+    expect(formatNumberThaiDigits(2569)).toBe('๒๕๖๙');
+    expect(formatNumberThaiDigits('MCU 8002/010')).toBe('MCU ๘๐๐๒/๐๑๐');
+    expect(formatThaiDigitsToNumber('๒๕๖๙')).toBe('2569');
+    expect(formatThaiDigitsToNumber('MCU ๘๐๐๒/๐๑๐')).toBe('MCU 8002/010');
   });
 });

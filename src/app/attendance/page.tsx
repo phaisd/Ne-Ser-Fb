@@ -61,6 +61,7 @@ import { AuthUser, getAuthUser, isAdminOrOfficer, clearAuthSession } from '@/lib
 import { useLanguage } from '@/hooks/useLanguage';
 import { toSafeCsvCell } from '@/lib/security';
 import UserProfileModal from '@/components/UserProfileModal';
+import { toast } from '@/lib/toast';
 
 export default function AttendancePage() {
   const { t, isEn } = useLanguage();
@@ -385,12 +386,12 @@ export default function AttendancePage() {
               )
           )
         );
-        alert(`นำนิสิตออกจากห้องเรียนวิชา ${currentCourse.courseCode} เรียบร้อยแล้ว`);
+        toast.success(`นำนิสิตออกจากห้องเรียนวิชา ${currentCourse.courseCode} เรียบร้อยแล้ว`);
       } else {
-        alert(data.error || 'เกิดข้อผิดพลาดในการนำออก');
+        toast.error(data.error || 'เกิดข้อผิดพลาดในการนำออก');
       }
     } catch (err: unknown) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + getErrorMessage(err));
+      toast.error('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + getErrorMessage(err));
     }
   };
 
@@ -596,13 +597,13 @@ export default function AttendancePage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`✅ จำลองบันทึกข้อมูลเวลาเรียนสำเร็จ ${data.count} รายการ (12 สัปดาห์) ระบบได้คำนวณสิทธิ์สอบให้นิสิตทุกคนเรียบร้อยแล้ว!`);
+        toast.success(`✅ จำลองบันทึกข้อมูลเวลาเรียนสำเร็จ ${data.count} รายการ (12 สัปดาห์) ระบบได้คำนวณสิทธิ์สอบให้นิสิตทุกคนเรียบร้อยแล้ว!`);
         const refRes = await fetch('/api/attendance');
         const refData = await refRes.json();
         if (refData.success) setHistoryRecords(refData.data);
       }
     } catch (e: unknown) {
-      alert('เกิดข้อผิดพลาด: ' + getErrorMessage(e));
+      toast.error('เกิดข้อผิดพลาด: ' + getErrorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -611,11 +612,11 @@ export default function AttendancePage() {
   // Submit attendance to Google Sheets & local cache
   const handleSave = async () => {
     if (!currentCourse) {
-      alert('กรุณาเลือกรายวิชาที่สอนก่อนบันทึก');
+      toast.warning('กรุณาเลือกรายวิชาที่สอนก่อนบันทึก');
       return;
     }
     if (!currentUser) {
-      alert('กรุณาเข้าสู่ระบบอาจารย์ผู้สอนก่อนทำการบันทึกข้อมูล');
+      toast.error('กรุณาเข้าสู่ระบบอาจารย์ผู้สอนก่อนทำการบันทึกข้อมูล');
       return;
     }
 
@@ -662,15 +663,17 @@ export default function AttendancePage() {
 
       const resData = await res.json();
       if (resData.success) {
-        setSavedSuccess(`บันทึกการเช็คชื่อ ${resData.count} รายการ ส่งตรงเข้า Google Sheets (แท็บ Attendance) สำเร็จเรียบร้อย!`);
+        const msg = `บันทึกการเช็คชื่อ ${resData.count} รายการ ส่งตรงเข้า Google Sheets (แท็บ Attendance) สำเร็จเรียบร้อย!`;
+        setSavedSuccess(msg);
+        toast.success(msg);
         fetch('/api/attendance')
           .then((r) => r.json())
           .then((d) => d.success && setHistoryRecords(d.data));
       } else {
-        alert('เกิดข้อผิดพลาด: ' + resData.error);
+        toast.error('เกิดข้อผิดพลาด: ' + resData.error);
       }
     } catch (err: unknown) {
-      alert('บันทึกล้มเหลว: ' + getErrorMessage(err));
+      toast.error('บันทึกล้มเหลว: ' + getErrorMessage(err));
     } finally {
       setSaving(false);
     }

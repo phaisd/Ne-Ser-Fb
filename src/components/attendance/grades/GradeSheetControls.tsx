@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
+import { Course, TimetableItem } from '@/types';
 import {
   Printer,
   Save,
@@ -15,8 +16,8 @@ import {
 } from 'lucide-react';
 
 interface GradeSheetControlsProps {
-  currentCourse: any;
-  availableCourses: any[];
+  currentCourse?: TimetableItem | Course | null;
+  availableCourses: (TimetableItem | Course)[];
   selectedCourseCode: string;
   handleCourseChange: (code: string) => void;
   formLanguage: 'THAI' | 'ENGLISH';
@@ -125,7 +126,7 @@ export function GradeSheetControls({
             </span>
           </div>
           <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
-            {currentCourse.courseCode} — {currentCourse.courseName}
+            {currentCourse?.courseCode} — {currentCourse?.courseName}
           </h2>
         </div>
 
@@ -273,10 +274,11 @@ export function GradeSheetControls({
             const sKey = (c as any).sectionKey || c.courseCode;
             const isSelected =
               sKey === selectedCourseCode || (!(c as any).sectionKey && c.courseCode === selectedCourseCode);
+            const ttTitle = 'timetableTitle' in c ? String((c as TimetableItem).timetableTitle || '') : '';
             const isEn =
               (c as any).programType === 'ENGLISH' ||
               (c as any).programType === 'INTERNATIONAL' ||
-              /inter|eng|english|นานาชาติ/i.test(c.timetableTitle || '') ||
+              /inter|eng|english|นานาชาติ/i.test(ttTitle) ||
               /^[A-Za-z0-9\s:,\-\(\)\/\.]+$/.test((c.courseName || '').trim());
 
             return (

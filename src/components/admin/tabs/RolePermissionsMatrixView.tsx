@@ -17,7 +17,7 @@ import {
   Briefcase,
   Layers,
 } from 'lucide-react';
-import { UserAccount } from '@/types';
+import { UserAccount, UserRole } from '@/types';
 
 export type SystemRoleKey =
   | 'SUPER_ADMIN'
@@ -88,6 +88,14 @@ export const DEFAULT_ROLE_COLUMNS: RoleColumnConfig[] = [
     badge: 'INSTRUCTOR',
     desc: 'เช็คชื่อเวลาเรียน สรุปสิทธิ์สอบ กรอกคะแนนวัดผล (Grade Sheet) ในรายวิชาที่รับผิดชอบสอน',
     colorTheme: 'emerald',
+  },
+  {
+    key: 'VIPASSANA_MASTER',
+    title: 'พระวิปัสสนาจารย์ / อาจารย์สอบอารมณ์',
+    shortHeader: '🧘 พระวิปัสสนาจารย์',
+    badge: 'VIPASSANA_MASTER',
+    desc: 'บันทึกการสอบอารมณ์สติปัฏฐาน 4 (กาย เวทนา จิต ธรรม) ให้คำแนะนำสภาวะธรรม และประเมินผลการปฏิบัติวิปัสสนา',
+    colorTheme: 'rose',
   },
   {
     key: 'STUDENT',
@@ -231,13 +239,30 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: true,
       INSTRUCTOR: true,
+      VIPASSANA_MASTER: false,
+      STUDENT: false,
+    },
+    lockedRoles: ['SUPER_ADMIN'],
+  },
+  {
+    id: 'vipassana_interview_eval',
+    moduleName: '10. สอบอารมณ์สติปัฏฐาน 4 และประเมินผลการปฏิบัติวิปัสสนา',
+    description: 'บันทึกการสอบอารมณ์สติปัฏฐาน 4 (กาย เวทนา จิต ธรรม) รายบุคคล/รายกลุ่ม และประเมินผล ผ่าน/ไม่ผ่าน',
+    routeHint: '/events & /admin (วิปัสสนาจารย์)',
+    roles: {
+      SUPER_ADMIN: true,
+      ADMIN: true,
+      OFFICER: false,
+      ACTING_OFFICER: false,
+      INSTRUCTOR: false,
+      VIPASSANA_MASTER: true,
       STUDENT: false,
     },
     lockedRoles: ['SUPER_ADMIN'],
   },
   {
     id: 'users_instructors_manage',
-    moduleName: '10. จัดการไอดีอาจารย์ รีเซ็ตรหัสผ่าน และกำหนดสิทธิ์ผู้ใช้งาน',
+    moduleName: '11. จัดการไอดีอาจารย์ รีเซ็ตรหัสผ่าน และกำหนดสิทธิ์ผู้ใช้งาน',
     description: 'สร้าง/แก้ไขบัญชีอาจารย์ รีเซ็ตรหัสผ่าน แต่งตั้งผู้ช่วยเจ้าหน้าที่ และพิมพ์บัตรแจ้งภาระงานสอน',
     routeHint: '/admin (จัดการผู้ใช้)',
     roles: {

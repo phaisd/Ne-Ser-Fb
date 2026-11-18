@@ -9,7 +9,7 @@ const VALID_STATUSES = new Set(['PRESENT', 'LATE', 'ABSENT', 'LEAVE', 'EXCUSED']
  * Checks whether a raw Google Sheets row is a corrupted 7-column legacy sample row
  * (where column D [r[3]] was status like PRESENT/LATE and column F [r[5]] was an ISO timestamp).
  */
-function isLegacyCorruptedRow(r: any[]): boolean {
+function isLegacyCorruptedRow(r: unknown[]): boolean {
   const colD = String(r[3] || '').trim().toUpperCase();
   const colF = String(r[5] || '').trim().toUpperCase();
   const colC = String(r[2] || '').trim();

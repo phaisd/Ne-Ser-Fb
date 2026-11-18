@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import type { SystemSettings } from '@/types';
 import { THEME_PRESETS, DEFAULT_THEME_PRESET, ThemeColorPreset } from '@/lib/theme-presets';
 import { getThemeMode, setThemeMode, THEME_MODE_EVENT } from '@/lib/theme-mode';
 
@@ -48,7 +49,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   const [currentPreset, setCurrentPreset] = useState<ThemeColorPreset>(DEFAULT_THEME_PRESET);
   const [showRibbon, setShowRibbon] = useState(false);
 
-  const applyTheme = (presetKey?: string, ribbon?: boolean, rawSettings?: any) => {
+  const applyTheme = (presetKey?: string, ribbon?: boolean, rawSettings?: SystemSettings | null) => {
     const key = (presetKey && THEME_PRESETS[presetKey as ThemeColorPreset]) ? (presetKey as ThemeColorPreset) : DEFAULT_THEME_PRESET;
     setCurrentPreset(key);
     setShowRibbon(key === 'mourning' && Boolean(ribbon));
@@ -80,7 +81,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     }
 
     // Apply font size & typography settings across both Public Portal & Admin Console
-    applyTypographySettings(rawSettings);
+    applyTypographySettings(rawSettings || undefined);
   };
 
   const loadThemeSettings = () => {

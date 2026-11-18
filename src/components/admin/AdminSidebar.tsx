@@ -18,7 +18,7 @@ import {
   Award,
   GraduationCap,
 } from 'lucide-react';
-import { SystemSettings } from '@/types';
+import { SystemSettings, AuthUser } from '@/types';
 import { isAdminOrOfficer } from '@/lib/auth-client';
 
 export type AdminTab =
@@ -44,7 +44,7 @@ export interface AdminSidebarProps {
   studentsTotalCount: number;
   isOfficer: boolean;
   isSuperAdmin: boolean;
-  currentUser: any;
+  currentUser?: AuthUser | null;
   handleLogout: () => void;
 }
 

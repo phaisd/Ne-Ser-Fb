@@ -16,13 +16,14 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Course, TimetableItem, DAYS_OF_WEEK } from './types';
+import { SystemSettings } from '@/types';
 
 const normCode = (s?: string) => String(s || '').replace(/\s+/g, '').toUpperCase();
 
 export interface CourseTimetableTabProps {
   courses: Course[];
   timetables: TimetableItem[];
-  settings: any;
+  settings: SystemSettings | null;
   filterAcademicYear: string;
   ttYear: number;
   setTtYear: (val: number) => void;

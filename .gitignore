@@ -40,6 +40,8 @@ Thumbs.db
 # Scratch temporary scripts
 scratch/
 data/backups/
+data/active_visitors.json
+data/visitor_logs.json
 nginx/ssl/*.pem
 nginx/ssl/*.key
 

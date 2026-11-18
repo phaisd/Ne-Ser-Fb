@@ -1,4 +1,4 @@
-import { StudentScoreItem } from '@/types';
+import { StudentScoreItem, Course, TimetableItem, AuthUser } from '@/types';
 import { GroupedMajorSection, MajorGroupMeta } from '../majorGrouping';
 
 export interface GradeSheetStudentInput {
@@ -33,9 +33,9 @@ export type ComputedGradeRowWithMeta = ComputedGradeRow & {
 };
 
 export interface GradeSheetTabProps {
-  currentUser: any;
-  currentCourse: any;
-  availableCourses: any[];
+  currentUser?: AuthUser | null;
+  currentCourse?: TimetableItem | Course | null;
+  availableCourses: (TimetableItem | Course)[];
   selectedCourseCode: string;
   handleCourseChange: (code: string) => void;
   studentsList: GradeSheetStudentInput[];

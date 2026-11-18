@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useMemo, Dispatch, SetStateAction } from 'react';
-import { Student } from '@/types';
+import { Student, AuthUser } from '@/types';
 import type { PromotionCandidate } from '@/components/admin/modals/BulkPromotionModal';
 import { getErrorMessage } from '@/lib/utils/error';
 
 interface UseAdminStudentsOptions {
-  studentsList: any[];
-  setStudentsList: Dispatch<SetStateAction<any[]>>;
+  studentsList: Student[];
+  setStudentsList: Dispatch<SetStateAction<Student[]>>;
   setStudentsCount: Dispatch<SetStateAction<{ total: number; thai: number; intl: number }>>;
-  currentUser: any;
+  currentUser?: AuthUser | null;
   loadData: () => void;
 }
 
@@ -101,7 +101,7 @@ export function useAdminStudents({
     setAdminSelectedStudentCodes(next);
   };
 
-  const openDeleteSingleStudentModal = (student: any) => {
+  const openDeleteSingleStudentModal = (student: Student) => {
     setStudentDeleteModal({
       isOpen: true,
       targets: [

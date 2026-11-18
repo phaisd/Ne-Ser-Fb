@@ -1,4 +1,9 @@
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR';
+export type UserRole =
+  | 'SUPER_ADMIN'
+  | 'ADMIN'
+  | 'OFFICER'
+  | 'INSTRUCTOR'
+  | 'VIPASSANA_MASTER';
 
 export interface LoginAuditRecord {
   id: string;
@@ -42,6 +47,26 @@ export interface InstructorAccount {
 
 // UserAccount is an alias / unified model for InstructorAccount
 export type UserAccount = InstructorAccount;
+
+export interface AuthUser {
+  id?: string;
+  name: string;
+  nameEn?: string;
+  fullName?: string;
+  email: string;
+  gmail?: string;
+  role: string;
+  instructorType?: string;
+  studentCode?: string;
+  faculty?: string;
+  major?: string;
+  year?: number;
+  phone?: string;
+  isSuperAdmin?: boolean;
+  isActingOfficer?: boolean;
+  department?: string;
+  avatarUrl?: string;
+}
 
 export interface ArchivedInstructor extends InstructorAccount {
   archivedAt: string;

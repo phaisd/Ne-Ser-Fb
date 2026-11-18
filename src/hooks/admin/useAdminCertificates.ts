@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { CertificateRequest } from '@/types';
-import { calculateNextDocNo, getErrorMessage } from '@/lib/utils';
+import { calculateNextDocNo, getErrorMessage, toBuddhistYear } from '@/lib/utils';
 
 interface UseAdminCertificatesOptions {
   loadData: () => Promise<void> | void;
@@ -41,8 +41,7 @@ export function useAdminCertificates({
     const set = new Set<string>();
     requests.forEach((r) => {
       if (r.createdAt) {
-        const yr = new Date(r.createdAt).getFullYear() + 543;
-        set.add(String(yr));
+        set.add(String(toBuddhistYear(r.createdAt)));
       }
     });
     if (set.size === 0) set.add('2569');
@@ -57,7 +56,7 @@ export function useAdminCertificates({
     return requests.filter((r) => {
       if (statusFilter !== 'ALL' && r.status !== statusFilter) return false;
       if (filterYear !== 'ALL' && r.createdAt) {
-        const yr = String(new Date(r.createdAt).getFullYear() + 543);
+        const yr = String(toBuddhistYear(r.createdAt));
         if (yr !== filterYear) return false;
       }
       if (search.trim()) {
@@ -75,9 +74,7 @@ export function useAdminCertificates({
 
   const handleApprove = async (id: string, defaultDocNo?: string, prefix?: '8002' | '8002.1') => {
     const targetReq = requests.find((r) => r.id === id);
-    const targetYear = targetReq?.createdAt
-      ? new Date(targetReq.createdAt).getFullYear() + 543
-      : new Date().getFullYear() + 543;
+    const targetYear = toBuddhistYear(targetReq?.createdAt);
 
     const autoDocNo = calculateNextDocNo(requests, targetYear).docNoWithYear;
     const finalDocNo = docNoInput.trim() || defaultDocNo || autoDocNo;

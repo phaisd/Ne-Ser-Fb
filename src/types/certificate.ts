@@ -1,5 +1,22 @@
 export type CertRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
 
+export interface AcademicYearArchive {
+  academicYear: string;
+  archivedAt: string;
+  totalRequests: number;
+  approvedCount: number;
+  rejectedCount: number;
+  pendingCount: number;
+  thaiStudentCount: number;
+  foreignStudentCount: number;
+  degreeSummary: {
+    bachelor: number;
+    master: number;
+    doctoral: number;
+  };
+  purposeSummary: Record<string, number>;
+}
+
 export interface CertificateRequest {
   id: string;
   createdAt: string;

@@ -1,4 +1,4 @@
-import { InstructorAccount, Student, UserRole } from '@/types';
+import { InstructorAccount, UserAccount, Student, UserRole } from '@/types';
 import { readLocalJson, writeLocalJson, getSheetsClient } from '../storageHelper';
 import { getStudents } from '../studentService';
 import { verifyPassword, hashPassword } from '@/lib/auth-security';
@@ -313,7 +313,7 @@ export async function toggleActingOfficer(
   targetId: string,
   isActingOfficer: boolean,
   userType?: 'STUDENT' | 'INSTRUCTOR'
-): Promise<{ success: boolean; message: string; data?: any }> {
+): Promise<{ success: boolean; message: string; data?: UserAccount | Student }> {
   const cleanId = (targetId || '').trim().toLowerCase();
   if (!cleanId) {
     return { success: false, message: 'กรุณาระบุรหัสผู้ใช้งาน' };
@@ -322,7 +322,7 @@ export async function toggleActingOfficer(
   // 1. Handle Student if explicitly STUDENT or if not found in instructors
   if (userType !== 'INSTRUCTOR') {
     const codeOnly = cleanId.replace(/@mcu\.ac\.th$/i, '').trim();
-    const localStudents = readLocalJson<any[]>('students.json', []);
+    const localStudents = readLocalJson<Student[]>('students.json', []);
     let sIdx = localStudents.findIndex(
       (s) =>
         (s.studentCode || '').trim().toLowerCase() === cleanId ||

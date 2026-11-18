@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { CertificateRequest, UserAccount, Student, Course } from '@/types';
 import { AcademicYearWorkflowCard } from '../AcademicYearWorkflowCard';
+import type { AdminTab } from '../AdminSidebar';
 
 interface AdminDashboardTabProps {
   pendingRequests: CertificateRequest[];
@@ -33,8 +34,8 @@ interface AdminDashboardTabProps {
   coursesCount: number;
   coursesList?: Course[];
   users: UserAccount[];
-  setActiveTab: (tab: any) => void;
-  setStatusFilter: (filter: any) => void;
+  setActiveTab: React.Dispatch<React.SetStateAction<AdminTab>> | ((tab: AdminTab) => void);
+  setStatusFilter: React.Dispatch<React.SetStateAction<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>> | ((filter: 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED') => void);
   setApprovingId: (id: string) => void;
   onOpenArchiveModal?: () => void;
 }

@@ -177,7 +177,9 @@ export function CertCustomizerToolbar({
             <label className="font-bold text-slate-700 block mb-1">ชนิดแบบฟอร์มเอกสาร:</label>
             <select
               value={previewTemplate}
-              onChange={(e: any) => setPreviewTemplate(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setPreviewTemplate(e.target.value as CertTemplateType)
+              }
               className="w-full px-2.5 py-2 rounded-xl border border-purple-300 bg-white font-bold text-xs text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm cursor-pointer"
             >
               <option value="THAI_STANDARD">📜 รับรองนิสิต (ไทย) + รูปถ่าย (หน้า 2-9)</option>
@@ -436,7 +438,11 @@ export function CertCustomizerToolbar({
             </button>
             <select
               value={docTitleFontWeight}
-              onChange={(e: any) => setDocTitleFontWeight(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setDocTitleFontWeight(
+                  e.target.value as 'font-normal' | 'font-semibold' | 'font-bold' | 'font-black'
+                )
+              }
               className="bg-purple-50 px-1.5 py-0.5 rounded text-xs font-bold text-purple-900 border border-purple-200 cursor-pointer focus:outline-none"
               title="เลือกความหนาของตัวอักษรหัวเรื่อง"
             >

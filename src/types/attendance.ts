@@ -73,3 +73,20 @@ export interface CourseGradeSheet {
   updatedBy?: string;
 }
 
+export interface StudentEligibility {
+  studentCode: string;
+  studentName: string;
+  major?: string;
+  yearLevel?: number;
+  nationality?: string;
+  attendedCount: number;
+  lateCount: number;
+  leaveCount: number;
+  absentCount: number;
+  attendedPercent: number;
+  status: 'ELIGIBLE' | 'WARNING' | 'INELIGIBLE';
+  remainingAllowedAbsences?: number;
+  reason?: string;
+  indexInMajor?: number;
+}
+

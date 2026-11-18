@@ -26,12 +26,14 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { UserAccount, Student } from '@/types';
+import type { AdminTab } from '../AdminSidebar';
+import type { AdminUserFilterItem } from '@/hooks/admin/useAdminUsers';
 import { ArchivedInstructorsModal, InstructorImportModal } from '../modals';
 import { RolePermissionsMatrixView } from './RolePermissionsMatrixView';
 
 interface AdminUsersTabProps {
   users: UserAccount[];
-  filteredUsers: any[];
+  filteredUsers: AdminUserFilterItem[];
   studentsList: Student[];
   userSearch: string;
   setUserSearch: (val: string) => void;
@@ -40,11 +42,11 @@ interface AdminUsersTabProps {
   isScanningInstructors: boolean;
   handleScanTimetables: () => void;
   setIsAddUserOpen: (val: boolean) => void;
-  setActiveTab: (tab: any) => void;
+  setActiveTab: React.Dispatch<React.SetStateAction<AdminTab>> | ((tab: AdminTab) => void);
   setStudentSearch: (val: string) => void;
-  handleStartEditUser: (u: UserAccount) => void;
-  handleOpenTeachingSlip: (u: UserAccount) => void;
-  handleCopyLineTeachingMessage: (u: UserAccount) => void;
+  handleStartEditUser: (u: UserAccount | AdminUserFilterItem) => void;
+  handleOpenTeachingSlip: (u: UserAccount | AdminUserFilterItem) => void;
+  handleCopyLineTeachingMessage: (u: UserAccount | AdminUserFilterItem) => void;
   copiedLineUserId: string | null;
   handleToggleSuspend: (id: string, isSuspended: boolean, name: string) => void;
   handleUpdateRole: (id: string, newRole: any) => void;
@@ -940,7 +942,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                           {/* Archive Instructor (เกษียณอายุ/ลาออก/จำหน่าย) */}
                           {!isSuper && (
                             <button
-                              onClick={() => handleArchiveInstructor(u)}
+                              onClick={() => handleArchiveInstructor(u as UserAccount)}
                               disabled={archivingId === u.id}
                               className="px-2 py-1 rounded-lg text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
                               title="ย้ายเข้าแฟ้มประวัติอาจารย์ที่เกษียณอายุ ลาออก หรือจำหน่ายออก (สามารถกู้คืนได้ทุกเมื่อ)"

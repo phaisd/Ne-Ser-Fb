@@ -47,7 +47,7 @@ interface AdminCoursesTabProps {
   courseSearch: string;
   setCourseSearch: (val: string) => void;
   courseProgramFilter: string;
-  setCourseProgramFilter: (val: any) => void;
+  setCourseProgramFilter: React.Dispatch<React.SetStateAction<'THAI' | 'ENGLISH' | 'ALL'>> | ((val: 'THAI' | 'ENGLISH' | 'ALL') => void);
   instructors?: UserAccount[];
   onRefreshCourses?: () => void;
 }

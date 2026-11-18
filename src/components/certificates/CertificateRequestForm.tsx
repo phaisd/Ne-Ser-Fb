@@ -22,20 +22,21 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { CertificateRequest, CertTypeItem, StudentLookupItem } from './types';
+import { AuthUser, SystemSettings } from '@/types';
 import { isAdmissionPeriodActive } from '@/lib/utils';
 import { CertCandidateGateSection } from './form/CertCandidateGateSection';
 import { CertStaffFormSection } from './form/CertStaffFormSection';
 import { CertStudentAttachmentsSection } from './form/CertStudentAttachmentsSection';
 
 export interface CertificateRequestFormProps {
-  currentUser: any;
+  currentUser?: AuthUser | null;
   selectedCert: CertTypeItem | null;
   setSelectedCert: (cert: CertTypeItem | null) => void;
   certTypes: CertTypeItem[];
   cardAudienceFilter: 'ALL' | 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE';
   setCardAudienceFilter: (filter: 'ALL' | 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE') => void;
   students: StudentLookupItem[];
-  settings: any;
+  settings?: SystemSettings | null;
   onSuccess: (newReq: CertificateRequest, msg: string) => void;
   onBackToSelect?: () => void;
 }
@@ -212,7 +213,7 @@ export function CertificateRequestForm({
       }
     } else if (['INSTRUCTOR', 'OFFICER', 'ADMIN', 'SUPER_ADMIN'].includes(currentUser.role)) {
       setFullName(currentUser.name || '');
-      if (currentUser.email || currentUser.gmail) setEmail(currentUser.email || currentUser.gmail);
+      if (currentUser.email || currentUser.gmail) setEmail(currentUser.email || currentUser.gmail || '');
       if (currentUser.phone) setPhone(currentUser.phone);
       if (currentUser.department) setStaffDepartment(currentUser.department);
       if (currentUser.role === 'INSTRUCTOR') setStaffPosition('อาจารย์ผู้สอน');
@@ -427,7 +428,7 @@ export function CertificateRequestForm({
       const cleanedAge = age ? String(age).replace(/\s*ปี$/g, '').trim() : '';
       const cleanedVassa = vassa ? String(vassa).replace(/\s*พรรษา$/g, '').trim() : '';
 
-      const payload: any = {
+      const payload: Omit<CertificateRequest, 'id' | 'createdAt'> = {
         studentCode: effectiveStudentCode,
         fullName: effectiveFullName,
         monasticName: !isStaffCert && isThaiCertSection && monasticName.trim() ? monasticName.trim() : undefined,

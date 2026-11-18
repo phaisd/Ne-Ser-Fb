@@ -4,6 +4,9 @@ import {
   createEvent,
   getEventRegistrations,
   saveVipassanaAttendance,
+  recordVipassanaScanCheckin,
+  batchVipassanaOfflineSync,
+  batchApproveAndIssueVipassanaCertificates,
 } from './eventService';
 import * as storageHelper from './storageHelper';
 
@@ -128,5 +131,109 @@ describe('eventService unit tests', () => {
 
     const regs = await getEventRegistrations('ev-1');
     expect(regs).toHaveLength(1);
+  });
+
+  it('records realtime Vipassana scan check-in by student code or badge QR payload', async () => {
+    vi.mocked(storageHelper.readLocalJson).mockReturnValue([
+      {
+        id: 'reg-vip-1',
+        eventId: 'ev-vipassana',
+        studentCode: '6501501071',
+        studentName: 'พระสมบัติ มหาปญฺโญ',
+        status: 'REGISTERED',
+        createdAt: '2026-01-01',
+      },
+    ]);
+
+    const res = await recordVipassanaScanCheckin({
+      eventId: 'ev-vipassana',
+      studentCodeOrId: 'VIPASSANA:6501501071',
+      dayKey: 'day_1',
+      periodKey: 'p1',
+      status: 'PRESENT',
+      checkInTime: '04:12:30',
+      recordedBy: 'MONK_COORDINATOR',
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.isAlreadyCheckedIn).toBe(false);
+    expect(res.registration?.status).toBe('ATTENDED');
+    expect(res.registration?.dailyAttendance?.day_1?.p1).toEqual({
+      status: 'PRESENT',
+      checkInTime: '04:12:30',
+      recordedBy: 'MONK_COORDINATOR',
+    });
+    expect(storageHelper.writeLocalJson).toHaveBeenCalled();
+  });
+
+  it('batch syncs offline check-in scans into daily attendance', async () => {
+    vi.mocked(storageHelper.readLocalJson).mockReturnValue([
+      {
+        id: 'reg-offline-1',
+        eventId: 'ev-vipassana',
+        studentCode: 'T101',
+        studentName: 'พระมหาสมชาย',
+        status: 'REGISTERED',
+        createdAt: '2026-01-01',
+      },
+    ]);
+
+    const result = await batchVipassanaOfflineSync('ev-vipassana', [
+      {
+        studentCodeOrId: 'T101',
+        dayKey: 'day_1',
+        periodKey: 'p1',
+        status: 'PRESENT',
+        checkInTime: '04:15:00',
+      },
+    ]);
+
+    expect(result.success).toBe(true);
+    expect(result.syncedCount).toBe(1);
+    expect(storageHelper.writeLocalJson).toHaveBeenCalled();
+  });
+
+  it('batch approves registrations and automatically issues digital certificates', async () => {
+    vi.mocked(storageHelper.readLocalJson).mockImplementation((file) => {
+      if (file === 'events.json') {
+        return [{ id: 'ev-vipassana', title: 'วิปัสสนากัมมัฏฐาน 2569', academicYear: '2569' }];
+      }
+      if (file === 'event_registrations.json') {
+        return [
+          {
+            id: 'reg-pass-1',
+            eventId: 'ev-vipassana',
+            studentCode: '6701501011',
+            studentName: 'พระมหาสมชาย กิตฺติโสภโณ',
+            status: 'REGISTERED',
+            createdAt: '2026-01-01',
+          },
+        ];
+      }
+      if (file === 'certificate_requests.json') {
+        return [];
+      }
+      return [];
+    });
+
+    const result = await batchApproveAndIssueVipassanaCertificates({
+      eventId: 'ev-vipassana',
+      registrationIds: ['reg-pass-1'],
+      docNoPrefix: '8002',
+      issueDateTh: '22 ธันวาคม 2568',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.issuedCount).toBe(1);
+    expect(storageHelper.writeLocalJson).toHaveBeenCalledWith(
+      'certificate_requests.json',
+      expect.arrayContaining([
+        expect.objectContaining({
+          studentCode: '6701501011',
+          docNo: expect.stringContaining('มจร 8002/ว.วป-2569-'),
+          status: 'APPROVED',
+        }),
+      ])
+    );
   });
 });

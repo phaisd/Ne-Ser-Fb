@@ -29,9 +29,10 @@ export function useLanguage() {
 
     updateLang();
 
-    const handleLangChanged = (e: any) => {
-      if (e?.detail) {
-        setLangState(e.detail === 'en' ? 'en' : 'th');
+    const handleLangChanged = (e: Event) => {
+      const detail = (e as CustomEvent<string>)?.detail;
+      if (detail) {
+        setLangState(detail === 'en' ? 'en' : 'th');
       } else {
         updateLang();
       }

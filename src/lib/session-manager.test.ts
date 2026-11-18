@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 
-const mockJsonStore: Record<string, any> = {};
+const mockJsonStore: Record<string, unknown> = {};
 vi.mock('@/services/storageHelper', () => ({
-  readLocalJson: vi.fn((file: string, fallback: any) =>
-    file in mockJsonStore ? JSON.parse(JSON.stringify(mockJsonStore[file])) : fallback
+  readLocalJson: vi.fn(<T>(file: string, fallback: T) =>
+    file in mockJsonStore ? (JSON.parse(JSON.stringify(mockJsonStore[file])) as T) : fallback
   ),
-  writeLocalJson: vi.fn((file: string, data: any) => {
+  writeLocalJson: vi.fn((file: string, data: unknown) => {
     mockJsonStore[file] = JSON.parse(JSON.stringify(data));
   }),
 }));

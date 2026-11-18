@@ -1,3 +1,5 @@
+import type { SystemSettings } from '@/types';
+
 /**
  * Shared Formatting Utilities (Thai/English Dates, PDPA Masking, Numbers)
  */
@@ -59,6 +61,38 @@ export function maskPassport(passport?: string | null, unmask: boolean = false):
   const clean = passport.trim();
   if (clean.length <= 4) return '••••';
   return `${clean.slice(0, 2)}••••${clean.slice(-2)}`;
+}
+
+/**
+ * PDPA Masking for Thai 13-digit National Citizen ID: displays e.g. 1-3499-•••••-12-3
+ */
+export function maskCitizenId(citizenId?: string | null, unmask: boolean = false): string {
+  if (!citizenId) return '-';
+  if (unmask) return citizenId;
+  const clean = citizenId.replace(/\D/g, '');
+  if (clean.length === 13) {
+    return `${clean[0]}-${clean.slice(1, 5)}-•••••-${clean.slice(10, 12)}-${clean[12]}`;
+  }
+  if (clean.length > 6) {
+    return `${clean.slice(0, 3)}•••••${clean.slice(-2)}`;
+  }
+  return '••••••••';
+}
+
+/**
+ * PDPA Masking for Email address: displays e.g. p•••••d@mcu.ac.th
+ */
+export function maskEmail(email?: string | null, unmask: boolean = false): string {
+  if (!email) return '-';
+  if (unmask) return email;
+  const parts = email.trim().split('@');
+  if (parts.length !== 2) return '••••@••••';
+  const name = parts[0];
+  const domain = parts[1];
+  if (name.length <= 2) {
+    return `${name[0]}•@${domain}`;
+  }
+  return `${name[0]}${'•'.repeat(Math.min(name.length - 2, 5))}${name[name.length - 1]}@${domain}`;
 }
 
 /**
@@ -154,7 +188,7 @@ export const THAI_MONTH_SHORT_NAMES = [
 /**
  * Checks if the Candidate Admission Period is currently open based on system settings.
  */
-export function isAdmissionPeriodActive(settings?: any): {
+export function isAdmissionPeriodActive(settings?: Partial<SystemSettings> | null): {
   isOpen: boolean;
   reason?: string;
   periodText?: string;
@@ -205,4 +239,80 @@ export function isAdmissionPeriodActive(settings?: any): {
     isOpen: true,
     periodText: settings.admissionPeriodDates || '',
   };
+}
+
+/**
+ * Converts a Gregorian Date, string, or number to Buddhist Era Year (พ.ศ.)
+ * If already in Buddhist Era (>= 2400), returns it directly.
+ */
+export function toBuddhistYear(dateInput?: Date | string | number | null): number {
+  if (dateInput === null || dateInput === undefined) {
+    return new Date().getFullYear() + 543;
+  }
+  if (typeof dateInput === 'number') {
+    return dateInput >= 2400 ? dateInput : dateInput + 543;
+  }
+  if (typeof dateInput === 'string') {
+    const num = parseInt(dateInput.trim(), 10);
+    if (!isNaN(num) && num >= 2400 && String(num) === dateInput.trim()) {
+      return num;
+    }
+    const d = new Date(dateInput);
+    if (!isNaN(d.getTime())) {
+      return d.getFullYear() + 543;
+    }
+    return !isNaN(num) ? (num >= 2400 ? num : num + 543) : new Date().getFullYear() + 543;
+  }
+  if (dateInput instanceof Date && !isNaN(dateInput.getTime())) {
+    return dateInput.getFullYear() + 543;
+  }
+  return new Date().getFullYear() + 543;
+}
+
+/**
+ * Formats a date into localized Thai Buddhist date string with specified format
+ */
+export function formatBuddhistDate(
+  dateInput?: Date | string | null,
+  formatType: 'full' | 'short' | 'month-year' = 'full'
+): string {
+  if (!dateInput) return '-';
+  const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (isNaN(d.getTime())) return '-';
+
+  const day = d.getDate();
+  const month = d.getMonth(); // 0-11
+  const bYear = d.getFullYear() + 543;
+
+  if (formatType === 'short') {
+    return `${day} ${THAI_MONTH_SHORT_NAMES[month]} ${bYear}`;
+  }
+  if (formatType === 'month-year') {
+    return `${THAI_MONTH_NAMES[month]} ${bYear}`;
+  }
+  return `${day} ${THAI_MONTH_NAMES[month]} พ.ศ. ${bYear}`;
+}
+
+const THAI_DIGIT_MAP: Record<string, string> = {
+  '0': '๐', '1': '๑', '2': '๒', '3': '๓', '4': '๔',
+  '5': '๕', '6': '๖', '7': '๗', '8': '๘', '9': '๙',
+};
+
+const ARABIC_DIGIT_MAP: Record<string, string> = {
+  '๐': '0', '๑': '1', '๒': '2', '๓': '3', '๔': '4',
+  '๕': '5', '๖': '6', '๗': '7', '๘': '8', '๙': '9',
+};
+
+/**
+ * Converts Western Arabic digits (0-9) to Thai numerals (๐-๙)
+ */
+export function formatNumberThaiDigits(input: string | number): string {
+  return String(input).replace(/[0-9]/g, (ch) => THAI_DIGIT_MAP[ch] || ch);
+}
+
+/**
+ * Converts Thai numerals (๐-๙) to Western Arabic digits (0-9)
+ */
+export function formatThaiDigitsToNumber(input: string): string {
+  return String(input).replace(/[๐-๙]/g, (ch) => ARABIC_DIGIT_MAP[ch] || ch);
 }

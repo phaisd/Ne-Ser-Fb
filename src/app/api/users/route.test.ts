@@ -16,7 +16,7 @@ vi.mock('@/lib/data-store', () => ({
   resetUserPassword: vi.fn(async () => true),
   updateInstructorPassword: vi.fn(async () => true),
   createUserAccount: vi.fn(),
-  updateUserProfile: vi.fn(async (_id: string, updates: any) => ({
+  updateUserProfile: vi.fn(async (_id: string, updates: Record<string, unknown>) => ({
     id: 'inst-72',
     name: updates.name || 'Teacher',
     email: updates.email || 'teacher44@mcu.ac.th',

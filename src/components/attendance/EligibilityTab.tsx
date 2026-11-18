@@ -14,12 +14,30 @@ import {
   Sparkles,
   Search,
 } from 'lucide-react';
+import { Course, TimetableItem, AuthUser, StudentEligibility } from '@/types';
 import { groupAndSortByMajor } from './majorGrouping';
 
+export interface EligibilityRowItem {
+  studentCode: string;
+  studentName: string;
+  major?: string;
+  yearLevel?: number;
+  present: number;
+  late: number;
+  leave: number;
+  absent: number;
+  attendedPercent: number;
+  remainingAbsences: number;
+  status: 'ELIGIBLE' | 'WARNING' | 'INELIGIBLE';
+  statusText?: string;
+  reason?: string;
+  isCustomEnrolled?: boolean;
+}
+
 interface EligibilityTabProps {
-  currentUser: any;
-  currentCourse: any;
-  availableCourses: any[];
+  currentUser?: AuthUser | null;
+  currentCourse?: TimetableItem | Course | null;
+  availableCourses: (TimetableItem | Course)[];
   selectedCourseCode: string;
   handleCourseChange: (code: string) => void;
   showEligibilitySettings: boolean;
@@ -46,8 +64,8 @@ interface EligibilityTabProps {
   setEligibilitySearch: (q: string) => void;
   eligibilityStatusFilter: 'ALL' | 'ELIGIBLE' | 'WARNING' | 'INELIGIBLE';
   setEligibilityStatusFilter: (status: 'ALL' | 'ELIGIBLE' | 'WARNING' | 'INELIGIBLE') => void;
-  eligibilityList: any[];
-  filteredEligibilityList: any[];
+  eligibilityList: EligibilityRowItem[];
+  filteredEligibilityList: EligibilityRowItem[];
 }
 
 export function EligibilityTab({
@@ -406,10 +424,11 @@ export function EligibilityTab({
           {availableCourses.map((c, i) => {
             const sKey = (c as any).sectionKey || c.courseCode;
             const isSelected = sKey === selectedCourseCode || (!(c as any).sectionKey && c.courseCode === selectedCourseCode);
+            const ttTitle = 'timetableTitle' in c ? String((c as TimetableItem).timetableTitle || '') : '';
             const isEn =
               (c as any).programType === 'ENGLISH' ||
               (c as any).programType === 'INTERNATIONAL' ||
-              /inter|eng|english|นานาชาติ/i.test(c.timetableTitle || '') ||
+              /inter|eng|english|นานาชาติ/i.test(ttTitle) ||
               /^[A-Za-z0-9\s:,\-\(\)\/\.]+$/.test((c.courseName || '').trim());
 
             return (

@@ -45,6 +45,7 @@ export interface Student {
   password?: string;
   hasChangedPassword?: boolean;
   isActingOfficer?: boolean;
+  updatedAt?: string;
 }
 
 export interface ArchivedStudent extends Student {

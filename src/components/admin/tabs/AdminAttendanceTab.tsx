@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { CheckSquare, ExternalLink, Search, FileSpreadsheet, Trash2, RefreshCw } from 'lucide-react';
-import { AttendanceRecord, TimetableItem, Student } from '@/types';
+import { AttendanceRecord, TimetableItem, Student, AuthUser } from '@/types';
 import { GradeSheetTab } from '@/components/attendance/GradeSheetTab';
 
 interface AdminAttendanceTabProps {
@@ -15,7 +15,7 @@ interface AdminAttendanceTabProps {
   setAttendanceStatusFilter: (val: string) => void;
   timetablesList?: TimetableItem[];
   studentsList?: Student[];
-  currentUser?: any;
+  currentUser?: AuthUser | null;
   logoUrl?: string;
   onRefresh?: () => void;
 }
@@ -221,7 +221,7 @@ export const AdminAttendanceTab: React.FC<AdminAttendanceTabProps> = ({
 
       {subTab === 'GRADE_SHEET' ? (
         <GradeSheetTab
-          currentUser={currentUser || { name: 'ผู้ดูแลระบบ', role: 'ADMIN' }}
+          currentUser={currentUser || { name: 'ผู้ดูแลระบบ', email: 'admin@mcu.ac.th', role: 'ADMIN' }}
           currentCourse={currentCourse}
           availableCourses={timetablesList}
           selectedCourseCode={currentCourse?.courseCode || selectedCourseCode}

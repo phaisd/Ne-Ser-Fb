@@ -4,12 +4,12 @@ import {
   Student,
   TimetableItem,
 } from '@/types';
-import { matchInstructorStrict } from '@/lib/utils';
+import { matchInstructorStrict, toBuddhistYear } from '@/lib/utils';
 import { AuthUser } from '@/lib/auth-client';
 import { calculateMaxAllowedAbsences } from '@/lib/attendance/attendanceEvaluator';
-import { groupAndSortByMajor } from '@/components/attendance';
+import { groupAndSortByMajor, GroupedMajorSection } from '@/components/attendance';
 
-export type MajorSectionGroup = ReturnType<typeof groupAndSortByMajor>['sections'][number];
+export type MajorSectionGroup = GroupedMajorSection<Student>;
 
 export type AttendanceStatusValue = 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
 
@@ -216,9 +216,7 @@ export function buildSemesterRoadmapSessions(
       sDate = new Date(sessionDateStr + 'T00:00:00');
     }
 
-    const dateFormattedTh = `${sDate.getDate()} ${thaiMonthsShort[sDate.getMonth()]} ${(
-      sDate.getFullYear() + 543
-    )
+    const dateFormattedTh = `${sDate.getDate()} ${thaiMonthsShort[sDate.getMonth()]} ${toBuddhistYear(sDate)
       .toString()
       .substring(2)}`;
     const dayNameTh = thaiDays[sDate.getDay()];

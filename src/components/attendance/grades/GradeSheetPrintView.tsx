@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Printer, FileCheck2 } from 'lucide-react';
+import { Course, TimetableItem } from '@/types';
 import { GroupedMajorSection } from '../majorGrouping';
 import { ComputedGradeRow } from './types';
 import {
@@ -13,7 +14,7 @@ interface GradeSheetPrintViewProps {
   showPrintPreviewOnScreen: boolean;
   formLanguage: 'THAI' | 'ENGLISH';
   resolvedLogoUrl: string;
-  currentCourse: any;
+  currentCourse?: TimetableItem | Course | null;
   yearLevelText: string;
   majorText: string;
   semesterText: string;
@@ -151,13 +152,13 @@ export function GradeSheetPrintView({
                     <div className="flex items-baseline gap-1">
                       <span className="font-semibold shrink-0">วิชา</span>
                       <span className="border-b border-dotted border-black flex-1 px-2 font-bold">
-                        {currentCourse.courseName}
+                        {currentCourse?.courseName || ''}
                       </span>
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className="font-semibold shrink-0">รหัสวิชา</span>
                       <span className="border-b border-dotted border-black flex-1 px-2 font-bold">
-                        {currentCourse.courseCode}
+                        {currentCourse?.courseCode || ''}
                       </span>
                     </div>
                     <div className="flex items-baseline gap-1">
@@ -531,14 +532,14 @@ export function GradeSheetPrintView({
                     <div className="flex items-baseline gap-1.5">
                       <span className="font-semibold shrink-0">Subject :</span>
                       <span className="border-b border-dotted border-black flex-1 px-2 font-bold">
-                        {currentCourse.courseName}
+                        {currentCourse?.courseName || ''}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex items-baseline gap-1.5">
                         <span className="font-semibold shrink-0">Code :</span>
                         <span className="border-b border-dotted border-black flex-1 px-2 font-bold">
-                          {currentCourse.courseCode}
+                          {currentCourse?.courseCode || ''}
                         </span>
                       </div>
                       <div className="flex items-baseline gap-1.5">

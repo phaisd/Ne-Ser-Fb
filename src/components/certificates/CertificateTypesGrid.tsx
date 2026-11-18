@@ -26,17 +26,18 @@ import {
   User,
 } from 'lucide-react';
 import { CertTypeItem } from './types';
+import { AuthUser, SystemSettings } from '@/types';
 import { isAdmissionPeriodActive } from '@/lib/utils';
 import { isAdminOrOfficer } from '@/lib/auth-client';
 
 interface CertificateTypesGridProps {
-  settings: any;
+  settings?: SystemSettings | null;
   certTypes: CertTypeItem[];
   visibleCards: CertTypeItem[];
   cardAudienceFilter: 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE' | 'ALL';
   setCardAudienceFilter: (val: 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE' | 'ALL') => void;
   isStaffUser: boolean;
-  currentUser?: any;
+  currentUser?: AuthUser | null;
   selectedCert: CertTypeItem | null;
   onCardSelect: (card: CertTypeItem) => void;
   onProceedToForm?: () => void;

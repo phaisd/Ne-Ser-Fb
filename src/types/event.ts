@@ -34,8 +34,60 @@ export interface StudentEvent {
   attendanceMode?: 'SINGLE_SCAN' | 'DAILY_CHECKIN'; // เช็คชื่อรอบเดียว หรือ เช็คชื่อรายวัน
   meditationDaysRequired?: number; // จำนวนวันที่ต้องเข้าร่วมขั้นต่ำ เช่น 8 หรือ 10 วัน
 
-  meditationConfig?: any;
+  meditationConfig?: MeditationConfig;
   createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MeditationPeriodConfig {
+  id: 'p1' | 'p2' | 'p3' | 'p4';
+  nameTh: string;
+  nameEn?: string;
+  time: string;
+}
+
+export interface MeditationConfig {
+  periods?: MeditationPeriodConfig[];
+  lateThresholdMinutes?: number;
+  totalInterviewSessions?: number;
+  minAttendedDaysRequired?: number;
+}
+
+export interface SatipatthanaChecklist {
+  // กายานุปัสสนาสติปัฏฐาน (Kayanupassa-satipatthana)
+  standing?: boolean | null; // ขณะยืน (Standing)
+  walking?: boolean | null; // ขณะเดิน (Walking)
+  sitting?: boolean | null; // ขณะนั่ง (Sitting)
+  lying?: boolean | null; // ขณะนอน (Lying)
+  // อิริยาบถย่อย (Activities)
+  bathing?: boolean | null; // สรงน้ำ (Taking Bath)
+  dressing?: boolean | null; // นุ่งห่ม (Dressing)
+  eating?: boolean | null; // ฉัน (Eating)
+  toileting?: boolean | null; // ขับถ่าย (Toileting)
+  others?: boolean | null; // อื่นๆ (Others)
+
+  // เวทนานุปัสสนาสติปัฏฐาน (Vedana - During Standing & Sitting)
+  sukha?: boolean | null; // สุข (Happy)
+  dukkha?: boolean | null; // ทุกข์ (Suffer)
+  upekkha?: boolean | null; // เฉยๆ (Neither happy nor unhappy)
+
+  // จิตตานุปัสสนาสติปัฏฐาน (Citta - During Practice)
+  raga?: boolean | null; // ราคะ (Raga/Greed)
+  dosa?: boolean | null; // โทสะ (Dosa/Hatred)
+  moha?: boolean | null; // โมหะ (Moha/Delusion)
+
+  // ธัมมานุปัสสนาสติปัฏฐาน (Dhamma - What's happened in practice?)
+  nivarana5?: boolean | null; // นิวรณ์ 5 (Five Hindrances)
+  ayatana6?: boolean | null; // อายตนะ 6 เช่น เห็น, ได้ยิน (6 Ayatanas)
+}
+
+export interface VipassanaInterviewEntry {
+  sessionNumber: number; // ครั้งที่ 1, 2, 3
+  date?: string; // วันที่สอบอารมณ์ เช่น "2025-12-15"
+  meditationMasterName?: string; // ชื่อพระวิปัสสนาจารย์ผู้สอบ
+  checklist: SatipatthanaChecklist;
+  result: 'PASS' | 'NOT_PASS' | 'PENDING'; // ผลการปฏิบัติ: ผ่าน / ไม่ผ่าน
+  remarks?: string; // หมายเหตุ (ข้อแนะนำ หรือสาเหตุ)
   updatedAt?: string;
 }
 
@@ -45,6 +97,7 @@ export interface EventRegistration {
   eventTitle?: string;
   studentCode: string;
   studentName: string;
+  groupSpecificCode?: string; // เลขเฉพาะกลุ่ม เช่น T101, T102, I301
   status: 'REGISTERED' | 'ATTENDED' | 'CANCELLED';
   role?: string; // STUDENT, MONK, COMMITTEE
   degreeLevel?: string; // 'ปริญญาตรี' | 'ปริญญาโท' | 'ปริญญาเอก'
@@ -54,17 +107,24 @@ export interface EventRegistration {
   department?: string;
   groupName?: string;
   groupNumber?: number;
+  age?: number | string; // อายุ
   vasa?: string | number; // พรรษา (สำหรับพระภิกษุ/สามเณร)
   dailyAttendance?: Record<string, {
-    p1?: { status: string }; // ภาคเช้ามืด 04.00-04.30
-    p2?: { status: string }; // ภาคเช้า 08.00-08.30
-    p3?: { status: string }; // ภาคบ่าย 12.30-13.00
-    p4?: { status: string }; // ภาคค่ำ 17.30-18.00
+    p1?: { status: string; checkInTime?: string; recordedBy?: string }; // ภาคเช้ามืด 04.00-04.30
+    p2?: { status: string; checkInTime?: string; recordedBy?: string }; // ภาคเช้า 08.00-08.30
+    p3?: { status: string; checkInTime?: string; recordedBy?: string }; // ภาคบ่าย 12.30-13.00
+    p4?: { status: string; checkInTime?: string; recordedBy?: string }; // ภาคค่ำ 17.30-18.00
+    [periodKey: string]: { status: string; checkInTime?: string; recordedBy?: string } | undefined;
   }>;
+  vipassanaInterviews?: Record<string, VipassanaInterviewEntry>; // key: "s1", "s2", "s3"
+  finalMeditationResult?: 'PASS' | 'NOT_PASS' | 'PENDING' | 'COMMITTEE_REVIEW'; // ผลการประเมินวิปัสสนารอบสุดท้าย
   remarks?: string;
   attendedAt?: string;
   attendedDays?: number[]; // บันทึกวันที่เข้าร่วมสำหรับโครงการต่อเนื่อง เช่น [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   passedMeditation?: boolean; // ผลการประเมินโครงการวิปัสสนา (ผ่าน/ไม่ผ่าน)
+  certificateIssued?: boolean; // ออกวุฒิบัตรดิจิทัลแล้วหรือไม่
+  certificateDocNo?: string; // เลขที่วุฒิบัตร เช่น มจร 8002/ว.วป-2569-001
+  certificateIssuedAt?: string; // วันเวลาที่ออกวุฒิบัตร
   createdAt: string;
   updatedAt?: string;
 }

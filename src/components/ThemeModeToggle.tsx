@@ -20,8 +20,8 @@ export default function ThemeModeToggle({
     setMounted(true);
     setMode(getThemeMode());
 
-    const handleThemeChange = (e: any) => {
-      const newMode = e?.detail || getThemeMode();
+    const handleThemeChange = (e: Event) => {
+      const newMode = ((e as CustomEvent<ThemeMode>)?.detail || getThemeMode()) as ThemeMode;
       setMode(newMode);
     };
 

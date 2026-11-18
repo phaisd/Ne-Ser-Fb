@@ -2,33 +2,39 @@
 
 import React, { useState } from 'react';
 import {
-  Eye,
-  EyeOff,
-  Plus,
-  Trash2,
+  Sparkles,
   Save,
   RotateCcw,
-  BookOpen,
-  FileText,
-  Search,
-  GraduationCap,
-  SlidersHorizontal,
   CheckCircle2,
-  Pencil,
-  X,
+  ListOrdered,
+  FileSpreadsheet,
+  Layers,
+  GraduationCap,
+  Eye,
 } from 'lucide-react';
 import {
-  AdmissionFirstYearCourseItem,
   AdmissionPortalConfig,
+  SystemSettings,
   AdmissionQualificationCard,
   AdmissionRequiredDocItem,
   AdmissionSelectOptionItem,
-  SystemSettings,
+  AdmissionFirstYearCourseItem,
 } from '@/types';
 import {
   DEFAULT_ADMISSION_PORTAL_CONFIG,
   resolveAdmissionPortalConfig,
 } from '@/lib/admission-config';
+import {
+  CustomizerSection,
+  SelectOptionKey,
+  EditModalState,
+  CustomizerVisibilitySection,
+  CustomizerQualificationsSection,
+  CustomizerFormOptionsSection,
+  CustomizerStatusCheckSection,
+  CustomizerCoursePlanSection,
+  CustomizerEditModal,
+} from './sections';
 
 interface AdmissionPortalCustomizerProps {
   settings: SystemSettings;
@@ -36,55 +42,6 @@ interface AdmissionPortalCustomizerProps {
   onSaveSettings: (nextSettings: SystemSettings) => Promise<void>;
   savingConfig: boolean;
 }
-
-type CustomizerSection = 'VISIBILITY' | 'SECTION1' | 'SECTION2' | 'SECTION3' | 'SECTION4';
-
-type SelectOptionKey =
-  | 'degreeOptions'
-  | 'majorOptions'
-  | 'studyPlanOptions'
-  | 'previousEducationOptions'
-  | 'applicantTypeOptions'
-  | 'nationalityTypeOptions'
-  | 'programLanguageOptions';
-
-type EditModalState =
-  | {
-      type: 'qualification';
-      id: string;
-      badgeText: string;
-      themeColor: 'orange' | 'sky' | 'purple' | 'emerald';
-      itemsText: string;
-      enabled: boolean;
-    }
-  | {
-      type: 'document';
-      id: string;
-      title: string;
-      description: string;
-      enabled: boolean;
-    }
-  | {
-      type: 'selectOption';
-      key: SelectOptionKey;
-      categoryTitle: string;
-      id: string;
-      label: string;
-      value: string;
-      enabled: boolean;
-    }
-  | {
-      type: 'course';
-      degreeKey: 'bachelor' | 'master' | 'doctoral' | 'certificate';
-      degreeTitle: string;
-      id: string;
-      code: string;
-      nameTh: string;
-      courseType: string;
-      credits: number;
-      enabled: boolean;
-    }
-  | null;
 
 export function AdmissionPortalCustomizer({
   settings,
@@ -128,7 +85,6 @@ export function AdmissionPortalCustomizer({
     await onSaveSettings(nextSettings);
   };
 
-  // --- Helper builders for adding items ---
   const addQualificationCard = () => {
     const newCard: AdmissionQualificationCard = {
       id: `qual-${Date.now().toString(36)}`,
@@ -177,11 +133,7 @@ export function AdmissionPortalCustomizer({
       credits: 3,
       enabled: true,
     };
-    const configKey:
-      | 'firstYearCourses'
-      | 'firstYearCoursesMaster'
-      | 'firstYearCoursesDoctoral'
-      | 'firstYearCoursesCertificate' =
+    const configKey =
       degreeKey === 'bachelor'
         ? 'firstYearCourses'
         : degreeKey === 'master'
@@ -196,7 +148,6 @@ export function AdmissionPortalCustomizer({
     }));
   };
 
-  // --- Save Handler for Universal Edit Modal ---
   const handleSaveEditingItem = () => {
     if (!editingItem) return;
 
@@ -248,11 +199,7 @@ export function AdmissionPortalCustomizer({
         ),
       }));
     } else if (editingItem.type === 'course') {
-      const configKey:
-        | 'firstYearCourses'
-        | 'firstYearCoursesMaster'
-        | 'firstYearCoursesDoctoral'
-        | 'firstYearCoursesCertificate' =
+      const configKey =
         editingItem.degreeKey === 'bachelor'
           ? 'firstYearCourses'
           : editingItem.degreeKey === 'master'
@@ -281,1356 +228,158 @@ export function AdmissionPortalCustomizer({
     setEditingItem(null);
   };
 
-  const renderSelectOptionEditor = (
-    title: string,
-    key: SelectOptionKey,
-    addPlaceholder: string,
-    addDefaultValue?: string
-  ) => {
-    const list = config[key] || [];
-    return (
-      <div className="bg-slate-50/80 rounded-2xl border border-slate-200 p-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="font-extrabold text-xs sm:text-sm text-slate-900">
-            {title} ({list.filter((i) => i.enabled).length}/{list.length} รายการที่แสดง)
-          </h4>
-          <button
-            type="button"
-            onClick={() => addSelectOption(key, addPlaceholder, addDefaultValue)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>เพิ่มตัวเลือก</span>
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          {list.map((opt, idx) => (
-            <div
-              key={opt.id}
-              className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-2 transition ${
-                opt.enabled ? 'bg-white border-slate-200' : 'bg-slate-100/80 border-slate-200 opacity-70'
-              }`}
-            >
-              <span className="text-[11px] font-bold text-slate-400 w-6 shrink-0">#{idx + 1}</span>
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={opt.label}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const preserveValue =
-                      key === 'degreeOptions' ||
-                      key === 'applicantTypeOptions' ||
-                      key === 'nationalityTypeOptions' ||
-                      key === 'programLanguageOptions';
-                    updateConfig((prev) => ({
-                      ...prev,
-                      [key]: (prev[key] || []).map((item) =>
-                        item.id === opt.id
-                          ? { ...item, label: val, value: preserveValue ? item.value : val }
-                          : item
-                      ),
-                    }));
-                  }}
-                  placeholder="ข้อความที่แสดงใน Dropdown"
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-900"
-                />
-                <input
-                  type="text"
-                  value={opt.value}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    updateConfig((prev) => ({
-                      ...prev,
-                      [key]: (prev[key] || []).map((item) =>
-                        item.id === opt.id ? { ...item, value: val } : item
-                      ),
-                    }));
-                  }}
-                  placeholder="ค่าที่บันทึก (Value)"
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-mono text-slate-700"
-                />
-              </div>
-
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateConfig((prev) => ({
-                      ...prev,
-                      [key]: (prev[key] || []).map((item) =>
-                        item.id === opt.id ? { ...item, enabled: !item.enabled } : item
-                      ),
-                    }))
-                  }
-                  className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border cursor-pointer ${
-                    opt.enabled
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : 'bg-rose-50 text-rose-700 border-rose-200'
-                  }`}
-                >
-                  {opt.enabled ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                  <span>{opt.enabled ? 'แสดง' : 'ซ่อน'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEditingItem({
-                      type: 'selectOption',
-                      key,
-                      categoryTitle: title,
-                      id: opt.id,
-                      label: opt.label,
-                      value: opt.value,
-                      enabled: opt.enabled,
-                    })
-                  }
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 cursor-pointer transition"
-                  title="แก้ไขตัวเลือกนี้"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span>แก้ไข</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm(`ต้องการลบตัวเลือก "${opt.label}" หรือไม่?`)) {
-                      updateConfig((prev) => ({
-                        ...prev,
-                        [key]: (prev[key] || []).filter((item) => item.id !== opt.id),
-                      }));
-                    }
-                  }}
-                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer"
-                  title="ลบรายการนี้"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // --- Course Plan Section Renderer for Section 4 ---
-  const renderDegreeCourseSection = (
-    degreeKey: 'bachelor' | 'master' | 'doctoral' | 'certificate',
-    degreeLabel: string,
-    titleConfigKey:
-      | 'firstYearCourseTitleBachelor'
-      | 'firstYearCourseTitleMaster'
-      | 'firstYearCourseTitleDoctoral'
-      | 'firstYearCourseTitleCertificate',
-    coursesConfigKey:
-      | 'firstYearCourses'
-      | 'firstYearCoursesMaster'
-      | 'firstYearCoursesDoctoral'
-      | 'firstYearCoursesCertificate',
-    defaultTitle: string,
-    badgeBg: string,
-    badgeText: string,
-    defaultNewCode: string,
-    defaultNewType: string
-  ) => {
-    const courses = config[coursesConfigKey] || [];
-    const currentTitle = config[titleConfigKey] || defaultTitle;
-    const enabledCount = courses.filter((c) => c.enabled).length;
-    const totalCredits = courses
-      .filter((c) => c.enabled)
-      .reduce((sum, c) => sum + Number(c.credits || 0), 0);
-
-    return (
-      <div className="bg-slate-50/70 rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-4">
-        {/* Degree Header Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`px-3 py-1 rounded-xl text-xs font-black border ${badgeBg} ${badgeText}`}>
-              🎓 {degreeLabel}
-            </span>
-            <span className="text-xs font-bold text-slate-600">
-              ({enabledCount}/{courses.length} วิชาที่แสดง • รวม {totalCredits} หน่วยกิต)
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => addCourseForDegree(degreeKey, defaultNewCode, defaultNewType)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer shadow-xs transition"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>เพิ่มรายวิชา</span>
-          </button>
-        </div>
-
-        {/* Editable Title for this Degree Table */}
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1">
-          <div className="flex items-center justify-between gap-2">
-            <label className="text-[11px] font-extrabold text-slate-700 flex items-center gap-1.5">
-              <Pencil className="w-3 h-3 text-indigo-600" />
-              <span>หัวข้อตารางเรียน ({degreeLabel}):</span>
-            </label>
-            <button
-              type="button"
-              onClick={() =>
-                updateConfig((prev) => ({
-                  ...prev,
-                  [titleConfigKey]: defaultTitle,
-                }))
-              }
-              className="text-[10px] text-slate-400 hover:text-indigo-600 underline cursor-pointer"
-            >
-              คืนค่าหัวข้อเริ่มต้น
-            </button>
-          </div>
-          <input
-            type="text"
-            value={currentTitle}
-            onChange={(e) => {
-              const val = e.target.value;
-              updateConfig((prev) => ({
-                ...prev,
-                [titleConfigKey]: val,
-              }));
-            }}
-            placeholder={`ระบุหัวข้อตารางเรียน ${degreeLabel}...`}
-            className="w-full px-3 py-2 rounded-lg border border-slate-300 font-bold text-xs text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
-        </div>
-
-        {/* Course Rows */}
-        <div className="space-y-2">
-          {courses.length === 0 ? (
-            <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl bg-white text-slate-400 text-xs">
-              ยังไม่มีรายวิชาสำหรับ{degreeLabel} คลิก &ldquo;+ เพิ่มรายวิชา&rdquo; เพื่อเพิ่มรายวิชา
-            </div>
-          ) : (
-            courses.map((course, idx) => (
-              <div
-                key={course.id}
-                className={`p-3 rounded-xl border flex flex-col lg:flex-row lg:items-center gap-2 transition ${
-                  course.enabled
-                    ? 'bg-white border-slate-200 shadow-2xs'
-                    : 'bg-slate-100/80 border-slate-200 opacity-70'
-                }`}
-              >
-                <span className="text-[11px] font-bold text-slate-400 w-6 shrink-0">#{idx + 1}</span>
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-2">
-                  <input
-                    type="text"
-                    value={course.code}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateConfig((prev) => ({
-                        ...prev,
-                        [coursesConfigKey]: (prev[coursesConfigKey] || []).map((c) =>
-                          c.id === course.id ? { ...c, code: val } : c
-                        ),
-                      }));
-                    }}
-                    placeholder="รหัสวิชา"
-                    className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-slate-300 font-mono font-bold text-indigo-900 text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={course.nameTh}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateConfig((prev) => ({
-                        ...prev,
-                        [coursesConfigKey]: (prev[coursesConfigKey] || []).map((c) =>
-                          c.id === course.id ? { ...c, nameTh: val } : c
-                        ),
-                      }));
-                    }}
-                    placeholder="ชื่อรายวิชา"
-                    className="sm:col-span-5 px-2.5 py-1.5 rounded-lg border border-slate-300 font-semibold text-slate-900 text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={course.type}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateConfig((prev) => ({
-                        ...prev,
-                        [coursesConfigKey]: (prev[coursesConfigKey] || []).map((c) =>
-                          c.id === course.id ? { ...c, type: val } : c
-                        ),
-                      }));
-                    }}
-                    placeholder="หมวดวิชา"
-                    className="sm:col-span-3 px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs"
-                  />
-                  <div className="sm:col-span-2 flex items-center gap-1">
-                    <input
-                      type="number"
-                      min={0}
-                      max={12}
-                      value={course.credits}
-                      onChange={(e) => {
-                        const val = Math.max(0, parseInt(e.target.value || '0', 10));
-                        updateConfig((prev) => ({
-                          ...prev,
-                          [coursesConfigKey]: (prev[coursesConfigKey] || []).map((c) =>
-                            c.id === course.id ? { ...c, credits: val } : c
-                          ),
-                        }));
-                      }}
-                      placeholder="หน่วยกิต"
-                      className="w-full px-2 py-1.5 rounded-lg border border-slate-300 font-bold text-center text-slate-900 text-xs"
-                    />
-                    <span className="text-[10px] text-slate-400 shrink-0">นก.</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateConfig((prev) => ({
-                        ...prev,
-                        [coursesConfigKey]: (prev[coursesConfigKey] || []).map((c) =>
-                          c.id === course.id ? { ...c, enabled: !c.enabled } : c
-                        ),
-                      }))
-                    }
-                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold border text-[11px] cursor-pointer ${
-                      course.enabled
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                        : 'bg-rose-50 text-rose-700 border-rose-200'
-                    }`}
-                  >
-                    {course.enabled ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    <span>{course.enabled ? 'แสดง' : 'ซ่อน'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditingItem({
-                        type: 'course',
-                        degreeKey,
-                        degreeTitle: degreeLabel,
-                        id: course.id,
-                        code: course.code,
-                        nameTh: course.nameTh,
-                        courseType: course.type,
-                        credits: course.credits,
-                        enabled: course.enabled,
-                      })
-                    }
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 cursor-pointer transition"
-                    title="แก้ไขรายวิชานี้"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    <span>แก้ไข</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateConfig((prev) => ({
-                        ...prev,
-                        [coursesConfigKey]: (prev[coursesConfigKey] || []).filter(
-                          (c) => c.id !== course.id
-                        ),
-                      }))
-                    }
-                    className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
-                    title="ลบรายวิชานี้"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 sm:p-6 space-y-6">
-      {/* Header + Save Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-        <div>
-          <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-            <SlidersHorizontal className="w-5 h-5 text-indigo-600" />
-            <span>จัดการเนื้อหา เพิ่ม/แก้ไข/ลบ และเปิด-ปิดการแสดงผลหน้า /enroll</span>
-          </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            ปรับแต่งครบทั้ง 4 ส่วนบนหน้าสมัครเรียนสาธารณะ: คุณสมบัติผู้สมัคร &amp; เอกสาร, แบบฟอร์มยื่นใบสมัคร, ตรวจสอบสถานะ &amp; นัดสัมภาษณ์, และขึ้นทะเบียนนิสิตใหม่
+    <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs space-y-6">
+      {/* Top Banner & Control Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-xl bg-orange-100 text-orange-700">
+              <Sparkles className="w-5 h-5" />
+            </span>
+            <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+              ปรับแต่งเนื้อหาและตัวเลือกแบบฟอร์มหน้า /enroll
+            </h3>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-orange-50 text-orange-700 border border-orange-200">
+              Live Customizer
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 leading-relaxed max-w-2xl">
+            แก้ไขข้อความ, หัวข้อ, ตัวเลือก Dropdown 7 หมวด, คุณสมบัติผู้สมัคร, เอกสารที่ต้องเตรียม
+            รวมถึงตารางแผนการลงทะเบียนเรียนปี 1 แยก 4 ระดับการศึกษา (ตรี/โท/เอก/ป.บัณฑิต)
+            ที่แสดงในใบรายงานตัวนิสิตใหม่
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleResetDefaults}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>รีเซ็ตค่าเริ่มต้น</span>
+            <span>คืนค่าเริ่มต้น</span>
           </button>
           <button
             type="button"
             onClick={handleSave}
             disabled={savingConfig}
-            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-md transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-extrabold shadow-sm hover:shadow transition disabled:opacity-50 cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            <span>{savingConfig ? 'กำลังบันทึก...' : 'บันทึกการปรับแต่งหน้า /enroll'}</span>
+            <span>{savingConfig ? 'กำลังบันทึก...' : 'บันทึกการปรับแต่งทั้งหมด'}</span>
           </button>
         </div>
       </div>
 
-      {/* Sub-section Selector Pills */}
-      <div className="flex flex-wrap gap-2 bg-slate-100 p-1.5 rounded-2xl text-xs font-extrabold">
-        {[
-          { id: 'VISIBILITY' as const, label: '👁️ เปิด/ปิด 4 ส่วนหลัก', icon: Eye },
-          { id: 'SECTION1' as const, label: '๑. คุณสมบัติ & เอกสารหลักฐาน', icon: BookOpen },
-          { id: 'SECTION2' as const, label: '๒. แบบฟอร์ม & สาขา/หลักสูตร', icon: FileText },
-          { id: 'SECTION3' as const, label: '๓. ตรวจสอบสถานะ & นัดสัมภาษณ์', icon: Search },
-          { id: 'SECTION4' as const, label: '๔. ขึ้นทะเบียน & แผนการเรียนปี 1', icon: GraduationCap },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeSubSection === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveSubSection(tab.id)}
-              className={`flex-1 min-w-[165px] inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl transition cursor-pointer ${
-                isActive
-                  ? 'bg-white text-indigo-800 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5 shrink-0" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* Sub-navigation Pills */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveSubSection('VISIBILITY')}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeSubSection === 'VISIBILITY'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>การแสดงผลแท็บ &amp; องค์ประกอบ</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubSection('SECTION1')}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeSubSection === 'SECTION1'
+              ? 'bg-orange-600 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>ส่วนที่ ๑: คุณสมบัติ &amp; เอกสาร</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubSection('SECTION2')}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeSubSection === 'SECTION2'
+              ? 'bg-orange-600 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <FileSpreadsheet className="w-3.5 h-3.5" />
+          <span>ส่วนที่ ๒: ตัวเลือกแบบฟอร์ม 7 หมวด</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubSection('SECTION3')}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeSubSection === 'SECTION3'
+              ? 'bg-orange-600 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>ส่วนที่ ๓: ตรวจสถานะ &amp; สัมภาษณ์</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubSection('SECTION4')}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeSubSection === 'SECTION4'
+              ? 'bg-orange-600 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <GraduationCap className="w-3.5 h-3.5" />
+          <span>ส่วนที่ ๔: ขึ้นทะเบียน &amp; แผนการเรียน 4 ระดับ</span>
+        </button>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────
-          SUB-SECTION 0: VISIBILITY TOGGLES FOR ALL 4 SECTIONS
-         ───────────────────────────────────────────────────────────── */}
+      {/* Render Subsections */}
       {activeSubSection === 'VISIBILITY' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          {[
-            {
-              key: 'showOverviewTab' as const,
-              title: '๑. ส่วน/แท็บ "คุณสมบัติผู้สมัครและเอกสารหลักฐานที่ต้องใช้"',
-              desc: 'เปิด/ปิด การแสดงแท็บที่ 1 (คุณสมบัติบรรพชิต คฤหัสถ์ ต่างชาติ และรายการเอกสารหลักฐาน)',
-            },
-            {
-              key: 'showApplyTab' as const,
-              title: '๒. ส่วน/แท็บ "แบบฟอร์มยื่นใบสมัครเข้าศึกษาออนไลน์"',
-              desc: 'เปิด/ปิด การแสดงแท็บที่ 2 (แบบฟอร์มกรอกสมัครเรียนออนไลน์บนหน้า /enroll)',
-            },
-            {
-              key: 'showStatusTab' as const,
-              title: '๓. ส่วน/แท็บ "ตรวจสอบสถานะการสมัคร & ตารางนัดสอบสัมภาษณ์"',
-              desc: 'เปิด/ปิด การแสดงแท็บที่ 3 (ช่องค้นหาสถานะใบสมัคร 4 ขั้นตอน และวัน-ห้องสอบสัมภาษณ์)',
-            },
-            {
-              key: 'showRegisterTab' as const,
-              title: '๔. ส่วน/แท็บ "ยืนยันสิทธิ์และขึ้นทะเบียนนิสิตใหม่ออนไลน์"',
-              desc: 'เปิด/ปิด การแสดงแท็บที่ 4 (หน้ายืนยันสิทธิ์รับรหัสนิสิต และพิมพ์ใบรายงานตัว A4)',
-            },
-            {
-              key: 'showProcessSteps' as const,
-              title: 'การ์ดผังกระบวนการ 4 ขั้นตอนด้านบนหน้า /enroll',
-              desc: 'เปิด/ปิด การแสดงการ์ดสรุปขั้นตอนที่ 1–4 ด้านบนของหน้ารับสมัคร',
-            },
-            {
-              key: 'showQuickTestBar' as const,
-              title: 'แถบทดสอบระบบด่วน 3 รหัส (Quick Test Simulation Links)',
-              desc: 'เปิด/ปิด แถบปุ่มจำลองรหัสทดสอบ (1349900123456 ฯลฯ) แนะนำให้ปิดเมื่อเปิดรับสมัครจริง',
-            },
-          ].map((item) => {
-            const checked = config[item.key] !== false;
-            return (
-              <div
-                key={item.key}
-                className={`p-4 rounded-2xl border flex items-start justify-between gap-3 transition ${
-                  checked ? 'bg-emerald-50/50 border-emerald-300' : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <div className="space-y-1">
-                  <div className="font-extrabold text-slate-900 flex flex-wrap items-center gap-1.5">
-                    <span>{item.title}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        checked ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                      }`}
-                    >
-                      {checked ? '🟢 เปิดแสดง' : '🔴 ปิดซ่อน'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 leading-relaxed">{item.desc}</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(e) =>
-                      updateConfig((prev) => ({ ...prev, [item.key]: e.target.checked }))
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                </label>
-              </div>
-            );
-          })}
-        </div>
+        <CustomizerVisibilitySection config={config} updateConfig={updateConfig} />
       )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          SUB-SECTION 1: QUALIFICATIONS & REQUIRED DOCUMENTS
-         ───────────────────────────────────────────────────────────── */}
       {activeSubSection === 'SECTION1' && (
-        <div className="space-y-6 text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">หัวข้อส่วนที่ ๑ (คุณสมบัติผู้สมัคร)</label>
-              <input
-                type="text"
-                value={config.overviewTitle || ''}
-                onChange={(e) => updateConfig((prev) => ({ ...prev, overviewTitle: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">คำอธิบายย่อยส่วนที่ ๑</label>
-              <input
-                type="text"
-                value={config.overviewSubtitle || ''}
-                onChange={(e) =>
-                  updateConfig((prev) => ({ ...prev, overviewSubtitle: e.target.value }))
-                }
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900"
-              />
-            </div>
-          </div>
-
-          {/* Qualification Cards Editor */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-extrabold text-sm text-slate-900">
-                การ์ดคุณสมบัติผู้สมัคร ({config.qualifications.length} กลุ่ม)
-              </h4>
-              <button
-                type="button"
-                onClick={addQualificationCard}
-                className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>เพิ่มกลุ่มคุณสมบัติใหม่</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {config.qualifications.map((card) => (
-                <div
-                  key={card.id}
-                  className={`p-4 rounded-2xl border space-y-3 ${
-                    card.enabled ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-100 border-slate-200 opacity-70'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <input
-                      type="text"
-                      value={card.badgeText}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        updateConfig((prev) => ({
-                          ...prev,
-                          qualifications: prev.qualifications.map((q) =>
-                            q.id === card.id ? { ...q, badgeText: val } : q
-                          ),
-                        }));
-                      }}
-                      className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 font-extrabold text-slate-900"
-                    />
-                    <select
-                      value={card.themeColor}
-                      onChange={(e) => {
-                        const val = e.target.value as 'orange' | 'sky' | 'purple' | 'emerald';
-                        updateConfig((prev) => ({
-                          ...prev,
-                          qualifications: prev.qualifications.map((q) =>
-                            q.id === card.id ? { ...q, themeColor: val } : q
-                          ),
-                        }));
-                      }}
-                      className="px-2.5 py-1.5 rounded-xl border border-slate-300 bg-slate-50 font-bold"
-                    >
-                      <option value="orange">สีส้ม</option>
-                      <option value="sky">สีฟ้า</option>
-                      <option value="purple">สีม่วง</option>
-                      <option value="emerald">สีเขียว</option>
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateConfig((prev) => ({
-                          ...prev,
-                          qualifications: prev.qualifications.map((q) =>
-                            q.id === card.id ? { ...q, enabled: !q.enabled } : q
-                          ),
-                        }))
-                      }
-                      className={`px-2.5 py-1.5 rounded-xl font-bold border cursor-pointer ${
-                        card.enabled
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'
-                      }`}
-                    >
-                      {card.enabled ? 'แสดง' : 'ซ่อน'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEditingItem({
-                          type: 'qualification',
-                          id: card.id,
-                          badgeText: card.badgeText,
-                          themeColor: card.themeColor,
-                          itemsText: card.items.join('\n'),
-                          enabled: card.enabled,
-                        })
-                      }
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-bold border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 cursor-pointer transition text-xs"
-                      title="แก้ไขกลุ่มคุณสมบัตินี้"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      <span>แก้ไข</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateConfig((prev) => ({
-                          ...prev,
-                          qualifications: prev.qualifications.filter((q) => q.id !== card.id),
-                        }))
-                      }
-                      className="p-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
-                      title="ลบกลุ่มคุณสมบัตินี้"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {/* Bullet items inside card */}
-                  <div className="space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-500">รายการคุณสมบัติย่อย (1 บรรทัดต่อ 1 ข้อ):</div>
-                    <textarea
-                      rows={4}
-                      value={card.items.join('\n')}
-                      onChange={(e) => {
-                        const lines = e.target.value.split('\n');
-                        updateConfig((prev) => ({
-                          ...prev,
-                          qualifications: prev.qualifications.map((q) =>
-                            q.id === card.id ? { ...q, items: lines } : q
-                          ),
-                        }));
-                      }}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 leading-relaxed"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Required Documents Editor */}
-          <div className="space-y-3 pt-2 border-t border-slate-200">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex-1 min-w-[260px]">
-                <label className="block font-bold text-slate-700 mb-1">หัวข้อรายการเอกสารหลักฐานที่ต้องเตรียม</label>
-                <input
-                  type="text"
-                  value={config.requiredDocsTitle || ''}
-                  onChange={(e) =>
-                    updateConfig((prev) => ({ ...prev, requiredDocsTitle: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-900"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={addRequiredDoc}
-                className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer self-end"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>เพิ่มรายการเอกสาร</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {config.requiredDocuments.map((doc, idx) => (
-                <div
-                  key={doc.id}
-                  className={`p-3.5 rounded-2xl border space-y-2 ${
-                    doc.enabled ? 'bg-white border-slate-200' : 'bg-slate-100 border-slate-200 opacity-70'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-extrabold text-orange-700">เอกสารข้อที่ {idx + 1}</span>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateConfig((prev) => ({
-                            ...prev,
-                            requiredDocuments: prev.requiredDocuments.map((d) =>
-                              d.id === doc.id ? { ...d, enabled: !d.enabled } : d
-                            ),
-                          }))
-                        }
-                        className={`px-2.5 py-1 rounded-lg font-bold border cursor-pointer ${
-                          doc.enabled
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-rose-50 text-rose-700 border-rose-200'
-                        }`}
-                      >
-                        {doc.enabled ? 'แสดง' : 'ซ่อน'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditingItem({
-                            type: 'document',
-                            id: doc.id,
-                            title: doc.title,
-                            description: doc.description,
-                            enabled: doc.enabled,
-                          })
-                        }
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 cursor-pointer transition text-[11px]"
-                        title="แก้ไขเอกสารนี้"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                        <span>แก้ไข</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateConfig((prev) => ({
-                            ...prev,
-                            requiredDocuments: prev.requiredDocuments.filter((d) => d.id !== doc.id),
-                          }))
-                        }
-                        className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
-                        title="ลบเอกสารนี้"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                  <input
-                    type="text"
-                    value={doc.title}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateConfig((prev) => ({
-                        ...prev,
-                        requiredDocuments: prev.requiredDocuments.map((d) =>
-                          d.id === doc.id ? { ...d, title: val } : d
-                        ),
-                      }));
-                    }}
-                    placeholder="ชื่อเอกสาร"
-                    className="w-full px-3 py-1.5 rounded-xl border border-slate-300 font-bold text-slate-900"
-                  />
-                  <input
-                    type="text"
-                    value={doc.description}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateConfig((prev) => ({
-                        ...prev,
-                        requiredDocuments: prev.requiredDocuments.map((d) =>
-                          d.id === doc.id ? { ...d, description: val } : d
-                        ),
-                      }));
-                    }}
-                    placeholder="คำอธิบายรายละเอียดเอกสาร"
-                    className="w-full px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <CustomizerQualificationsSection
+          config={config}
+          updateConfig={updateConfig}
+          addQualificationCard={addQualificationCard}
+          addRequiredDoc={addRequiredDoc}
+          setEditingItem={setEditingItem}
+        />
       )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          SUB-SECTION 2: ONLINE APPLICATION FORM OPTIONS
-         ───────────────────────────────────────────────────────────── */}
       {activeSubSection === 'SECTION2' && (
-        <div className="space-y-5 text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">หัวข้อแบบฟอร์มรับสมัคร (แท็บ ๒)</label>
-              <input
-                type="text"
-                value={config.applyFormTitle || ''}
-                onChange={(e) => updateConfig((prev) => ({ ...prev, applyFormTitle: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">คำอธิบายแบบฟอร์ม</label>
-              <input
-                type="text"
-                value={config.applyFormSubtitle || ''}
-                onChange={(e) =>
-                  updateConfig((prev) => ({ ...prev, applyFormSubtitle: e.target.value }))
-                }
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900"
-              />
-            </div>
-            {/* Field Display Switches */}
-            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
-                <div>
-                  <div className="font-bold text-slate-900">📎 เปิดแสดงช่องแนบไฟล์ / ลิงก์เอกสารเบื้องต้น</div>
-                  <div className="text-[11px] text-slate-500">ผู้สมัครสามารถอัปโหลด PDF หรือใส่ลิงก์ Drive ได้</div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={config.showDocumentUploadField !== false}
-                    onChange={(e) =>
-                      updateConfig((prev) => ({ ...prev, showDocumentUploadField: e.target.checked }))
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
-                <div>
-                  <div className="font-bold text-slate-900">📊 เปิดแสดงช่อง เกรดเฉลี่ยสะสม (GPAX - ข้อ ๑๒)</div>
-                  <div className="text-[11px] text-slate-500">เปิดหรือปิดการแสดงช่องเกรดสะสมในแบบฟอร์ม</div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={config.showGpaField !== false}
-                    onChange={(e) =>
-                      updateConfig((prev) => ({ ...prev, showGpaField: e.target.checked }))
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
-                <div>
-                  <div className="font-bold text-slate-900">✉️ เปิดแสดงช่อง อีเมล (Email - ข้อ ๑๔)</div>
-                  <div className="text-[11px] text-slate-500">เปิดหรือปิดการแสดงช่องกรอกอีเมลในแบบฟอร์ม</div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={config.showEmailField !== false}
-                    onChange={(e) =>
-                      updateConfig((prev) => ({ ...prev, showEmailField: e.target.checked }))
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
-                <div>
-                  <div className="font-bold text-slate-900">💬 เปิดแสดงช่อง LINE ID (ข้อ ๑๕)</div>
-                  <div className="text-[11px] text-slate-500">เปิดหรือปิดช่อง LINE ID สำหรับแจ้งเตือนสัมภาษณ์</div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={config.showLineIdField !== false}
-                    onChange={(e) =>
-                      updateConfig((prev) => ({ ...prev, showLineIdField: e.target.checked }))
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {renderSelectOptionEditor(
-            '๑. ตัวเลือกสถานภาพผู้สมัคร (ข้อ ๑: พระภิกษุ-สามเณร / บุคคลทั่วไป)',
-            'applicantTypeOptions',
-            'สถานภาพใหม่',
-            'MONK'
-          )}
-          {renderSelectOptionEditor(
-            '๒. ตัวเลือกประเภทผู้สมัคร (ข้อ ๒: สัญชาติไทย / ชาวต่างชาติ)',
-            'nationalityTypeOptions',
-            'ประเภทผู้สมัครใหม่',
-            'THAI'
-          )}
-          {renderSelectOptionEditor(
-            '๗. ระดับหลักสูตรที่เปิดรับสมัคร (ข้อ ๗: ปริญญาตรี / โท / เอก / ป.บัณฑิต)',
-            'degreeOptions',
-            'หลักสูตรใหม่'
-          )}
-          {renderSelectOptionEditor(
-            '๘. ตัวเลือกหลักสูตรภาษา (ข้อ ๘: ภาษาไทย / ภาษาอังกฤษ)',
-            'programLanguageOptions',
-            'หลักสูตรภาษาใหม่',
-            'THAI'
-          )}
-          {renderSelectOptionEditor(
-            '๙. สาขาวิชาที่เปิดรับสมัคร (ข้อ ๙)',
-            'majorOptions',
-            'สาขาวิชาใหม่'
-          )}
-          {renderSelectOptionEditor(
-            '๑๐. ตัวเลือกวุฒิการศึกษาเดิม (ข้อ ๑๐)',
-            'previousEducationOptions',
-            'วุฒิการศึกษาอื่น ๆ'
-          )}
-          {renderSelectOptionEditor(
-            '๑๑. แผนการเรียนที่เปิดรับสมัคร (ข้อ ๑๑: ภาคปกติ / ภาคพิเศษ)',
-            'studyPlanOptions',
-            'แผนการเรียนใหม่'
-          )}
-
-          <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 space-y-1.5">
-            <label className="block font-bold text-amber-950">ข้อความคำรับรองของผู้สมัครท้ายแบบฟอร์ม</label>
-            <textarea
-              rows={2}
-              value={config.certificationStatement || ''}
-              onChange={(e) =>
-                updateConfig((prev) => ({ ...prev, certificationStatement: e.target.value }))
-              }
-              className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white text-slate-900"
-            />
-          </div>
-        </div>
+        <CustomizerFormOptionsSection
+          config={config}
+          updateConfig={updateConfig}
+          addSelectOption={addSelectOption}
+          setEditingItem={setEditingItem}
+        />
       )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          SUB-SECTION 3: STATUS CHECK & INTERVIEW SCHEDULE
-         ───────────────────────────────────────────────────────────── */}
       {activeSubSection === 'SECTION3' && (
-        <div className="space-y-4 text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">หัวข้อส่วนตรวจสอบสถานะ &amp; นัดสัมภาษณ์ (แท็บ ๓)</label>
-              <input
-                type="text"
-                value={config.statusSectionTitle || ''}
-                onChange={(e) =>
-                  updateConfig((prev) => ({ ...prev, statusSectionTitle: e.target.value }))
-                }
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">คำอธิบายช่องค้นหา</label>
-              <input
-                type="text"
-                value={config.statusSectionSubtitle || ''}
-                onChange={(e) =>
-                  updateConfig((prev) => ({ ...prev, statusSectionSubtitle: e.target.value }))
-                }
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900"
-              />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 text-sky-900 flex items-start gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <div className="font-bold">หมายเหตุการจัดการตารางสัมภาษณ์รายบุคคล:</div>
-              <p className="text-[11px] leading-relaxed">
-                วัน-เวลา และห้องสอบสัมภาษณ์เริ่มต้นของทุกคนสามารถตั้งค่าได้ในแท็บ <strong>&ldquo;รายชื่อผู้สมัคร &amp; สวิตช์หลัก&rdquo;</strong> หรือกดปุ่ม <strong>&ldquo;นัดสัมภาษณ์/รหัส&rdquo;</strong> ในแต่ละแถวผู้สมัครเพื่อกำหนดวัน-เวลา/ห้องสอบเฉพาะรายบุคคลได้เลยครับ
-              </p>
-            </div>
-          </div>
-        </div>
+        <CustomizerStatusCheckSection config={config} updateConfig={updateConfig} />
       )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          SUB-SECTION 4: ONLINE REGISTRATION & FIRST YEAR COURSE PLAN
-         ───────────────────────────────────────────────────────────── */}
       {activeSubSection === 'SECTION4' && (
-        <div className="space-y-6 text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">หัวข้อส่วนขึ้นทะเบียนนิสิตใหม่ (แท็บ ๔)</label>
-              <input
-                type="text"
-                value={config.registerSectionTitle || ''}
-                onChange={(e) =>
-                  updateConfig((prev) => ({ ...prev, registerSectionTitle: e.target.value }))
-                }
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">คำอธิบายส่วนขึ้นทะเบียนนิสิต</label>
-              <input
-                type="text"
-                value={config.registerSectionSubtitle || ''}
-                onChange={(e) =>
-                  updateConfig((prev) => ({ ...prev, registerSectionSubtitle: e.target.value }))
-                }
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900"
-              />
-            </div>
-            <div className="md:col-span-2 flex items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
-              <div>
-                <div className="font-bold text-slate-900">📋 แสดงตารางแผนการลงทะเบียนเรียน ปี 1 เทอม 1 ในใบรายงานตัวนิสิตใหม่</div>
-                <div className="text-[11px] text-slate-500">เปิด/ปิด ตารางรายวิชาในเอกสารใบรายงานตัว A4 ของผู้สมัครทุกระดับการศึกษา</div>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input
-                  type="checkbox"
-                  checked={config.showFirstYearCoursePlan !== false}
-                  onChange={(e) =>
-                    updateConfig((prev) => ({ ...prev, showFirstYearCoursePlan: e.target.checked }))
-                  }
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-              </label>
-            </div>
-          </div>
-
-          {/* Quick jump navigation / explanation for the 4 degree tables */}
-          <div className="flex flex-wrap items-center gap-2 bg-indigo-50/60 p-3 rounded-2xl border border-indigo-100">
-            <span className="text-[11px] font-extrabold text-indigo-900">ตารางแผนการเรียน 4 ระดับการศึกษา:</span>
-            <span className="text-[11px] text-indigo-700">
-              ท่านสามารถแก้ไขหัวข้อตารางและจัดการรายวิชาแยกตามระดับการศึกษา เพื่อแสดงในใบรายงานตัวนิสิตใหม่โดยอัตโนมัติ
-            </span>
-          </div>
-
-          {/* 1. Bachelor's Degree Course Plan (ภาพ 3) */}
-          {renderDegreeCourseSection(
-            'bachelor',
-            'ระดับปริญญาตรี (พธ.บ.)',
-            'firstYearCourseTitleBachelor',
-            'firstYearCourses',
-            DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCourseTitleBachelor ||
-              'รายวิชาแผนการเรียนชั้นปีที่ ๑ ภาคเรียนที่ ๑ (ระดับปริญญาตรี)',
-            'bg-indigo-50 border-indigo-200',
-            'text-indigo-800',
-            '000 108',
-            'วิชาเลือกเสรี'
-          )}
-
-          {/* 2. Master's Degree Course Plan (ถัดต่อจาก ภาพ 3) */}
-          {renderDegreeCourseSection(
-            'master',
-            'ระดับปริญญาโท (พธ.ม.)',
-            'firstYearCourseTitleMaster',
-            'firstYearCoursesMaster',
-            DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCourseTitleMaster ||
-              'รายวิชาแผนการเรียนชั้นปีที่ ๑ ภาคเรียนที่ ๑ (ระดับปริญญาโท)',
-            'bg-purple-50 border-purple-200',
-            'text-purple-800',
-            '600 105',
-            'วิชาแกน'
-          )}
-
-          {/* 3. Doctoral Degree Course Plan (ถัดต่อจาก ปริญญาโท) */}
-          {renderDegreeCourseSection(
-            'doctoral',
-            'ระดับปริญญาเอก (พธ.ด.)',
-            'firstYearCourseTitleDoctoral',
-            'firstYearCoursesDoctoral',
-            DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCourseTitleDoctoral ||
-              'รายวิชาแผนการเรียนชั้นปีที่ ๑ ภาคเรียนที่ ๑ (ระดับปริญญาเอก)',
-            'bg-amber-50 border-amber-200',
-            'text-amber-900',
-            '700 105',
-            'วิชาสัมมนาขั้นสูง'
-          )}
-
-          {/* 4. Graduate Certificate Course Plan (ถัดต่อจาก ปริญญาเอก) */}
-          {renderDegreeCourseSection(
-            'certificate',
-            'ระดับประกาศนียบัตร (ป.บัณฑิต)',
-            'firstYearCourseTitleCertificate',
-            'firstYearCoursesCertificate',
-            DEFAULT_ADMISSION_PORTAL_CONFIG.firstYearCourseTitleCertificate ||
-              'รายวิชาแผนการเรียนชั้นปีที่ ๑ ภาคเรียนที่ ๑ (ระดับประกาศนียบัตรบัณฑิต)',
-            'bg-teal-50 border-teal-200',
-            'text-teal-900',
-            '500 105',
-            'วิชาบังคับ'
-          )}
-        </div>
+        <CustomizerCoursePlanSection
+          config={config}
+          updateConfig={updateConfig}
+          addCourseForDegree={addCourseForDegree}
+          setEditingItem={setEditingItem}
+        />
       )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          UNIVERSAL EDIT MODAL FOR ALL SECTIONS
-         ───────────────────────────────────────────────────────────── */}
+      {/* Universal Edit Modal */}
       {editingItem && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setEditingItem(null);
-          }}
-        >
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-                  <Pencil className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-slate-900">
-                    {editingItem.type === 'qualification' && 'แก้ไขกลุ่มคุณสมบัติผู้สมัคร'}
-                    {editingItem.type === 'document' && 'แก้ไขรายการเอกสารหลักฐาน'}
-                    {editingItem.type === 'selectOption' && `แก้ไขตัวเลือก: ${editingItem.categoryTitle}`}
-                    {editingItem.type === 'course' && `แก้ไขข้อมูลรายวิชา (${editingItem.degreeTitle})`}
-                  </h4>
-                  <p className="text-[11px] text-slate-500">
-                    ปรับปรุงรายละเอียด และกดปุ่ม &ldquo;บันทึกการแก้ไข&rdquo;
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingItem(null)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="space-y-3.5 text-xs">
-              {editingItem.type === 'qualification' && (
-                <>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      ข้อความ Badge / หัวข้อกลุ่มคุณสมบัติ
-                    </label>
-                    <input
-                      type="text"
-                      value={editingItem.badgeText}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, badgeText: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">สีประจำการ์ด</label>
-                    <select
-                      value={editingItem.themeColor}
-                      onChange={(e) =>
-                        setEditingItem({
-                          ...editingItem,
-                          themeColor: e.target.value as 'orange' | 'sky' | 'purple' | 'emerald',
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-800"
-                    >
-                      <option value="orange">สีส้ม (Orange)</option>
-                      <option value="sky">สีฟ้า (Sky)</option>
-                      <option value="purple">สีม่วง (Purple)</option>
-                      <option value="emerald">สีเขียว (Emerald)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      รายการคุณสมบัติย่อย (1 บรรทัดต่อ 1 ข้อ)
-                    </label>
-                    <textarea
-                      rows={5}
-                      value={editingItem.itemsText}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, itemsText: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-800 leading-relaxed font-normal"
-                    />
-                  </div>
-                </>
-              )}
-
-              {editingItem.type === 'document' && (
-                <>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">ชื่อเอกสารหลักฐาน</label>
-                    <input
-                      type="text"
-                      value={editingItem.title}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, title: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      รายละเอียดและจำนวนชุดที่ต้องเตรียม
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={editingItem.description}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, description: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-800"
-                    />
-                  </div>
-                </>
-              )}
-
-              {editingItem.type === 'selectOption' && (
-                <>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      ข้อความที่แสดงใน Dropdown (Label)
-                    </label>
-                    <input
-                      type="text"
-                      value={editingItem.label}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, label: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      ค่าที่บันทึกลงฐานข้อมูล (Value)
-                    </label>
-                    <input
-                      type="text"
-                      value={editingItem.value}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, value: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono text-slate-800"
-                    />
-                  </div>
-                </>
-              )}
-
-              {editingItem.type === 'course' && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">รหัสวิชา</label>
-                      <input
-                        type="text"
-                        value={editingItem.code}
-                        onChange={(e) =>
-                          setEditingItem({ ...editingItem, code: e.target.value })
-                        }
-                        placeholder="เช่น 000 101"
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono font-bold text-indigo-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">จำนวนหน่วยกิต</label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={12}
-                        value={editingItem.credits}
-                        onChange={(e) =>
-                          setEditingItem({
-                            ...editingItem,
-                            credits: Math.max(0, parseInt(e.target.value || '0', 10)),
-                          })
-                        }
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-center text-slate-900"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">ชื่อรายวิชา</label>
-                    <input
-                      type="text"
-                      value={editingItem.nameTh}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, nameTh: e.target.value })
-                      }
-                      placeholder="เช่น พระไตรปิฎกศึกษา (Tipitaka Studies)"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">หมวดวิชา</label>
-                    <input
-                      type="text"
-                      value={editingItem.courseType}
-                      onChange={(e) =>
-                        setEditingItem({ ...editingItem, courseType: e.target.value })
-                      }
-                      placeholder="เช่น วิชาแกนพระพุทธศาสนา, วิชาปฏิบัติการ"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-800"
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Common Toggle: Enabled/Disabled */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 mt-2">
-                <div>
-                  <span className="font-bold text-slate-800">เปิดแสดงผลในหน้า /enroll</span>
-                  <p className="text-[10px] text-slate-500">
-                    {editingItem.enabled ? '🟢 แสดงรายการนี้ในระบบ' : '🔴 ซ่อนรายการนี้ชั่วคราว'}
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={editingItem.enabled}
-                    onChange={(e) =>
-                      setEditingItem({ ...editingItem, enabled: e.target.checked })
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                </label>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setEditingItem(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveEditingItem}
-                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow-sm cursor-pointer transition"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>บันทึกการแก้ไข</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <CustomizerEditModal
+          editingItem={editingItem}
+          setEditingItem={setEditingItem}
+          onSave={handleSaveEditingItem}
+        />
       )}
     </div>
   );

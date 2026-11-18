@@ -7,6 +7,9 @@ export * from './CertRejectModal';
 export * from './ArchiveSummaryModal';
 export * from './BulkPromotionModal';
 export * from './VipassanaAttendanceSheetModal';
+export * from './VipassanaBadgesModal';
+export * from './VipassanaLiveScannerModal';
+export * from './VipassanaInterviewSheetModal';
 export * from './StudentImportModal';
 export * from './CourseImportModal';
 export * from './BatchTeachingSlipsModal';
@@ -20,5 +23,6 @@ export * from './EventFormModal';
 export * from './CourseHistoryAndCloneModals';
 export * from './StudentAccessSlipModal';
 export * from './BatchStudentAccessSlipsModal';
+export * from './VipassanaCombinedEvaluationModal';
 
 

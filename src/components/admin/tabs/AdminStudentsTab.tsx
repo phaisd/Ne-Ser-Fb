@@ -35,7 +35,7 @@ interface AdminStudentsTabProps {
   studentSearch: string;
   setStudentSearch: (val: string) => void;
   studentProgramFilter: string;
-  setStudentProgramFilter: (val: any) => void;
+  setStudentProgramFilter: React.Dispatch<React.SetStateAction<'THAI' | 'ENGLISH' | 'ALL'>> | ((val: 'THAI' | 'ENGLISH' | 'ALL') => void);
   studentStatusFilter: string;
   setStudentStatusFilter: (val: string) => void;
   studentYearFilter: string;

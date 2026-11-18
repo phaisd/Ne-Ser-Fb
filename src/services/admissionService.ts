@@ -142,12 +142,12 @@ function serializeAdmissionRow(app: AdmissionApplication): string[] {
   ];
 }
 
-function parseAdmissionRow(row: any[]): AdmissionApplication | null {
+function parseAdmissionRow(row: unknown[]): AdmissionApplication | null {
   const id = String(row[0] || '').trim();
   const applicationCode = String(row[1] || '').trim();
   if (!id && !applicationCode) return null;
 
-  let extra: Record<string, any> = {};
+  let extra: Partial<AdmissionApplication> = {};
   if (row[12]) {
     try {
       const parsed = JSON.parse(String(row[12]));

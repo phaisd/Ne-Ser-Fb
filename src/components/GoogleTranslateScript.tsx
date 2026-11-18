@@ -3,9 +3,22 @@
 import React, { useEffect } from 'react';
 import Script from 'next/script';
 
+interface GoogleTranslateElementOptions {
+  pageLanguage: string;
+}
+
+interface GoogleTranslateNamespace {
+  translate?: {
+    TranslateElement?: new (
+      options: GoogleTranslateElementOptions,
+      elementId: string
+    ) => unknown;
+  };
+}
+
 declare global {
   interface Window {
-    google: any;
+    google?: GoogleTranslateNamespace;
     googleTranslateElementInit: () => void;
   }
 }

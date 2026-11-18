@@ -1,6 +1,26 @@
 import { SignatoryItem } from './certificate';
 import type { AdmissionPortalConfig } from './admission';
 
+export interface SystemRoleColumnConfig {
+  key: string;
+  title: string;
+  shortHeader: string;
+  badge: string;
+  desc: string;
+  colorTheme: string;
+  isCustom?: boolean;
+}
+
+export interface SystemPermissionItem {
+  id: string;
+  moduleName: string;
+  description: string;
+  routeHint: string;
+  roles: Record<string, boolean>;
+  lockedRoles?: string[];
+  isCustom?: boolean;
+}
+
 export interface SystemSettings {
   universityNameTh: string;
   universityNameEn: string;
@@ -130,8 +150,8 @@ export interface SystemSettings {
   fontWeightBoost?: boolean; // เพิ่มความเข้มตัวอักษรขนาดเล็กให้อ่านชัดขึ้น
 
   // Role-Based Access Control (RBAC) Permission Matrix & Custom Role Columns
-  rolePermissions?: any[];
-  roleColumns?: any[];
+  rolePermissions?: SystemPermissionItem[];
+  roleColumns?: SystemRoleColumnConfig[];
 
   // Google Identity Services OAuth Client ID (optional runtime override)
   googleClientId?: string;

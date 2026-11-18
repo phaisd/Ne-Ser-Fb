@@ -23,7 +23,7 @@ interface CandidateVerifiedInfo {
 }
 
 interface CertCandidateGateSectionProps {
-  currentUser: {
+  currentUser?: {
     id?: string;
     name?: string;
     role?: string;
@@ -34,10 +34,10 @@ interface CertCandidateGateSectionProps {
   certTypes: CertTypeItem[];
   cardAudienceFilter: 'ALL' | 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE';
   setCardAudienceFilter: (filter: 'ALL' | 'THAI' | 'INTERNATIONAL' | 'STAFF' | 'CANDIDATE') => void;
-  settings: {
+  settings?: {
     admissionPeriodOpen?: boolean;
     admissionPeriodDates?: string;
-  };
+  } | null;
   candidateVerified: CandidateVerifiedInfo | null;
   setCandidateVerified: (info: CandidateVerifiedInfo | null) => void;
   candidateAppNo: string;
@@ -147,18 +147,18 @@ export function CertCandidateGateSection({
                 ระบบคัดกรองและตรวจสอบคุณสมบัติผู้ผ่านการคัดเลือกเข้าศึกษา (Candidate Portal)
               </h3>
             </div>
-            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${settings.admissionPeriodOpen !== false ? 'bg-emerald-200 text-emerald-900' : 'bg-red-200 text-red-900'}`}>
-              {settings.admissionPeriodOpen !== false ? '🟢 เปิดรับคำร้อง' : '🔴 ปิดรับคำร้อง'}
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${settings?.admissionPeriodOpen !== false ? 'bg-emerald-200 text-emerald-900' : 'bg-red-200 text-red-900'}`}>
+              {settings?.admissionPeriodOpen !== false ? '🟢 เปิดรับคำร้อง' : '🔴 ปิดรับคำร้อง'}
             </span>
           </div>
 
-          {settings.admissionPeriodOpen === false ? (
+          {settings?.admissionPeriodOpen === false ? (
             <div className="p-3.5 rounded-xl bg-red-100 border border-red-300 text-red-950 text-xs flex items-start gap-2.5">
               <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
               <div>
                 <p className="font-bold">ขณะนี้อยู่นอกช่วงเวลาการยื่นขอหนังสือรับรองสำหรับผู้ผ่านการคัดเลือก</p>
                 <p className="text-[11px] text-red-800 mt-0.5">
-                  ระบบเปิดให้บริการเฉพาะช่วงรับสมัครและประกาศผล ({settings.admissionPeriodDates || 'มีนาคม - กรกฎาคม'}) หากมีความจำเป็นเร่งด่วนสำหรับการขอ Visa กรุณาติดต่อสำนักงานคณะพุทธศาสตร์โดยตรง
+                  ระบบเปิดให้บริการเฉพาะช่วงรับสมัครและประกาศผล ({settings?.admissionPeriodDates || 'มีนาคม - กรกฎาคม'}) หากมีความจำเป็นเร่งด่วนสำหรับการขอ Visa กรุณาติดต่อสำนักงานคณะพุทธศาสตร์โดยตรง
                 </p>
               </div>
             </div>
@@ -168,7 +168,7 @@ export function CertCandidateGateSection({
             </p>
           )}
 
-          {settings.admissionPeriodOpen !== false && !candidateVerified && (
+          {settings?.admissionPeriodOpen !== false && !candidateVerified && (
             <div className="bg-white p-4 rounded-xl border border-emerald-200 space-y-3 shadow-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>

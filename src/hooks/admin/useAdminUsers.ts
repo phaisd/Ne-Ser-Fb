@@ -67,7 +67,7 @@ export function useAdminUsers({
     aliasesText: '',
     instructorType: 'อาจารย์ประจำ',
     department: 'คณะพุทธศาสตร์ มจร',
-    role: 'INSTRUCTOR' as 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR',
+    role: 'INSTRUCTOR' as UserRole,
     isActingOfficer: false,
   });
   const [editUserSaving, setEditUserSaving] = useState(false);

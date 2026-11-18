@@ -87,9 +87,10 @@ export default function Navbar() {
     };
     loadAutoLogout();
 
-    const handleSettingChange = (e: any) => {
-      if (e?.detail !== undefined) {
-        setAutoLogoutMins(e.detail);
+    const handleSettingChange = (e: Event) => {
+      const customEvt = e as CustomEvent<number>;
+      if (customEvt?.detail !== undefined) {
+        setAutoLogoutMins(customEvt.detail);
       } else {
         loadAutoLogout();
       }
@@ -134,8 +135,8 @@ export default function Navbar() {
 
   // Listen for global requests to open Profile / Password / Login History modal + check suspicious alerts
   useEffect(() => {
-    const handleOpenProfile = (e: any) => {
-      const tab = e?.detail?.tab;
+    const handleOpenProfile = (e: Event) => {
+      const tab = (e as CustomEvent<{ tab?: string }>)?.detail?.tab;
       if (tab === 'PROFILE' || tab === 'PASSWORD' || tab === 'HISTORY') {
         setProfileModalTab(tab);
       }

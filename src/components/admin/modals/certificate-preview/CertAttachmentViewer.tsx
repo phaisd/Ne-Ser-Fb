@@ -134,7 +134,7 @@ export function CertAttachmentViewer({
       });
       const data = await res.json();
       if (data.success && data.url) {
-        const updatePayload: any = { id: previewRequest.id };
+        const updatePayload: Partial<CertificateRequest> & { id: string } = { id: previewRequest.id };
         if (type === 'enrollment') updatePayload.enrollmentSlipUrl = data.url;
         else if (type === 'passport') updatePayload.passportCopyUrl = data.url;
         else if (type === 'photo') updatePayload.photoUrl = data.url;

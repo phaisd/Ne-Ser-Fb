@@ -17,15 +17,19 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
+import { TimetableItem, AuthUser } from '@/types';
+import type { SemesterSessionItem } from '@/lib/attendance/workspaceHelpers';
+import type { AttendanceMode } from './RollCallTab';
+
 interface SemesterRoadmapTabProps {
-  currentUser: any;
-  currentCourse: any;
-  semesterRoadmapSessions: any[];
+  currentUser?: AuthUser | null;
+  currentCourse?: TimetableItem | null;
+  semesterRoadmapSessions: SemesterSessionItem[];
   semesterTotalSessions: number;
   completedSessionsCount: number;
-  nextUpcomingSession: any;
-  handleFastOpenSession: (session: any) => void;
-  setActiveMode: (mode: any) => void;
+  nextUpcomingSession?: SemesterSessionItem | null;
+  handleFastOpenSession: (session: SemesterSessionItem) => void;
+  setActiveMode: (mode: AttendanceMode) => void;
 }
 
 export function SemesterRoadmapTab({

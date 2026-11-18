@@ -1,19 +1,7 @@
 'use client';
 
-export interface AuthUser {
-  id?: string;
-  name: string;
-  email: string;
-  gmail?: string;
-  role: string;
-  faculty?: string;
-  major?: string;
-  year?: number;
-  phone?: string;
-  isSuperAdmin?: boolean;
-  isActingOfficer?: boolean;
-  [key: string]: any;
-}
+import type { AuthUser } from '@/types';
+export type { AuthUser };
 
 export interface SavedBrowserAccount {
   email: string;

@@ -26,6 +26,8 @@ import {
   AdminEventsTab,
   AdminAdmissionsTab,
 } from '@/components/admin/tabs';
+import { Student, AuthUser, UserAccount } from '@/types';
+import { toast } from '@/lib/toast';
 import {
   StudentDeleteModal,
   TeachingSlipModal,
@@ -131,7 +133,7 @@ export default function AdminConsolePage() {
         if (stdRes.success) {
           setStudentsList(stdRes.data);
           const total = stdRes.data.length;
-          const eng = stdRes.data.filter((s: any) => {
+          const eng = stdRes.data.filter((s: Student) => {
             const p = String(s.programType || '').toUpperCase().trim();
             if (p === 'ENGLISH') return true;
             if (p === 'THAI') return false;
@@ -165,11 +167,11 @@ export default function AdminConsolePage() {
         if (usrRes.success) {
           adminUsers.setUsers(usrRes.data);
           // Sync currentUser name with the real account in database
-          setCurrentUser((prev: any) => {
+          setCurrentUser((prev: AuthUser | null) => {
             if (!prev) return prev;
             const prevEmail = (prev.email || '').toLowerCase();
             const prevGmail = (prev.gmail || '').toLowerCase();
-            const matched = (usrRes.data as any[]).find(
+            const matched = (usrRes.data as UserAccount[]).find(
               (u) =>
                 (prev.id && u.id === prev.id) ||
                 (prevEmail && (u.email?.toLowerCase() === prevEmail || u.gmail?.toLowerCase() === prevEmail)) ||
@@ -367,16 +369,18 @@ export default function AdminConsolePage() {
       });
       const data = await res.json();
       if (data.success) {
-        setActionSuccess(`สรุปปิดยอดและจัดเก็บประวัติปีการศึกษา ${archivingYear} สำเร็จเรียบร้อย`);
+        const msg = `สรุปปิดยอดและจัดเก็บประวัติปีการศึกษา ${archivingYear} สำเร็จเรียบร้อย`;
+        setActionSuccess(msg);
+        toast.success(msg);
         fetch('/api/archives')
           .then((r) => r.json())
           .then((d) => d.success && setAcademicArchives(d.data));
         setIsArchiveModalOpen(false);
       } else {
-        alert('เกิดข้อผิดพลาด: ' + data.error);
+        toast.error('เกิดข้อผิดพลาด: ' + data.error);
       }
     } catch (err: unknown) {
-      alert('การจัดเก็บประวัติล้มเหลว: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error('การจัดเก็บประวัติล้มเหลว: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setArchiveLoading(false);
     }
@@ -390,13 +394,15 @@ export default function AdminConsolePage() {
       const res = await fetch('/api/sheets-sync', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        setActionSuccess(`ซิงค์ข้อมูล Google Sheets สำเร็จ! (${data.syncedTabs.join(', ')})`);
+        const msg = `ซิงค์ข้อมูล Google Sheets สำเร็จ! (${data.syncedTabs.join(', ')})`;
+        setActionSuccess(msg);
+        toast.success(msg);
         loadData();
       } else {
-        alert('เกิดข้อผิดพลาด: ' + data.error);
+        toast.error('เกิดข้อผิดพลาด: ' + data.error);
       }
     } catch (e: unknown) {
-      alert((e instanceof Error ? e.message : String(e)));
+      toast.error((e instanceof Error ? e.message : String(e)));
     } finally {
       setSyncingSheet(false);
     }
@@ -711,9 +717,9 @@ export default function AdminConsolePage() {
               setIsAddUserOpen={adminUsers.setIsAddUserOpen}
               setActiveTab={setActiveTab}
               setStudentSearch={adminStudents.setStudentSearch}
-              handleStartEditUser={adminUsers.handleStartEditUser}
-              handleOpenTeachingSlip={adminUsers.handleOpenTeachingSlip}
-              handleCopyLineTeachingMessage={adminUsers.handleCopyLineTeachingMessage}
+              handleStartEditUser={(u) => adminUsers.handleStartEditUser(u as UserAccount)}
+              handleOpenTeachingSlip={(u) => adminUsers.handleOpenTeachingSlip(u as UserAccount)}
+              handleCopyLineTeachingMessage={(u) => adminUsers.handleCopyLineTeachingMessage(u as UserAccount)}
               copiedLineUserId={adminUsers.copiedLineUserId}
               handleToggleSuspend={adminUsers.handleToggleSuspend}
               handleUpdateRole={adminUsers.handleUpdateRole}

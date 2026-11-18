@@ -16,11 +16,20 @@ vi.mock('@/services', () => ({
   updateEvent: vi.fn(async () => undefined),
   deleteEvent: vi.fn(async () => true),
   saveVipassanaAttendance: vi.fn(async () => undefined),
+  recordVipassanaScanCheckin: vi.fn(async () => ({
+    success: true,
+    isAlreadyCheckedIn: false,
+    registration: { studentName: 'พระสมบัติ', dailyAttendance: {} },
+  })),
   batchImportEventRegistrations: vi.fn(async () => ({
     importedCount: 2,
     skippedCount: 0,
     replacedCount: 0,
     items: [],
+  })),
+  saveVipassanaInterview: vi.fn(async () => ({
+    success: true,
+    updatedCount: 1,
   })),
 }));
 
@@ -93,6 +102,42 @@ describe('/api/events RBAC & batch group import', () => {
       'ev-1',
       expect.any(Array),
       'APPEND'
+    );
+  });
+
+  it('allows authenticated staff to execute vipassana_scan_checkin', async () => {
+    const adminToken = createSignedSessionToken({
+      id: 'admin-1',
+      name: 'Admin Monk',
+      email: 'admin@mcu.ac.th',
+      role: 'ADMIN',
+    });
+
+    const res = await POST(
+      new Request('http://localhost/api/events', {
+        method: 'POST',
+        headers: { cookie: `mcu_session_token=${encodeURIComponent(adminToken)}` },
+        body: JSON.stringify({
+          action: 'vipassana_scan_checkin',
+          eventId: 'ev-1',
+          studentCodeOrId: '6501501071',
+          dayKey: 'day_1',
+          periodKey: 'p1',
+          status: 'PRESENT',
+          checkInTime: '04:15:00',
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(services.recordVipassanaScanCheckin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: 'ev-1',
+        studentCodeOrId: '6501501071',
+        dayKey: 'day_1',
+        periodKey: 'p1',
+      })
     );
   });
 });

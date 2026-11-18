@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Course } from '@/types';
+import { toBuddhistYear } from '@/lib/utils';
 
 interface CourseImportModalProps {
   isOpen: boolean;
@@ -347,7 +348,7 @@ export const CourseImportModal: React.FC<CourseImportModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `template_courses_timetable_${new Date().getFullYear() + 543}.csv`);
+    link.setAttribute('download', `template_courses_timetable_${toBuddhistYear()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

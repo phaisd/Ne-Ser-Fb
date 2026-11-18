@@ -20,7 +20,7 @@ import {
   RefreshCw,
   Layers,
 } from 'lucide-react';
-import { CertificateRequest } from '@/types';
+import { CertificateRequest, AcademicYearArchive } from '@/types';
 import { calculateNextDocNo } from '@/lib/utils';
 import { CertificateTypesRepoModal } from '../modals';
 
@@ -32,7 +32,7 @@ interface AdminCertificatesTabProps {
   setFilterYear: (yr: string) => void;
   setArchivingYear: (yr: string) => void;
   setIsArchiveModalOpen: (open: boolean) => void;
-  setAcademicArchives: (archives: any[]) => void;
+  setAcademicArchives: (archives: AcademicYearArchive[]) => void;
   statusFilter: 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED';
   setStatusFilter: (st: 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED') => void;
   pendingRequests: CertificateRequest[];

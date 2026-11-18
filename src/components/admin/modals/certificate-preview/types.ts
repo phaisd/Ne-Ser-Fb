@@ -1,5 +1,5 @@
 import React from 'react';
-import { CertificateRequest, SystemSettings, SignatoryItem } from '@/types';
+import { CertificateRequest, SystemSettings, SignatoryItem, AuthUser } from '@/types';
 
 export type CertTemplateType = 'THAI_STANDARD' | 'BANK_LETTER' | 'ENG_CERT' | 'INTERNAL_MEMO';
 export type InspectionDocTab = 'ENROLLMENT' | 'PASSPORT' | 'SIDE_BY_SIDE';
@@ -13,7 +13,7 @@ export interface AdminCertificatePreviewModalProps {
   requests: CertificateRequest[];
   settings: SystemSettings;
   activeSignatoriesList: SignatoryItem[];
-  currentUser: any;
+  currentUser?: AuthUser | null;
   handleApprove: (id: string, defaultDocNo?: string, prefix?: '8002' | '8002.1') => Promise<void>;
   handleOpenRejectModal: (request: CertificateRequest) => void;
   setRejectReasonInput: React.Dispatch<React.SetStateAction<string>>;

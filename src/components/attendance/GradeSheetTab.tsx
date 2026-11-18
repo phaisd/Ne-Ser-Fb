@@ -145,12 +145,14 @@ export function GradeSheetTab({
   // Auto-detect language and default metadata when course changes
   useEffect(() => {
     if (!currentCourse) return;
+    const ttTitle = 'timetableTitle' in currentCourse ? String(currentCourse.timetableTitle || '') : '';
+    const progType = String(currentCourse.programType || '').toUpperCase();
     const isEngCourse =
-      currentCourse.programType === 'INTERNATIONAL' ||
-      currentCourse.programType === 'ENGLISH' ||
+      progType === 'INTERNATIONAL' ||
+      progType === 'ENGLISH' ||
       currentCourse.major?.toLowerCase().includes('english') ||
       currentCourse.major?.toLowerCase().includes('นานาชาติ') ||
-      /inter|eng|english|นานาชาติ/i.test(currentCourse.timetableTitle || '') ||
+      /inter|eng|english|นานาชาติ/i.test(ttTitle) ||
       /^[A-Za-z0-9\s\-.,():/]+$/.test(currentCourse.courseName || '');
 
     setFormLanguage(isEngCourse ? 'ENGLISH' : 'THAI');
@@ -166,7 +168,8 @@ export function GradeSheetTab({
         ? 'Buddhist Studies'
         : 'สาขาวิชาพระพุทธศาสนา'
     );
-    setCreditText(String(currentCourse.credits || '3'));
+    const crVal = 'credits' in currentCourse ? (currentCourse as { credits?: number | string }).credits : 3;
+    setCreditText(String(crVal || '3'));
     setLecturerName(currentCourse.instructor || currentUser?.name || '');
     setCollectionCount(DEFAULT_COLLECTION_COUNT);
     setCollectionColumns(normalizeCollectionColumns(DEFAULT_COLLECTION_COUNT));

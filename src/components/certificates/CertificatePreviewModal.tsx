@@ -12,19 +12,22 @@ import {
 } from 'lucide-react';
 import { exportElementToPdf } from '@/lib/pdf-export';
 import { CertificateRequest } from './types';
+import { SystemSettings } from '@/types';
+import { DEFAULT_SETTINGS } from '@/lib/constants/defaultSettings';
 import { PreviewCustomizerToolbar } from './preview/PreviewCustomizerToolbar';
 
 interface CertificatePreviewModalProps {
   previewRequest: CertificateRequest | null;
   onClose: () => void;
-  settings?: any;
+  settings?: SystemSettings | null;
 }
 
 export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = ({
   previewRequest,
   onClose,
-  settings,
+  settings: rawSettings,
 }) => {
+  const settings = rawSettings || DEFAULT_SETTINGS;
   const [pdfDownloading, setPdfDownloading] = useState<boolean>(false);
 
   // Document Customizer States for Preview

@@ -1,0 +1,1098 @@
+'use client';
+
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import {
+  X,
+  Camera,
+  CameraOff,
+  Barcode,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  Users,
+  Search,
+  RefreshCw,
+  ChevronRight,
+  ShieldCheck,
+  UserCheck,
+  SlidersHorizontal,
+  Timer,
+  Check,
+} from 'lucide-react';
+import type { StudentEvent, EventRegistration, MeditationPeriodConfig } from '@/types/event';
+
+interface BarcodeDetectorInstance {
+  detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>>;
+}
+
+interface VipassanaLiveScannerModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  event: StudentEvent;
+  registrations: EventRegistration[];
+  onCheckInRecorded?: () => void;
+}
+
+type PeriodKey = 'p1' | 'p2' | 'p3' | 'p4';
+
+const PERIOD_CONFIG: Record<
+  PeriodKey,
+  { nameTh: string; nameEn: string; timeRange: string; defaultStart: string; defaultEnd: string }
+> = {
+  p1: { nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', timeRange: '04.00-04.30', defaultStart: '03:30', defaultEnd: '06:00' },
+  p2: { nameTh: 'ภาคเช้า', nameEn: 'Morning Period', timeRange: '08.00-08.30', defaultStart: '07:30', defaultEnd: '10:30' },
+  p3: { nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', timeRange: '12.30-13.00', defaultStart: '11:30', defaultEnd: '15:00' },
+  p4: { nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', timeRange: '17.30-18.00', defaultStart: '16:30', defaultEnd: '21:00' },
+};
+
+// Helper: Web Audio API Synthesizer for instant beeps
+function playBeep(type: 'SUCCESS' | 'WARN' | 'ERROR') {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'SUCCESS') {
+      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.08); // D6
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.25);
+    } else if (type === 'WARN') {
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(440, ctx.currentTime + 0.1); // A4
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } else {
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      gain.gain.setValueAtTime(0.4, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    }
+  } catch {}
+}
+
+export function VipassanaLiveScannerModal({
+  isOpen,
+  onClose,
+  event,
+  registrations,
+  onCheckInRecorded,
+}: VipassanaLiveScannerModalProps) {
+  // Determine current period from system time
+  const autoDetectPeriod = useCallback((): PeriodKey => {
+    const now = new Date();
+    const curHour = now.getHours();
+    const curMin = now.getMinutes();
+    const curTime = curHour * 60 + curMin;
+
+    if (curTime >= 3 * 60 && curTime < 6 * 60 + 30) return 'p1';
+    if (curTime >= 6 * 60 + 30 && curTime < 11 * 60) return 'p2';
+    if (curTime >= 11 * 60 && curTime < 15 * 60 + 30) return 'p3';
+    return 'p4';
+  }, []);
+
+  const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodKey>(autoDetectPeriod);
+  const [statusMode, setStatusMode] = useState<'PRESENT' | 'LATE' | 'SICK'>('PRESENT');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Policy & Late threshold configuration
+  const [evalMode, setEvalMode] = useState<'AUTO' | 'MANUAL'>('AUTO');
+  const [lateGraceMinutes, setLateGraceMinutes] = useState<number>(15);
+  const [showConfigDrawer, setShowConfigDrawer] = useState<boolean>(false);
+  const [periodPolicies, setPeriodPolicies] = useState<Record<PeriodKey, { startTime: string; endTime: string }>>(() => {
+    const defaultPol: Record<PeriodKey, { startTime: string; endTime: string }> = {
+      p1: { startTime: '04:00', endTime: '04:30' },
+      p2: { startTime: '08:00', endTime: '08:30' },
+      p3: { startTime: '12:30', endTime: '13:00' },
+      p4: { startTime: '17:30', endTime: '18:00' },
+    };
+    if (event.meditationConfig?.periods && Array.isArray(event.meditationConfig.periods)) {
+      event.meditationConfig.periods.forEach((p: MeditationPeriodConfig) => {
+        if (p.id && p.time && p.time.includes('-')) {
+          const parts = p.time.split('-');
+          const s = parts[0].trim().replace('.', ':');
+          const e = parts[1].trim().replace('.', ':');
+          if (defaultPol[p.id as PeriodKey]) {
+            defaultPol[p.id as PeriodKey] = { startTime: s, endTime: e };
+          }
+        }
+      });
+    }
+    return defaultPol;
+  });
+
+  // Scanner states
+  const [inputCode, setInputCode] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recentScans, setRecentScans] = useState<
+    Array<{
+      id: string;
+      studentCode: string;
+      studentName: string;
+      groupNumber?: number;
+      vasa?: string | number;
+      period: PeriodKey;
+      time: string;
+      status: 'PRESENT' | 'LATE' | 'SICK';
+      isDuplicate?: boolean;
+    }>
+  >([]);
+
+  const [lastFeedback, setLastFeedback] = useState<{
+    type: 'SUCCESS' | 'WARN' | 'ERROR';
+    message: string;
+    student?: EventRegistration;
+    time?: string;
+  } | null>(null);
+
+  // Camera states
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<'environment' | 'user'>('environment');
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scanThrottleRef = useRef<number>(0);
+
+  const dayKey = `day_${selectedDayNumber}`;
+
+  // Offline Cache Queue State
+  const OFFLINE_QUEUE_KEY = `vipassana_scanner_offline_queue_${event.id}`;
+  const [offlineQueue, setOfflineQueue] = useState<
+    Array<{
+      studentCodeOrId: string;
+      dayKey: string;
+      periodKey: PeriodKey;
+      status: 'PRESENT' | 'LATE';
+      checkInTime: string;
+      scannedAt: string;
+      studentName?: string;
+    }>
+  >([]);
+  const [isSyncingOffline, setIsSyncingOffline] = useState(false);
+
+  // Load offline queue on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(OFFLINE_QUEUE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setOfflineQueue(parsed);
+        }
+      }
+    } catch {}
+  }, [OFFLINE_QUEUE_KEY]);
+
+  // Sync offline queue helper
+  const syncOfflineQueue = useCallback(async () => {
+    try {
+      const saved = localStorage.getItem(OFFLINE_QUEUE_KEY);
+      const itemsToSync = saved ? JSON.parse(saved) : offlineQueue;
+      if (!Array.isArray(itemsToSync) || itemsToSync.length === 0 || isSyncingOffline) return;
+
+      setIsSyncingOffline(true);
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'vipassana_batch_offline_sync',
+          eventId: event.id,
+          items: itemsToSync,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setOfflineQueue([]);
+        localStorage.removeItem(OFFLINE_QUEUE_KEY);
+        if (onCheckInRecorded) onCheckInRecorded();
+      }
+    } catch (e) {
+      console.warn('Offline sync attempt paused (will retry):', e);
+    } finally {
+      setIsSyncingOffline(false);
+    }
+  }, [offlineQueue, isSyncingOffline, event.id, onCheckInRecorded, OFFLINE_QUEUE_KEY]);
+
+  // Auto-sync interval & online event listener
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleOnline = () => {
+      syncOfflineQueue();
+    };
+
+    window.addEventListener('online', handleOnline);
+    const interval = setInterval(() => {
+      if (navigator.onLine && offlineQueue.length > 0) {
+        syncOfflineQueue();
+      }
+    }, 12000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      clearInterval(interval);
+    };
+  }, [isOpen, offlineQueue.length, syncOfflineQueue]);
+
+  // Keep input focused for physical USB barcode/QR scanner
+  useEffect(() => {
+    if (isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isOpen, isSubmitting, lastFeedback]);
+
+  // Handle Scan Submission
+  const processScanCode = useCallback(
+    async (codeToProcess: string) => {
+      const cleanCode = codeToProcess.trim();
+      if (!cleanCode || isSubmitting) return;
+
+      // Throttle rapid repeated triggers
+      const nowTs = Date.now();
+      if (nowTs - scanThrottleRef.current < 1200) return;
+      scanThrottleRef.current = nowTs;
+
+      setIsSubmitting(true);
+      setInputCode('');
+
+      const now = new Date();
+      let checkInTime = `${String(now.getHours()).padStart(2, '0')}:${String(
+        now.getMinutes()
+      ).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      let targetStatus: 'PRESENT' | 'LATE' | 'SICK' = 'PRESENT';
+      let lateNote = '';
+
+      try {
+        if (evalMode === 'AUTO') {
+          const curPolicy = periodPolicies[selectedPeriod];
+          const [startH, startM] = (curPolicy?.startTime || '04:00').split(':').map(Number);
+          const startTotal = (startH || 0) * 60 + (startM || 0);
+          const currentTotal = now.getHours() * 60 + now.getMinutes();
+          const diffMinutes = currentTotal - startTotal;
+
+          if (diffMinutes > lateGraceMinutes) {
+            targetStatus = 'LATE';
+            lateNote = ` (สาย +${diffMinutes} นาที / เกณฑ์ ${lateGraceMinutes} นาที)`;
+          } else {
+            targetStatus = 'PRESENT';
+          }
+        } else {
+          targetStatus = statusMode;
+        }
+
+        const res = await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'vipassana_scan_checkin',
+            eventId: event.id,
+            studentCodeOrId: cleanCode,
+            dayKey,
+            periodKey: selectedPeriod,
+            status: targetStatus,
+            checkInTime,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.success && data.registration) {
+          const reg = data.registration;
+          const isDuplicate = data.isAlreadyCheckedIn;
+
+          if (soundEnabled) {
+            playBeep(isDuplicate ? 'WARN' : 'SUCCESS');
+          }
+
+          setLastFeedback({
+            type: isDuplicate ? 'WARN' : 'SUCCESS',
+            message: isDuplicate
+              ? `เช็คชื่อซ้ำ: ${reg.studentName} ลงชื่อรอบนี้ไปแล้ว (${checkInTime} น.)`
+              : `เช็คชื่อสำเร็จ: ${reg.studentName}${lateNote}`,
+            student: reg,
+            time: checkInTime,
+          });
+
+          // Add to recent scans list
+          setRecentScans((prev) => [
+            {
+              id: `${reg.id}-${nowTs}`,
+              studentCode: reg.studentCode,
+              studentName: reg.studentName,
+              groupNumber: reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined),
+              vasa: reg.vasa,
+              period: selectedPeriod,
+              time: checkInTime,
+              status: targetStatus,
+              isDuplicate,
+            },
+            ...prev.slice(0, 19),
+          ]);
+
+          if (onCheckInRecorded) {
+            onCheckInRecorded();
+          }
+        } else {
+          if (soundEnabled) playBeep('ERROR');
+          setLastFeedback({
+            type: 'ERROR',
+            message: data.error || 'ไม่พบข้อมูลนิสิตในโครงการนี้',
+          });
+        }
+      } catch (err: unknown) {
+        // Fallback to offline queue if practitioner is found in local registrations prop
+        const localReg = registrations.find(
+          (r) =>
+            r.studentCode?.toLowerCase() === cleanCode.toLowerCase() ||
+            (r.groupSpecificCode && r.groupSpecificCode.toLowerCase() === cleanCode.toLowerCase()) ||
+            r.id === cleanCode
+        );
+
+        if (localReg) {
+          const offlineItem = {
+            studentCodeOrId: cleanCode,
+            dayKey,
+            periodKey: selectedPeriod,
+            status: (targetStatus === 'SICK' ? 'PRESENT' : targetStatus) as 'PRESENT' | 'LATE',
+            checkInTime,
+            scannedAt: new Date().toISOString(),
+            studentName: localReg.studentName,
+          };
+
+          const nextQueue = [...offlineQueue, offlineItem];
+          setOfflineQueue(nextQueue);
+          try {
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(nextQueue));
+          } catch {}
+
+          if (soundEnabled) playBeep('SUCCESS');
+
+          setLastFeedback({
+            type: 'SUCCESS',
+            message: `📦 บันทึกออฟไลน์สำเร็จ: ${localReg.studentName} (${checkInTime} น. • รอซิงค์เมื่อต่อเน็ต)`,
+            student: localReg,
+            time: checkInTime,
+          });
+
+          setRecentScans((prev) => [
+            {
+              id: `${localReg.id}-${nowTs}`,
+              studentCode: localReg.studentCode,
+              studentName: localReg.studentName + ' (📦 ออฟไลน์)',
+              groupNumber: localReg.groupNumber || (localReg.groupName ? parseInt(localReg.groupName.replace(/\D/g, ''), 10) : undefined),
+              vasa: localReg.vasa,
+              period: selectedPeriod,
+              time: checkInTime,
+              status: targetStatus,
+              isDuplicate: false,
+            },
+            ...prev.slice(0, 19),
+          ]);
+        } else {
+          if (soundEnabled) playBeep('ERROR');
+          const errText = err instanceof Error ? err.message : String(err);
+          setLastFeedback({
+            type: 'ERROR',
+            message: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + errText,
+          });
+        }
+      } finally {
+        setIsSubmitting(false);
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+      }
+    },
+    [
+      event.id,
+      dayKey,
+      selectedPeriod,
+      statusMode,
+      isSubmitting,
+      soundEnabled,
+      onCheckInRecorded,
+      registrations,
+      offlineQueue,
+      OFFLINE_QUEUE_KEY,
+      evalMode,
+      periodPolicies,
+      lateGraceMinutes,
+    ]
+  );
+
+  // Form Submit handler
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputCode.trim()) {
+      processScanCode(inputCode.trim());
+    }
+  };
+
+  // Camera stream lifecycle
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let isCancelled = false;
+
+    if (isOpen && isCameraActive) {
+      setCameraError(null);
+      navigator.mediaDevices
+        ?.getUserMedia({
+          video: {
+            facingMode: cameraFacing,
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        })
+        .then((s) => {
+          if (isCancelled) {
+            s.getTracks().forEach((t) => t.stop());
+            return;
+          }
+          stream = s;
+          if (videoRef.current) {
+            videoRef.current.srcObject = s;
+            videoRef.current.play().catch(() => {});
+          }
+        })
+        .catch((err) => {
+          console.error('Camera access error:', err);
+          setCameraError('ไม่สามารถเข้าถึงกล้องได้: ' + (err.message || 'โปรดตรวจสอบการอนุญาตใช้งานกล้อง'));
+          setIsCameraActive(false);
+        });
+    }
+
+    return () => {
+      isCancelled = true;
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, [isOpen, isCameraActive, cameraFacing]);
+
+  // Camera Barcode Scanning Loop via native BarcodeDetector if available
+  useEffect(() => {
+    if (!isCameraActive || !isOpen) return;
+
+    let animId: number;
+    let detector: BarcodeDetectorInstance | null = null;
+
+    if ('BarcodeDetector' in window) {
+      try {
+        const DetectorCtor = (
+          window as unknown as {
+            BarcodeDetector: new (opts: { formats: string[] }) => BarcodeDetectorInstance;
+          }
+        ).BarcodeDetector;
+        detector = new DetectorCtor({
+          formats: ['qr_code', 'code_128', 'code_39', 'ean_13'],
+        });
+      } catch {}
+    }
+
+    const checkFrame = async () => {
+      if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && detector) {
+        try {
+          const barcodes = await detector.detect(videoRef.current);
+          if (barcodes.length > 0) {
+            const rawVal = barcodes[0].rawValue;
+            if (rawVal) {
+              processScanCode(rawVal);
+            }
+          }
+        } catch {}
+      }
+      animId = requestAnimationFrame(checkFrame);
+    };
+
+    animId = requestAnimationFrame(checkFrame);
+
+    return () => {
+      cancelAnimationFrame(animId);
+    };
+  }, [isCameraActive, isOpen, processScanCode]);
+
+  // Statistics for current period
+  const stats = useMemo(() => {
+    let checkedCount = 0;
+    registrations.forEach((r) => {
+      const p = r.dailyAttendance?.[dayKey]?.[selectedPeriod];
+      if (p && (p.status === 'PRESENT' || p.status === 'LATE')) {
+        checkedCount++;
+      }
+    });
+    return {
+      total: registrations.length,
+      checkedCount,
+      percent: registrations.length > 0 ? Math.round((checkedCount / registrations.length) * 100) : 0,
+    };
+  }, [registrations, dayKey, selectedPeriod]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* HEADER */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500 text-slate-950 flex items-center gap-1 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
+                <span>LIVE SCANNER</span>
+              </span>
+              {/* Online / Offline Sync Badge */}
+              {offlineQueue.length === 0 ? (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                  <span>🟢 พร้อมใช้งาน</span>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={syncOfflineQueue}
+                  disabled={isSyncingOffline}
+                  className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center gap-1 shadow-sm transition cursor-pointer animate-pulse"
+                  title="คลิกเพื่อส่งข้อมูลที่บันทึกออฟไลน์ขึ้นเซิร์ฟเวอร์ทันที"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isSyncingOffline ? 'animate-spin' : ''}`} />
+                  <span>รอซิงค์ {offlineQueue.length} รายการ (คลิกซิงค์)</span>
+                </button>
+              )}
+              <span className="text-xs text-purple-200 font-medium">
+                จุดสแกนเช็คชื่ออัตโนมัติ (Barcode / QR / ป้ายคล้องคอ)
+              </span>
+            </div>
+            <h3 className="font-extrabold text-base sm:text-lg tracking-tight">
+              ระบบสแกนเช็คชื่อปฏิบัติธรรม 4 รอบต่อวัน
+            </h3>
+            <p className="text-xs text-purple-200/80 line-clamp-1">
+              {event.title}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {/* Sound Mute Toggle */}
+            <button
+              type="button"
+              onClick={() => setSoundEnabled((v) => !v)}
+              className={`p-2 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold ${
+                soundEnabled
+                  ? 'bg-purple-800/80 text-purple-200 hover:bg-purple-700'
+                  : 'bg-rose-900/60 text-rose-300 hover:bg-rose-800'
+              }`}
+              title={soundEnabled ? 'ปิดเสียงแจ้งเตือน' : 'เปิดเสียงแจ้งเตือน'}
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
+              <span className="hidden sm:inline">{soundEnabled ? 'เสียงเปิด' : 'ปิดเสียง'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl text-purple-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* SETTINGS / PERIOD SELECTOR TOOLBAR */}
+        <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            {/* Day Selector */}
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-slate-700">วันที่ปฏิบัติ:</span>
+              <select
+                value={selectedDayNumber}
+                onChange={(e) => setSelectedDayNumber(parseInt(e.target.value, 10))}
+                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-bold text-amber-950 focus:outline-none"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={d}>
+                    วันที่ {d} ({10 + d} ธ.ค.)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Period Switcher */}
+            <div className="flex items-center gap-1 p-1 bg-slate-200/70 rounded-xl">
+              {(Object.keys(PERIOD_CONFIG) as PeriodKey[]).map((pkey) => {
+                const conf = PERIOD_CONFIG[pkey];
+                const isSelected = selectedPeriod === pkey;
+                return (
+                  <button
+                    key={pkey}
+                    type="button"
+                    onClick={() => setSelectedPeriod(pkey)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                      isSelected
+                        ? 'bg-purple-700 text-white shadow-xs'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
+                    }`}
+                  >
+                    <span>{conf.nameTh}</span>
+                    <span className="text-[10px] font-mono opacity-80">({conf.timeRange})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Evaluation Mode Switcher (AUTO vs MANUAL) */}
+            <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setEvalMode('AUTO')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                  evalMode === 'AUTO'
+                    ? 'bg-purple-700 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="ระบบจะคำนวณและตัดเป็น 'สาย' ให้อัตโนมัติเมื่อเกินเกณฑ์เวลาที่กำหนด"
+              >
+                <Timer className="w-3.5 h-3.5" />
+                <span>ตัดสายอัตโนมัติ (Auto)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEvalMode('MANUAL')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                  evalMode === 'MANUAL'
+                    ? 'bg-purple-700 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Admin เลือกกำหนดสถานะที่ต้องการให้เป็นตามปุ่มที่เลือก"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>เลือกสถานะเอง (Manual)</span>
+              </button>
+            </div>
+
+            {/* If AUTO: Late Threshold Dropdown & Policy summary */}
+            {evalMode === 'AUTO' ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-950">
+                  <span className="font-bold text-[11px]">เกณฑ์เวลาสาย: เกิน</span>
+                  <select
+                    value={lateGraceMinutes}
+                    onChange={(e) => setLateGraceMinutes(parseInt(e.target.value, 10))}
+                    className="px-1.5 py-0.5 bg-white rounded border border-amber-300 font-extrabold text-amber-900 text-xs focus:outline-none"
+                  >
+                    <option value={10}>10 นาที</option>
+                    <option value={15}>15 นาที (มาตรฐาน)</option>
+                    <option value={20}>20 นาที</option>
+                    <option value={30}>30 นาที (ผ่อนปรน)</option>
+                    <option value={45}>45 นาที</option>
+                  </select>
+                  <span className="text-[11px] font-bold">= สาย</span>
+                </div>
+
+                {/* Calculated Cutoff badge */}
+                {(() => {
+                  const [h, m] = (periodPolicies[selectedPeriod]?.startTime || '04:00').split(':').map(Number);
+                  const total = (h || 0) * 60 + (m || 0) + lateGraceMinutes;
+                  const cutH = Math.floor(total / 60) % 24;
+                  const cutM = total % 60;
+                  const cutStr = `${String(cutH).padStart(2, '0')}:${String(cutM).padStart(2, '0')}`;
+                  return (
+                    <span className="text-[11px] text-slate-600 font-medium">
+                      (เริ่ม {periodPolicies[selectedPeriod]?.startTime} น. ➔ สแกนหลัง <strong>{cutStr} น.</strong> ปรับเป็นสาย)
+                    </span>
+                  );
+                })()}
+
+                <button
+                  type="button"
+                  onClick={() => setShowConfigDrawer((v) => !v)}
+                  className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer transition flex items-center gap-1"
+                  title="แก้ไขเวลาเริ่มต้นและสิ้นสุดของแต่ละรอบ"
+                >
+                  <SlidersHorizontal className="w-3 h-3 text-slate-500" />
+                  <span>{showConfigDrawer ? 'ซ่อนตั้งเวลา' : '⚙️ ปรับเวลาเริ่มรอบ'}</span>
+                </button>
+              </div>
+            ) : (
+              /* If MANUAL: Status buttons */
+              <div className="flex items-center gap-1">
+                <span className="font-bold text-slate-700">สถานะที่บันทึก:</span>
+                <div className="inline-flex rounded-lg border border-slate-300 p-0.5 bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setStatusMode('PRESENT')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
+                      statusMode === 'PRESENT'
+                        ? 'bg-emerald-600 text-white'
+                        : 'text-slate-600 hover:text-emerald-700'
+                    }`}
+                  >
+                    ปกติ (มา)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusMode('LATE')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
+                      statusMode === 'LATE'
+                        ? 'bg-amber-500 text-white'
+                        : 'text-slate-600 hover:text-amber-700'
+                    }`}
+                  >
+                    สาย
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusMode('SICK')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
+                      statusMode === 'SICK'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-600 hover:text-blue-700'
+                    }`}
+                  >
+                    ป่วย
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Progress / Stats */}
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <div className="text-[10px] text-slate-500">สแกนรอบนี้แล้ว</div>
+              <div className="font-mono font-black text-purple-900 text-sm">
+                {stats.checkedCount} / {stats.total} รูป ({stats.percent}%)
+              </div>
+            </div>
+            <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-purple-600 transition-all duration-300"
+                style={{ width: `${stats.percent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Policy Time Editor Drawer */}
+        {showConfigDrawer && (
+          <div className="bg-purple-50/70 border-b border-purple-200 p-3 text-xs animate-in slide-in-from-top-2 duration-150">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-purple-700" />
+                <span className="font-extrabold text-purple-950">
+                  ปรับเวลาเริ่ม-สิ้นสุดของรอบ {PERIOD_CONFIG[selectedPeriod].nameTh}:
+                </span>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <label className="flex items-center gap-1 font-semibold text-slate-700">
+                  <span>เวลาเริ่มรอบ:</span>
+                  <input
+                    type="time"
+                    value={periodPolicies[selectedPeriod]?.startTime || '04:00'}
+                    onChange={(e) =>
+                      setPeriodPolicies((prev) => ({
+                        ...prev,
+                        [selectedPeriod]: { ...prev[selectedPeriod], startTime: e.target.value },
+                      }))
+                    }
+                    className="px-2 py-1 bg-white rounded border border-purple-300 font-mono font-bold text-slate-900"
+                  />
+                </label>
+                <label className="flex items-center gap-1 font-semibold text-slate-700">
+                  <span>เวลาสิ้นสุดรอบ:</span>
+                  <input
+                    type="time"
+                    value={periodPolicies[selectedPeriod]?.endTime || '04:30'}
+                    onChange={(e) =>
+                      setPeriodPolicies((prev) => ({
+                        ...prev,
+                        [selectedPeriod]: { ...prev[selectedPeriod], endTime: e.target.value },
+                      }))
+                    }
+                    className="px-2 py-1 bg-white rounded border border-purple-300 font-mono font-bold text-slate-900"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowConfigDrawer(false)}
+                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition cursor-pointer"
+                >
+                  เรียบร้อย
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BODY AREA */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
+          
+          {/* LEFT COLUMN: SCANNER INPUT & CAMERA FEED (7 COLS) */}
+          <div className="lg:col-span-7 space-y-4">
+            
+            {/* Hardware Scanner & Fast Input Box */}
+            <div className="bg-purple-50/60 border-2 border-purple-200 rounded-2xl p-4 shadow-xs">
+              <form onSubmit={handleFormSubmit} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-extrabold text-purple-950 flex items-center gap-1.5">
+                    <Barcode className="w-4 h-4 text-purple-700" />
+                    <span>ช่องรับสัญญาณปืนสแกนบาร์โค้ด / พิมพ์รหัสนิสิต:</span>
+                  </label>
+                  <span className="text-[10px] text-purple-700 font-mono">
+                    (Auto-focused • พร้อมยิงสแกนทันที)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={inputCode}
+                      onChange={(e) => setInputCode(e.target.value)}
+                      placeholder="ยิงบาร์โค้ด หรือพิมพ์รหัสนิสิต (เช่น 6501501071) แล้วกด Enter..."
+                      disabled={isSubmitting}
+                      className="w-full pl-9 pr-4 py-2.5 bg-white rounded-xl border border-purple-300 font-mono text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !inputCode.trim()}
+                    className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'กำลังบันทึก...' : 'บันทึก'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Camera Scanner Box */}
+            <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-900 text-white">
+              <div className="px-4 py-2.5 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 font-bold">
+                  <Camera className="w-4 h-4 text-purple-400" />
+                  <span>โหมดกล้องสแกน (Webcam / มือถือ)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isCameraActive && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCameraFacing((f) => (f === 'environment' ? 'user' : 'environment'))
+                      }
+                      className="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-[11px] font-semibold cursor-pointer transition"
+                    >
+                      สลับกล้อง ({cameraFacing === 'environment' ? 'หลัง' : 'หน้า'})
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraActive((v) => !v)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
+                      isCameraActive
+                        ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    }`}
+                  >
+                    {isCameraActive ? (
+                      <>
+                        <CameraOff className="w-3.5 h-3.5" />
+                        <span>ปิดกล้อง</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>เปิดกล้องสแกน QR</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Camera Preview Area */}
+              <div className="relative min-h-[220px] max-h-[320px] flex items-center justify-center bg-black/60 overflow-hidden">
+                {isCameraActive ? (
+                  <>
+                    <video
+                      ref={videoRef}
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Reticle Overlay */}
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                      <div className="w-48 h-48 border-2 border-emerald-400/80 rounded-2xl relative shadow-2xl">
+                        <div className="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-emerald-400" />
+                        <div className="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-emerald-400" />
+                        <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-emerald-400" />
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-emerald-400" />
+                        <div className="w-full h-0.5 bg-emerald-400/60 absolute top-1/2 -translate-y-1/2 animate-pulse" />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-8 text-center space-y-2 text-slate-400">
+                    <Camera className="w-10 h-10 mx-auto opacity-30" />
+                    <p className="text-xs">
+                      กล้องปิดอยู่ — ท่านสามารถใช้ **ปืนสแกนบาร์โค้ด USB** ยิงได้ทันที หรือกด "เปิดกล้องสแกน QR" ด้านบน
+                    </p>
+                    {cameraError && (
+                      <p className="text-xs text-rose-400 font-semibold">{cameraError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* LIVE FEEDBACK CARD */}
+            {lastFeedback && (
+              <div
+                className={`p-4 rounded-2xl border transition-all animate-in fade-in slide-in-from-top-2 duration-200 ${
+                  lastFeedback.type === 'SUCCESS'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                    : lastFeedback.type === 'WARN'
+                    ? 'bg-amber-50 border-amber-200 text-amber-950'
+                    : 'bg-rose-50 border-rose-200 text-rose-950'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {lastFeedback.type === 'SUCCESS' ? (
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : lastFeedback.type === 'WARN' ? (
+                    <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <X className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                  )}
+
+                  <div className="flex-1 space-y-1">
+                    <div className="font-extrabold text-sm sm:text-base leading-tight">
+                      {lastFeedback.message}
+                    </div>
+
+                    {lastFeedback.student && (
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs pt-1 opacity-90">
+                        {lastFeedback.student.groupSpecificCode && (
+                          <span className="px-2 py-0.5 rounded bg-white/90 text-purple-950 font-black font-mono shadow-xs">
+                            {lastFeedback.student.groupSpecificCode}
+                          </span>
+                        )}
+                        <span>
+                          รหัสนิสิต: <strong className="font-mono">{lastFeedback.student.studentCode}</strong>
+                        </span>
+                        {lastFeedback.student.groupNumber && (
+                          <span className="px-2 py-0.5 rounded bg-white/70 font-bold">
+                            กลุ่มที่ {lastFeedback.student.groupNumber}
+                          </span>
+                        )}
+                        {lastFeedback.student.vasa && <span>พรรษา: {lastFeedback.student.vasa}</span>}
+                        {lastFeedback.time && (
+                          <span className="flex items-center gap-1 font-mono">
+                            <Clock className="w-3 h-3" />
+                            {lastFeedback.time} น.
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT COLUMN: RECENT SCANS LOG & REALTIME LIST (5 COLS) */}
+          <div className="lg:col-span-5 flex flex-col space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-purple-600" />
+                <span>ประวัติการสแกนรอบนี้ ({recentScans.length} รายการล่าสุด):</span>
+              </h4>
+              {recentScans.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setRecentScans([])}
+                  className="text-[10px] text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  ล้างประวัติ
+                </button>
+              )}
+            </div>
+
+            <div className="border border-slate-200 rounded-2xl flex-1 max-h-[460px] overflow-y-auto bg-slate-50/50 p-2 space-y-1.5 shadow-2xs">
+              {recentScans.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  ยังไม่มีรายการสแกนในรอบนี้<br />
+                  <span className="text-[11px] opacity-75">พร้อมรับสัญญาณสแกนจากป้ายชื่อ...</span>
+                </div>
+              ) : (
+                recentScans.map((scan) => (
+                  <div
+                    key={scan.id}
+                    className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between gap-2 text-xs"
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="font-extrabold text-slate-900 truncate">
+                        {scan.studentName}
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+                        <span className="font-bold text-purple-700">{scan.studentCode}</span>
+                        {scan.groupNumber && (
+                          <span className="bg-slate-100 text-slate-700 px-1 rounded font-sans">
+                            กลุ่ม {scan.groupNumber}
+                          </span>
+                        )}
+                        {scan.vasa && <span className="font-sans">พรรษา {scan.vasa}</span>}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-black ${
+                          scan.status === 'PRESENT'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : scan.status === 'LATE'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {scan.status === 'PRESENT' ? 'มา' : scan.status === 'LATE' ? 'สาย' : 'ป่วย'}
+                      </span>
+                      <div className="text-[9.5px] font-mono text-slate-400 mt-0.5">
+                        {scan.time} น.
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Quick tips */}
+            <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-[11px] text-amber-900 space-y-1">
+              <div className="font-bold flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>คำแนะนำการใช้งานจุดสแกน:</span>
+              </div>
+              <ul className="list-disc pl-4 space-y-0.5 text-slate-700 text-[10.5px]">
+                <li>สำหรับโต๊ะหน้าศาลา: เสียบปืนสแกนบาร์โค้ด USB เข้าเครื่อง แล้วยิงป้ายชื่อได้ทันที</li>
+                <li>สำหรับพระพี่เลี้ยง: เปิดหน้านี้บนมือถือ/แท็บเล็ต แล้วกดเปิดกล้องเพื่อสแกน QR นิสิตในกลุ่ม</li>
+                <li>หากนิสิตมาสายเกิน 30 นาที สามารถสลับสถานะเป็น <strong>"สาย"</strong> ก่อนสแกนได้</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Archive } from 'lucide-react';
-import { CertificateRequest } from '@/types';
+import { CertificateRequest, AcademicYearArchive } from '@/types';
+import { toBuddhistYear } from '@/lib/utils';
 
 interface ArchiveSummaryModalProps {
   isOpen: boolean;
@@ -10,9 +11,9 @@ interface ArchiveSummaryModalProps {
   archivingYear: string;
   setArchivingYear: (yr: string) => void;
   requests: CertificateRequest[];
-  academicArchives: any[];
+  academicArchives: AcademicYearArchive[];
   archiveLoading: boolean;
-  onArchiveYear: (e?: any) => void;
+  onArchiveYear: (e?: React.FormEvent | React.MouseEvent) => void;
   onClose: () => void;
 }
 
@@ -30,7 +31,7 @@ export function ArchiveSummaryModal({
   if (!isOpen) return null;
 
   const yearReqs = requests.filter((r) => {
-    const yr = r.createdAt ? new Date(r.createdAt).getFullYear() + 543 : null;
+    const yr = r.createdAt ? toBuddhistYear(r.createdAt) : null;
     return String(yr) === archivingYear;
   });
   const approved = yearReqs.filter((r) => r.status === 'APPROVED').length;

@@ -13,6 +13,7 @@ import {
   FileText,
   CheckCircle2,
 } from 'lucide-react';
+import { AuthUser } from '@/types';
 
 interface SessionCustomModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ interface SessionCustomModalProps {
     }>
   >;
   instructors: string[];
-  currentUser: any;
+  currentUser?: AuthUser | null;
 }
 
 export function SessionCustomModal({
@@ -130,11 +131,11 @@ export function SessionCustomModal({
               <label className="font-bold text-slate-700 block mb-1">ประเภทการสอน:</label>
               <select
                 value={sessionCustom.sessionType}
-                onChange={(e: any) =>
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setSessionCustom((prev) => ({
                     ...prev,
                     isCustomized: true,
-                    sessionType: e.target.value,
+                    sessionType: e.target.value as 'NORMAL' | 'MAKEUP' | 'SPECIAL' | 'EXAM',
                   }))
                 }
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"

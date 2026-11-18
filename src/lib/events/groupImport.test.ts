@@ -10,6 +10,95 @@ import type { EventRegistration } from '@/types/event';
 import type { Student } from '@/types/student';
 
 describe('groupImport helpers', () => {
+  it('parses full 8-column CSV with both group-specific code and student ID', () => {
+    const csv = [
+      'กลุ่ม,เลขเฉพาะกลุ่ม,รหัสนิสิต,ชื่อ-นามสกุล,หลักสูตร,หลักสูตรภาษา,สาขาวิชา,ชั้นปี',
+      '1,T101,6701501011,พระมหาสมชาย กิตฺติโสภโณ,ปริญญาตรี,THAI,พระพุทธศาสนา,2',
+      '1,T102,6701501011,สามเณรธีรภัทร สุขใจ,ปริญญาโท,THAI,พระพุทธศาสนา,2',
+      '2,T201,6701501011,นายก้องภพ ใจดี,ปริญญาเอก,THAI,ศาสนาและปรัชญา,3',
+      '3,I301,6701501011,Ven. Dhammapalo,ปริญญาตรี,ENGLISH,Buddhism,1',
+    ].join('\n');
+
+    const res = parseGroupedParticipantsText(csv);
+    expect(res.warnings).toEqual([]);
+    expect(res.detectedGroups).toEqual([1, 2, 3]);
+    expect(res.items).toHaveLength(4);
+
+    expect(res.items[0]).toMatchObject({
+      groupNumber: 1,
+      groupSpecificCode: 'T101',
+      studentCode: '6701501011',
+      studentName: 'พระมหาสมชาย กิตฺติโสภโณ',
+      degreeLevel: 'ปริญญาตรี',
+      programType: 'THAI',
+      major: 'พระพุทธศาสนา',
+      yearLevel: 2,
+    });
+
+    expect(res.items[1]).toMatchObject({
+      groupNumber: 1,
+      groupSpecificCode: 'T102',
+      studentCode: '6701501011',
+      studentName: 'สามเณรธีรภัทร สุขใจ',
+      degreeLevel: 'ปริญญาโท',
+      programType: 'THAI',
+      major: 'พระพุทธศาสนา',
+      yearLevel: 2,
+    });
+
+    expect(res.items[2]).toMatchObject({
+      groupNumber: 2,
+      groupSpecificCode: 'T201',
+      studentCode: '6701501011',
+      studentName: 'นายก้องภพ ใจดี',
+      degreeLevel: 'ปริญญาเอก',
+      programType: 'THAI',
+      major: 'ศาสนาและปรัชญา',
+      yearLevel: 3,
+    });
+
+    expect(res.items[3]).toMatchObject({
+      groupNumber: 3,
+      groupSpecificCode: 'I301',
+      studentCode: '6701501011',
+      studentName: 'Ven. Dhammapalo',
+      degreeLevel: 'ปริญญาตรี',
+      programType: 'ENGLISH',
+      major: 'Buddhism',
+      yearLevel: 1,
+    });
+  });
+
+  it('parses headerless 8-column tab-separated rows', () => {
+    const tsv = [
+      '1\tT101\t6701501011\tพระมหาสมชาย กิตฺติโสภโณ\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t2',
+      '3\tI301\t6701501011\tVen. Dhammapalo\tปริญญาตรี\tENGLISH\tBuddhism\t1',
+    ].join('\n');
+
+    const res = parseGroupedParticipantsText(tsv);
+    expect(res.items).toHaveLength(2);
+    expect(res.items[0]).toMatchObject({
+      groupNumber: 1,
+      groupSpecificCode: 'T101',
+      studentCode: '6701501011',
+      studentName: 'พระมหาสมชาย กิตฺติโสภโณ',
+      degreeLevel: 'ปริญญาตรี',
+      programType: 'THAI',
+      major: 'พระพุทธศาสนา',
+      yearLevel: 2,
+    });
+    expect(res.items[1]).toMatchObject({
+      groupNumber: 3,
+      groupSpecificCode: 'I301',
+      studentCode: '6701501011',
+      studentName: 'Ven. Dhammapalo',
+      degreeLevel: 'ปริญญาตรี',
+      programType: 'ENGLISH',
+      major: 'Buddhism',
+      yearLevel: 1,
+    });
+  });
+
   it('parses CSV with Thai headers and group-specific codes', () => {
     const csv = [
       'กลุ่ม,เลขเฉพาะกลุ่ม,ชื่อ-นามสกุล,หลักสูตรภาษา,ชั้นปี',

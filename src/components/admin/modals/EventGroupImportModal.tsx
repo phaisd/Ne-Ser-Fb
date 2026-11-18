@@ -33,11 +33,11 @@ interface EventGroupImportModalProps {
 type ImportSourceTab = 'paste' | 'clone' | 'directory';
 
 const SAMPLE_CSV = [
-  'กลุ่ม,เลขเฉพาะกลุ่ม,ชื่อ-นามสกุล,หลักสูตรภาษา,สาขาวิชา,ชั้นปี',
-  '1,T101,พระมหาสมชาย กิตฺติโสภโณ,THAI,พระพุทธศาสนา,2',
-  '1,T102,สามเณรธีรภัทร สุขใจ,THAI,พระพุทธศาสนา,2',
-  '2,T201,นายก้องภพ ใจดี,THAI,ศาสนาและปรัชญา,3',
-  '3,I301,Ven. Dhammapalo,ENGLISH,Buddhism,1',
+  'กลุ่ม,เลขเฉพาะกลุ่ม,รหัสนิสิต,ชื่อ-นามสกุล,หลักสูตร,หลักสูตรภาษา,สาขาวิชา,ชั้นปี',
+  '1,T101,6701501011,พระมหาสมชาย กิตฺติโสภโณ,ปริญญาตรี,THAI,พระพุทธศาสนา,2',
+  '1,T102,6701501011,สามเณรธีรภัทร สุขใจ,ปริญญาโท,THAI,พระพุทธศาสนา,2',
+  '2,T201,6701501011,นายก้องภพ ใจดี,ปริญญาเอก,THAI,ศาสนาและปรัชญา,3',
+  '3,I301,6701501011,Ven. Dhammapalo,ปริญญาตรี,ENGLISH,Buddhism,1',
 ].join('\n');
 
 export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
@@ -444,7 +444,7 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder={
-                  'วางข้อมูลจาก Excel หรือ CSV ได้เลย เช่น:\nกลุ่ม\tเลขเฉพาะกลุ่ม\tชื่อ-นามสกุล\n3\tT321\tพระมหาสมชาย ใจดี\n3\tT322\tสามเณรธีรภัทร สุขใจ'
+                  'วางข้อมูลจาก Excel หรือ CSV ได้เลย (รองรับ 8 คอลัมน์):\nกลุ่ม\tเลขเฉพาะกลุ่ม\tรหัสนิสิต\tชื่อ-นามสกุล\tหลักสูตร\tหลักสูตรภาษา\tสาขาวิชา\tชั้นปี\n1\tT101\t6701501011\tพระมหาสมชาย กิตฺติโสภโณ\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t2\n1\tT102\t6701501011\tสามเณรธีรภัทร สุขใจ\tปริญญาโท\tTHAI\tพระพุทธศาสนา\t2\n2\tT201\t6701501011\tนายก้องภพ ใจดี\tปริญญาเอก\tTHAI\tศาสนาและปรัชญา\t3\n3\tI301\t6701501011\tVen. Dhammapalo\tปริญญาตรี\tENGLISH\tBuddhism\t1'
                 }
                 className="w-full p-3 rounded-2xl border border-slate-300 font-mono text-xs bg-slate-50/40 focus:ring-2 focus:ring-emerald-500 outline-none"
               />
@@ -689,35 +689,59 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                 <span className="text-[11px] text-slate-500">แสดงตัวอย่าง 50 รายการแรก</span>
               )}
             </div>
-            <div className="border border-slate-200 rounded-2xl overflow-hidden max-h-48 overflow-y-auto">
+            <div className="border border-slate-200 rounded-2xl overflow-hidden max-h-56 overflow-y-auto">
               <table className="w-full text-left border-collapse text-[11px]">
                 <thead className="bg-slate-100 text-slate-700 sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 font-bold">กลุ่ม</th>
-                    <th className="px-3 py-2 font-bold">เลขเฉพาะกลุ่ม / รหัส</th>
-                    <th className="px-3 py-2 font-bold">ชื่อ-ฉายา-นามสกุล</th>
-                    <th className="px-3 py-2 font-bold">หลักสูตร / หมายเหตุ</th>
+                    <th className="px-2.5 py-2 font-bold text-center">กลุ่ม</th>
+                    <th className="px-2.5 py-2 font-bold">เลขเฉพาะกลุ่ม</th>
+                    <th className="px-2.5 py-2 font-bold">รหัสนิสิต</th>
+                    <th className="px-2.5 py-2 font-bold">ชื่อ-นามสกุล</th>
+                    <th className="px-2.5 py-2 font-bold">หลักสูตร</th>
+                    <th className="px-2.5 py-2 font-bold text-center">หลักสูตรภาษา</th>
+                    <th className="px-2.5 py-2 font-bold">สาขาวิชา</th>
+                    <th className="px-2.5 py-2 font-bold text-center">ชั้นปี</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {previewItems.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-3 py-5 text-center text-slate-400">
-                        กรุณาวางข้อมูล เลือกกลุ่ม หรือเลือกนิสิตเพื่อดูตัวอย่างก่อนนำเข้า
+                      <td colSpan={8} className="px-3 py-6 text-center text-slate-400">
+                        กรุณาวางข้อมูล หรือเลือกไฟล์ CSV / TSV เพื่อดูตัวอย่างก่อนนำเข้า
                       </td>
                     </tr>
                   ) : (
                     previewItems.slice(0, 50).map((it, idx) => (
-                      <tr key={`${it.studentCode}-${idx}`} className="hover:bg-slate-50">
-                        <td className="px-3 py-1.5 font-semibold text-indigo-700">
-                          {it.groupName || (it.groupNumber ? `กลุ่มที่ ${it.groupNumber}` : '-')}
+                      <tr key={`${it.studentCode}-${it.groupSpecificCode || ''}-${idx}`} className="hover:bg-slate-50">
+                        <td className="px-2.5 py-1.5 text-center font-semibold text-indigo-700">
+                          {it.groupNumber || (it.groupName ? it.groupName.replace(/[^\d]/g, '') : '-')}
                         </td>
-                        <td className="px-3 py-1.5 font-mono font-bold text-slate-800">
-                          {it.studentCode}
+                        <td className="px-2.5 py-1.5 font-mono font-bold text-emerald-700">
+                          {it.groupSpecificCode || '-'}
                         </td>
-                        <td className="px-3 py-1.5 text-slate-800">{it.studentName}</td>
-                        <td className="px-3 py-1.5 text-slate-500">
-                          {it.programType || '-'} {it.remarks ? `• ${it.remarks}` : ''}
+                        <td className="px-2.5 py-1.5 font-mono text-slate-800">
+                          {it.studentCode || '-'}
+                        </td>
+                        <td className="px-2.5 py-1.5 text-slate-900 font-medium">{it.studentName}</td>
+                        <td className="px-2.5 py-1.5 text-slate-600">
+                          {it.degreeLevel || '-'}
+                        </td>
+                        <td className="px-2.5 py-1.5 text-center">
+                          <span
+                            className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                              it.programType === 'ENGLISH'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
+                            {it.programType || 'THAI'}
+                          </span>
+                        </td>
+                        <td className="px-2.5 py-1.5 text-slate-600 truncate max-w-[130px]" title={it.major}>
+                          {it.major || '-'}
+                        </td>
+                        <td className="px-2.5 py-1.5 text-center font-mono text-slate-600">
+                          {it.yearLevel ? `ปี ${it.yearLevel}` : '-'}
                         </td>
                       </tr>
                     ))

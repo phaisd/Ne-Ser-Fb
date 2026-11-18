@@ -4,10 +4,21 @@ import React from 'react';
 import { UserCog, Mail, Info, ShieldCheck } from 'lucide-react';
 import { UserAccount } from '@/types';
 
+export interface NewUserFormData {
+  name: string;
+  nameEn: string;
+  email: string;
+  gmail: string;
+  instructorType: string;
+  department: string;
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR';
+  password: string;
+}
+
 interface AddUserModalProps {
   isOpen: boolean;
-  newUserForm: any;
-  setNewUserForm: any;
+  newUserForm: NewUserFormData;
+  setNewUserForm: React.Dispatch<React.SetStateAction<NewUserFormData>>;
   isOfficer?: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;

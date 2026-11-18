@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAuthUser, isAdminOrOfficer, saveAuthSession } from '@/lib/auth-client';
 import { useLanguage } from '@/hooks/useLanguage';
+import { toBuddhistYear } from '@/lib/utils';
+import type { AuthUser } from '@/types';
 import { FileText, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import {
   CertificateRequest,
@@ -25,7 +27,7 @@ export default function CertificatesPage() {
   const [, setLoading] = useState(true);
 
   // Current Authenticated User & Roles
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
   const canManageCertificates = useMemo(() => {
     return isAdminOrOfficer(currentUser);
@@ -73,8 +75,7 @@ export default function CertificatesPage() {
     const set = new Set<string>();
     requests.forEach((r) => {
       if (r.createdAt) {
-        const yr = new Date(r.createdAt).getFullYear() + 543;
-        set.add(String(yr));
+        set.add(String(toBuddhistYear(r.createdAt)));
       }
     });
     if (set.size === 0) set.add('2569');
@@ -94,7 +95,7 @@ export default function CertificatesPage() {
         if (!match) return false;
       }
       if (filterCertYear !== 'ALL' && r.createdAt) {
-        const yr = String(new Date(r.createdAt).getFullYear() + 543);
+        const yr = String(toBuddhistYear(r.createdAt));
         if (yr !== filterCertYear) return false;
       }
       return true;

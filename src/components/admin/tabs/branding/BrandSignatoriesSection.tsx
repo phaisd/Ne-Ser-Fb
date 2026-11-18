@@ -21,7 +21,7 @@ interface BrandSignatoriesSectionProps {
   setIsAddingSignatory: (open: boolean) => void;
   newSignatoryForm: SignatoryItem;
   setNewSignatoryForm: React.Dispatch<React.SetStateAction<SignatoryItem>>;
-  handleAddSignatory: (e?: any) => void;
+  handleAddSignatory: (e?: React.FormEvent | React.MouseEvent) => void;
   handleResetSignatories: () => void;
   editingSignatoryId: string | null;
   setEditingSignatoryId: (id: string | null) => void;

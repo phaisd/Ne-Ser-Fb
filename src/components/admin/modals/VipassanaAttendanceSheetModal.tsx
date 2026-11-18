@@ -17,8 +17,13 @@ import {
   Sparkles,
   ChevronRight,
   BookOpen,
+  Camera,
+  Timer,
 } from 'lucide-react';
 import { StudentEvent, EventRegistration } from '@/types';
+import { VipassanaBadgesModal } from './VipassanaBadgesModal';
+import { VipassanaLiveScannerModal } from './VipassanaLiveScannerModal';
+import { VipassanaAttendancePrintSheet } from './vipassana/VipassanaAttendancePrintSheet';
 
 interface VipassanaAttendanceSheetModalProps {
   isOpen: boolean;
@@ -29,6 +34,20 @@ interface VipassanaAttendanceSheetModalProps {
 }
 
 type PeriodStatus = 'PRESENT' | 'LATE' | 'SICK' | 'ABSENT' | 'UNCHECKED';
+
+export interface MeditationPeriodConfig {
+  id: 'p1' | 'p2' | 'p3' | 'p4';
+  nameTh: string;
+  nameEn?: string;
+  time: string;
+}
+
+export const DEFAULT_PERIODS: MeditationPeriodConfig[] = [
+  { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
+  { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
+  { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
+  { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
+];
 
 interface StudentAttendanceRow {
   registrationId: string;
@@ -44,6 +63,10 @@ interface StudentAttendanceRow {
   p2: PeriodStatus; // 08.00 - 08.30
   p3: PeriodStatus; // 12.30 - 13.00
   p4: PeriodStatus; // 17.30 - 18.00
+  p1Time?: string;
+  p2Time?: string;
+  p3Time?: string;
+  p4Time?: string;
   remark?: string;
 }
 
@@ -75,6 +98,73 @@ export function VipassanaAttendanceSheetModal({
   }>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  // Sub-modal states for Live Scanner & Badges Generator
+  const [isBadgesModalOpen, setIsBadgesModalOpen] = useState(false);
+  const [isLiveScannerOpen, setIsLiveScannerOpen] = useState(false);
+
+  // Editable check-in times state & late threshold
+  const [timeState, setTimeState] = useState<Record<string, {
+    p1?: string;
+    p2?: string;
+    p3?: string;
+    p4?: string;
+  }>>({});
+  const [lateGraceMinutes, setLateGraceMinutes] = useState<number>(15);
+
+  // Editable Period Configurations (04.00-04.30, 08.00-08.30, etc.)
+  const [periodSettings, setPeriodSettings] = useState<MeditationPeriodConfig[]>(() => {
+    if (
+      event.meditationConfig?.periods &&
+      Array.isArray(event.meditationConfig.periods) &&
+      event.meditationConfig.periods.length === 4
+    ) {
+      return event.meditationConfig.periods;
+    }
+    return DEFAULT_PERIODS;
+  });
+  const [isEditingPeriods, setIsEditingPeriods] = useState(false);
+  const [isSavingPeriods, setIsSavingPeriods] = useState(false);
+
+  const p1Conf = periodSettings.find((p) => p.id === 'p1') || DEFAULT_PERIODS[0];
+  const p2Conf = periodSettings.find((p) => p.id === 'p2') || DEFAULT_PERIODS[1];
+  const p3Conf = periodSettings.find((p) => p.id === 'p3') || DEFAULT_PERIODS[2];
+  const p4Conf = periodSettings.find((p) => p.id === 'p4') || DEFAULT_PERIODS[3];
+
+  const handleSavePeriodSettings = async () => {
+    setIsSavingPeriods(true);
+    try {
+      const updatedConfig = {
+        ...(event.meditationConfig || {}),
+        periods: periodSettings,
+      };
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_event',
+          id: event.id,
+          updates: {
+            meditationConfig: updatedConfig,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        event.meditationConfig = updatedConfig;
+        setIsEditingPeriods(false);
+        setSaveSuccessMsg('บันทึกการแก้ไขช่วงเวลาทั้ง 4 รอบลงในโครงการสำเร็จ');
+        setTimeout(() => setSaveSuccessMsg(null), 3500);
+        if (onAttendanceSaved) onAttendanceSaved();
+      } else {
+        alert('บันทึกไม่สำเร็จ: ' + (data.error || 'Unknown error'));
+      }
+    } catch (e: unknown) {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIsSavingPeriods(false);
+    }
+  };
 
   // Available groups for this event
   const availableGroups = useMemo(() => {
@@ -133,6 +223,10 @@ export function VipassanaAttendanceSheetModal({
       const p2 = (localState?.p2 || (savedForDay?.p2?.status as PeriodStatus) || 'PRESENT');
       const p3 = (localState?.p3 || (savedForDay?.p3?.status as PeriodStatus) || 'PRESENT');
       const p4 = (localState?.p4 || (savedForDay?.p4?.status as PeriodStatus) || 'PRESENT');
+      const p1Time = timeState[r.id]?.p1 !== undefined ? timeState[r.id]?.p1 : (savedForDay?.p1?.checkInTime || '');
+      const p2Time = timeState[r.id]?.p2 !== undefined ? timeState[r.id]?.p2 : (savedForDay?.p2?.checkInTime || '');
+      const p3Time = timeState[r.id]?.p3 !== undefined ? timeState[r.id]?.p3 : (savedForDay?.p3?.checkInTime || '');
+      const p4Time = timeState[r.id]?.p4 !== undefined ? timeState[r.id]?.p4 : (savedForDay?.p4?.checkInTime || '');
       const remark = localState?.remark ?? r.remarks ?? '';
 
       return {
@@ -149,6 +243,10 @@ export function VipassanaAttendanceSheetModal({
         p2,
         p3,
         p4,
+        p1Time,
+        p2Time,
+        p3Time,
+        p4Time,
         remark,
       };
     });
@@ -212,6 +310,65 @@ export function VipassanaAttendanceSheetModal({
     });
   };
 
+  // Handler to set individual period time
+  const handleSetPeriodTime = (regId: string, period: 'p1' | 'p2' | 'p3' | 'p4', timeStr: string) => {
+    setTimeState((prev) => ({
+      ...prev,
+      [regId]: {
+        ...prev[regId],
+        [period]: timeStr,
+      },
+    }));
+  };
+
+  // Auto-evaluate late status based on check-in times
+  const handleAutoEvaluateLate = () => {
+    const periodStarts: Record<'p1' | 'p2' | 'p3' | 'p4', number> = {
+      p1: 4 * 60,       // 04:00
+      p2: 8 * 60,       // 08:00
+      p3: 12 * 60 + 30, // 12:30
+      p4: 17 * 60 + 30, // 17:30
+    };
+
+    setAttendanceState((prev) => {
+      const updated = { ...prev };
+      attendanceRows.forEach((row) => {
+        const cur = updated[row.registrationId] || {
+          p1: row.p1,
+          p2: row.p2,
+          p3: row.p3,
+          p4: row.p4,
+        };
+
+        const evalPeriod = (pkey: 'p1' | 'p2' | 'p3' | 'p4') => {
+          const tStr = (timeState[row.registrationId]?.[pkey] !== undefined
+            ? timeState[row.registrationId]?.[pkey]
+            : row[`${pkey}Time` as keyof StudentAttendanceRow]) as string;
+          if (!tStr || !tStr.includes(':')) return cur[pkey];
+          if (cur[pkey] === 'SICK') return 'SICK';
+          const [h, m] = tStr.split(':').map(Number);
+          const tTotal = (h || 0) * 60 + (m || 0);
+          const startTotal = periodStarts[pkey];
+          const diff = tTotal - startTotal;
+          if (diff > lateGraceMinutes) return 'LATE';
+          return 'PRESENT';
+        };
+
+        updated[row.registrationId] = {
+          ...cur,
+          p1: evalPeriod('p1'),
+          p2: evalPeriod('p2'),
+          p3: evalPeriod('p3'),
+          p4: evalPeriod('p4'),
+        };
+      });
+      return updated;
+    });
+
+    setSaveSuccessMsg(`ปรับสถานะ มา/สาย ให้ทุกคนตามเกณฑ์เวลาเกิน ${lateGraceMinutes} นาที เรียบร้อย`);
+    setTimeout(() => setSaveSuccessMsg(null), 3500);
+  };
+
   // Save attendance to server
   const handleSaveAttendance = async () => {
     setIsSaving(true);
@@ -219,10 +376,10 @@ export function VipassanaAttendanceSheetModal({
     try {
       const records = attendanceRows.map((row) => ({
         registrationId: row.registrationId,
-        p1: { status: row.p1 },
-        p2: { status: row.p2 },
-        p3: { status: row.p3 },
-        p4: { status: row.p4 },
+        p1: { status: row.p1, checkInTime: row.p1Time },
+        p2: { status: row.p2, checkInTime: row.p2Time },
+        p3: { status: row.p3, checkInTime: row.p3Time },
+        p4: { status: row.p4, checkInTime: row.p4Time },
         remark: row.remark,
       }));
 
@@ -258,6 +415,7 @@ export function VipassanaAttendanceSheetModal({
     let p2Present = 0;
     let p3Present = 0;
     let p4Present = 0;
+    let sickCount = 0;
     let riskCount = 0;
 
     attendanceRows.forEach((row) => {
@@ -265,6 +423,9 @@ export function VipassanaAttendanceSheetModal({
       if (row.p2 === 'PRESENT' || row.p2 === 'LATE') p2Present++;
       if (row.p3 === 'PRESENT' || row.p3 === 'LATE') p3Present++;
       if (row.p4 === 'PRESENT' || row.p4 === 'LATE') p4Present++;
+
+      const sicks = [row.p1, row.p2, row.p3, row.p4].filter((s) => s === 'SICK').length;
+      if (sicks > 0) sickCount++;
 
       const absences = [row.p1, row.p2, row.p3, row.p4].filter((s) => s === 'ABSENT').length;
       if (absences >= 2) riskCount++;
@@ -276,6 +437,7 @@ export function VipassanaAttendanceSheetModal({
       p2Present,
       p3Present,
       p4Present,
+      sickCount,
       riskCount,
     };
   }, [attendanceRows]);
@@ -425,6 +587,39 @@ export function VipassanaAttendanceSheetModal({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* Live Scanner & Badges Shortcuts */}
+            <button
+              type="button"
+              onClick={() => setIsLiveScannerOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="เปิดจุดสแกนเช็คชื่ออัตโนมัติ (กล้องมือถือ/ปืนสแกนบาร์โค้ด)"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>จุดสแกนสด</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsBadgesModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="พิมพ์ป้ายชื่อคล้องคอพร้อม QR Code สำหรับนิสิต"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <span>พิมพ์ป้ายคล้องคอ</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditingPeriods((v) => !v)}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                isEditingPeriods
+                  ? 'bg-purple-700 text-white border-purple-700'
+                  : 'border-purple-300 bg-white hover:bg-purple-50 text-purple-900'
+              }`}
+              title="แก้ไขช่วงเวลา 4 รอบ (เช่น 04.00-04.30) และบันทึกลงโครงการ"
+            >
+              <Clock className="w-3.5 h-3.5 text-purple-600" />
+              <span>⚙️ แก้ไขช่วงเวลา 4 รอบ</span>
+            </button>
+
             {viewMode === 'INTERACTIVE' ? (
               <>
                 <button
@@ -482,6 +677,201 @@ export function VipassanaAttendanceSheetModal({
           {viewMode === 'INTERACTIVE' ? (
             /* VIEW 1: INTERACTIVE ATTENDANCE TABLE */
             <div className="space-y-4">
+              {/* PERIOD TIMES EDIT DRAWER */}
+              {isEditingPeriods && (
+                <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-amber-50 border-2 border-purple-300 p-4 rounded-2xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-150 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-purple-700" />
+                      <h4 className="font-extrabold text-sm text-purple-950">
+                        แก้ไขช่วงเวลาปฏิบัติธรรม 4 รอบ (จะอัปเดตลงในการ์ด, หัวตาราง, และเอกสารพิมพ์ A4):
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPeriodSettings(DEFAULT_PERIODS)}
+                        className="text-xs text-purple-700 hover:underline cursor-pointer font-semibold"
+                      >
+                        [ใช้เวลามาตรฐานเดิม]
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingPeriods(false)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/60 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    {/* P1 */}
+                    <div className="p-3 bg-white rounded-xl border border-amber-200 shadow-2xs space-y-1.5">
+                      <div className="font-bold text-amber-900 flex items-center justify-between">
+                        <span>รอบที่ 1: เช้ามืด</span>
+                        <span className="text-[10px] text-slate-400 font-mono">p1</span>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">ชื่อรอบ:</label>
+                        <input
+                          type="text"
+                          value={periodSettings.find((p) => p.id === 'p1')?.nameTh || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriodSettings((prev) =>
+                              prev.map((p) => (p.id === 'p1' ? { ...p, nameTh: val } : p))
+                            );
+                          }}
+                          className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">ช่วงเวลา (เช่น 04.00-04.30):</label>
+                        <input
+                          type="text"
+                          value={periodSettings.find((p) => p.id === 'p1')?.time || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriodSettings((prev) =>
+                              prev.map((p) => (p.id === 'p1' ? { ...p, time: val } : p))
+                            );
+                          }}
+                          className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-mono font-bold text-amber-950 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* P2 */}
+                    <div className="p-3 bg-white rounded-xl border border-blue-200 shadow-2xs space-y-1.5">
+                      <div className="font-bold text-blue-900 flex items-center justify-between">
+                        <span>รอบที่ 2: เช้า</span>
+                        <span className="text-[10px] text-slate-400 font-mono">p2</span>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">ชื่อรอบ:</label>
+                        <input
+                          type="text"
+                          value={periodSettings.find((p) => p.id === 'p2')?.nameTh || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriodSettings((prev) =>
+                              prev.map((p) => (p.id === 'p2' ? { ...p, nameTh: val } : p))
+                            );
+                          }}
+                          className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">ช่วงเวลา (เช่น 08.00-08.30):</label>
+                        <input
+                          type="text"
+                          value={periodSettings.find((p) => p.id === 'p2')?.time || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriodSettings((prev) =>
+                              prev.map((p) => (p.id === 'p2' ? { ...p, time: val } : p))
+                            );
+                          }}
+                          className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-mono font-bold text-blue-950 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* P3 */}
+                    <div className="p-3 bg-white rounded-xl border border-emerald-200 shadow-2xs space-y-1.5">
+                      <div className="font-bold text-emerald-900 flex items-center justify-between">
+                        <span>รอบที่ 3: บ่าย</span>
+                        <span className="text-[10px] text-slate-400 font-mono">p3</span>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">ชื่อรอบ:</label>
+                        <input
+                          type="text"
+                          value={periodSettings.find((p) => p.id === 'p3')?.nameTh || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriodSettings((prev) =>
+                              prev.map((p) => (p.id === 'p3' ? { ...p, nameTh: val } : p))
+                            );
+                          }}
+                          className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">ช่วงเวลา (เช่น 12.30-13.00):</label>
+                        <input
+                          type="text"
+                          value={periodSettings.find((p) => p.id === 'p3')?.time || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriodSettings((prev) =>
+                              prev.map((p) => (p.id === 'p3' ? { ...p, time: val } : p))
+                            );
+                          }}
+                          className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-mono font-bold text-emerald-950 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* P4 */}
+                    <div className="p-3 bg-white rounded-xl border border-purple-200 shadow-2xs space-y-1.5">
+                      <div className="font-bold text-purple-900 flex items-center justify-between">
+                        <span>รอบที่ 4: ค่ำ</span>
+                        <span className="text-[10px] text-slate-400 font-mono">p4</span>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">ชื่อรอบ:</label>
+                        <input
+                          type="text"
+                          value={periodSettings.find((p) => p.id === 'p4')?.nameTh || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriodSettings((prev) =>
+                              prev.map((p) => (p.id === 'p4' ? { ...p, nameTh: val } : p))
+                            );
+                          }}
+                          className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block">ช่วงเวลา (เช่น 17.30-18.00):</label>
+                        <input
+                          type="text"
+                          value={periodSettings.find((p) => p.id === 'p4')?.time || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPeriodSettings((prev) =>
+                              prev.map((p) => (p.id === 'p4' ? { ...p, time: val } : p))
+                            );
+                          }}
+                          className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-mono font-bold text-purple-950 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingPeriods(false)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold cursor-pointer text-xs"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isSavingPeriods}
+                      onClick={handleSavePeriodSettings}
+                      className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>{isSavingPeriods ? 'กำลังบันทึก...' : 'บันทึกช่วงเวลาลงโครงการ'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Stat Summary Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700">
@@ -490,7 +880,13 @@ export function VipassanaAttendanceSheetModal({
                 </div>
                 <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900">
                   <div className="text-[10px] flex items-center justify-between">
-                    <span>1. เช้ามืด (04.00-04.30)</span>
+                    <span
+                      onClick={() => setIsEditingPeriods(true)}
+                      className="cursor-pointer hover:underline"
+                      title="คลิกเพื่อแก้ไขช่วงเวลา"
+                    >
+                      1. {p1Conf.nameTh.replace('ภาค', '')} ({p1Conf.time})
+                    </span>
                     <button
                       type="button"
                       onClick={() => handleMarkAllPeriodPresent('p1')}
@@ -503,7 +899,13 @@ export function VipassanaAttendanceSheetModal({
                 </div>
                 <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900">
                   <div className="text-[10px] flex items-center justify-between">
-                    <span>2. เช้า (08.00-08.30)</span>
+                    <span
+                      onClick={() => setIsEditingPeriods(true)}
+                      className="cursor-pointer hover:underline"
+                      title="คลิกเพื่อแก้ไขช่วงเวลา"
+                    >
+                      2. {p2Conf.nameTh.replace('ภาค', '')} ({p2Conf.time})
+                    </span>
                     <button
                       type="button"
                       onClick={() => handleMarkAllPeriodPresent('p2')}
@@ -516,7 +918,13 @@ export function VipassanaAttendanceSheetModal({
                 </div>
                 <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-emerald-900">
                   <div className="text-[10px] flex items-center justify-between">
-                    <span>3. บ่าย (12.30-13.00)</span>
+                    <span
+                      onClick={() => setIsEditingPeriods(true)}
+                      className="cursor-pointer hover:underline"
+                      title="คลิกเพื่อแก้ไขช่วงเวลา"
+                    >
+                      3. {p3Conf.nameTh.replace('ภาค', '')} ({p3Conf.time})
+                    </span>
                     <button
                       type="button"
                       onClick={() => handleMarkAllPeriodPresent('p3')}
@@ -529,7 +937,13 @@ export function VipassanaAttendanceSheetModal({
                 </div>
                 <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200 text-purple-900">
                   <div className="text-[10px] flex items-center justify-between">
-                    <span>4. ค่ำ (17.30-18.00)</span>
+                    <span
+                      onClick={() => setIsEditingPeriods(true)}
+                      className="cursor-pointer hover:underline"
+                      title="คลิกเพื่อแก้ไขช่วงเวลา"
+                    >
+                      4. {p4Conf.nameTh.replace('ภาค', '')} ({p4Conf.time})
+                    </span>
                     <button
                       type="button"
                       onClick={() => handleMarkAllPeriodPresent('p4')}
@@ -540,6 +954,38 @@ export function VipassanaAttendanceSheetModal({
                   </div>
                   <div className="text-base font-extrabold font-mono">{stats.p4Present} / {stats.total}</div>
                 </div>
+              </div>
+
+              {/* Dynamic Late Evaluation Toolbar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-purple-50/70 border border-purple-200/90 px-3.5 py-2.5 rounded-2xl text-xs">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Timer className="w-4 h-4 text-purple-700 shrink-0" />
+                  <span className="font-extrabold text-purple-950">
+                    ปรับสถานะสายอัตโนมัติจากเวลาที่บันทึกไว้:
+                  </span>
+                  <span className="text-slate-600">หากเวลาเข้าเกิน</span>
+                  <select
+                    value={lateGraceMinutes}
+                    onChange={(e) => setLateGraceMinutes(parseInt(e.target.value, 10))}
+                    className="px-2 py-1 bg-white rounded-lg border border-purple-300 font-extrabold text-purple-950 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  >
+                    <option value={10}>10 นาที</option>
+                    <option value={15}>15 นาที (มาตรฐาน)</option>
+                    <option value={20}>20 นาที</option>
+                    <option value={30}>30 นาที (ผ่อนปรน)</option>
+                    <option value={45}>45 นาที</option>
+                  </select>
+                  <span className="text-slate-600 font-medium">จากเวลาเริ่มรอบ ➔ ปรับเป็น "สาย"</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAutoEvaluateLate}
+                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer shadow-xs flex items-center gap-1.5"
+                  title="คำนวณและปรับสถานะ มา/สาย ให้ทุกคนในกลุ่มตามเวลาที่บันทึกไว้ทันที"
+                >
+                  <Timer className="w-3.5 h-3.5" />
+                  <span>คำนวณปรับสถานะสาย</span>
+                </button>
               </div>
 
               {/* Attendance Table */}
@@ -554,20 +1000,44 @@ export function VipassanaAttendanceSheetModal({
                         <th className="py-2.5 px-2 font-bold text-center w-14">พรรษา</th>
                         <th className="py-2.5 px-2 font-bold text-center w-16">กลุ่ม</th>
                         <th className="py-2.5 px-2 font-bold text-center bg-amber-50/70 border-l border-r border-amber-200">
-                          <div>ภาคเช้ามืด</div>
-                          <div className="text-[9.5px] font-mono text-slate-500 font-normal">04.00-04.30</div>
+                          <div>{p1Conf.nameTh}</div>
+                          <div
+                            onClick={() => setIsEditingPeriods(true)}
+                            className="text-[9.5px] font-mono text-slate-500 font-normal cursor-pointer hover:underline hover:text-amber-700"
+                            title="คลิกเพื่อแก้ไขช่วงเวลา"
+                          >
+                            {p1Conf.time}
+                          </div>
                         </th>
                         <th className="py-2.5 px-2 font-bold text-center bg-blue-50/70 border-r border-blue-200">
-                          <div>ภาคเช้า</div>
-                          <div className="text-[9.5px] font-mono text-slate-500 font-normal">08.00-08.30</div>
+                          <div>{p2Conf.nameTh}</div>
+                          <div
+                            onClick={() => setIsEditingPeriods(true)}
+                            className="text-[9.5px] font-mono text-slate-500 font-normal cursor-pointer hover:underline hover:text-blue-700"
+                            title="คลิกเพื่อแก้ไขช่วงเวลา"
+                          >
+                            {p2Conf.time}
+                          </div>
                         </th>
                         <th className="py-2.5 px-2 font-bold text-center bg-emerald-50/70 border-r border-emerald-200">
-                          <div>ภาคบ่าย</div>
-                          <div className="text-[9.5px] font-mono text-slate-500 font-normal">12.30-13.00</div>
+                          <div>{p3Conf.nameTh}</div>
+                          <div
+                            onClick={() => setIsEditingPeriods(true)}
+                            className="text-[9.5px] font-mono text-slate-500 font-normal cursor-pointer hover:underline hover:text-emerald-700"
+                            title="คลิกเพื่อแก้ไขช่วงเวลา"
+                          >
+                            {p3Conf.time}
+                          </div>
                         </th>
                         <th className="py-2.5 px-2 font-bold text-center bg-purple-50/70 border-r border-purple-200">
-                          <div>ภาคค่ำ</div>
-                          <div className="text-[9.5px] font-mono text-slate-500 font-normal">17.30-18.00</div>
+                          <div>{p4Conf.nameTh}</div>
+                          <div
+                            onClick={() => setIsEditingPeriods(true)}
+                            className="text-[9.5px] font-mono text-slate-500 font-normal cursor-pointer hover:underline hover:text-purple-700"
+                            title="คลิกเพื่อแก้ไขช่วงเวลา"
+                          >
+                            {p4Conf.time}
+                          </div>
                         </th>
                         <th className="py-2.5 px-3 font-bold min-w-[120px]">หมายเหตุ</th>
                       </tr>
@@ -606,48 +1076,75 @@ export function VipassanaAttendanceSheetModal({
                               </td>
 
                               {/* 4 Periods Status Selectors */}
-                              {periods.map(({ key, val }) => (
-                                <td key={key} className="py-1.5 px-1.5 text-center align-middle">
-                                  <div className="flex items-center justify-center gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSetPeriodStatus(row.registrationId, key, 'PRESENT')}
-                                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                                        val === 'PRESENT'
-                                          ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-700'
-                                          : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-700'
-                                      }`}
-                                      title="มา (Present)"
-                                    >
-                                      มา
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSetPeriodStatus(row.registrationId, key, 'LATE')}
-                                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                                        val === 'LATE'
-                                          ? 'bg-amber-500 text-white shadow-2xs ring-1 ring-amber-600'
-                                          : 'bg-slate-100 text-slate-400 hover:bg-amber-50 hover:text-amber-700'
-                                      }`}
-                                      title="สาย (Late)"
-                                    >
-                                      สาย
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSetPeriodStatus(row.registrationId, key, 'ABSENT')}
-                                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                                        val === 'ABSENT'
-                                          ? 'bg-rose-600 text-white shadow-2xs ring-1 ring-rose-700'
-                                          : 'bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-700'
-                                      }`}
-                                      title="ขาด (Absent)"
-                                    >
-                                      ขาด
-                                    </button>
-                                  </div>
-                                </td>
-                              ))}
+                              {periods.map(({ key, val }) => {
+                                const timeVal = row[`${key}Time` as keyof StudentAttendanceRow];
+                                return (
+                                  <td key={key} className="py-1.5 px-1.5 text-center align-middle">
+                                    <div className="flex flex-col items-center justify-center">
+                                      <div className="flex items-center justify-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSetPeriodStatus(row.registrationId, key, 'PRESENT')}
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                                            val === 'PRESENT'
+                                              ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-700'
+                                              : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-700'
+                                          }`}
+                                          title="มา (Present)"
+                                        >
+                                          มา
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSetPeriodStatus(row.registrationId, key, 'LATE')}
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                                            val === 'LATE'
+                                              ? 'bg-amber-500 text-white shadow-2xs ring-1 ring-amber-600'
+                                              : 'bg-slate-100 text-slate-400 hover:bg-amber-50 hover:text-amber-700'
+                                          }`}
+                                          title="สาย (Late)"
+                                        >
+                                          สาย
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSetPeriodStatus(row.registrationId, key, 'SICK')}
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                                            val === 'SICK'
+                                              ? 'bg-blue-600 text-white shadow-2xs ring-1 ring-blue-700'
+                                              : 'bg-slate-100 text-slate-400 hover:bg-blue-50 hover:text-blue-700'
+                                          }`}
+                                          title="ป่วย (Sick)"
+                                        >
+                                          ป่วย
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSetPeriodStatus(row.registrationId, key, 'ABSENT')}
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                                            val === 'ABSENT'
+                                              ? 'bg-rose-600 text-white shadow-2xs ring-1 ring-rose-700'
+                                              : 'bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-700'
+                                          }`}
+                                          title="ขาด (Absent)"
+                                        >
+                                          ขาด
+                                        </button>
+                                      </div>
+                                      <div className="flex items-center gap-1 mt-0.5">
+                                        <input
+                                          type="text"
+                                          value={timeVal || ''}
+                                          onChange={(e) => handleSetPeriodTime(row.registrationId, key, e.target.value)}
+                                          placeholder="--:--"
+                                          className="w-14 text-center text-[9.5px] font-mono border border-slate-200 rounded px-1 py-0.2 bg-white text-slate-800 hover:border-purple-400 focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500/20"
+                                          title="คลิกเพื่อแก้ไขเวลาเข้าจริง (เช่น 04:15 หรือ 04:15:00)"
+                                        />
+                                      </div>
+                                    </div>
+                                  </td>
+                                );
+                              })}
 
                               {/* Remark Input */}
                               <td className="py-1.5 px-2">
@@ -682,298 +1179,18 @@ export function VipassanaAttendanceSheetModal({
               </div>
             </div>
           ) : (
-            /* VIEW 2: OFFICIAL PRINTABLE A4 FORM (MATCHES USER'S PDF 100%) */
-            <div className="flex flex-col items-center">
-              {/* PRINT STYLES */}
-              <style jsx global>{`
-                @media print {
-                  body * {
-                    visibility: hidden;
-                  }
-                  #official-a4-sheet, #official-a4-sheet * {
-                    visibility: visible;
-                  }
-                  #official-a4-sheet {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    width: 100%;
-                    margin: 0;
-                    padding: 0;
-                  }
-                }
-              `}</style>
-
-              {/* A4 PAPER CONTAINER */}
-              <div
-                id="official-a4-sheet"
-                className="w-full max-w-[800px] bg-white border border-slate-300 p-8 sm:p-10 shadow-lg text-slate-900 font-serif leading-tight print:border-none print:shadow-none print:p-0"
-              >
-                {activeProgram === 'ENGLISH' ? (
-                  /* ================= ENGLISH PROGRAM FORM ================= */
-                  <div className="space-y-4">
-                    {/* Header */}
-                    <div className="text-center space-y-1">
-                      <h2 className="text-sm sm:text-base font-bold tracking-tight">
-                        The Name List for the 1<sup>st</sup> - 4<sup>th</sup> students of the Faculty of Buddhism. (English Program)
-                      </h2>
-                      <h3 className="text-xs sm:text-sm font-semibold">
-                        The Meditation Practice on December 11 - 22, 2025
-                      </h3>
-                      <p className="text-xs">AT Bodhiyanmahavijjalai, Nakhon Pathom</p>
-                      <p className="text-xs pt-1">
-                        Date( &nbsp; &nbsp;{selectedDayNumber ? 10 + selectedDayNumber : '..........'}&nbsp; &nbsp; / December / 2025 )
-                      </p>
-                    </div>
-
-                    {/* Subhead: Group */}
-                    <div className="flex items-center justify-between border-b-2 border-black pb-1">
-                      <div className="text-base font-bold font-sans">
-                        Group : {selectedGroup !== 'ALL' ? selectedGroup : '12'}
-                      </div>
-                    </div>
-
-                    {/* Table */}
-                    <table className="w-full border-collapse border border-black text-center text-[10.5px]">
-                      <thead>
-                        <tr className="border-b border-black">
-                          <th rowSpan={2} className="border-r border-black p-1 w-8">No.</th>
-                          <th rowSpan={2} className="border-r border-black p-1 w-16">Code</th>
-                          <th rowSpan={2} className="border-r border-black p-1 text-left min-w-[150px]">Name/ Pali Name</th>
-                          <th rowSpan={2} className="border-r border-black p-1 w-10">Vasa</th>
-                          <th rowSpan={2} className="border-r border-black p-1 w-10">
-                            <span className="block transform -rotate-90">Group</span>
-                          </th>
-                          <th colSpan={4} className="border-r border-black p-1 font-bold">
-                            Signature
-                          </th>
-                          <th rowSpan={2} className="p-1 w-12">
-                            <span className="block transform -rotate-90">Remark</span>
-                          </th>
-                        </tr>
-                        <tr className="border-b border-black text-[9.5px]">
-                          <th className="border-r border-black p-1 w-20">
-                            <div>Dawn Period</div>
-                            <div className="font-mono text-[8.5px]">04.00-04.30</div>
-                          </th>
-                          <th className="border-r border-black p-1 w-20">
-                            <div>Morning Period</div>
-                            <div className="font-mono text-[8.5px]">08.00-08.30</div>
-                          </th>
-                          <th className="border-r border-black p-1 w-20">
-                            <div>Afternoon Period</div>
-                            <div className="font-mono text-[8.5px]">12.30-13.00</div>
-                          </th>
-                          <th className="border-r border-black p-1 w-20">
-                            <div>Evening Period</div>
-                            <div className="font-mono text-[8.5px]">17.30-18.00</div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {printBlankRows
-                          ? Array.from({ length: 22 }, (_, idx) => (
-                              <tr key={idx} className="border-b border-black/70 h-7">
-                                <td className="border-r border-black/70 font-mono text-[9.5px]">{idx + 1}</td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70">{selectedGroup !== 'ALL' ? selectedGroup : ''}</td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70"></td>
-                                <td></td>
-                              </tr>
-                            ))
-                          : attendanceRows.map((row, idx) => (
-                              <tr key={idx} className="border-b border-black/70 h-6.5 text-[10px]">
-                                <td className="border-r border-black/70 font-mono text-[9.5px] p-0.5">{idx + 1}</td>
-                                <td className="border-r border-black/70 font-mono p-0.5 font-semibold">{row.studentCode}</td>
-                                <td className="border-r border-black/70 text-left px-1.5 p-0.5 truncate max-w-[180px]">
-                                  {row.studentName}
-                                </td>
-                                <td className="border-r border-black/70 font-mono p-0.5">{row.vasa || '-'}</td>
-                                <td className="border-r border-black/70 p-0.5">
-                                  {row.groupNumber || (selectedGroup !== 'ALL' ? selectedGroup : '')}
-                                </td>
-                                <td className="border-r border-black/70 p-0.5 text-center">
-                                  {row.p1 === 'PRESENT' ? '✓' : row.p1 === 'ABSENT' ? 'ขาด' : ''}
-                                </td>
-                                <td className="border-r border-black/70 p-0.5 text-center">
-                                  {row.p2 === 'PRESENT' ? '✓' : row.p2 === 'ABSENT' ? 'ขาด' : ''}
-                                </td>
-                                <td className="border-r border-black/70 p-0.5 text-center">
-                                  {row.p3 === 'PRESENT' ? '✓' : row.p3 === 'ABSENT' ? 'ขาด' : ''}
-                                </td>
-                                <td className="border-r border-black/70 p-0.5 text-center">
-                                  {row.p4 === 'PRESENT' ? '✓' : row.p4 === 'ABSENT' ? 'ขาด' : ''}
-                                </td>
-                                <td className="p-0.5 text-left text-[9px] px-1 truncate">{row.remark || ''}</td>
-                              </tr>
-                            ))}
-                      </tbody>
-                    </table>
-
-                    {/* Footer */}
-                    <div className="pt-2 space-y-4 text-xs">
-                      <div>
-                        หมายเหตุ .......................................................................................................................................................................................
-                      </div>
-
-                      <div className="text-center pt-2 space-y-2">
-                        <div className="font-bold">รับรองตามนี้</div>
-                        <div className="text-[11px]">
-                          ......................................................... ผู้ดูแลกลุ่ม ......... / ............ / ..........
-                        </div>
-                      </div>
-
-                      {/* Footnote Rules */}
-                      <div className="pt-4 border-t border-black/40 text-[9.5px] space-y-1">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-0.5">
-                            <div>• Please sign–in during the scheduled times above. Or you will not get credit for your ATTANDANCE !</div>
-                            <div>• In order to get one full-day credit, you must sign in for 4 periods which can be done in different days.</div>
-                          </div>
-                          <span className="font-mono font-bold text-xs">1</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* ================= THAI PROGRAM FORM ================= */
-                  <div className="space-y-4">
-                    {/* Header */}
-                    <div className="text-center space-y-1">
-                      <h2 className="text-sm sm:text-base font-bold tracking-tight">
-                        บัญชีเช็คชื่อและเวลาปฏิบัติวิปัสสนากัมมัฏฐาน แต่ละวัน
-                      </h2>
-                      <h3 className="text-xs sm:text-sm font-semibold">
-                        นิสิตคณะพุทธศาสตร์ ชั้นปีที่ 1 - 4 ปีการศึกษา 2568 (บรรพชิต)
-                      </h3>
-                      <p className="text-xs">ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม</p>
-                      <p className="text-xs pt-1">
-                        วัน ........................... ที่ &nbsp; &nbsp;{selectedDayNumber ? 10 + selectedDayNumber : '..........'}&nbsp; &nbsp; เดือน ธันวาคม พ.ศ. 2568
-                      </p>
-                    </div>
-
-                    {/* Subhead: Group and Big Number Watermark */}
-                    <div className="flex items-center justify-between border-b-2 border-black pb-1">
-                      <div className="text-base font-bold font-sans">
-                        กลุ่มที่ : {selectedGroup !== 'ALL' ? selectedGroup : '3'}
-                      </div>
-                      <div className="text-2xl font-black font-sans px-2 border border-black rounded">
-                        {selectedGroup !== 'ALL' ? selectedGroup : '3'}
-                      </div>
-                    </div>
-
-                    {/* Table */}
-                    <table className="w-full border-collapse border border-black text-center text-[10.5px]">
-                      <thead>
-                        <tr className="border-b border-black">
-                          <th rowSpan={2} className="border-r border-black p-1 w-8">ที่</th>
-                          <th rowSpan={2} className="border-r border-black p-1 w-16">รหัส</th>
-                          <th rowSpan={2} className="border-r border-black p-1 text-left min-w-[150px]">ชื่อ ฉายา/นามสกุล</th>
-                          <th rowSpan={2} className="border-r border-black p-1 w-10">
-                            <span className="block transform -rotate-90">กลุ่ม</span>
-                          </th>
-                          <th colSpan={4} className="border-r border-black p-1 font-bold">
-                            ลงชื่อ / ในแต่ละช่วงเวลา
-                          </th>
-                          <th rowSpan={2} className="p-1 w-16">
-                            หมายเหตุ
-                          </th>
-                        </tr>
-                        <tr className="border-b border-black text-[9.5px]">
-                          <th className="border-r border-black p-1 w-20">
-                            <div>ภาคเช้ามืด</div>
-                            <div className="font-mono text-[8.5px]">04.00-04.30</div>
-                          </th>
-                          <th className="border-r border-black p-1 w-20">
-                            <div>ภาคเช้า</div>
-                            <div className="font-mono text-[8.5px]">08.00-08.30</div>
-                          </th>
-                          <th className="border-r border-black p-1 w-20">
-                            <div>ภาคบ่าย</div>
-                            <div className="font-mono text-[8.5px]">12.30-13.00</div>
-                          </th>
-                          <th className="border-r border-black p-1 w-20">
-                            <div>ภาคค่ำ</div>
-                            <div className="font-mono text-[8.5px]">17.30-18.00</div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {printBlankRows
-                          ? Array.from({ length: 22 }, (_, idx) => (
-                              <tr key={idx} className="border-b border-black/70 h-7">
-                                <td className="border-r border-black/70 font-mono text-[9.5px]">{idx + 1}</td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70">{selectedGroup !== 'ALL' ? selectedGroup : ''}</td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70"></td>
-                                <td className="border-r border-black/70"></td>
-                                <td></td>
-                              </tr>
-                            ))
-                          : attendanceRows.map((row, idx) => (
-                              <tr key={idx} className="border-b border-black/70 h-6.5 text-[10px]">
-                                <td className="border-r border-black/70 font-mono text-[9.5px] p-0.5">{idx + 1}</td>
-                                <td className="border-r border-black/70 font-mono p-0.5 font-semibold">{row.studentCode}</td>
-                                <td className="border-r border-black/70 text-left px-1.5 p-0.5 truncate max-w-[180px]">
-                                  {row.studentName}
-                                </td>
-                                <td className="border-r border-black/70 p-0.5">
-                                  {row.groupNumber || (selectedGroup !== 'ALL' ? selectedGroup : '')}
-                                </td>
-                                <td className="border-r border-black/70 p-0.5 text-center">
-                                  {row.p1 === 'PRESENT' ? '✓' : row.p1 === 'ABSENT' ? 'ขาด' : ''}
-                                </td>
-                                <td className="border-r border-black/70 p-0.5 text-center">
-                                  {row.p2 === 'PRESENT' ? '✓' : row.p2 === 'ABSENT' ? 'ขาด' : ''}
-                                </td>
-                                <td className="border-r border-black/70 p-0.5 text-center">
-                                  {row.p3 === 'PRESENT' ? '✓' : row.p3 === 'ABSENT' ? 'ขาด' : ''}
-                                </td>
-                                <td className="border-r border-black/70 p-0.5 text-center">
-                                  {row.p4 === 'PRESENT' ? '✓' : row.p4 === 'ABSENT' ? 'ขาด' : ''}
-                                </td>
-                                <td className="p-0.5 text-left text-[9px] px-1 truncate">{row.remark || ''}</td>
-                              </tr>
-                            ))}
-                      </tbody>
-                    </table>
-
-                    {/* Footer */}
-                    <div className="pt-2 space-y-4 text-xs">
-                      <div>
-                        บันทึก.........................................................................................................................................................................................
-                      </div>
-
-                      <div className="text-center pt-2 space-y-2">
-                        <div className="font-bold">รับรองตามนี้</div>
-                        <div className="text-[11px]">
-                          ................................................................./........................................................................... อาจารย์ประจำกลุ่ม กลุ่มที่ : {selectedGroup !== 'ALL' ? selectedGroup : '3'}
-                        </div>
-                      </div>
-
-                      {/* Footnote Rules */}
-                      <div className="pt-4 border-t border-black/40 text-[9.5px] space-y-1">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-0.5">
-                            <div>• นิสิตจะต้องลงชื่อตามช่วงเวลาที่กำหนดให้ข้างต้นนี้ หากไม่ลงชื่อตามช่วงเวลาที่กำหนด ถือว่าขาดในช่วงระยะเวลานั้น ๆ</div>
-                            <div>• หากขาด ๔ ช่วงเวลา เท่ากับว่าขาด ๑ วัน และถือว่าไม่ผ่านการปฏิบัติ</div>
-                          </div>
-                          <span className="font-mono font-bold text-xs">1</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            /* VIEW 2: OFFICIAL PRINTABLE A4 FORM */
+            <VipassanaAttendancePrintSheet
+              activeProgram={activeProgram}
+              selectedDayNumber={selectedDayNumber}
+              selectedGroup={selectedGroup}
+              p1Conf={p1Conf}
+              p2Conf={p2Conf}
+              p3Conf={p3Conf}
+              p4Conf={p4Conf}
+              printBlankRows={printBlankRows}
+              attendanceRows={attendanceRows}
+            />
           )}
         </div>
 
@@ -1005,6 +1222,29 @@ export function VipassanaAttendanceSheetModal({
         </div>
 
       </div>
+
+      {/* Badges Modal */}
+      {isBadgesModalOpen && (
+        <VipassanaBadgesModal
+          isOpen={isBadgesModalOpen}
+          onClose={() => setIsBadgesModalOpen(false)}
+          event={event}
+          registrations={registrations}
+        />
+      )}
+
+      {/* Live Scanner Modal */}
+      {isLiveScannerOpen && (
+        <VipassanaLiveScannerModal
+          isOpen={isLiveScannerOpen}
+          onClose={() => setIsLiveScannerOpen(false)}
+          event={event}
+          registrations={registrations}
+          onCheckInRecorded={() => {
+            if (onAttendanceSaved) onAttendanceSaved();
+          }}
+        />
+      )}
     </div>
   );
 }

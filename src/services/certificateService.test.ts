@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { CertificateRequest } from '@/types';
 import * as certificateService from './certificateService';
 import * as storageHelper from './storageHelper';
 
@@ -22,7 +23,7 @@ describe('certificateService', () => {
   });
 
   it('creates new certificate request with unique ID and timestamp', async () => {
-    const existingList: any[] = [];
+    const existingList: CertificateRequest[] = [];
     vi.mocked(storageHelper.readLocalJson).mockReturnValue(existingList);
 
     const newReq = await certificateService.createCertificateRequest({

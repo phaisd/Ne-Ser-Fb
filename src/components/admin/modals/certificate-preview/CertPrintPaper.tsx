@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CertificateRequest, SystemSettings } from '@/types';
+import { CertificateRequest, SystemSettings, AuthUser } from '@/types';
 import { CertTemplateType } from './types';
 
 interface CertPrintPaperProps {
@@ -42,7 +42,7 @@ interface CertPrintPaperProps {
   previewAge: string;
   previewVassa: string;
   settings: SystemSettings;
-  currentUser: any;
+  currentUser?: AuthUser | null;
   fmtNum: (val: string | number | undefined | null, isThai?: boolean) => string;
   sanitizeName: (name?: string) => string;
 }

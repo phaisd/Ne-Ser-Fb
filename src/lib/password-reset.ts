@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import type { Student } from '@/types';
 import { readLocalJson, writeLocalJson } from '@/services/storageHelper';
 import { getInstructorAccounts, updateInstructorPassword } from '@/services/instructorService';
 import { getStudents, updateStudentPassword } from '@/services/studentService';
@@ -101,7 +102,7 @@ export async function requestPasswordReset(
   } else {
     // Check students
     const students = await getStudents();
-    const student = students.find((s: any) =>
+    const student = students.find((s: Student) =>
       s.studentCode?.toLowerCase() === cleanId ||
       s.email?.toLowerCase() === cleanId
     );

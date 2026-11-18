@@ -237,8 +237,34 @@ export async function scanTimetableInstructors() {
 
   const existingEmails = new Set(existingInstructors.map((i) => i.email.toLowerCase()));
 
-  const alreadyExisting: any[] = [];
-  const candidates: any[] = [];
+  interface ExistingInstructorMatch {
+    rawName: string;
+    accountId: string;
+    accountName: string;
+    accountNameEn?: string;
+    accountEmail: string;
+    courseCount: number;
+  }
+
+  interface InstructorCandidate {
+    rawName: string;
+    name: string;
+    nameEn: string;
+    email: string;
+    password?: string;
+    defaultPassword?: string;
+    department?: string;
+    instructorType?: string;
+    role?: string;
+    coursesCount: number;
+    courses: unknown[];
+    aliases?: string[];
+    selected?: boolean;
+    similarTo?: { id: string; name: string; nameEn?: string; email?: string } | null;
+  }
+
+  const alreadyExisting: ExistingInstructorMatch[] = [];
+  const candidates: InstructorCandidate[] = [];
 
   for (const [rawName, courses] of nameToCourses.entries()) {
     const rawLower = rawName.toLowerCase();
@@ -290,7 +316,7 @@ export async function scanTimetableInstructors() {
       }
       existingEmails.add(email.toLowerCase());
 
-      let similarTo: any = null;
+      let similarTo: { id: string; name: string; nameEn?: string; email?: string } | null = null;
       for (const ex of existingInstructors) {
         const exName = ex.name.toLowerCase();
         const exEn = (ex.nameEn || '').toLowerCase();

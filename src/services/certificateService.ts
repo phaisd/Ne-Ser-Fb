@@ -1,5 +1,6 @@
-﻿import { CertificateRequest, CertRequestStatus } from '@/types';
+﻿import { CertificateRequest, CertRequestStatus, AcademicYearArchive } from '@/types';
 import { getErrorMessage } from '@/lib/utils/error';
+import { toBuddhistYear } from '@/lib/utils/formatters';
 import { readLocalJson, writeLocalJson, getSheetsClient } from './storageHelper';
 import { getStudents } from './studentService';
 import {
@@ -722,23 +723,6 @@ export async function getRetentionSummary() {
   };
 }
 
-export interface AcademicYearArchive {
-  academicYear: string;
-  archivedAt: string;
-  totalRequests: number;
-  approvedCount: number;
-  rejectedCount: number;
-  pendingCount: number;
-  thaiStudentCount: number;
-  foreignStudentCount: number;
-  degreeSummary: {
-    bachelor: number;
-    master: number;
-    doctoral: number;
-  };
-  purposeSummary: Record<string, number>;
-}
-
 export async function getAcademicYearArchives(): Promise<AcademicYearArchive[]> {
   return readLocalJson<AcademicYearArchive[]>('academic_archives.json', []);
 }
@@ -746,7 +730,7 @@ export async function getAcademicYearArchives(): Promise<AcademicYearArchive[]> 
 export async function archiveAcademicYear(year: string): Promise<AcademicYearArchive> {
   const certs = await getCertificateRequests();
   const matching = certs.filter((c) => {
-    const createdYear = new Date(c.createdAt).getFullYear() + 543;
+    const createdYear = toBuddhistYear(c.createdAt);
     const itemWithYear = c as CertificateRequest & { academicYear?: string };
     return String(createdYear) === String(year) || itemWithYear.academicYear === String(year) || year === '2569';
   });

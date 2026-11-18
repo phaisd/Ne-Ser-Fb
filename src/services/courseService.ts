@@ -267,7 +267,7 @@ export async function updateCourse(
         return;
       }
       if (Array.isArray(tt.scheduleData)) {
-        tt.scheduleData.forEach((s: any) => {
+        tt.scheduleData.forEach((s: { courseCode?: string; courseName?: string; instructor?: string; room?: string; dayOfWeek?: number | string; startTime?: string; endTime?: string }) => {
           const sNorm = norm(s.courseCode);
           const isCodeMatch = sNorm === curNorm || sNorm === updNorm;
           const isNameMatch =
@@ -392,7 +392,7 @@ export async function deleteCourse(idOrCode: string): Promise<boolean> {
     timetables.forEach((tt) => {
       if (Array.isArray(tt.scheduleData)) {
         const prevLen = tt.scheduleData.length;
-        tt.scheduleData = tt.scheduleData.filter((s: any) => s.courseCode !== targetCode && s.id !== targetId);
+        tt.scheduleData = tt.scheduleData.filter((s: { courseCode?: string; id?: string }) => s.courseCode !== targetCode && s.id !== targetId);
         if (tt.scheduleData.length !== prevLen) {
           ttChanged = true;
           tt.updatedAt = new Date().toISOString();

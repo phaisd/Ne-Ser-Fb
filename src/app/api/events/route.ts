@@ -91,6 +91,44 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: 'บันทึกเวลาปฏิบัติวิปัสสนากัมมัฏฐาน 4 รอบเรียบร้อยแล้ว' });
     }
 
+    // Realtime Vipassana Scan Check-in
+    if (action === 'vipassana_scan_checkin') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, studentCodeOrId, dayKey, periodKey, status, checkInTime } = body;
+      if (!eventId || !studentCodeOrId || !dayKey || !periodKey) {
+        return NextResponse.json(
+          { success: false, error: 'ข้อมูลไม่ครบถ้วน (ต้องการ eventId, studentCodeOrId, dayKey, periodKey)' },
+          { status: 400 }
+        );
+      }
+
+      const { recordVipassanaScanCheckin } = await import('@/services');
+      const result = await recordVipassanaScanCheckin({
+        eventId,
+        studentCodeOrId,
+        dayKey,
+        periodKey,
+        status: status || 'PRESENT',
+        checkInTime,
+        recordedBy: staffAuth.user?.name || staffAuth.user?.email || 'STAFF_SCANNER',
+      });
+
+      if (!result.success) {
+        return NextResponse.json({ success: false, error: result.error }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        isAlreadyCheckedIn: result.isAlreadyCheckedIn,
+        registration: result.registration,
+        message: result.isAlreadyCheckedIn
+          ? `นิสิต ${result.registration?.studentName} เช็คชื่อรอบนี้ไปแล้ว (${result.registration?.dailyAttendance?.[dayKey]?.[periodKey]?.checkInTime || ''})`
+          : `เช็คชื่อสำเร็จ: ${result.registration?.studentName} (รอบ ${periodKey})`,
+      });
+    }
+
     // Batch import grouped participants into an event
     if (action === 'batch_import_registrations') {
       const staffAuth = requireStaffOrInstructor(request);
@@ -116,6 +154,82 @@ export async function POST(request: Request) {
         message: `นำเข้าผู้เข้าร่วมกิจกรรมสำเร็จ ${result.importedCount} คน${
           result.skippedCount > 0 ? ` (ข้ามรายการซ้ำ/ไม่สมบูรณ์ ${result.skippedCount} รายการ)` : ''
         }`,
+      });
+    }
+
+    // Save Vipassana Interview (สติปัฏฐาน 4) evaluation results
+    if (action === 'save_vipassana_interview') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, sessionNumber, sessionDate, meditationMasterName, entries } = body;
+      if (!eventId || !sessionNumber || !Array.isArray(entries)) {
+        return NextResponse.json(
+          { success: false, error: 'ข้อมูลการสอบอารมณ์ไม่ครบถ้วน' },
+          { status: 400 }
+        );
+      }
+
+      const { saveVipassanaInterview } = await import('@/services');
+      const result = await saveVipassanaInterview({
+        eventId,
+        sessionNumber,
+        sessionDate,
+        meditationMasterName,
+        entries,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `บันทึกผลสอบอารมณ์ครั้งที่ ${sessionNumber} สำเร็จ (${result.updatedCount} รูป/คน)`,
+      });
+    }
+
+    // Batch Sync Offline Scans from Live Scanner
+    if (action === 'vipassana_batch_offline_sync') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, items } = body;
+      if (!eventId || !Array.isArray(items)) {
+        return NextResponse.json({ success: false, error: 'ข้อมูลไม่ถูกต้อง' }, { status: 400 });
+      }
+
+      const { batchVipassanaOfflineSync } = await import('@/services');
+      const result = await batchVipassanaOfflineSync(eventId, items);
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `ซิงค์ข้อมูลออฟไลน์สำเร็จ ${result.syncedCount} รายการ`,
+      });
+    }
+
+    // Batch Approve & Issue Digital Certificates
+    if (action === 'batch_approve_and_issue_certificates') {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
+      const { eventId, registrationIds, docNoPrefix, issueDateTh, issueDateEn, signerNameTh, signerTitleTh } = body;
+      if (!eventId || !Array.isArray(registrationIds) || registrationIds.length === 0) {
+        return NextResponse.json({ success: false, error: 'กรุณาเลือกนิสิตอย่างน้อย 1 รายการ' }, { status: 400 });
+      }
+
+      const { batchApproveAndIssueVipassanaCertificates } = await import('@/services');
+      const result = await batchApproveAndIssueVipassanaCertificates({
+        eventId,
+        registrationIds,
+        docNoPrefix,
+        issueDateTh,
+        issueDateEn,
+        signerNameTh,
+        signerTitleTh,
+      });
+
+      return NextResponse.json({
+        success: result.success,
+        data: result,
+        message: `อนุมัติและออกวุฒิบัตรสำเร็จ ${result.issuedCount} รายการ`,
       });
     }
 

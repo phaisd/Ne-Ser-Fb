@@ -119,9 +119,10 @@ export default function AutoLogoutManager() {
 
     // Listen to login/logout/setting change events
     const checkUser = () => checkLoginState();
-    const handleSettingChange = (e: any) => {
-      if (e?.detail !== undefined) {
-        setTimeoutMinutes(e.detail);
+    const handleSettingChange = (e: Event) => {
+      const customEvt = e as CustomEvent<number>;
+      if (customEvt?.detail !== undefined) {
+        setTimeoutMinutes(customEvt.detail);
       } else {
         loadTimeoutPreference();
       }

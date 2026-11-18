@@ -18,10 +18,19 @@ import {
   UserPlus,
   Lock,
 } from 'lucide-react';
-import { Student, TimetableItem } from '@/types';
+import { Student, TimetableItem, AuthUser } from '@/types';
+import type { MajorSectionGroup, SemesterSessionItem } from '@/lib/attendance/workspaceHelpers';
+
+export type AttendanceMode =
+  | 'ROLL_CALL'
+  | 'ROADMAP'
+  | 'QR_CODE'
+  | 'ELIGIBILITY'
+  | 'GRADE_SHEET'
+  | 'HISTORY';
 
 interface RollCallTabProps {
-  currentUser: any;
+  currentUser?: AuthUser | null;
   currentCourse: TimetableItem | undefined;
   availableCourses: TimetableItem[];
   selectedCourseCode: string;
@@ -61,11 +70,11 @@ interface RollCallTabProps {
   setShowSessionModal: (val: boolean) => void;
   semesterTotalSessions: number;
   completedSessionsCount: number;
-  nextUpcomingSession: any;
-  handleFastOpenSession: (sess: any) => void;
-  setActiveMode: (mode: any) => void;
+  nextUpcomingSession?: SemesterSessionItem | null;
+  handleFastOpenSession: (sess: SemesterSessionItem) => void;
+  setActiveMode: (mode: AttendanceMode) => void;
   targetStudents: Student[];
-  groupedTargetSections: any[];
+  groupedTargetSections: MajorSectionGroup[];
   attendanceMap: Record<string, 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE'>;
   handleStatusChange: (code: string, status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE') => void;
   setAllStatus: (status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE') => void;
