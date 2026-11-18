@@ -19,6 +19,7 @@ import {
   BookOpen,
   Camera,
   Timer,
+  Pencil,
 } from 'lucide-react';
 import { StudentEvent, EventRegistration } from '@/types';
 import { VipassanaBadgesModal } from './VipassanaBadgesModal';
@@ -469,7 +470,7 @@ export function VipassanaAttendanceSheetModal({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
             {/* View Switcher: Interactive vs Print */}
             <div className="flex items-center p-1 bg-slate-100 rounded-xl text-xs font-bold border border-slate-200/80">
               <button
@@ -497,6 +498,24 @@ export function VipassanaAttendanceSheetModal({
                 <span>แบบฟอร์ม A4 พิมพ์</span>
               </button>
             </div>
+
+            {/* Prominent Header 4-Periods Edit Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('INTERACTIVE');
+                setIsEditingPeriods((v) => !v);
+              }}
+              className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs ${
+                isEditingPeriods
+                  ? 'bg-purple-700 text-white border-purple-700'
+                  : 'border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900'
+              }`}
+              title="คลิกเพื่อแก้ไขช่วงเวลาทั้ง 4 รอบ (เช้ามืด, เช้า, บ่าย, ค่ำ)"
+            >
+              <Clock className="w-3.5 h-3.5 text-purple-600" />
+              <span>{isEditingPeriods ? '✖ ปิดกล่องแก้ไข' : '⚙️ แก้ไขช่วงเวลา 4 รอบ'}</span>
+            </button>
 
             <button
               type="button"
@@ -872,6 +891,34 @@ export function VipassanaAttendanceSheetModal({
                 </div>
               )}
 
+              {/* Stat Summary Cards Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-gradient-to-r from-purple-50 via-indigo-50 to-amber-50 border border-purple-200 rounded-2xl">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 bg-purple-100 text-purple-700 rounded-lg">
+                    <Clock className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <div className="font-extrabold text-xs text-purple-950 flex items-center gap-1.5">
+                      <span>ช่วงเวลาปฏิบัติธรรม 4 รอบต่อวัน</span>
+                      <span className="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-bold">
+                        กำหนดเวลา 4 ภาค
+                      </span>
+                    </div>
+                    <div className="text-[10.5px] text-purple-800 mt-0.5 font-medium">
+                      1. เช้ามืด ({p1Conf.time}) • 2. เช้า ({p2Conf.time}) • 3. บ่าย ({p3Conf.time}) • 4. ค่ำ ({p4Conf.time})
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingPeriods((v) => !v)}
+                  className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>{isEditingPeriods ? '✖ ปิดกล่องแก้ไข' : '⚙️ แก้ไขช่วงเวลา 4 รอบ'}</span>
+                </button>
+              </div>
+
               {/* Stat Summary Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700">
@@ -879,18 +926,20 @@ export function VipassanaAttendanceSheetModal({
                   <div className="text-base font-extrabold text-slate-900 font-mono">{stats.total} รูป/คน</div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900">
-                  <div className="text-[10px] flex items-center justify-between">
-                    <span
+                  <div className="text-[10px] flex items-center justify-between gap-1 mb-1">
+                    <button
+                      type="button"
                       onClick={() => setIsEditingPeriods(true)}
-                      className="cursor-pointer hover:underline"
-                      title="คลิกเพื่อแก้ไขช่วงเวลา"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white border border-amber-300 text-amber-950 font-bold hover:bg-amber-100 cursor-pointer transition text-[10px]"
+                      title="คลิกเพื่อแก้ไขช่วงเวลาภาคเช้ามืด"
                     >
-                      1. {p1Conf.nameTh.replace('ภาค', '')} ({p1Conf.time})
-                    </span>
+                      <Pencil className="w-2.5 h-2.5 text-amber-700" />
+                      <span>1. เช้ามืด ({p1Conf.time})</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleMarkAllPeriodPresent('p1')}
-                      className="text-[9px] text-amber-700 hover:underline cursor-pointer font-bold"
+                      className="text-[9px] text-amber-700 hover:underline cursor-pointer font-bold shrink-0"
                     >
                       [มาครบ]
                     </button>
@@ -898,18 +947,20 @@ export function VipassanaAttendanceSheetModal({
                   <div className="text-base font-extrabold font-mono">{stats.p1Present} / {stats.total}</div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900">
-                  <div className="text-[10px] flex items-center justify-between">
-                    <span
+                  <div className="text-[10px] flex items-center justify-between gap-1 mb-1">
+                    <button
+                      type="button"
                       onClick={() => setIsEditingPeriods(true)}
-                      className="cursor-pointer hover:underline"
-                      title="คลิกเพื่อแก้ไขช่วงเวลา"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white border border-blue-300 text-blue-950 font-bold hover:bg-blue-100 cursor-pointer transition text-[10px]"
+                      title="คลิกเพื่อแก้ไขช่วงเวลาภาคเช้า"
                     >
-                      2. {p2Conf.nameTh.replace('ภาค', '')} ({p2Conf.time})
-                    </span>
+                      <Pencil className="w-2.5 h-2.5 text-blue-700" />
+                      <span>2. เช้า ({p2Conf.time})</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleMarkAllPeriodPresent('p2')}
-                      className="text-[9px] text-blue-700 hover:underline cursor-pointer font-bold"
+                      className="text-[9px] text-blue-700 hover:underline cursor-pointer font-bold shrink-0"
                     >
                       [มาครบ]
                     </button>
@@ -917,18 +968,20 @@ export function VipassanaAttendanceSheetModal({
                   <div className="text-base font-extrabold font-mono">{stats.p2Present} / {stats.total}</div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-emerald-900">
-                  <div className="text-[10px] flex items-center justify-between">
-                    <span
+                  <div className="text-[10px] flex items-center justify-between gap-1 mb-1">
+                    <button
+                      type="button"
                       onClick={() => setIsEditingPeriods(true)}
-                      className="cursor-pointer hover:underline"
-                      title="คลิกเพื่อแก้ไขช่วงเวลา"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white border border-emerald-300 text-emerald-950 font-bold hover:bg-emerald-100 cursor-pointer transition text-[10px]"
+                      title="คลิกเพื่อแก้ไขช่วงเวลาภาคบ่าย"
                     >
-                      3. {p3Conf.nameTh.replace('ภาค', '')} ({p3Conf.time})
-                    </span>
+                      <Pencil className="w-2.5 h-2.5 text-emerald-700" />
+                      <span>3. บ่าย ({p3Conf.time})</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleMarkAllPeriodPresent('p3')}
-                      className="text-[9px] text-emerald-700 hover:underline cursor-pointer font-bold"
+                      className="text-[9px] text-emerald-700 hover:underline cursor-pointer font-bold shrink-0"
                     >
                       [มาครบ]
                     </button>
@@ -936,18 +989,20 @@ export function VipassanaAttendanceSheetModal({
                   <div className="text-base font-extrabold font-mono">{stats.p3Present} / {stats.total}</div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200 text-purple-900">
-                  <div className="text-[10px] flex items-center justify-between">
-                    <span
+                  <div className="text-[10px] flex items-center justify-between gap-1 mb-1">
+                    <button
+                      type="button"
                       onClick={() => setIsEditingPeriods(true)}
-                      className="cursor-pointer hover:underline"
-                      title="คลิกเพื่อแก้ไขช่วงเวลา"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white border border-purple-300 text-purple-950 font-bold hover:bg-purple-100 cursor-pointer transition text-[10px]"
+                      title="คลิกเพื่อแก้ไขช่วงเวลาภาคค่ำ"
                     >
-                      4. {p4Conf.nameTh.replace('ภาค', '')} ({p4Conf.time})
-                    </span>
+                      <Pencil className="w-2.5 h-2.5 text-purple-700" />
+                      <span>4. ค่ำ ({p4Conf.time})</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleMarkAllPeriodPresent('p4')}
-                      className="text-[9px] text-purple-700 hover:underline cursor-pointer font-bold"
+                      className="text-[9px] text-purple-700 hover:underline cursor-pointer font-bold shrink-0"
                     >
                       [มาครบ]
                     </button>
@@ -1001,43 +1056,51 @@ export function VipassanaAttendanceSheetModal({
                         <th className="py-2.5 px-2 font-bold text-center w-16">กลุ่ม</th>
                         <th className="py-2.5 px-2 font-bold text-center bg-amber-50/70 border-l border-r border-amber-200">
                           <div>{p1Conf.nameTh}</div>
-                          <div
+                          <button
+                            type="button"
                             onClick={() => setIsEditingPeriods(true)}
-                            className="text-[9.5px] font-mono text-slate-500 font-normal cursor-pointer hover:underline hover:text-amber-700"
-                            title="คลิกเพื่อแก้ไขช่วงเวลา"
+                            className="mt-0.5 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-white/80 border border-amber-300 text-[9.5px] font-mono text-amber-950 font-bold cursor-pointer hover:bg-amber-100 transition shadow-2xs"
+                            title="คลิกเพื่อแก้ไขช่วงเวลานี้"
                           >
-                            {p1Conf.time}
-                          </div>
+                            <Pencil className="w-2.5 h-2.5 text-amber-700" />
+                            <span>{p1Conf.time}</span>
+                          </button>
                         </th>
                         <th className="py-2.5 px-2 font-bold text-center bg-blue-50/70 border-r border-blue-200">
                           <div>{p2Conf.nameTh}</div>
-                          <div
+                          <button
+                            type="button"
                             onClick={() => setIsEditingPeriods(true)}
-                            className="text-[9.5px] font-mono text-slate-500 font-normal cursor-pointer hover:underline hover:text-blue-700"
-                            title="คลิกเพื่อแก้ไขช่วงเวลา"
+                            className="mt-0.5 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-white/80 border border-blue-300 text-[9.5px] font-mono text-blue-950 font-bold cursor-pointer hover:bg-blue-100 transition shadow-2xs"
+                            title="คลิกเพื่อแก้ไขช่วงเวลานี้"
                           >
-                            {p2Conf.time}
-                          </div>
+                            <Pencil className="w-2.5 h-2.5 text-blue-700" />
+                            <span>{p2Conf.time}</span>
+                          </button>
                         </th>
                         <th className="py-2.5 px-2 font-bold text-center bg-emerald-50/70 border-r border-emerald-200">
                           <div>{p3Conf.nameTh}</div>
-                          <div
+                          <button
+                            type="button"
                             onClick={() => setIsEditingPeriods(true)}
-                            className="text-[9.5px] font-mono text-slate-500 font-normal cursor-pointer hover:underline hover:text-emerald-700"
-                            title="คลิกเพื่อแก้ไขช่วงเวลา"
+                            className="mt-0.5 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-white/80 border border-emerald-300 text-[9.5px] font-mono text-emerald-950 font-bold cursor-pointer hover:bg-emerald-100 transition shadow-2xs"
+                            title="คลิกเพื่อแก้ไขช่วงเวลานี้"
                           >
-                            {p3Conf.time}
-                          </div>
+                            <Pencil className="w-2.5 h-2.5 text-emerald-700" />
+                            <span>{p3Conf.time}</span>
+                          </button>
                         </th>
                         <th className="py-2.5 px-2 font-bold text-center bg-purple-50/70 border-r border-purple-200">
                           <div>{p4Conf.nameTh}</div>
-                          <div
+                          <button
+                            type="button"
                             onClick={() => setIsEditingPeriods(true)}
-                            className="text-[9.5px] font-mono text-slate-500 font-normal cursor-pointer hover:underline hover:text-purple-700"
-                            title="คลิกเพื่อแก้ไขช่วงเวลา"
+                            className="mt-0.5 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-white/80 border border-purple-300 text-[9.5px] font-mono text-purple-950 font-bold cursor-pointer hover:bg-purple-100 transition shadow-2xs"
+                            title="คลิกเพื่อแก้ไขช่วงเวลานี้"
                           >
-                            {p4Conf.time}
-                          </div>
+                            <Pencil className="w-2.5 h-2.5 text-purple-700" />
+                            <span>{p4Conf.time}</span>
+                          </button>
                         </th>
                         <th className="py-2.5 px-3 font-bold min-w-[120px]">หมายเหตุ</th>
                       </tr>

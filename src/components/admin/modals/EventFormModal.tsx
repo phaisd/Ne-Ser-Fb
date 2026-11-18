@@ -268,105 +268,111 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                   </div>
                 </div>
 
-                {/* 4 Periods Time Range Configuration for Meditation Events */}
-                {(eventForm.durationFormat === 'LONG_TERM_MEDITATION' || eventForm.eventType === 'MEDITATION') && (
-                  <div className="p-3.5 bg-purple-50/70 rounded-2xl border border-purple-200 space-y-2 text-xs">
+                {/* 4 Periods Time Range Configuration */}
+                <div className="p-3.5 bg-gradient-to-r from-purple-50/90 to-indigo-50/70 rounded-2xl border border-purple-200/80 shadow-xs space-y-2 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <div className="font-bold text-purple-950 flex items-center gap-1.5">
                       <Clock className="w-4 h-4 text-purple-700" />
-                      <span>กำหนดช่วงเวลาปฏิบัติธรรม 4 รอบต่อวัน (เช่น 04.00-04.30):</span>
+                      <span>กำหนดช่วงเวลาปฏิบัติธรรม 4 รอบต่อวัน:</span>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <div>
-                        <label className="text-[10px] text-slate-600 block">1. ภาคเช้ามืด:</label>
-                        <input
-                          type="text"
-                          value={eventForm.meditationConfig?.periods?.[0]?.time || '04.00-04.30'}
-                          onChange={(e) => {
-                            const curPeriods = eventForm.meditationConfig?.periods || [
-                              { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
-                              { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
-                              { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
-                              { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
-                            ];
-                            const updated = [...curPeriods];
-                            updated[0] = { ...updated[0], time: e.target.value };
-                            setEventForm({
-                              ...eventForm,
-                              meditationConfig: { ...(eventForm.meditationConfig || {}), periods: updated },
-                            });
-                          }}
-                          className="w-full px-2 py-1 rounded-lg border border-purple-300 bg-white font-mono text-[11px] font-bold text-purple-950"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-600 block">2. ภาคเช้า:</label>
-                        <input
-                          type="text"
-                          value={eventForm.meditationConfig?.periods?.[1]?.time || '08.00-08.30'}
-                          onChange={(e) => {
-                            const curPeriods = eventForm.meditationConfig?.periods || [
-                              { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
-                              { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
-                              { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
-                              { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
-                            ];
-                            const updated = [...curPeriods];
-                            updated[1] = { ...updated[1], time: e.target.value };
-                            setEventForm({
-                              ...eventForm,
-                              meditationConfig: { ...(eventForm.meditationConfig || {}), periods: updated },
-                            });
-                          }}
-                          className="w-full px-2 py-1 rounded-lg border border-purple-300 bg-white font-mono text-[11px] font-bold text-purple-950"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-600 block">3. ภาคบ่าย:</label>
-                        <input
-                          type="text"
-                          value={eventForm.meditationConfig?.periods?.[2]?.time || '12.30-13.00'}
-                          onChange={(e) => {
-                            const curPeriods = eventForm.meditationConfig?.periods || [
-                              { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
-                              { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
-                              { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
-                              { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
-                            ];
-                            const updated = [...curPeriods];
-                            updated[2] = { ...updated[2], time: e.target.value };
-                            setEventForm({
-                              ...eventForm,
-                              meditationConfig: { ...(eventForm.meditationConfig || {}), periods: updated },
-                            });
-                          }}
-                          className="w-full px-2 py-1 rounded-lg border border-purple-300 bg-white font-mono text-[11px] font-bold text-purple-950"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-slate-600 block">4. ภาคค่ำ:</label>
-                        <input
-                          type="text"
-                          value={eventForm.meditationConfig?.periods?.[3]?.time || '17.30-18.00'}
-                          onChange={(e) => {
-                            const curPeriods = eventForm.meditationConfig?.periods || [
-                              { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
-                              { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
-                              { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
-                              { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
-                            ];
-                            const updated = [...curPeriods];
-                            updated[3] = { ...updated[3], time: e.target.value };
-                            setEventForm({
-                              ...eventForm,
-                              meditationConfig: { ...(eventForm.meditationConfig || {}), periods: updated },
-                            });
-                          }}
-                          className="w-full px-2 py-1 rounded-lg border border-purple-300 bg-white font-mono text-[11px] font-bold text-purple-950"
-                        />
-                      </div>
+                    <span className="text-[10px] text-purple-700 bg-purple-100/80 px-2 py-0.5 rounded-full font-medium">
+                      ใช้ในแบบฟอร์มบันทึกเวลา 4 รอบ & ใบพิมพ์ทางการ
+                    </span>
+                  </div>
+                  <p className="text-[10.5px] text-slate-500">
+                    กำหนดเวลาของแต่ละรอบ เช่น 04.00-04.30 สามารถปรับเปลี่ยนได้ตลอดเวลาที่นี่ หรือในหน้าบันทึกเวลา 4 รอบ
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-0.5">
+                    <div className="bg-white/80 p-1.5 rounded-xl border border-purple-100">
+                      <label className="text-[10px] font-semibold text-amber-800 block mb-1">1. ภาคเช้ามืด:</label>
+                      <input
+                        type="text"
+                        value={eventForm.meditationConfig?.periods?.[0]?.time || '04.00-04.30'}
+                        onChange={(e) => {
+                          const curPeriods = eventForm.meditationConfig?.periods || [
+                            { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
+                            { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
+                            { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
+                            { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
+                          ];
+                          const updated = [...curPeriods];
+                          updated[0] = { ...updated[0], time: e.target.value };
+                          setEventForm({
+                            ...eventForm,
+                            meditationConfig: { ...(eventForm.meditationConfig || {}), periods: updated },
+                          });
+                        }}
+                        className="w-full px-2 py-1 rounded-lg border border-purple-300 bg-white font-mono text-[11px] font-bold text-purple-950 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                      />
+                    </div>
+                    <div className="bg-white/80 p-1.5 rounded-xl border border-purple-100">
+                      <label className="text-[10px] font-semibold text-blue-800 block mb-1">2. ภาคเช้า:</label>
+                      <input
+                        type="text"
+                        value={eventForm.meditationConfig?.periods?.[1]?.time || '08.00-08.30'}
+                        onChange={(e) => {
+                          const curPeriods = eventForm.meditationConfig?.periods || [
+                            { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
+                            { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
+                            { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
+                            { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
+                          ];
+                          const updated = [...curPeriods];
+                          updated[1] = { ...updated[1], time: e.target.value };
+                          setEventForm({
+                            ...eventForm,
+                            meditationConfig: { ...(eventForm.meditationConfig || {}), periods: updated },
+                          });
+                        }}
+                        className="w-full px-2 py-1 rounded-lg border border-purple-300 bg-white font-mono text-[11px] font-bold text-purple-950 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                      />
+                    </div>
+                    <div className="bg-white/80 p-1.5 rounded-xl border border-purple-100">
+                      <label className="text-[10px] font-semibold text-emerald-800 block mb-1">3. ภาคบ่าย:</label>
+                      <input
+                        type="text"
+                        value={eventForm.meditationConfig?.periods?.[2]?.time || '12.30-13.00'}
+                        onChange={(e) => {
+                          const curPeriods = eventForm.meditationConfig?.periods || [
+                            { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
+                            { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
+                            { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
+                            { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
+                          ];
+                          const updated = [...curPeriods];
+                          updated[2] = { ...updated[2], time: e.target.value };
+                          setEventForm({
+                            ...eventForm,
+                            meditationConfig: { ...(eventForm.meditationConfig || {}), periods: updated },
+                          });
+                        }}
+                        className="w-full px-2 py-1 rounded-lg border border-purple-300 bg-white font-mono text-[11px] font-bold text-purple-950 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                      />
+                    </div>
+                    <div className="bg-white/80 p-1.5 rounded-xl border border-purple-100">
+                      <label className="text-[10px] font-semibold text-purple-800 block mb-1">4. ภาคค่ำ:</label>
+                      <input
+                        type="text"
+                        value={eventForm.meditationConfig?.periods?.[3]?.time || '17.30-18.00'}
+                        onChange={(e) => {
+                          const curPeriods = eventForm.meditationConfig?.periods || [
+                            { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
+                            { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
+                            { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
+                            { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
+                          ];
+                          const updated = [...curPeriods];
+                          updated[3] = { ...updated[3], time: e.target.value };
+                          setEventForm({
+                            ...eventForm,
+                            meditationConfig: { ...(eventForm.meditationConfig || {}), periods: updated },
+                          });
+                        }}
+                        className="w-full px-2 py-1 rounded-lg border border-purple-300 bg-white font-mono text-[11px] font-bold text-purple-950 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                      />
                     </div>
                   </div>
-                )}
+                </div>
 
                 {/* Location */}
                 <div>
