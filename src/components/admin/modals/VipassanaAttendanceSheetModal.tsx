@@ -475,14 +475,22 @@ export function VipassanaAttendanceSheetModal({
             <div className="flex items-center p-1 bg-slate-100 rounded-xl text-xs font-bold border border-slate-200/80">
               <button
                 type="button"
-                onClick={() => setViewMode('INTERACTIVE')}
+                onClick={() => {
+                  if (viewMode === 'INTERACTIVE') {
+                    // Clicking again toggles the 4-period edit panel so user always gets immediate action
+                    setIsEditingPeriods((v) => !v);
+                  } else {
+                    setViewMode('INTERACTIVE');
+                  }
+                }}
                 className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                   viewMode === 'INTERACTIVE'
                     ? 'bg-white text-purple-900 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
+                title="คลิกเพื่อสลับโหมด หรือคลิกเพื่อเปิด/ปิดแผงแก้ไขช่วงเวลา 4 รอบ"
               >
-                <Clock className="w-3.5 h-3.5" />
+                <Clock className="w-3.5 h-3.5 text-purple-600" />
                 <span>บันทึกเวลา 4 รอบ</span>
               </button>
               <button
