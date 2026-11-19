@@ -7,18 +7,24 @@ export type WatermarkMode = 'MCU_LOGO' | 'CUSTOM' | 'NONE';
 export interface UseWatermarkSettingsOptions {
   isOpen?: boolean;
   defaultMode?: WatermarkMode;
+  initialMode?: WatermarkMode;
   defaultOpacity?: number;
+  initialOpacity?: number;
   fallbackLogoUrl?: string;
 }
 
 export function useWatermarkSettings({
   isOpen = true,
-  defaultMode = 'MCU_LOGO',
-  defaultOpacity = 0.10,
+  defaultMode,
+  initialMode,
+  defaultOpacity,
+  initialOpacity,
   fallbackLogoUrl = '/uploads/logo-1793607763771.jpg',
 }: UseWatermarkSettingsOptions = {}) {
-  const [watermarkMode, setWatermarkMode] = useState<WatermarkMode>(defaultMode);
-  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(defaultOpacity);
+  const resolvedMode = initialMode || defaultMode || 'MCU_LOGO';
+  const resolvedOpacity = initialOpacity !== undefined ? initialOpacity : (defaultOpacity !== undefined ? defaultOpacity : 0.10);
+  const [watermarkMode, setWatermarkMode] = useState<WatermarkMode>(resolvedMode);
+  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(resolvedOpacity);
   const [customWatermarkUrl, setCustomWatermarkUrl] = useState<string>('');
   const [systemLogoUrl, setSystemLogoUrl] = useState<string>(fallbackLogoUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +91,9 @@ export function useWatermarkSettings({
     systemLogoUrl,
     activeWatermark,
     fileInputRef,
+    watermarkInputRef: fileInputRef,
     handleFileUpload,
+    handleWatermarkUpload: handleFileUpload,
     clearCustomWatermark,
   };
 }

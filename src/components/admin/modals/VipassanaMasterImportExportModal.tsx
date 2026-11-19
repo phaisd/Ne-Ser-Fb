@@ -38,6 +38,17 @@ import {
 import { stripLeadingTitles } from '@/lib/utils/name-matcher';
 import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
 import { parseXlsxToTsv } from '@/lib/utils/xlsx-import';
+import { downloadCsvFile } from '@/lib/utils/csv-helpers';
+import { exportMultiPagePdf } from '@/lib/utils/pdf-export';
+import { useWatermarkSettings } from '@/hooks/useWatermarkSettings';
+import {
+  ParsedMasterItem,
+  STANDARD_POSITIONS,
+  VipassanaMasterExportTab,
+} from './master-import';
+
+export type { ParsedMasterItem };
+export { STANDARD_POSITIONS };
 
 interface VipassanaMasterImportExportModalProps {
   isOpen: boolean;
@@ -45,29 +56,6 @@ interface VipassanaMasterImportExportModalProps {
   existingUsers: UserAccount[];
   onSuccess: () => void;
 }
-
-export interface ParsedMasterItem {
-  id?: string;
-  name: string;
-  nameEn?: string;
-  position: string; // ประธาน, รองประธาน, พระวิปัสสนาจารย์, เลขานุการ, ฯลฯ
-  ecclesiasticalTitle?: string; // ตำแหน่งทางคณะสงฆ์ เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระมหา...
-  department?: string; // หน่วยงาน / ภาควิชา
-  contactAddress?: string; // ที่อยู่ติดต่อ / สังกัดวัด
-  email: string;
-  password: string;
-  isExisting?: boolean;
-  existingMatchName?: string;
-}
-
-// Standard positions list
-const STANDARD_POSITIONS = [
-  'ประธานพระวิปัสสนาจารย์',
-  'รองประธานพระวิปัสสนาจารย์',
-  'พระวิปัสสนาจารย์',
-  'เลขานุการพระวิปัสสนาจารย์',
-  'ผู้ช่วยเลขานุการพระวิปัสสนาจารย์',
-];
 
 export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExportModalProps> = ({
   isOpen,
@@ -102,59 +90,19 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   const [isExportingPng, setIsExportingPng] = useState(false);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
 
-  // Watermark / Custom Background states
-  const [slipsWatermarkMode, setSlipsWatermarkMode] = useState<'MCU_LOGO' | 'CUSTOM' | 'NONE'>('MCU_LOGO');
-  const [slipsWatermarkOpacity, setSlipsWatermarkOpacity] = useState<number>(0.10);
-  const [slipsCustomWatermarkUrl, setSlipsCustomWatermarkUrl] = useState<string>('');
-  const [slipsSystemLogoUrl, setSlipsSystemLogoUrl] = useState<string>('/uploads/logo-1793607763771.jpg');
-  const slipsWatermarkInputRef = useRef<HTMLInputElement>(null);
-
-  // Fetch official MCU logo from system settings
-  useEffect(() => {
-    let isMounted = true;
-    async function loadLogo() {
-      try {
-        const res = await fetch('/api/system-settings');
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && data.data?.logoUrl) {
-            setSlipsSystemLogoUrl(data.data.logoUrl);
-          }
-        }
-      } catch {
-        // Fallback default
-      }
-    }
-    loadLogo();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Compute active watermark image url
-  const slipsActiveWatermark = useMemo(() => {
-    if (slipsWatermarkMode === 'NONE') return '';
-    if (slipsWatermarkMode === 'CUSTOM') return slipsCustomWatermarkUrl;
-    return slipsSystemLogoUrl || '/uploads/logo-1793607763771.jpg';
-  }, [slipsWatermarkMode, slipsCustomWatermarkUrl, slipsSystemLogoUrl]);
-
-  // Handle custom watermark / background upload
-  const handleSlipsWatermarkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('ขนาดไฟล์ภาพต้องไม่เกิน 5 MB');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setSlipsCustomWatermarkUrl(reader.result);
-        setSlipsWatermarkMode('CUSTOM');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
+  // Watermark / Custom Background hook
+  const {
+    watermarkMode: slipsWatermarkMode,
+    setWatermarkMode: setSlipsWatermarkMode,
+    watermarkOpacity: slipsWatermarkOpacity,
+    setWatermarkOpacity: setSlipsWatermarkOpacity,
+    customWatermarkUrl: slipsCustomWatermarkUrl,
+    setCustomWatermarkUrl: setSlipsCustomWatermarkUrl,
+    systemLogoUrl: slipsSystemLogoUrl,
+    watermarkInputRef: slipsWatermarkInputRef,
+    activeWatermark: slipsActiveWatermark,
+    handleWatermarkUpload: handleSlipsWatermarkUpload,
+  } = useWatermarkSettings({ initialOpacity: 0.10 });
 
   // List of current Vipassana Masters in the system
   const currentMasters = useMemo(() => {
@@ -482,24 +430,28 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   };
 
   const handleDownloadTemplateCsv = () => {
-    const headers =
-      'ลำดับ,ชื่อ-ฉายา (ภาษาไทย),ชื่อ-ฉายา (ภาษาอังกฤษ),ตำแหน่งในโครงการ,ตำแหน่งทางคณะสงฆ์,หน่วยงาน / ภาควิชา,ที่อยู่ติดต่อ / สังกัดวัด,ไอดีเข้าใช้งาน,รหัสผ่าน';
-    const sampleRows = [
-      '1,พระธรรมวชิรมุนี,Phra Dhammavajiramuni,ประธานพระวิปัสสนาจารย์,เจ้าคณะภาค ๑๐,ฝ่ายวิปัสสนาธุระ คณะพุทธศาสตร์,วัดมหาธาตุยุวราชรังสฤษฎิ์ กรุงเทพฯ,vipassana01@mcu.ac.th,mcu123456',
-      '2,พระมหาบุญช่วย ปภสฺสโร,Phra Maha Boonchuay Pabhassaro,รองประธานพระวิปัสสนาจารย์,เจ้าอาวาสวัดวังผาหมู,คณะพุทธศาสตร์ ภาควิชาพระพุทธศาสนา,วัดวังผาหมู จ.นครศรีธรรมราช,,',
-      '3,พระครูปลัดสุวัฒนบัณฑิตคุณ,Phra Khru Palat Suwattanabanditkun,เลขานุการพระวิปัสสนาจารย์,ผู้ช่วยเจ้าอาวาสวัดจากแดง,สำนักงานคณบดี คณะพุทธศาสตร์,วัดจากแดง จ.สมุทรปราการ,,',
-      '4,พระอาจารย์มหาเอกสิทธิ์,Phra Ajahn Ekkasit,พระวิปัสสนาจารย์,พระวิปัสสนาจารย์ประจำศูนย์,ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์,สถาบันวิปัสสนาธุระ มจร วังน้อย,,',
+    const headers = [
+      'ลำดับ',
+      'ชื่อ-ฉายา (ภาษาไทย)',
+      'ชื่อ-ฉายา (ภาษาอังกฤษ)',
+      'ตำแหน่งในโครงการ',
+      'ตำแหน่งทางคณะสงฆ์',
+      'หน่วยงาน / ภาควิชา',
+      'ที่อยู่ติดต่อ / สังกัดวัด',
+      'ไอดีเข้าใช้งาน',
+      'รหัสผ่าน',
     ];
-    const csvContent = '\uFEFF' + [headers, ...sampleRows].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'เทมเพลตนำเข้า_พระวิปัสสนาจารย์.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const sampleRows = [
+      ['1', 'พระธรรมวชิรมุนี', 'Phra Dhammavajiramuni', 'ประธานพระวิปัสสนาจารย์', 'เจ้าคณะภาค ๑๐', 'ฝ่ายวิปัสสนาธุระ คณะพุทธศาสตร์', 'วัดมหาธาตุยุวราชรังสฤษฎิ์ กรุงเทพฯ', 'vipassana01@mcu.ac.th', 'mcu123456'],
+      ['2', 'พระมหาบุญช่วย ปภสฺสโร', 'Phra Maha Boonchuay Pabhassaro', 'รองประธานพระวิปัสสนาจารย์', 'เจ้าอาวาสวัดวังผาหมู', 'คณะพุทธศาสตร์ ภาควิชาพระพุทธศาสนา', 'วัดวังผาหมู จ.นครศรีธรรมราช', '', ''],
+      ['3', 'พระครูปลัดสุวัฒนบัณฑิตคุณ', 'Phra Khru Palat Suwattanabanditkun', 'เลขานุการพระวิปัสสนาจารย์', 'ผู้ช่วยเจ้าอาวาสวัดจากแดง', 'สำนักงานคณบดี คณะพุทธศาสตร์', 'วัดจากแดง จ.สมุทรปราการ', '', ''],
+      ['4', 'พระอาจารย์มหาเอกสิทธิ์', 'Phra Ajahn Ekkasit', 'พระวิปัสสนาจารย์', 'พระวิปัสสนาจารย์ประจำศูนย์', 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์', 'สถาบันวิปัสสนาธุระ มจร วังน้อย', '', ''],
+    ];
+    downloadCsvFile({
+      filename: 'เทมเพลตนำเข้า_พระวิปัสสนาจารย์.csv',
+      headers,
+      rows: sampleRows,
+    });
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -596,32 +548,38 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   };
 
   const handleExportCsv = (dataToExport: any[] = filteredMasters) => {
-    const headers =
-      'ลำดับ,ชื่อ-ฉายา (ภาษาไทย),ชื่อ-ฉายา (ภาษาอังกฤษ),ตำแหน่งในโครงการ,ตำแหน่งทางคณะสงฆ์,หน่วยงาน / ภาควิชา,ที่อยู่ติดต่อ / สังกัดวัด,บทบาท,ไอดีเข้าใช้งาน,รหัสผ่านเริ่มต้น,สถานะ';
-    const rows = dataToExport.map((m, idx) => {
-      const name = `"${(m.name || '').replace(/"/g, '""')}"`;
-      const nameEn = `"${(m.nameEn || '').replace(/"/g, '""')}"`;
-      const pos = `"${(m.instructorType || m.position || 'พระวิปัสสนาจารย์').replace(/"/g, '""')}"`;
-      const sangha = `"${(m.ecclesiasticalTitle || '-').replace(/"/g, '""')}"`;
-      const dept = `"${(m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์').replace(/"/g, '""')}"`;
-      const addr = `"${(m.contactAddress || '-').replace(/"/g, '""')}"`;
-      const role = m.role || 'VIPASSANA_MASTER';
-      const email = m.email || '';
-      const pwd = m.defaultPassword || m.password || 'mcu123456';
-      const status = m.isActive !== false ? 'เปิดใช้งาน' : 'ระงับ';
-      return `${idx + 1},${name},${nameEn},${pos},${sangha},${dept},${addr},${role},${email},${pwd},${status}`;
-    });
+    const headers = [
+      'ลำดับ',
+      'ชื่อ-ฉายา (ภาษาไทย)',
+      'ชื่อ-ฉายา (ภาษาอังกฤษ)',
+      'ตำแหน่งในโครงการ',
+      'ตำแหน่งทางคณะสงฆ์',
+      'หน่วยงาน / ภาควิชา',
+      'ที่อยู่ติดต่อ / สังกัดวัด',
+      'บทบาท',
+      'ไอดีเข้าใช้งาน',
+      'รหัสผ่านเริ่มต้น',
+      'สถานะ',
+    ];
+    const rows = dataToExport.map((m, idx) => [
+      idx + 1,
+      m.name || '',
+      m.nameEn || '',
+      m.instructorType || m.position || 'พระวิปัสสนาจารย์',
+      m.ecclesiasticalTitle || '-',
+      m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
+      m.contactAddress || '-',
+      m.role || 'VIPASSANA_MASTER',
+      m.email || '',
+      m.defaultPassword || m.password || 'mcu123456',
+      m.isActive !== false ? 'เปิดใช้งาน' : 'ระงับ',
+    ]);
 
-    const csvContent = '\uFEFF' + [headers, ...rows].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `บัญชีพระวิปัสสนาจารย์_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadCsvFile({
+      filename: `บัญชีพระวิปัสสนาจารย์_${new Date().toISOString().split('T')[0]}.csv`,
+      headers,
+      rows,
+    });
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -711,70 +669,18 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
     setExportProgress('กำลังเตรียมข้อมูลเอกสาร PDF...');
 
     try {
-      const html2canvas = (await import('html2canvas-pro')).default;
-      const { jsPDF } = await import('jspdf');
+      const pageElements = slipsPages
+        .map((_, i) => document.getElementById(`master-slip-page-${i}`))
+        .filter(Boolean) as HTMLElement[];
 
-      const pdf = new jsPDF({
+      await exportMultiPagePdf({
+        pageElements,
+        filename: `บัตรประจำตัวพระวิปัสสนาจารย์_คณะพุทธศาสตร์_มจร.pdf`,
         orientation: 'portrait',
-        unit: 'mm',
         format: 'a4',
-        compress: true,
+        scale: 2,
+        onProgress: (msg) => setExportProgress(msg),
       });
-
-      for (let i = 0; i < slipsPages.length; i++) {
-        setExportProgress(`กำลังสร้างหน้า PDF ที่ ${i + 1} จากทั้งหมด ${slipsPages.length} หน้า...`);
-        const pageEl = document.getElementById(`master-slip-page-${i}`);
-        if (!pageEl) continue;
-
-        const screenHeaders = pageEl.querySelectorAll('.screen-only-header');
-        screenHeaders.forEach((h) => ((h as HTMLElement).style.display = 'none'));
-
-        const origBorder = pageEl.style.border;
-        const origShadow = pageEl.style.boxShadow;
-        const origRadius = pageEl.style.borderRadius;
-        pageEl.style.border = 'none';
-        pageEl.style.boxShadow = 'none';
-        pageEl.style.borderRadius = '0';
-
-        const canvas = await html2canvas(pageEl, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          windowWidth: pageEl.scrollWidth,
-        });
-
-        pageEl.style.border = origBorder;
-        pageEl.style.boxShadow = origShadow;
-        pageEl.style.borderRadius = origRadius;
-        screenHeaders.forEach((h) => ((h as HTMLElement).style.display = ''));
-
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        if (i > 0) {
-          pdf.addPage('a4', 'portrait');
-        }
-
-        const pdfWidth = 210;
-        const pdfHeight = 297;
-        const canvasRatio = canvas.width / canvas.height;
-        let targetW = pdfWidth;
-        let targetH = pdfWidth / canvasRatio;
-        let x = 0;
-        let y = 0;
-
-        if (targetH > pdfHeight) {
-          targetH = pdfHeight;
-          targetW = pdfHeight * canvasRatio;
-          x = (pdfWidth - targetW) / 2;
-        } else {
-          y = (pdfHeight - targetH) / 2;
-        }
-
-        pdf.addImage(imgData, 'JPEG', x, y, targetW, targetH);
-      }
-
-      setExportProgress('กำลังบันทึกไฟล์ PDF...');
-      pdf.save(`บัตรประจำตัวพระวิปัสสนาจารย์_คณะพุทธศาสตร์_มจร.pdf`);
     } catch (err) {
       console.error('Failed to export slips PDF:', err);
       alert('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF กรุณาลองใหม่อีกครั้ง');
@@ -1182,133 +1088,16 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
 
           {/* ======================= TAB 2: EXPORT ======================= */}
           {activeTab === 'EXPORT' && (
-            <div className="space-y-4">
-              {/* Controls bar */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Search */}
-                  <div className="relative min-w-[200px]">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="ค้นหาชื่อ, ฉายา, หรือไอดี..."
-                      value={exportSearch}
-                      onChange={(e) => setExportSearch(e.target.value)}
-                      className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-
-                  {/* Position Filter */}
-                  <select
-                    value={exportPositionFilter}
-                    onChange={(e) => setExportPositionFilter(e.target.value)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white font-semibold text-slate-700 outline-none"
-                  >
-                    <option value="ALL">ทุกตำแหน่ง ({currentMasters.length})</option>
-                    {STANDARD_POSITIONS.map((pos) => (
-                      <option key={pos} value={pos}>
-                        {pos}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Export Buttons */}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleExportXlsx()}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
-                    title="ดาวน์โหลดรายชื่อพระวิปัสสนาจารย์และรหัสผ่านทั้งหมดเป็นไฟล์ Excel"
-                  >
-                    <FileSpreadsheet className="w-4 h-4" />
-                    <span>ส่งออก Excel (.xlsx)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleExportCsv()}
-                    className="px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
-                  >
-                    <Download className="w-4 h-4 text-slate-500" />
-                    <span>CSV</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Table of Existing Masters */}
-              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-                <div className="overflow-x-auto max-h-[55vh]">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-100 text-slate-700 font-bold sticky top-0 border-b border-slate-200">
-                      <tr>
-                        <th className="p-3 text-center w-12">ลำดับ</th>
-                        <th className="p-3">ชื่อ-ฉายา (ไทย)</th>
-                        <th className="p-3">ชื่ออังกฤษ</th>
-                        <th className="p-3">ตำแหน่งโครงการ</th>
-                        <th className="p-3">ตำแหน่งทางคณะสงฆ์</th>
-                        <th className="p-3">หน่วยงาน/ภาควิชา</th>
-                        <th className="p-3">ที่อยู่ติดต่อ/สังกัดวัด</th>
-                        <th className="p-3">ไอดีเข้าใช้งาน (Login ID)</th>
-                        <th className="p-3">รหัสผ่านเริ่มต้น</th>
-                        <th className="p-3 text-center">สถานะ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredMasters.length === 0 ? (
-                        <tr>
-                          <td colSpan={10} className="p-8 text-center text-slate-400 italic">
-                            ไม่พบรายชื่อพระวิปัสสนาจารย์ตามเงื่อนไขที่ค้นหา
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredMasters.map((m, idx) => (
-                          <tr key={m.id || idx} className="hover:bg-amber-50/20 transition">
-                            <td className="p-3 text-center font-mono text-slate-500">{idx + 1}</td>
-                            <td className="p-3 font-bold text-slate-900">{m.name}</td>
-                            <td className="p-3 text-slate-600 font-serif">{m.nameEn || '-'}</td>
-                            <td className="p-3">
-                              <span
-                                className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
-                                  (m.instructorType || '').includes('ประธาน') && !(m.instructorType || '').includes('รอง')
-                                    ? 'bg-purple-100 text-purple-900'
-                                    : (m.instructorType || '').includes('รองประธาน')
-                                    ? 'bg-indigo-100 text-indigo-900'
-                                    : (m.instructorType || '').includes('เลขา')
-                                    ? 'bg-emerald-100 text-emerald-900'
-                                    : 'bg-amber-100 text-amber-900'
-                                }`}
-                              >
-                                {m.instructorType || 'พระวิปัสสนาจารย์'}
-                              </span>
-                            </td>
-                            <td className="p-3 text-slate-700">{m.ecclesiasticalTitle || '-'}</td>
-                            <td className="p-3 text-slate-600 text-[11px]">{m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์'}</td>
-                            <td className="p-3 text-slate-600 text-[11px] max-w-[180px] truncate" title={m.contactAddress}>
-                              {m.contactAddress || '-'}
-                            </td>
-                            <td className="p-3 font-mono font-semibold text-amber-950">{m.email}</td>
-                            <td className="p-3 font-mono text-slate-700 bg-slate-50/70 px-2 rounded">
-                              {m.defaultPassword || m.password || 'mcu123456'}
-                            </td>
-                            <td className="p-3 text-center">
-                              {m.isActive !== false ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                  ใช้งานได้
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600">
-                                  ระงับ
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            <VipassanaMasterExportTab
+              currentMasters={currentMasters}
+              filteredMasters={filteredMasters}
+              exportSearch={exportSearch}
+              setExportSearch={setExportSearch}
+              exportPositionFilter={exportPositionFilter}
+              setExportPositionFilter={setExportPositionFilter}
+              onExportXlsx={handleExportXlsx}
+              onExportCsv={handleExportCsv}
+            />
           )}
 
           {/* ======================= TAB 3: SLIPS / BADGES ======================= */}
