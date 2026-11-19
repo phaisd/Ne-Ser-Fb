@@ -48,22 +48,44 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
   return (
     <div className="flex flex-col items-center">
       {/* PRINT STYLES */}
-      <style jsx global>{`
+      <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm 6mm;
+          }
+          html, body {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            height: auto !important;
+            min-height: 100% !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           #official-a4-sheet,
           #official-a4-sheet * {
-            visibility: visible;
+            visibility: visible !important;
           }
           #official-a4-sheet {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 0;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+            display: block !important;
+          }
+          .print\\:hidden, .no-print {
+            display: none !important;
           }
         }
       `}</style>

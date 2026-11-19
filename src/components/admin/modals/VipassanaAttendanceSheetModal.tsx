@@ -28,6 +28,7 @@ import { VipassanaLiveScannerModal } from './VipassanaLiveScannerModal';
 import { VipassanaInterviewSheetModal } from './VipassanaInterviewSheetModal';
 import { VipassanaCombinedEvaluationModal } from './VipassanaCombinedEvaluationModal';
 import { VipassanaAttendancePrintSheet, VipassanaGroupAssignmentModal } from './vipassana';
+import { printElement } from '@/lib/utils/print-helper';
 
 interface VipassanaAttendanceSheetModalProps {
   isOpen: boolean;
@@ -478,12 +479,23 @@ export function VipassanaAttendanceSheetModal({
     };
   }, [attendanceRows]);
 
+  const handlePrintA4 = () => {
+    if (viewMode !== 'PRINT_PREVIEW') {
+      setViewMode('PRINT_PREVIEW');
+      setTimeout(() => {
+        printElement('official-a4-sheet', 'แบบฟอร์มบันทึกเวลาปฏิบัติวิปัสสนากัมมัฏฐาน 4 รอบ');
+      }, 250);
+    } else {
+      printElement('official-a4-sheet', 'แบบฟอร์มบันทึกเวลาปฏิบัติวิปัสสนากัมมัฏฐาน 4 รอบ');
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:block print:overflow-visible">
       {/* Container Card */}
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 print:shadow-none print:border-none print:max-h-none print:w-full print:p-0 print:static print:block print:overflow-visible print:h-auto">
         
         {/* MODAL HEADER (Hidden in Print) */}
         <div className="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-amber-50/80 via-white to-purple-50/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0 print:hidden">
@@ -530,15 +542,22 @@ export function VipassanaAttendanceSheetModal({
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('PRINT_PREVIEW')}
+                onClick={() => {
+                  if (viewMode === 'PRINT_PREVIEW') {
+                    handlePrintA4();
+                  } else {
+                    setViewMode('PRINT_PREVIEW');
+                  }
+                }}
                 className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                   viewMode === 'PRINT_PREVIEW'
-                    ? 'bg-white text-purple-900 shadow-xs'
+                    ? 'bg-white text-purple-900 shadow-xs ring-2 ring-purple-600/30 font-bold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
+                title={viewMode === 'PRINT_PREVIEW' ? 'คลิกเพื่อเปิดหน้าต่างสั่งพิมพ์ A4 ทันที' : 'เปิดดูแบบฟอร์มกระดาษ A4 สำหรับพิมพ์'}
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>แบบฟอร์ม A4 พิมพ์</span>
+                <span>{viewMode === 'PRINT_PREVIEW' ? '🖨️ สั่งพิมพ์ A4 (คลิกพิมพ์)' : 'แบบฟอร์ม A4 พิมพ์'}</span>
               </button>
             </div>
 
@@ -766,7 +785,7 @@ export function VipassanaAttendanceSheetModal({
                 </label>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={handlePrintA4}
                   className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -1411,11 +1430,11 @@ export function VipassanaAttendanceSheetModal({
 
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={handlePrintA4}
                   className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
                 >
                   <Printer className="w-4 h-4" />
-                  <span>พิมพ์เอกสาร A4</span>
+                  <span>พิมพ์เอกสาร A4 (Print Now)</span>
                 </button>
               </div>
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import QRCode from 'qrcode';
+import { printElement } from '@/lib/utils/print-helper';
 import {
   X,
   Printer,
@@ -74,9 +75,18 @@ export function VipassanaBadgesModal({
     });
   }, [registrations, selectedGroup, searchQuery]);
 
+  // Stable key for registrations to prevent infinite effect triggers
+  const registrationKey = useMemo(() => {
+    return filteredRegistrations.map((r) => r.id + ':' + (r.groupSpecificCode || r.studentCode)).join('|');
+  }, [filteredRegistrations]);
+
   // Pre-generate QR codes for badges (Parallel for high performance)
   useEffect(() => {
-    if (!isOpen || filteredRegistrations.length === 0) return;
+    if (!isOpen) return;
+    if (filteredRegistrations.length === 0) {
+      setIsGeneratingQr(false);
+      return;
+    }
 
     let isMounted = true;
     setIsGeneratingQr(true);
@@ -119,7 +129,7 @@ export function VipassanaBadgesModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, filteredRegistrations]);
+  }, [isOpen, registrationKey]);
 
   // Number of badges per A4 sheet
   const badgesPerPage = useMemo(() => {
@@ -170,6 +180,10 @@ export function VipassanaBadgesModal({
     URL.revokeObjectURL(url);
   };
 
+  const handlePrintBadges = () => {
+    printElement('vipassana-badges-print-area', `ป้ายชื่อคล้องคอ_${event.title || 'วิปัสสนากัมมัฏฐาน'}`);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -210,8 +224,8 @@ export function VipassanaBadgesModal({
             </button>
             <button
               type="button"
-              onClick={() => window.print()}
-              disabled={isGeneratingQr || filteredRegistrations.length === 0}
+              onClick={handlePrintBadges}
+              disabled={filteredRegistrations.length === 0}
               className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
             >
               <Printer className="w-4 h-4" />
@@ -331,6 +345,22 @@ export function VipassanaBadgesModal({
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
                 }
+                body * {
+                  visibility: hidden !important;
+                }
+                #vipassana-badges-print-area,
+                #vipassana-badges-print-area * {
+                  visibility: visible !important;
+                }
+                #vipassana-badges-print-area {
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  width: 100% !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  display: block !important;
+                }
                 .print\\:hidden, .no-print {
                   display: none !important;
                 }
@@ -362,7 +392,7 @@ export function VipassanaBadgesModal({
         />
 
         {/* BADGES CONTAINER */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-100/70 print:p-0 print:bg-white print:overflow-visible">
+        <div id="vipassana-badges-print-area" className="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-100/70 print:p-0 print:bg-white print:overflow-visible">
           {filteredRegistrations.length === 0 ? (
             <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 max-w-lg mx-auto">
               <Users className="w-10 h-10 mx-auto text-slate-300 mb-2" />
