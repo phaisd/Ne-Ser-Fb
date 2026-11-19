@@ -138,10 +138,25 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                         ☀️ 1 วัน
                       </span>
                     )}
+
+                    {/* Group Assignment Badge */}
+                    {e.meditationConfig?.groupAssignments &&
+                      Object.keys(e.meditationConfig.groupAssignments).length > 0 && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                          👥 มอบหมาย {Object.keys(e.meditationConfig.groupAssignments).length} กลุ่มแล้ว
+                        </span>
+                      )}
                   </div>
-                  <span className="text-[11px] font-semibold text-slate-500">
-                    เข้าร่วม: <strong className="text-emerald-700">{attended}</strong> / {count} คน
-                  </span>
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md border border-slate-200/80">
+                    <span>
+                      นิสิตในโครงการ: <strong className="text-indigo-700 font-bold">{count}</strong> คน
+                    </span>
+                    {attended > 0 && (
+                      <span className="text-emerald-700 font-bold border-l border-slate-300 pl-1.5">
+                        (เช็คชื่อแล้ว {attended})
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <h4 className="font-bold text-slate-900 text-sm line-clamp-2 leading-snug">

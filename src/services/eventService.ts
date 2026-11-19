@@ -13,11 +13,19 @@ export async function getEvents(): Promise<StudentEvent[]> {
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Events!A2:O');
+      const rows = await gClient.getValues('Events!A2:P');
       if (rows && rows.length > 0) {
         return rows.map((r) => {
           const id = r[0] || '';
           const local = localMap.get(id) || {};
+          let meditationConfig = local.meditationConfig || {};
+          if (r[15]) {
+            try {
+              meditationConfig = typeof r[15] === 'string' ? JSON.parse(r[15]) : r[15];
+            } catch {
+              // fallback to local
+            }
+          }
           return {
             ...local,
             id,
@@ -35,6 +43,7 @@ export async function getEvents(): Promise<StudentEvent[]> {
             targetProgram: r[12] || local.targetProgram || 'ALL',
             coordinatorName: r[13] || local.coordinatorName || '',
             showCoordinator: r[14] !== undefined ? (r[14] === 'TRUE' || r[14] === true) : (local.showCoordinator !== false),
+            meditationConfig,
           };
         });
       }
@@ -115,7 +124,7 @@ export async function createEvent(data: Partial<StudentEvent>): Promise<StudentE
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      await gClient.appendValues('Events!A:O', [[
+      await gClient.appendValues('Events!A:P', [[
         newEvent.id,
         newEvent.title,
         newEvent.eventType,
@@ -131,6 +140,7 @@ export async function createEvent(data: Partial<StudentEvent>): Promise<StudentE
         newEvent.targetProgram,
         newEvent.coordinatorName,
         newEvent.showCoordinator ? 'TRUE' : 'FALSE',
+        JSON.stringify(newEvent.meditationConfig || {}),
       ]]);
     } catch (err) {
       console.warn('Google Sheets append failed for Events:', err);
@@ -227,13 +237,14 @@ export async function updateEvent(id: string, updates: Partial<StudentEvent>): P
         updated.targetProgram,
         updated.coordinatorName,
         updated.showCoordinator ? 'TRUE' : 'FALSE',
+        JSON.stringify(updated.meditationConfig || {}),
       ];
 
       if (sheetRowIndex !== -1) {
         const rowNum = sheetRowIndex + 2;
-        await gClient.updateValues(`Events!A${rowNum}:O${rowNum}`, [rowValues]);
+        await gClient.updateValues(`Events!A${rowNum}:P${rowNum}`, [rowValues]);
       } else {
-        await gClient.appendValues('Events!A:O', [rowValues]);
+        await gClient.appendValues('Events!A:P', [rowValues]);
       }
     } catch (err) {
       console.warn('Google Sheets update failed for Events:', err);
@@ -328,34 +339,99 @@ export async function getEventRegistrations(
   }
 
   const raw = readLocalJson<any[]>('event_registrations.json', []);
-  let list: EventRegistration[] = raw.map((r) => {
-    const sInfo = studentMap.get((r.studentCode || '').trim().toLowerCase()) || {};
-    const degree = r.degreeLevel || sInfo.degree || (sInfo.yearLevel ? 'ปริญญาตรี' : 'ปริญญาตรี');
-    const prog = r.programType || r.program || sInfo.programType || 'THAI';
-
-    return {
-      id: r.id,
-      eventId: r.eventId,
-      eventTitle: eventTitleMap.get(r.eventId) || 'กิจกรรมนิสิต',
-      studentCode: r.studentCode || '',
-      studentName: r.studentName || sInfo.fullName || '',
-      status: r.status || 'REGISTERED',
-      role: r.role || 'STUDENT',
-      degreeLevel: degree,
-      programType: prog,
-      major: r.major || sInfo.major || 'พระพุทธศาสนา',
-      yearLevel: r.yearLevel || sInfo.yearLevel || 1,
-      department: r.department || sInfo.department || '',
-      groupName: r.groupName || (r.groupNumber ? `กลุ่มที่ ${r.groupNumber}` : 'ทั่วไป'),
-      groupNumber: r.groupNumber !== undefined ? Number(r.groupNumber) : undefined,
-      vasa: r.vasa || sInfo.vasa || '',
-      dailyAttendance: r.dailyAttendance || {},
-      remarks: r.remarks || '',
-      attendedAt: r.attendedAt || '',
-      createdAt: r.createdAt ? String(r.createdAt) : new Date().toISOString(),
-      updatedAt: r.updatedAt,
-    };
+  const localMap = new Map<string, any>();
+  raw.forEach((r) => {
+    if (r.id) localMap.set(r.id, r);
   });
+
+  let list: EventRegistration[] = [];
+
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const rows = await gClient.getValues('EventRegistrations!A2:R');
+      if (rows && rows.length > 0) {
+        list = rows.map((r) => {
+          const id = r[0] || '';
+          const local = localMap.get(id) || {};
+          let dailyAttendance = local.dailyAttendance || {};
+          if (r[17]) {
+            try {
+              dailyAttendance = typeof r[17] === 'string' ? JSON.parse(r[17]) : r[17];
+            } catch {
+              // fallback to local
+            }
+          }
+          const sCode = r[2] || local.studentCode || '';
+          const sInfo = studentMap.get(sCode.trim().toLowerCase()) || {};
+          const groupNum = r[11]
+            ? Number(r[11])
+            : local.groupNumber !== undefined
+            ? Number(local.groupNumber)
+            : r[9]
+            ? parseInt(String(r[9]).replace(/\D/g, ''), 10) || undefined
+            : undefined;
+
+          return {
+            id,
+            eventId: r[1] || local.eventId || '',
+            eventTitle: eventTitleMap.get(r[1] || local.eventId) || 'กิจกรรมนิสิต',
+            studentCode: sCode,
+            studentName: r[3] || local.studentName || sInfo.fullName || '',
+            status: (r[4] || local.status || 'REGISTERED') as any,
+            role: (r[5] || local.role || 'STUDENT') as any,
+            major: r[6] || local.major || sInfo.major || 'พระพุทธศาสนา',
+            yearLevel: r[7] ? Number(r[7]) : (local.yearLevel || sInfo.yearLevel || 1),
+            department: r[8] || local.department || sInfo.department || '',
+            groupName: r[9] || local.groupName || (groupNum ? `กลุ่มที่ ${groupNum}` : 'ทั่วไป'),
+            createdAt: r[10] || local.createdAt || new Date().toISOString(),
+            groupNumber: groupNum,
+            groupSpecificCode: r[12] || local.groupSpecificCode || undefined,
+            degreeLevel: r[13] || local.degreeLevel || sInfo.degree || 'ปริญญาตรี',
+            programType: r[14] || local.programType || sInfo.programType || 'THAI',
+            remarks: r[15] !== undefined ? r[15] : (local.remarks || ''),
+            attendedAt: r[16] || local.attendedAt || '',
+            dailyAttendance,
+            updatedAt: local.updatedAt,
+          };
+        });
+      }
+    } catch (err) {
+      console.warn('Google Sheets read error for EventRegistrations, falling back to local file:', err);
+    }
+  }
+
+  // If no rows from Google Sheets, fallback to local file
+  if (list.length === 0 && raw.length > 0) {
+    list = raw.map((r) => {
+      const sInfo = studentMap.get((r.studentCode || '').trim().toLowerCase()) || {};
+      const degree = r.degreeLevel || sInfo.degree || (sInfo.yearLevel ? 'ปริญญาตรี' : 'ปริญญาตรี');
+      const prog = r.programType || r.program || sInfo.programType || 'THAI';
+
+      return {
+        id: r.id,
+        eventId: r.eventId,
+        eventTitle: eventTitleMap.get(r.eventId) || 'กิจกรรมนิสิต',
+        studentCode: r.studentCode || '',
+        studentName: r.studentName || sInfo.fullName || '',
+        status: r.status || 'REGISTERED',
+        role: r.role || 'STUDENT',
+        degreeLevel: degree,
+        programType: prog,
+        major: r.major || sInfo.major || 'พระพุทธศาสนา',
+        yearLevel: r.yearLevel || sInfo.yearLevel || 1,
+        department: r.department || sInfo.department || '',
+        groupName: r.groupName || (r.groupNumber ? `กลุ่มที่ ${r.groupNumber}` : 'ทั่วไป'),
+        groupNumber: r.groupNumber !== undefined ? Number(r.groupNumber) : undefined,
+        vasa: r.vasa || sInfo.vasa || '',
+        dailyAttendance: r.dailyAttendance || {},
+        remarks: r.remarks || '',
+        attendedAt: r.attendedAt || '',
+        createdAt: r.createdAt ? String(r.createdAt) : new Date().toISOString(),
+        updatedAt: r.updatedAt,
+      };
+    });
+  }
 
   if (eventId && eventId !== 'ALL') list = list.filter((r) => r.eventId === eventId);
   if (studentCode) list = list.filter((r) => r.studentCode.toLowerCase().includes(studentCode.toLowerCase()));
@@ -376,6 +452,34 @@ export async function registerStudentForEvent(
   const local = readLocalJson<any[]>('event_registrations.json', []);
   local.unshift(newReg);
   writeLocalJson('event_registrations.json', local);
+
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      await gClient.appendValues('EventRegistrations!A:R', [[
+        newReg.id,
+        newReg.eventId,
+        newReg.studentCode,
+        newReg.studentName,
+        newReg.status || 'REGISTERED',
+        newReg.role || 'STUDENT',
+        newReg.major || '',
+        newReg.yearLevel || 1,
+        newReg.department || '',
+        newReg.groupName || '',
+        newReg.createdAt || new Date().toISOString(),
+        newReg.groupNumber || '',
+        newReg.groupSpecificCode || '',
+        newReg.degreeLevel || '',
+        newReg.programType || '',
+        newReg.remarks || '',
+        newReg.attendedAt || '',
+        JSON.stringify(newReg.dailyAttendance || {}),
+      ]]);
+    } catch (err) {
+      console.warn('Google Sheets append failed for EventRegistration:', err);
+    }
+  }
 
   return newReg;
 }
@@ -511,6 +615,35 @@ export async function batchImportEventRegistrations(
   // Prepend created items in natural order before remaining rows
   const nextList = [...createdItems, ...remaining];
   writeLocalJson('event_registrations.json', nextList);
+
+  const gClient = getSheetsClient();
+  if (gClient && createdItems.length > 0) {
+    try {
+      const appendRows = createdItems.map((reg) => [
+        reg.id,
+        reg.eventId,
+        reg.studentCode,
+        reg.studentName,
+        reg.status || 'REGISTERED',
+        reg.role || 'STUDENT',
+        reg.major || '',
+        reg.yearLevel || 1,
+        reg.department || '',
+        reg.groupName || '',
+        reg.createdAt || new Date().toISOString(),
+        reg.groupNumber || '',
+        reg.groupSpecificCode || '',
+        reg.degreeLevel || '',
+        reg.programType || '',
+        reg.remarks || '',
+        reg.attendedAt || '',
+        JSON.stringify(reg.dailyAttendance || {}),
+      ]);
+      await gClient.appendValues('EventRegistrations!A:R', appendRows);
+    } catch (err) {
+      console.warn('Google Sheets append failed for EventRegistrations:', err);
+    }
+  }
 
   return {
     importedCount: createdItems.length,

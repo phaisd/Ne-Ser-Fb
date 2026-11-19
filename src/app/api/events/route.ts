@@ -281,11 +281,12 @@ export async function POST(request: Request) {
       const adminAuth = requireAdminOrOfficer(request);
       if (adminAuth.response) return adminAuth.response;
 
-      const { id, updates } = body;
+      const { id, updates, eventData } = body;
+      const actualUpdates = updates || eventData;
       if (!id) {
         return NextResponse.json({ success: false, error: 'Missing event id' }, { status: 400 });
       }
-      const updated = await updateEvent(id, updates);
+      const updated = await updateEvent(id, actualUpdates);
       if (!updated) {
         return NextResponse.json({ success: false, error: 'ไม่พบกิจกรรมที่ต้องการแก้ไข' }, { status: 404 });
       }
