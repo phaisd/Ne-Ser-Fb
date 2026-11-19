@@ -46,7 +46,7 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
   scannerStaff,
 }) => {
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center print:block print:w-full">
       {/* PRINT STYLES */}
       <style>{`
         @media print {
@@ -64,32 +64,37 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          body {
+          body * {
             visibility: hidden !important;
           }
-          #vipassana-attendance-root,
-          #vipassana-attendance-root * {
+          #official-a4-sheet,
+          #official-a4-sheet * {
             visibility: visible !important;
           }
-          #vipassana-attendance-root {
-            position: static !important;
-            display: block !important;
-            width: 100% !important;
-            height: auto !important;
-            overflow: visible !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-          }
           #official-a4-sheet {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
-            background: white !important;
+            background: #ffffff !important;
             display: block !important;
+            overflow: visible !important;
+          }
+          table {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }
+          thead {
+            display: table-header-group !important;
+          }
+          tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .print\\:hidden, .no-print {
             display: none !important;

@@ -21,6 +21,8 @@ import {
   Timer,
   Pencil,
   Award,
+  FileDown,
+  Loader2,
 } from 'lucide-react';
 import { StudentEvent, EventRegistration } from '@/types';
 import { VipassanaBadgesModal } from './VipassanaBadgesModal';
@@ -478,14 +480,89 @@ export function VipassanaAttendanceSheetModal({
     };
   }, [attendanceRows]);
 
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [exportProgress, setExportProgress] = useState<string | null>(null);
+
   const handlePrintA4 = () => {
     if (viewMode !== 'PRINT_PREVIEW') {
       setViewMode('PRINT_PREVIEW');
       setTimeout(() => {
         window.print();
-      }, 100);
+      }, 300);
     } else {
       window.print();
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (viewMode !== 'PRINT_PREVIEW') {
+      setViewMode('PRINT_PREVIEW');
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
+    setIsExportingPdf(true);
+    setExportProgress('กำลังเตรียมข้อมูลเอกสาร PDF...');
+
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const sheetEl = document.getElementById('official-a4-sheet');
+      if (!sheetEl) {
+        alert('ไม่พบเอกสารสำหรับสร้าง PDF');
+        return;
+      }
+
+      setExportProgress('กำลังประมวลผลความคมชัดสูง (2x Retina)...');
+
+      const origBorder = sheetEl.style.border;
+      const origShadow = sheetEl.style.boxShadow;
+      sheetEl.style.border = 'none';
+      sheetEl.style.boxShadow = 'none';
+
+      const canvas = await html2canvas(sheetEl, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: sheetEl.scrollWidth || 800,
+      });
+
+      sheetEl.style.border = origBorder;
+      sheetEl.style.boxShadow = origShadow;
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+      });
+
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+      const canvasRatio = canvas.width / canvas.height;
+      let renderWidth = pdfWidth - 10;
+      let renderHeight = renderWidth / canvasRatio;
+
+      if (renderHeight > pdfHeight - 10) {
+        renderHeight = pdfHeight - 10;
+        renderWidth = renderHeight * canvasRatio;
+      }
+
+      const xOffset = (pdfWidth - renderWidth) / 2;
+      const yOffset = 5;
+
+      pdf.addImage(imgData, 'JPEG', xOffset, yOffset, renderWidth, renderHeight);
+      const progName = activeProgram === 'ENGLISH' ? 'English' : 'Thai';
+      const fileName = `vipassana_attendance_day_${selectedDayNumber || 1}_group_${selectedGroup}_${progName}.pdf`;
+      pdf.save(fileName);
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+      alert('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsExportingPdf(false);
+      setExportProgress(null);
     }
   };
 
@@ -758,6 +835,20 @@ export function VipassanaAttendanceSheetModal({
               <>
                 <button
                   type="button"
+                  onClick={handleExportPdf}
+                  disabled={isExportingPdf}
+                  className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  title="บันทึกแบบฟอร์มเอกสารเช็คชื่อเป็นไฟล์ PDF"
+                >
+                  {isExportingPdf ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileDown className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isExportingPdf ? 'กำลังสร้าง PDF...' : 'บันทึก PDF (Save PDF)'}</span>
+                </button>
+                <button
+                  type="button"
                   disabled={isSaving}
                   onClick={handleSaveAttendance}
                   className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
@@ -785,6 +876,24 @@ export function VipassanaAttendanceSheetModal({
                   />
                   <span>พิมพ์แบบฟอร์มเปล่า (สำหรับเซ็นสด)</span>
                 </label>
+
+                {/* Save PDF Button */}
+                <button
+                  type="button"
+                  onClick={handleExportPdf}
+                  disabled={isExportingPdf}
+                  className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  title="บันทึกแบบฟอร์มนี้เป็นเอกสาร PDF ทันที"
+                >
+                  {isExportingPdf ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileDown className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isExportingPdf ? 'กำลังสร้าง PDF...' : 'บันทึก PDF (Save PDF)'}</span>
+                </button>
+
+                {/* Print Button */}
                 <button
                   type="button"
                   onClick={handlePrintA4}
@@ -838,6 +947,19 @@ export function VipassanaAttendanceSheetModal({
           </div>
         )}
 
+        {/* EXPORT PROGRESS NOTIFICATION */}
+        {exportProgress && (
+          <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white px-4 py-2.5 text-xs flex items-center justify-between shrink-0 shadow-inner animate-in fade-in print:hidden">
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-amber-300" />
+              <span className="font-bold">{exportProgress}</span>
+            </div>
+            <span className="text-[11px] text-purple-200 hidden sm:inline">
+              ⚡ ระบบกำลังสร้างเอกสาร PDF คุณภาพสูง กรุณารอสักครู่...
+            </span>
+          </div>
+        )}
+
         {/* SUCCESS NOTIFICATION */}
         {saveSuccessMsg && (
           <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-2 text-xs font-bold text-emerald-900 flex items-center gap-2 print:hidden">
@@ -847,10 +969,11 @@ export function VipassanaAttendanceSheetModal({
         )}
 
         {/* MODAL BODY (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 print:p-0 print:overflow-visible print:h-auto print:block">
           {viewMode === 'INTERACTIVE' ? (
             /* VIEW 1: INTERACTIVE ATTENDANCE TABLE */
-            <div className="space-y-4">
+            <>
+              <div className="space-y-4 print:hidden">
               {/* PERIOD TIMES EDIT DRAWER */}
               {isEditingPeriods && (
                 <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-amber-50 border-2 border-purple-300 p-4 rounded-2xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-150 shadow-xs">
@@ -1396,9 +1519,27 @@ export function VipassanaAttendanceSheetModal({
                 </ul>
               </div>
             </div>
+
+            {/* Mounted in DOM for instant, reliable background print without switching views */}
+            <div className="hidden print:block">
+              <VipassanaAttendancePrintSheet
+                activeProgram={activeProgram}
+                selectedDayNumber={selectedDayNumber}
+                selectedGroup={selectedGroup}
+                p1Conf={p1Conf}
+                p2Conf={p2Conf}
+                p3Conf={p3Conf}
+                p4Conf={p4Conf}
+                printBlankRows={printBlankRows}
+                attendanceRows={attendanceRows}
+                advisors={currentGroupAssignment?.advisors}
+                scannerStaff={scannerStaff}
+              />
+            </div>
+          </>
           ) : (
             /* VIEW 2: OFFICIAL PRINTABLE A4 FORM */
-            <div className="flex flex-col items-center space-y-4">
+            <div className="flex flex-col items-center space-y-4 print:space-y-0 print:block print:w-full">
               {/* Print Header Controls (Hidden during physical print) */}
               <div className="w-full max-w-[800px] bg-amber-50/90 border border-amber-200/90 rounded-2xl p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
                 <div className="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
@@ -1430,14 +1571,33 @@ export function VipassanaAttendanceSheetModal({
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handlePrintA4}
-                  className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>พิมพ์เอกสาร A4 (Print Now)</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Save to PDF button */}
+                  <button
+                    type="button"
+                    onClick={handleExportPdf}
+                    disabled={isExportingPdf}
+                    className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer disabled:opacity-50"
+                    title="บันทึกแบบฟอร์มเอกสารเช็คชื่อเป็นไฟล์ PDF"
+                  >
+                    {isExportingPdf ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FileDown className="w-4 h-4" />
+                    )}
+                    <span>{isExportingPdf ? 'กำลังสร้าง PDF...' : 'บันทึก PDF (Save PDF)'}</span>
+                  </button>
+
+                  {/* Print A4 button */}
+                  <button
+                    type="button"
+                    onClick={handlePrintA4}
+                    className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>สั่งพิมพ์เอกสาร A4 (Print Now)</span>
+                  </button>
+                </div>
               </div>
 
               <VipassanaAttendancePrintSheet
