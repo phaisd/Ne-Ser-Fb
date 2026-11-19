@@ -19,7 +19,7 @@ import {
   Table as TableIcon,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, SatipatthanaChecklist } from '@/types/event';
-import { VipassanaInterviewCardView, EditableInterviewRow } from './vipassana';
+import { VipassanaInterviewCardView, EditableInterviewRow, VipassanaGroupAssignmentModal } from './vipassana';
 
 interface VipassanaInterviewSheetModalProps {
   isOpen: boolean;
@@ -93,6 +93,21 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isGroupAssignmentModalOpen, setIsGroupAssignmentModalOpen] = useState(false);
+
+  // Group Vipassana Masters from MeditationConfig
+  const currentGroupMasters = useMemo(() => {
+    if (selectedGroup === 'ALL') return [];
+    const gKey = String(selectedGroup);
+    return event.meditationConfig?.groupAssignments?.[gKey]?.vipassanaMasters || [];
+  }, [selectedGroup, event.meditationConfig?.groupAssignments]);
+
+  // Auto-fill master name if empty and group has assigned masters
+  useEffect(() => {
+    if (currentGroupMasters.length > 0 && !meditationMaster.trim()) {
+      setMeditationMaster(currentGroupMasters[0]);
+    }
+  }, [currentGroupMasters, meditationMaster]);
 
   // Available groups
   const availableGroups = useMemo(() => {
@@ -430,7 +445,7 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
 
           {/* Row 2: Master Name, Date & Mode Selector */}
           <div className="flex items-center gap-2 flex-wrap justify-between md:justify-end">
-            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-300 text-xs">
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-300 text-xs shadow-2xs">
               <span className="font-semibold text-slate-600 text-[10.5px]">พระวิปัสสนาจารย์:</span>
               <input
                 type="text"
@@ -440,6 +455,43 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
                 className="text-xs font-bold text-amber-950 outline-none w-28 sm:w-36"
               />
             </div>
+
+            {/* Quick 1-Click Master selection pills if group has multiple masters */}
+            {currentGroupMasters.length > 0 && (
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-[10.5px] text-slate-500 font-medium hidden lg:inline">พระประจำกลุ่ม:</span>
+                {currentGroupMasters.map((mName, mIdx) => {
+                  const isSelected = meditationMaster.trim() === mName.trim();
+                  return (
+                    <button
+                      key={mIdx}
+                      type="button"
+                      onClick={() => setMeditationMaster(mName)}
+                      className={`px-2 py-0.5 rounded-lg text-[10.5px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-amber-600 text-white shadow-2xs font-bold'
+                          : 'bg-white border border-amber-200 text-amber-900 hover:bg-amber-100'
+                      }`}
+                      title={`คลิกเลือก "${mName}" เป็นผู้สอบอารมณ์`}
+                    >
+                      <span>🧘</span>
+                      <span className="truncate max-w-[130px]">{mName}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Manage Group Masters Button */}
+            <button
+              type="button"
+              onClick={() => setIsGroupAssignmentModalOpen(true)}
+              className="px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-[11px] flex items-center gap-1 transition cursor-pointer"
+              title="เปิดหน้าต่างมอบหมายอาจารย์และพระวิปัสสนาจารย์ประจำกลุ่ม"
+            >
+              <Users className="w-3.5 h-3.5 text-indigo-600" />
+              <span>👥 จัดการพระประจำกลุ่ม</span>
+            </button>
 
             {/* Bulk pass button */}
             <button
@@ -821,7 +873,9 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
                 </div>
 
                 <div className="text-center pt-2 min-w-[220px]">
-                  <p className="mb-6">(..................................................................)</p>
+                  <p className="mb-6">
+                    ( {meditationMaster || (currentGroupMasters.length > 0 ? currentGroupMasters.join('  /  ') : '..................................................................')} )
+                  </p>
                   <p className="font-bold">Meditation Master</p>
                   <p className="text-[10px] text-slate-600">{sessionDate || '......../............/...........'}</p>
                 </div>
@@ -843,7 +897,9 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
                 </div>
 
                 <div className="text-center pt-2 min-w-[250px]">
-                  <p className="mb-6">รับรองตามนี้ ..........................................................................</p>
+                  <p className="mb-6">
+                    รับรองตามนี้ {meditationMaster || (currentGroupMasters.length > 0 ? currentGroupMasters.join('  /  ') : '..........................................................................')}
+                  </p>
                   <p className="font-bold">พระวิปัสสนาจารย์</p>
                   <p className="text-[10px] text-slate-600">วันที่ {sessionDate || '......../............/...........'}</p>
                 </div>
@@ -885,6 +941,19 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
           </div>
         </div>
       </div>
+
+      {/* Vipassana Group Assignment Modal */}
+      {isGroupAssignmentModalOpen && (
+        <VipassanaGroupAssignmentModal
+          isOpen={isGroupAssignmentModalOpen}
+          onClose={() => setIsGroupAssignmentModalOpen(false)}
+          event={event}
+          registrations={registrations}
+          onAssignmentsSaved={() => {
+            if (onSaved) onSaved();
+          }}
+        />
+      )}
     </div>
   );
 };

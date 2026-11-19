@@ -27,7 +27,7 @@ import { VipassanaBadgesModal } from './VipassanaBadgesModal';
 import { VipassanaLiveScannerModal } from './VipassanaLiveScannerModal';
 import { VipassanaInterviewSheetModal } from './VipassanaInterviewSheetModal';
 import { VipassanaCombinedEvaluationModal } from './VipassanaCombinedEvaluationModal';
-import { VipassanaAttendancePrintSheet } from './vipassana/VipassanaAttendancePrintSheet';
+import { VipassanaAttendancePrintSheet, VipassanaGroupAssignmentModal } from './vipassana';
 
 interface VipassanaAttendanceSheetModalProps {
   isOpen: boolean;
@@ -103,11 +103,12 @@ export function VipassanaAttendanceSheetModal({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
-  // Sub-modal states for Live Scanner & Badges Generator & Interview & Combined Eval
+  // Sub-modal states for Live Scanner & Badges Generator & Interview & Combined Eval & Group Assignment
   const [isBadgesModalOpen, setIsBadgesModalOpen] = useState(false);
   const [isLiveScannerOpen, setIsLiveScannerOpen] = useState(false);
   const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
   const [isCombinedEvalModalOpen, setIsCombinedEvalModalOpen] = useState(false);
+  const [isGroupAssignmentModalOpen, setIsGroupAssignmentModalOpen] = useState(false);
 
   // Editable check-in times state & late threshold
   const [timeState, setTimeState] = useState<Record<string, {
@@ -218,6 +219,13 @@ export function VipassanaAttendanceSheetModal({
       return true;
     });
   }, [registrations, selectedGroup, searchQuery]);
+
+  // Current Group Assignment (Advisors & Vipassana Masters)
+  const currentGroupAssignment = useMemo(() => {
+    if (selectedGroup === 'ALL') return null;
+    const gKey = String(selectedGroup);
+    return event.meditationConfig?.groupAssignments?.[gKey] || null;
+  }, [selectedGroup, event.meditationConfig?.groupAssignments]);
 
   // Sync / Initialize attendanceState when group or day changes
   const attendanceRows: StudentAttendanceRow[] = useMemo(() => {
@@ -573,6 +581,16 @@ export function VipassanaAttendanceSheetModal({
 
             <button
               type="button"
+              onClick={() => setIsGroupAssignmentModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-950 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="มอบหมายอาจารย์และเจ้าหน้าที่ผู้ช่วยประจำกลุ่ม และพระวิปัสสนาจารย์ประจำกลุ่ม (หลายคน/รูป)"
+            >
+              <Users className="w-3.5 h-3.5 text-indigo-700" />
+              <span>👥 มอบหมายกลุ่ม</span>
+            </button>
+
+            <button
+              type="button"
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
             >
@@ -736,6 +754,46 @@ export function VipassanaAttendanceSheetModal({
             )}
           </div>
         </div>
+
+        {/* ACTIVE GROUP ASSIGNMENT INFO BANNER */}
+        {selectedGroup !== 'ALL' && (
+          <div className="px-4 py-2 bg-indigo-50/70 border-b border-indigo-100 flex flex-wrap items-center justify-between gap-2 text-xs print:hidden">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="font-bold text-indigo-950 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-indigo-600" />
+                ผู้รับผิดชอบกลุ่ม {selectedGroup}:
+              </span>
+              <div className="flex items-center gap-1.5 text-slate-700">
+                <span className="font-semibold text-indigo-900">อาจารย์/ผู้ช่วย:</span>
+                {currentGroupAssignment?.advisors && currentGroupAssignment.advisors.length > 0 ? (
+                  <span className="font-medium text-slate-800 bg-white px-2 py-0.5 rounded-md border border-indigo-200">
+                    {currentGroupAssignment.advisors.join('  /  ')}
+                  </span>
+                ) : (
+                  <span className="italic text-slate-400">ยังไม่ได้ระบุ</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-700">
+                <span className="font-semibold text-amber-900">พระวิปัสสนาจารย์:</span>
+                {currentGroupAssignment?.vipassanaMasters && currentGroupAssignment.vipassanaMasters.length > 0 ? (
+                  <span className="font-medium text-slate-800 bg-white px-2 py-0.5 rounded-md border border-amber-200">
+                    {currentGroupAssignment.vipassanaMasters.join('  /  ')}
+                  </span>
+                ) : (
+                  <span className="italic text-slate-400">ยังไม่ได้ระบุ</span>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsGroupAssignmentModalOpen(true)}
+              className="text-xs font-bold text-indigo-700 hover:text-indigo-900 underline flex items-center gap-1 cursor-pointer"
+            >
+              แก้ไขการมอบหมายกลุ่มนี้ ✎
+            </button>
+          </div>
+        )}
 
         {/* SUCCESS NOTIFICATION */}
         {saveSuccessMsg && (
@@ -1307,6 +1365,7 @@ export function VipassanaAttendanceSheetModal({
               p4Conf={p4Conf}
               printBlankRows={printBlankRows}
               attendanceRows={attendanceRows}
+              advisors={currentGroupAssignment?.advisors}
             />
           )}
         </div>
@@ -1382,6 +1441,19 @@ export function VipassanaAttendanceSheetModal({
           event={event}
           registrations={registrations}
           onRefresh={onAttendanceSaved}
+        />
+      )}
+
+      {/* Vipassana Group Assignment Modal (มอบหมายอาจารย์และพระวิปัสสนาจารย์ประจำกลุ่ม) */}
+      {isGroupAssignmentModalOpen && (
+        <VipassanaGroupAssignmentModal
+          isOpen={isGroupAssignmentModalOpen}
+          onClose={() => setIsGroupAssignmentModalOpen(false)}
+          event={event}
+          registrations={registrations}
+          onAssignmentsSaved={() => {
+            if (onAttendanceSaved) onAttendanceSaved();
+          }}
         />
       )}
     </div>

@@ -46,12 +46,21 @@ export interface MeditationPeriodConfig {
   time: string;
 }
 
+export interface MeditationGroupAssignment {
+  groupNumber: number;
+  groupName?: string;
+  advisors?: string[]; // รายนามอาจารย์ประจำกลุ่มและเจ้าหน้าที่ผู้ช่วย (มีได้หลายคน)
+  vipassanaMasters?: string[]; // รายนามพระวิปัสสนาจารย์ / พระมหาเถระผู้สอบอารมณ์ (มีได้หลายรูป)
+  notes?: string;
+}
+
 export interface MeditationConfig {
   isMeditationEvent?: boolean;
   periods?: MeditationPeriodConfig[];
   lateThresholdMinutes?: number;
   totalInterviewSessions?: number;
   minAttendedDaysRequired?: number;
+  groupAssignments?: Record<string, MeditationGroupAssignment>;
 }
 
 export interface SatipatthanaChecklist {

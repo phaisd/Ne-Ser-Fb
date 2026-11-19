@@ -28,6 +28,7 @@ interface VipassanaAttendancePrintSheetProps {
   p4Conf: MeditationPeriodConfig;
   printBlankRows: boolean;
   attendanceRows: PrintAttendanceRow[];
+  advisors?: string[]; // รายนามอาจารย์ประจำกลุ่ม และผู้ช่วย
 }
 
 export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintSheetProps> = ({
@@ -40,6 +41,7 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
   p4Conf,
   printBlankRows,
   attendanceRows,
+  advisors,
 }) => {
   return (
     <div className="flex flex-col items-center">
@@ -184,7 +186,14 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
               <div className="text-center pt-2 space-y-2">
                 <div className="font-bold">รับรองตามนี้</div>
                 <div className="text-[11px]">
-                  ......................................................... ผู้ดูแลกลุ่ม ......... / ............ / ..........
+                  {advisors && advisors.length > 0 ? (
+                    <span className="font-semibold px-2 py-0.5 border-b border-black">
+                      {advisors.join('  /  ')}
+                    </span>
+                  ) : (
+                    '.........................................................'
+                  )}{' '}
+                  ผู้ดูแลกลุ่ม ......... / ............ / ..........
                 </div>
               </div>
 
@@ -315,7 +324,14 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
               <div className="text-center pt-2 space-y-2">
                 <div className="font-bold">รับรองตามนี้</div>
                 <div className="text-[11px]">
-                  ................................................................./........................................................................... อาจารย์ประจำกลุ่ม กลุ่มที่ : {selectedGroup !== 'ALL' ? selectedGroup : '3'}
+                  {advisors && advisors.length > 0 ? (
+                    <span className="font-semibold px-2 py-0.5 border-b border-black">
+                      {advisors.join('  /  ')}
+                    </span>
+                  ) : (
+                    '................................................................./...........................................................................'
+                  )}{' '}
+                  อาจารย์ประจำกลุ่ม กลุ่มที่ : {selectedGroup !== 'ALL' ? selectedGroup : '3'}
                 </div>
               </div>
 
