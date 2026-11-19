@@ -119,6 +119,7 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: true,
       INSTRUCTOR: true,
+      VIPASSANA_MASTER: false,
       STUDENT: true,
     },
     lockedRoles: ['SUPER_ADMIN'],
@@ -134,6 +135,7 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: true,
       INSTRUCTOR: false,
+      VIPASSANA_MASTER: false,
       STUDENT: false,
     },
     lockedRoles: ['SUPER_ADMIN'],
@@ -149,6 +151,7 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: true,
       INSTRUCTOR: false,
+      VIPASSANA_MASTER: false,
       STUDENT: false,
     },
     lockedRoles: ['SUPER_ADMIN'],
@@ -164,6 +167,7 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: false,
       INSTRUCTOR: false,
+      VIPASSANA_MASTER: false,
       STUDENT: false,
     },
     lockedRoles: ['SUPER_ADMIN'],
@@ -179,6 +183,7 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: true,
       INSTRUCTOR: true,
+      VIPASSANA_MASTER: false,
       STUDENT: true,
     },
     lockedRoles: ['SUPER_ADMIN'],
@@ -194,6 +199,7 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: true,
       INSTRUCTOR: false,
+      VIPASSANA_MASTER: false,
       STUDENT: false,
     },
     lockedRoles: ['SUPER_ADMIN'],
@@ -209,6 +215,7 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: true,
       INSTRUCTOR: true,
+      VIPASSANA_MASTER: false,
       STUDENT: false,
     },
     lockedRoles: ['SUPER_ADMIN'],
@@ -224,13 +231,14 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: false,
       INSTRUCTOR: false,
+      VIPASSANA_MASTER: false,
       STUDENT: false,
     },
     lockedRoles: ['SUPER_ADMIN'],
   },
   {
     id: 'events_checkin',
-    moduleName: '9. จัดการโครงการและเช็คชื่อเข้าร่วมกิจกรรมนิสิต',
+    moduleName: '9. จัดการโครงการและเช็คชื่อเข้าร่วมกิจกรรมนิสิตทั่วไป',
     description: 'สร้างโครงการกิจกรรม และกดเช็คชื่อนิสิตเข้าร่วมกิจกรรมหน้างาน',
     routeHint: '/events & /admin',
     roles: {
@@ -245,10 +253,26 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
     lockedRoles: ['SUPER_ADMIN'],
   },
   {
+    id: 'vipassana_events_view',
+    moduleName: '10. เข้าถึงโครงการปฏิบัติวิปัสสนากัมมัฏฐาน & ดูรายชื่อกลุ่มนิสิตที่ดูแล',
+    description: 'ดูการ์ดโครงการปฏิบัติวิปัสสนา รายชื่อนิสิตในกลุ่ม และสถานะการปฏิบัติรายบุคคล',
+    routeHint: '/events & /admin (โครงการวิปัสสนา)',
+    roles: {
+      SUPER_ADMIN: true,
+      ADMIN: true,
+      OFFICER: true,
+      ACTING_OFFICER: true,
+      INSTRUCTOR: true,
+      VIPASSANA_MASTER: true,
+      STUDENT: false,
+    },
+    lockedRoles: ['SUPER_ADMIN', 'VIPASSANA_MASTER'],
+  },
+  {
     id: 'vipassana_interview_eval',
-    moduleName: '10. สอบอารมณ์สติปัฏฐาน 4 และประเมินผลการปฏิบัติวิปัสสนา',
-    description: 'บันทึกการสอบอารมณ์สติปัฏฐาน 4 (กาย เวทนา จิต ธรรม) รายบุคคล/รายกลุ่ม และประเมินผล ผ่าน/ไม่ผ่าน',
-    routeHint: '/events & /admin (วิปัสสนาจารย์)',
+    moduleName: '11. ระบบแบบสอบอารมณ์สติปัฏฐาน 4 (กาย เวทนา จิต ธรรม) และประเมินผล',
+    description: 'บันทึกการสอบอารมณ์สติปัฏฐาน 4 รายบุคคล/รายกลุ่ม ให้โอวาทสภาวะธรรม และประเมินผลผ่าน/ไม่ผ่าน',
+    routeHint: '/events & /admin (สอบอารมณ์วิปัสสนา)',
     roles: {
       SUPER_ADMIN: true,
       ADMIN: true,
@@ -258,11 +282,27 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       VIPASSANA_MASTER: true,
       STUDENT: false,
     },
-    lockedRoles: ['SUPER_ADMIN'],
+    lockedRoles: ['SUPER_ADMIN', 'VIPASSANA_MASTER'],
+  },
+  {
+    id: 'vipassana_report_print',
+    moduleName: '12. พิมพ์และส่งออกรายงานใบบันทึกผลการสอบอารมณ์สติปัฏฐาน 4',
+    description: 'พิมพ์ใบบันทึกผลการสอบอารมณ์รายบุคคล หรือส่งออกข้อมูลสรุปการปฏิบัติธรรมประจำโครงการ',
+    routeHint: '/events (พิมพ์ผลสอบอารมณ์)',
+    roles: {
+      SUPER_ADMIN: true,
+      ADMIN: true,
+      OFFICER: true,
+      ACTING_OFFICER: true,
+      INSTRUCTOR: false,
+      VIPASSANA_MASTER: true,
+      STUDENT: false,
+    },
+    lockedRoles: ['SUPER_ADMIN', 'VIPASSANA_MASTER'],
   },
   {
     id: 'users_instructors_manage',
-    moduleName: '11. จัดการไอดีอาจารย์ รีเซ็ตรหัสผ่าน และกำหนดสิทธิ์ผู้ใช้งาน',
+    moduleName: '13. จัดการไอดีอาจารย์ รีเซ็ตรหัสผ่าน และกำหนดสิทธิ์ผู้ใช้งาน',
     description: 'สร้าง/แก้ไขบัญชีอาจารย์ รีเซ็ตรหัสผ่าน แต่งตั้งผู้ช่วยเจ้าหน้าที่ และพิมพ์บัตรแจ้งภาระงานสอน',
     routeHint: '/admin (จัดการผู้ใช้)',
     roles: {
@@ -271,13 +311,14 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: true,
       ACTING_OFFICER: false,
       INSTRUCTOR: false,
+      VIPASSANA_MASTER: false,
       STUDENT: false,
     },
     lockedRoles: ['SUPER_ADMIN'],
   },
   {
     id: 'system_branding_sheets',
-    moduleName: '11. ตั้งค่าตราตั้ง โลโก้ ผู้ลงนาม และเชื่อมต่อ Google Sheets หลัก',
+    moduleName: '14. ตั้งค่าตราตั้ง โลโก้ ผู้ลงนาม และเชื่อมต่อ Google Sheets หลัก',
     description: 'ปรับแต่งโลโก้คณะ รายชื่อผู้ลงนาม นโยบายความปลอดภัย และซิงค์ฐานข้อมูล Google Sheets',
     routeHint: '/admin (ตั้งค่าตราตั้ง & Google Sheets)',
     roles: {
@@ -286,6 +327,7 @@ export const DEFAULT_PERMISSIONS_MATRIX: PermissionItem[] = [
       OFFICER: false,
       ACTING_OFFICER: false,
       INSTRUCTOR: false,
+      VIPASSANA_MASTER: false,
       STUDENT: false,
     },
     lockedRoles: ['SUPER_ADMIN'],
@@ -406,10 +448,11 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
           setRoleColumns(mergedCols);
         }
 
-        // 2. Merge rolePermissions (backfill ACTING_OFFICER default permissions if missing)
+        // 2. Merge rolePermissions (backfill ACTING_OFFICER and VIPASSANA_MASTER default permissions if missing)
         if (Array.isArray(d.data.rolePermissions) && d.data.rolePermissions.length > 0) {
           const defaultMap = new Map(DEFAULT_PERMISSIONS_MATRIX.map((p) => [p.id, p]));
-          const hydratedPerms = (d.data.rolePermissions as PermissionItem[]).map((item) => {
+          const savedPermIds = new Set((d.data.rolePermissions as PermissionItem[]).map((p) => p.id));
+          const hydratedPerms: PermissionItem[] = (d.data.rolePermissions as PermissionItem[]).map((item) => {
             const defItem = defaultMap.get(item.id);
             const nextRoles: Record<string, boolean> = { ...(item.roles || {}) };
             if (nextRoles.ACTING_OFFICER === undefined) {
@@ -422,7 +465,11 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
               nextRoles.VIPASSANA_MASTER =
                 defItem?.roles.VIPASSANA_MASTER !== undefined
                   ? defItem.roles.VIPASSANA_MASTER
-                  : item.id === 'vipassana_interview_eval';
+                  : (item.id === 'vipassana_interview_eval' || item.id === 'vipassana_events_view' || item.id === 'vipassana_report_print');
+            }
+            // Guarantee that core vipassana modules are active for VIPASSANA_MASTER
+            if (item.id === 'vipassana_interview_eval' || item.id === 'vipassana_events_view' || item.id === 'vipassana_report_print') {
+              nextRoles.VIPASSANA_MASTER = true;
             }
             loadedCols.forEach((col) => {
               if (nextRoles[col.key] === undefined) {
@@ -431,9 +478,27 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
             });
             return {
               ...item,
+              lockedRoles: defItem?.lockedRoles || item.lockedRoles,
               roles: nextRoles,
             };
           });
+
+          // Ensure any default permissions missing from the saved configuration are appended
+          DEFAULT_PERMISSIONS_MATRIX.forEach((defItem) => {
+            if (!savedPermIds.has(defItem.id)) {
+              const nextRoles: Record<string, boolean> = { ...(defItem.roles || {}) };
+              loadedCols.forEach((col) => {
+                if (nextRoles[col.key] === undefined) {
+                  nextRoles[col.key] = false;
+                }
+              });
+              hydratedPerms.push({
+                ...defItem,
+                roles: nextRoles,
+              });
+            }
+          });
+
           setPermissions(hydratedPerms);
         }
       })
