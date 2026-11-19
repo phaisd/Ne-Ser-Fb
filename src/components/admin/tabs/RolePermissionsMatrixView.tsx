@@ -390,6 +390,16 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
               mergedCols.push(actingCol);
             }
           }
+          // Ensure VIPASSANA_MASTER is inserted if missing from older saved settings
+          if (!savedKeys.has('VIPASSANA_MASTER')) {
+            const instructorIdx = mergedCols.findIndex((c) => c.key === 'INSTRUCTOR');
+            const vipassanaCol = DEFAULT_ROLE_COLUMNS.find((c) => c.key === 'VIPASSANA_MASTER')!;
+            if (instructorIdx !== -1) {
+              mergedCols.splice(instructorIdx + 1, 0, vipassanaCol);
+            } else {
+              mergedCols.push(vipassanaCol);
+            }
+          }
           loadedCols = mergedCols;
           setRoleColumns(mergedCols);
         }
@@ -405,6 +415,12 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
                 defItem?.roles.ACTING_OFFICER !== undefined
                   ? defItem.roles.ACTING_OFFICER
                   : Boolean(nextRoles.OFFICER && item.id !== 'users_instructors_manage');
+            }
+            if (nextRoles.VIPASSANA_MASTER === undefined) {
+              nextRoles.VIPASSANA_MASTER =
+                defItem?.roles.VIPASSANA_MASTER !== undefined
+                  ? defItem.roles.VIPASSANA_MASTER
+                  : item.id === 'vipassana_interview_eval';
             }
             loadedCols.forEach((col) => {
               if (nextRoles[col.key] === undefined) {
@@ -625,6 +641,7 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
   const officersCount = users.filter((u) => u.role === 'OFFICER').length;
   const actingOfficersCount = users.filter((u) => Boolean(u.isActingOfficer)).length;
   const instructorsCount = users.filter((u) => u.role === 'INSTRUCTOR').length;
+  const vipassanaMastersCount = users.filter((u) => u.role === 'VIPASSANA_MASTER').length;
 
   const getRoleCount = (key: SystemRoleKey): number => {
     if (key === 'SUPER_ADMIN') return superAdminsCount;
@@ -632,6 +649,7 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
     if (key === 'OFFICER') return officersCount;
     if (key === 'ACTING_OFFICER') return actingOfficersCount;
     if (key === 'INSTRUCTOR') return instructorsCount;
+    if (key === 'VIPASSANA_MASTER') return vipassanaMastersCount;
     if (key === 'STUDENT') return studentsCount;
     return users.filter((u) => (u.role as string) === key).length;
   };
@@ -642,6 +660,7 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
     if (key === 'OFFICER') return <UserCheck className="w-5 h-5 text-sky-100" />;
     if (key === 'ACTING_OFFICER') return <Briefcase className="w-5 h-5 text-teal-100" />;
     if (key === 'INSTRUCTOR') return <Users className="w-5 h-5 text-emerald-100" />;
+    if (key === 'VIPASSANA_MASTER') return <Sparkles className="w-5 h-5 text-rose-100" />;
     if (key === 'STUDENT') return <GraduationCap className="w-5 h-5 text-amber-100" />;
     return <Layers className="w-5 h-5 text-white" />;
   };
@@ -664,8 +683,8 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
         </div>
       )}
 
-      {/* 1. Role Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
+      {/* 1. Role Overview Cards - Responsive 2-Row Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
         {roleColumns.map((rc) => {
           const isSelected = selectedRoleCard === rc.key;
           const theme = THEME_STYLES[rc.colorTheme] || THEME_STYLES.teal;

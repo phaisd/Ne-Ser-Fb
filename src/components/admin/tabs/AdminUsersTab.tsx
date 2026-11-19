@@ -443,7 +443,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
         </div>
 
         <div className="text-[11px] text-slate-500 px-3 hidden md:flex items-center gap-1.5">
-          <span>💡 คลิกสลับแท็บเพื่อดูตารางเปรียบเทียบสิทธิ์ 5 บทบาท หรือปรับแต่งสิทธิ์การเข้าถึงแต่ละเมนู</span>
+          <span>💡 คลิกสลับแท็บเพื่อดูตารางเปรียบเทียบสิทธิ์ 7 บทบาท (รวมพระวิปัสสนาจารย์) หรือปรับแต่งสิทธิ์การเข้าถึงแต่ละเมนู</span>
         </div>
       </div>
 
