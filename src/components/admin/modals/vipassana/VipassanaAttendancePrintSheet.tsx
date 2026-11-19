@@ -29,6 +29,7 @@ interface VipassanaAttendancePrintSheetProps {
   printBlankRows: boolean;
   attendanceRows: PrintAttendanceRow[];
   advisors?: string[]; // รายนามอาจารย์ประจำกลุ่ม และผู้ช่วย
+  scannerStaff?: string; // อาจารย์ผู้ดูแล หรือเจ้าหน้าที่ ที่สแกนตรวจเช็ค (กรณีสแกน QR Code)
 }
 
 export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintSheetProps> = ({
@@ -42,6 +43,7 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
   printBlankRows,
   attendanceRows,
   advisors,
+  scannerStaff,
 }) => {
   return (
     <div className="flex flex-col items-center">
@@ -195,6 +197,18 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                   )}{' '}
                   ผู้ดูแลกลุ่ม ......... / ............ / ..........
                 </div>
+
+                {/* ช่องชื่อของอาจารย์ผู้ดูแล หรือเจ้าหน้าที่ ที่สแกนตรวจเช็ค (กรณีสแกน QR Code) */}
+                <div className="text-[11px] pt-1">
+                  {scannerStaff ? (
+                    <span className="font-semibold px-2 py-0.5 border-b border-black">
+                      ( {scannerStaff} )
+                    </span>
+                  ) : (
+                    '............................................................................................................'
+                  )}{' '}
+                  อาจารย์ผู้ดูแล / เจ้าหน้าที่ ที่สแกนตรวจเช็ค (QR Code Scanner / Staff)
+                </div>
               </div>
 
               {/* Footnote Rules */}
@@ -332,6 +346,18 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                     '................................................................./...........................................................................'
                   )}{' '}
                   อาจารย์ประจำกลุ่ม กลุ่มที่ : {selectedGroup !== 'ALL' ? selectedGroup : '3'}
+                </div>
+
+                {/* ช่องชื่อของอาจารย์ผู้ดูแล หรือเจ้าหน้าที่ ที่สแกนตรวจเช็ค (กรณีสแกน QR Code) */}
+                <div className="text-[11px] pt-1">
+                  {scannerStaff ? (
+                    <span className="font-semibold px-2 py-0.5 border-b border-black">
+                      ( {scannerStaff} )
+                    </span>
+                  ) : (
+                    '..................................................................................................................................................'
+                  )}{' '}
+                  อาจารย์ผู้ดูแล / เจ้าหน้าที่ ที่สแกนตรวจเช็ค (กรณีสแกน QR Code)
                 </div>
               </div>
 

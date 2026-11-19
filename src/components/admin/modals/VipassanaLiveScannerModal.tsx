@@ -248,6 +248,16 @@ export function VipassanaLiveScannerModal({
   >([]);
   const [isSyncingOffline, setIsSyncingOffline] = useState(false);
 
+  // Scanner Officer Name (อาจารย์ผู้ดูแล / เจ้าหน้าที่ ที่สแกนตรวจเช็ค)
+  const [scannerOfficerName, setScannerOfficerName] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return localStorage.getItem('vipassana_scanner_officer_name') || '';
+      } catch {}
+    }
+    return '';
+  });
+
   // Load offline queue on mount
   useEffect(() => {
     try {
@@ -370,6 +380,7 @@ export function VipassanaLiveScannerModal({
             periodKey: selectedPeriod,
             status: targetStatus,
             checkInTime,
+            recordedBy: scannerOfficerName.trim() || undefined,
           }),
         });
 
@@ -546,6 +557,7 @@ export function VipassanaLiveScannerModal({
           periodKey: selectedPeriod,
           status: newStatus,
           checkInTime,
+          recordedBy: scannerOfficerName.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -798,6 +810,24 @@ export function VipassanaLiveScannerModal({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Scanner Officer Name (อาจารย์ผู้ดูแล / เจ้าหน้าที่ ที่สแกนตรวจเช็ค) */}
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-300 shadow-2xs">
+              <span className="font-semibold text-slate-600 text-[11px] whitespace-nowrap">ผู้สแกน:</span>
+              <input
+                type="text"
+                placeholder="ระบุชื่ออาจารย์/จนท..."
+                value={scannerOfficerName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setScannerOfficerName(val);
+                  try {
+                    localStorage.setItem('vipassana_scanner_officer_name', val);
+                  } catch {}
+                }}
+                className="w-24 sm:w-36 text-xs font-bold text-slate-800 outline-none"
+              />
             </div>
 
             {/* Period Switcher */}

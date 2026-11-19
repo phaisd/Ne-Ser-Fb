@@ -110,6 +110,9 @@ export function VipassanaAttendanceSheetModal({
   const [isCombinedEvalModalOpen, setIsCombinedEvalModalOpen] = useState(false);
   const [isGroupAssignmentModalOpen, setIsGroupAssignmentModalOpen] = useState(false);
 
+  // Scanner Staff Officer Name (สำหรับแบบฟอร์มพิมพ์ A4 กรณีสแกน QR Code)
+  const [scannerStaff, setScannerStaff] = useState<string>('');
+
   // Editable check-in times state & late threshold
   const [timeState, setTimeState] = useState<Record<string, {
     p1?: string;
@@ -226,6 +229,25 @@ export function VipassanaAttendanceSheetModal({
     const gKey = String(selectedGroup);
     return event.meditationConfig?.groupAssignments?.[gKey] || null;
   }, [selectedGroup, event.meditationConfig?.groupAssignments]);
+
+  // Detected Scanner / Staff names from recordedBy or group advisors
+  const detectedScanners = useMemo(() => {
+    const setNames = new Set<string>();
+    registrations.forEach((r) => {
+      const savedForDay = r.dailyAttendance?.[dayKey];
+      if (!savedForDay) return;
+      ['p1', 'p2', 'p3', 'p4'].forEach((pk) => {
+        const staff = (savedForDay as any)[pk]?.recordedBy;
+        if (staff && staff !== 'STAFF_SCANNER' && !staff.includes('@')) {
+          setNames.add(staff);
+        }
+      });
+    });
+    if (currentGroupAssignment?.advisors) {
+      currentGroupAssignment.advisors.forEach((a) => setNames.add(a));
+    }
+    return Array.from(setNames);
+  }, [registrations, dayKey, currentGroupAssignment]);
 
   // Sync / Initialize attendanceState when group or day changes
   const attendanceRows: StudentAttendanceRow[] = useMemo(() => {
@@ -1355,18 +1377,62 @@ export function VipassanaAttendanceSheetModal({
             </div>
           ) : (
             /* VIEW 2: OFFICIAL PRINTABLE A4 FORM */
-            <VipassanaAttendancePrintSheet
-              activeProgram={activeProgram}
-              selectedDayNumber={selectedDayNumber}
-              selectedGroup={selectedGroup}
-              p1Conf={p1Conf}
-              p2Conf={p2Conf}
-              p3Conf={p3Conf}
-              p4Conf={p4Conf}
-              printBlankRows={printBlankRows}
-              attendanceRows={attendanceRows}
-              advisors={currentGroupAssignment?.advisors}
-            />
+            <div className="flex flex-col items-center space-y-4">
+              {/* Print Header Controls (Hidden during physical print) */}
+              <div className="w-full max-w-[800px] bg-amber-50/90 border border-amber-200/90 rounded-2xl p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
+                <div className="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
+                  <span className="font-bold text-amber-950 flex items-center gap-1.5 shrink-0">
+                    <Camera className="w-4 h-4 text-emerald-600" />
+                    อาจารย์/เจ้าหน้าที่ ที่สแกนตรวจเช็ค (กรณีสแกน QR Code):
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="พิมพ์ชื่อผู้สแกนตรวจเช็ค (หรือเว้นว่างเพื่อเซ็นสด)..."
+                    value={scannerStaff}
+                    onChange={(e) => setScannerStaff(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-bold text-slate-800 flex-1 min-w-[200px] outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+                  />
+                  {detectedScanners.length > 0 && (
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="text-[10.5px] text-slate-500">เลือก:</span>
+                      {detectedScanners.map((name, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setScannerStaff(name)}
+                          className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-white border border-amber-200 text-amber-900 hover:bg-amber-100 transition cursor-pointer"
+                        >
+                          + {name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>พิมพ์เอกสาร A4</span>
+                </button>
+              </div>
+
+              <VipassanaAttendancePrintSheet
+                activeProgram={activeProgram}
+                selectedDayNumber={selectedDayNumber}
+                selectedGroup={selectedGroup}
+                p1Conf={p1Conf}
+                p2Conf={p2Conf}
+                p3Conf={p3Conf}
+                p4Conf={p4Conf}
+                printBlankRows={printBlankRows}
+                attendanceRows={attendanceRows}
+                advisors={currentGroupAssignment?.advisors}
+                scannerStaff={scannerStaff}
+              />
+            </div>
           )}
         </div>
 
