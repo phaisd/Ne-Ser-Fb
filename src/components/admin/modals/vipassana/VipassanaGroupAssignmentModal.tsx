@@ -24,6 +24,7 @@ interface VipassanaGroupAssignmentModalProps {
   onClose: () => void;
   event: StudentEvent;
   registrations: EventRegistration[];
+  systemUsers?: UserAccount[];
   onAssignmentsSaved?: (updatedEvent: StudentEvent) => void;
 }
 
@@ -32,6 +33,7 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
   onClose,
   event,
   registrations,
+  systemUsers: initialUsers,
   onAssignmentsSaved,
 }) => {
   // 1. Group list calculation: derived from registrations or standard 1..12
@@ -54,8 +56,15 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
 
   // 3. Local working copy of group assignments
   const [assignments, setAssignments] = useState<Record<string, MeditationGroupAssignment>>({});
-  const [systemUsers, setSystemUsers] = useState<UserAccount[]>([]);
+  const [systemUsers, setSystemUsers] = useState<UserAccount[]>(initialUsers || []);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  // Sync if initialUsers prop changes
+  useEffect(() => {
+    if (initialUsers && initialUsers.length > 0) {
+      setSystemUsers(initialUsers);
+    }
+  }, [initialUsers]);
 
   // Grouped system users for easy selection
   const vipassanaMasterUsers = useMemo(() => {
@@ -121,11 +130,16 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
       setIsLoadingUsers(true);
       fetch('/api/users')
         .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) {
-            setSystemUsers(data);
-          } else if (data && Array.isArray(data.users)) {
-            setSystemUsers(data.users);
+        .then((resData) => {
+          const list: UserAccount[] = Array.isArray(resData)
+            ? resData
+            : Array.isArray(resData?.data)
+            ? resData.data
+            : Array.isArray(resData?.users)
+            ? resData.users
+            : [];
+          if (list.length > 0) {
+            setSystemUsers(list);
           }
         })
         .catch((err) => console.warn('Could not load users for assignment:', err))
@@ -478,24 +492,26 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                       value={selectedUserAdvisorId}
                       onChange={(e) => {
                         const val = e.target.value;
-                        setSelectedUserAdvisorId(val);
                         if (val) {
                           const found = systemUsers.find((u) => u.id === val);
                           if (found) handleAddAdvisor(found.name);
                         }
+                        setSelectedUserAdvisorId('');
                       }}
                       className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
                     >
-                      <option value="">-- เลือกจากรายชื่อระบบ ({systemUsers.length}) --</option>
-                      <optgroup label="อาจารย์และเจ้าหน้าที่ประจำ">
+                      <option value="">
+                        {isLoadingUsers ? 'กำลังโหลดรายชื่อ...' : `-- เลือกจากรายชื่อระบบ (${systemUsers.length}) --`}
+                      </option>
+                      <optgroup label={`อาจารย์และเจ้าหน้าที่ประจำ (${regularStaffUsers.length})`}>
                         {regularStaffUsers.map((u) => (
                           <option key={u.id} value={u.id}>
-                            {u.name} [{u.role || 'อาจารย์'}]
+                            {u.name} [{u.role || 'อาจารย์'}]{u.department ? ` - ${u.department}` : ''}
                           </option>
                         ))}
                       </optgroup>
                       {vipassanaMasterUsers.length > 0 && (
-                        <optgroup label="พระวิปัสสนาจารย์">
+                        <optgroup label={`พระวิปัสสนาจารย์ (${vipassanaMasterUsers.length})`}>
                           {vipassanaMasterUsers.map((u) => (
                             <option key={u.id} value={u.id}>
                               {u.name} {u.instructorType ? `(${u.instructorType})` : ''}
@@ -601,25 +617,27 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                       value={selectedUserMasterId}
                       onChange={(e) => {
                         const val = e.target.value;
-                        setSelectedUserMasterId(val);
                         if (val) {
                           const found = systemUsers.find((u) => u.id === val);
                           if (found) handleAddMaster(found.name);
                         }
+                        setSelectedUserMasterId('');
                       }}
                       className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                     >
-                      <option value="">-- เลือกจากรายชื่อระบบ ({systemUsers.length}) --</option>
+                      <option value="">
+                        {isLoadingUsers ? 'กำลังโหลดรายชื่อ...' : `-- เลือกจากรายชื่อระบบ (${systemUsers.length}) --`}
+                      </option>
                       {vipassanaMasterUsers.length > 0 && (
-                        <optgroup label="⭐ พระวิปัสสนาจารย์ (VIPASSANA_MASTER)">
+                        <optgroup label={`⭐ พระวิปัสสนาจารย์ (${vipassanaMasterUsers.length})`}>
                           {vipassanaMasterUsers.map((u) => (
                             <option key={u.id} value={u.id}>
-                              {u.name} {u.instructorType ? `(${u.instructorType})` : ''}
+                              {u.name} {u.instructorType ? `[${u.instructorType}]` : ''} {u.ecclesiasticalTitle ? `(${u.ecclesiasticalTitle})` : ''}
                             </option>
                           ))}
                         </optgroup>
                       )}
-                      <optgroup label="อาจารย์และพระภิกษุรูปอื่นในระบบ">
+                      <optgroup label={`อาจารย์และพระภิกษุรูปอื่นในระบบ (${regularStaffUsers.length})`}>
                         {regularStaffUsers.map((u) => (
                           <option key={u.id} value={u.id}>
                             {u.name} [{u.role || 'อาจารย์'}]
