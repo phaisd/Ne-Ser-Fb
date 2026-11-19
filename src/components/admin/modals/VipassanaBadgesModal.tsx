@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import QRCode from 'qrcode';
-import { printElement } from '@/lib/utils/print-helper';
 import {
   X,
   Printer,
@@ -181,13 +180,16 @@ export function VipassanaBadgesModal({
   };
 
   const handlePrintBadges = () => {
-    printElement('vipassana-badges-print-area', `ป้ายชื่อคล้องคอ_${event.title || 'วิปัสสนากัมมัฏฐาน'}`);
+    window.print();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:block animate-in fade-in">
+    <div
+      id="vipassana-badges-root"
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:block print:overflow-visible animate-in fade-in"
+    >
       {/* Container */}
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden print:shadow-none print:border-none print:max-h-none print:w-full print:p-0 print:static print:block print:overflow-visible print:h-auto animate-in fade-in zoom-in-95 duration-200">
         
@@ -344,22 +346,21 @@ export function VipassanaBadgesModal({
                 body {
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
-                }
-                body * {
                   visibility: hidden !important;
                 }
-                #vipassana-badges-print-area,
-                #vipassana-badges-print-area * {
+                #vipassana-badges-root,
+                #vipassana-badges-root * {
                   visibility: visible !important;
                 }
-                #vipassana-badges-print-area {
-                  position: absolute !important;
-                  left: 0 !important;
-                  top: 0 !important;
+                #vipassana-badges-root {
+                  position: static !important;
+                  display: block !important;
                   width: 100% !important;
+                  height: auto !important;
+                  overflow: visible !important;
                   margin: 0 !important;
                   padding: 0 !important;
-                  display: block !important;
+                  background: white !important;
                 }
                 .print\\:hidden, .no-print {
                   display: none !important;

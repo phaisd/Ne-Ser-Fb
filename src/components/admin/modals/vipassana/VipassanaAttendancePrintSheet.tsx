@@ -64,17 +64,24 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          body * {
+          body {
             visibility: hidden !important;
           }
-          #official-a4-sheet,
-          #official-a4-sheet * {
+          #vipassana-attendance-root,
+          #vipassana-attendance-root * {
             visibility: visible !important;
           }
+          #vipassana-attendance-root {
+            position: static !important;
+            display: block !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+          }
           #official-a4-sheet {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;

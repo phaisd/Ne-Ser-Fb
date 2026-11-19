@@ -28,7 +28,6 @@ import { VipassanaLiveScannerModal } from './VipassanaLiveScannerModal';
 import { VipassanaInterviewSheetModal } from './VipassanaInterviewSheetModal';
 import { VipassanaCombinedEvaluationModal } from './VipassanaCombinedEvaluationModal';
 import { VipassanaAttendancePrintSheet, VipassanaGroupAssignmentModal } from './vipassana';
-import { printElement } from '@/lib/utils/print-helper';
 
 interface VipassanaAttendanceSheetModalProps {
   isOpen: boolean;
@@ -483,17 +482,20 @@ export function VipassanaAttendanceSheetModal({
     if (viewMode !== 'PRINT_PREVIEW') {
       setViewMode('PRINT_PREVIEW');
       setTimeout(() => {
-        printElement('official-a4-sheet', 'แบบฟอร์มบันทึกเวลาปฏิบัติวิปัสสนากัมมัฏฐาน 4 รอบ');
-      }, 250);
+        window.print();
+      }, 100);
     } else {
-      printElement('official-a4-sheet', 'แบบฟอร์มบันทึกเวลาปฏิบัติวิปัสสนากัมมัฏฐาน 4 รอบ');
+      window.print();
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:block print:overflow-visible">
+    <div
+      id="vipassana-attendance-root"
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:block print:overflow-visible"
+    >
       {/* Container Card */}
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 print:shadow-none print:border-none print:max-h-none print:w-full print:p-0 print:static print:block print:overflow-visible print:h-auto">
         
