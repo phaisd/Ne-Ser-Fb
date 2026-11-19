@@ -205,7 +205,7 @@ export async function updateUserRole(
     target.role = 'INSTRUCTOR';
     target.isActingOfficer = true;
     if (target.instructorType && !target.instructorType.includes('ผู้ช่วย')) {
-      target.instructorType = 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)';
+      target.instructorType = 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)';
     }
   } else {
     target.role = newRole;

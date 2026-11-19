@@ -62,7 +62,7 @@ export interface ParsedOfficerItem {
 
 const OFFICER_POSITIONS = [
   'เจ้าหน้าที่หลักสูตร',
-  'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)',
+  'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)',
   'เจ้าหน้าที่ดูแลระบบ',
   'เจ้าหน้าที่ฝ่ายวิชาการ',
   'เจ้าหน้าที่ทะเบียนและวัดผล',
@@ -264,7 +264,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
       staged.push({
         id: existingMatch?.id,
         name: rawName,
-        position: rawPosition || (isActingOfficer ? 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)' : 'เจ้าหน้าที่หลักสูตร'),
+        position: rawPosition || (isActingOfficer ? 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)' : 'เจ้าหน้าที่หลักสูตร'),
         department: rawDept,
         phoneNumber: rawPhone,
         email: assignedEmail,
@@ -342,17 +342,17 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
         ['นายธนกฤต มณีรัตน์', 'เจ้าหน้าที่หลักสูตร (OFFICER)', 'เจ้าหน้าที่ประจำหลักสูตรบัณฑิตศึกษา', 'สำนักงานคณบดี คณะพุทธศาสตร์', '082-111-2233', '', 'Fb8323mcu'],
       ];
     } else if (roleMode === 'ACTING') {
-      fileTitle = 'เทมเพลต_ผู้ช่วยเจ้าหน้าที่_อาจารย์ช่วยงาน_Fb8323mcu';
+      fileTitle = 'เทมเพลต_ผู้ช่วยเจ้าหน้าที่_ผู้ช่วยงาน_Fb8323mcu';
       sampleRows = [
-        ['ดร.สมเกียรติ กิจเจริญ', 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', 'ผู้ช่วยเจ้าหน้าที่หลักสูตร', 'สำนักงานคณบดี คณะพุทธศาสตร์', '089-876-5432', '', 'Fb8323mcu'],
-        ['พระครูสมุห์ประพันธ์ ญาณวโร', 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', 'อาจารย์ผู้ช่วยงานหลักสูตร', 'ภาควิชาปรัชญา', '084-555-6789', '', 'Fb8323mcu'],
-        ['ผศ.ดร.วิชัย ธัมมธีโร', 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', 'อาจารย์ผู้ช่วยงานหลักสูตร', 'ภาควิชาศาสนาและปรัชญา', '087-999-0011', '', 'Fb8323mcu'],
+        ['ดร.สมเกียรติ กิจเจริญ', 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)', 'ผู้ช่วยเจ้าหน้าที่หลักสูตร', 'สำนักงานคณบดี คณะพุทธศาสตร์', '089-876-5432', '', 'Fb8323mcu'],
+        ['พระครูสมุห์ประพันธ์ ญาณวโร', 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)', 'ผู้ช่วยงานหลักสูตร', 'ภาควิชาปรัชญา', '084-555-6789', '', 'Fb8323mcu'],
+        ['ผศ.ดร.วิชัย ธัมมธีโร', 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)', 'ผู้ช่วยงานหลักสูตร', 'ภาควิชาศาสนาและปรัชญา', '087-999-0011', '', 'Fb8323mcu'],
       ];
     } else {
       fileTitle = 'เทมเพลต_รวมเจ้าหน้าที่และผู้ช่วย_Fb8323mcu';
       sampleRows = [
         ['นางสาวจิตรา ศิริสุข', 'เจ้าหน้าที่หลักสูตร (OFFICER)', 'เจ้าหน้าที่ประจำหลักสูตร', 'ภาควิชาพระพุทธศาสนา', '081-234-5678', '', 'Fb8323mcu'],
-        ['ดร.สมเกียรติ กิจเจริญ', 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', 'ผู้ช่วยเจ้าหน้าที่หลักสูตร', 'สำนักงานคณบดี คณะพุทธศาสตร์', '089-876-5432', '', 'Fb8323mcu'],
+        ['ดร.สมเกียรติ กิจเจริญ', 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)', 'ผู้ช่วยเจ้าหน้าที่หลักสูตร', 'สำนักงานคณบดี คณะพุทธศาสตร์', '089-876-5432', '', 'Fb8323mcu'],
         ['พระมหาสุริยา สุริโย', 'เจ้าหน้าที่หลักสูตร (OFFICER)', 'เจ้าหน้าที่หลักสูตร', 'หลักสูตรนานาชาติ (Buddhism)', '035-248-000', '', 'Fb8323mcu'],
         ['นายกิตติศักดิ์ พูลผล', 'เจ้าหน้าที่สายสนับสนุน (STAFF)', 'เจ้าหน้าที่สนับสนุนวิชาการ', 'สำนักงานคณบดี คณะพุทธศาสตร์', '086-555-1234', '', 'Fb8323mcu'],
       ];
@@ -530,7 +530,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
                 </span>
               </div>
               <p className="text-xs text-teal-200/90 mt-0.5">
-                สร้างไอดี officerXX@mcu.ac.th และรหัสผ่านอัตโนมัติ (Fb8323mcu) รองรับเจ้าหน้าที่หลักสูตรและอาจารย์ช่วยงาน
+                สร้างไอดี officerXX@mcu.ac.th และรหัสผ่านอัตโนมัติ (Fb8323mcu) รองรับเจ้าหน้าที่หลักสูตรและผู้ช่วยงาน
               </p>
             </div>
           </div>
@@ -619,7 +619,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
                     type="button"
                     onClick={() => handleDownloadTemplate('CSV', 'ACTING')}
                     className="px-2 py-1 rounded-lg hover:bg-amber-50 text-amber-700 font-bold transition cursor-pointer text-[11px] border-l border-slate-200"
-                    title="เทมเพลตเฉพาะ ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)"
+                    title="เทมเพลตเฉพาะ ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)"
                   >
                     ผู้ช่วยเจ้าหน้าที่ (.csv)
                   </button>
@@ -638,7 +638,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
                   >
                     <option value="AUTO">🔍 ตรวจจับอัตโนมัติ (จากไฟล์)</option>
                     <option value="OFFICER">👤 เจ้าหน้าที่หลักสูตร (OFFICER) ทั้งหมด</option>
-                    <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน) ทั้งหมด</option>
+                    <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน) ทั้งหมด</option>
                     <option value="STAFF">💼 เจ้าหน้าที่สายสนับสนุน (STAFF) ทั้งหมด</option>
                   </select>
                 </div>
@@ -744,7 +744,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
                                           isActingOfficer: true,
                                           position: p.position.includes('เจ้าหน้าที่') && !p.position.includes('ผู้ช่วย')
                                             ? p.position.replace('เจ้าหน้าที่', 'ผู้ช่วยเจ้าหน้าที่')
-                                            : p.position || 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)',
+                                            : p.position || 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)',
                                         };
                                       } else if (val === 'STAFF') {
                                         return {
@@ -773,7 +773,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
                                 }`}
                               >
                                 <option value="OFFICER">👤 เจ้าหน้าที่หลักสูตร (OFFICER)</option>
-                                <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)</option>
+                                <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)</option>
                                 <option value="STAFF">💼 เจ้าหน้าที่สายสนับสนุน (STAFF)</option>
                               </select>
                               <span className="text-[10px] text-slate-500 font-medium truncate max-w-[160px]" title={item.position}>
@@ -846,7 +846,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
                   >
                     <option value="ALL">ทั้งหมด ({currentOfficers.length})</option>
                     <option value="OFFICER">เจ้าหน้าที่หลักสูตร (OFFICER)</option>
-                    <option value="ACTING">ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)</option>
+                    <option value="ACTING">ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)</option>
                     <option value="STAFF">เจ้าหน้าที่ทั่วไป (STAFF)</option>
                   </select>
                 </div>

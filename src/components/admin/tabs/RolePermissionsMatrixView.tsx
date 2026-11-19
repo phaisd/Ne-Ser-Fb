@@ -34,7 +34,7 @@ export interface RoleColumnConfig {
   shortHeader: string;
   badge: string;
   desc: string;
-  colorTheme: 'purple' | 'indigo' | 'sky' | 'teal' | 'emerald' | 'amber' | 'rose';
+  colorTheme: 'purple' | 'indigo' | 'sky' | 'teal' | 'emerald' | 'amber' | 'rose' | 'blue';
   isCustom?: boolean;
 }
 
@@ -67,19 +67,27 @@ export const DEFAULT_ROLE_COLUMNS: RoleColumnConfig[] = [
   },
   {
     key: 'OFFICER',
-    title: 'เจ้าหน้าที่ดูแลระบบ',
-    shortHeader: '👮 เจ้าหน้าที่ดูแลระบบ (Officer)',
+    title: 'เจ้าหน้าที่หลักสูตร (OFFICER)',
+    shortHeader: '📋 เจ้าหน้าที่หลักสูตร',
     badge: 'OFFICER',
     desc: 'ตรวจสอบคำร้อง แก้ไข/เลื่อนชั้นปีนิสิต จัดการรายวิชา/ตารางสอน และออกบัตรภาระงานอาจารย์',
     colorTheme: 'sky',
   },
   {
     key: 'ACTING_OFFICER',
-    title: 'เจ้าหน้าที่หลักสูตร / ผู้ช่วยเจ้าหน้าที่',
-    shortHeader: '🤝 ผู้ช่วยเจ้าหน้าที่ / หลักสูตร',
+    title: 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)',
+    shortHeader: '🎓 ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)',
     badge: 'ACTING_OFFICER',
     desc: 'อาจารย์หรือนิสิตที่ได้รับมอบหมาย (☑️ ช่วยงานเจ้าหน้าที่) ช่วยตรวจคำร้อง จัดตารางสอน และเช็คชื่อกิจกรรม โดยจำกัดสิทธิ์บางเรื่องที่สำคัญ',
     colorTheme: 'teal',
+  },
+  {
+    key: 'STAFF',
+    title: 'เจ้าหน้าที่สายสนับสนุน (STAFF)',
+    shortHeader: '💼 สายสนับสนุน (STAFF)',
+    badge: 'STAFF',
+    desc: 'บุคลากรสายสนับสนุนวิชาการ หรือเจ้าหน้าที่ธุรการคณะ ช่วยงานประสานงานทั่วไป',
+    colorTheme: 'blue',
   },
   {
     key: 'INSTRUCTOR',
@@ -373,6 +381,11 @@ const THEME_STYLES: Record<
     activeBorder: 'ring-2 ring-rose-500 border-rose-500 bg-rose-50/40',
     thBg: 'bg-rose-50/70 text-rose-900',
   },
+  blue: {
+    cardGrad: 'from-blue-600 to-indigo-600 text-white',
+    activeBorder: 'ring-2 ring-blue-600 border-blue-600 bg-blue-50/40',
+    thBg: 'bg-blue-50/70 text-blue-900',
+  },
 };
 
 interface RolePermissionsMatrixViewProps {
@@ -420,7 +433,7 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
       .then((d) => {
         if (!d.success || !d.data) return;
 
-        // 1. Merge roleColumns (ensure ACTING_OFFICER and all 6 core columns exist)
+        // 1. Merge roleColumns (ensure ACTING_OFFICER, STAFF, and all core columns exist with matching titles)
         let loadedCols: RoleColumnConfig[] = DEFAULT_ROLE_COLUMNS;
         if (Array.isArray(d.data.roleColumns) && d.data.roleColumns.length > 0) {
           const savedCols = d.data.roleColumns as RoleColumnConfig[];
@@ -436,6 +449,16 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
               mergedCols.push(actingCol);
             }
           }
+          // Ensure STAFF is inserted if missing from older saved settings
+          if (!savedKeys.has('STAFF')) {
+            const actingIdx = mergedCols.findIndex((c) => c.key === 'ACTING_OFFICER');
+            const staffCol = DEFAULT_ROLE_COLUMNS.find((c) => c.key === 'STAFF')!;
+            if (actingIdx !== -1) {
+              mergedCols.splice(actingIdx + 1, 0, staffCol);
+            } else {
+              mergedCols.push(staffCol);
+            }
+          }
           // Ensure VIPASSANA_MASTER is inserted if missing from older saved settings
           if (!savedKeys.has('VIPASSANA_MASTER')) {
             const instructorIdx = mergedCols.findIndex((c) => c.key === 'INSTRUCTOR');
@@ -446,6 +469,19 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
               mergedCols.push(vipassanaCol);
             }
           }
+          // Synchronize standard titles with current naming
+          mergedCols.forEach((col) => {
+            if (col.key === 'OFFICER') {
+              col.title = 'เจ้าหน้าที่หลักสูตร (OFFICER)';
+              col.shortHeader = '📋 เจ้าหน้าที่หลักสูตร';
+            } else if (col.key === 'ACTING_OFFICER') {
+              col.title = 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)';
+              col.shortHeader = '🎓 ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)';
+            } else if (col.key === 'STAFF') {
+              col.title = 'เจ้าหน้าที่สายสนับสนุน (STAFF)';
+              col.shortHeader = '💼 สายสนับสนุน (STAFF)';
+            }
+          });
           loadedCols = mergedCols;
           setRoleColumns(mergedCols);
         }
@@ -709,6 +745,7 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
   ).length;
   const officersCount = users.filter((u) => u.role === 'OFFICER').length;
   const actingOfficersCount = users.filter((u) => Boolean(u.isActingOfficer)).length;
+  const staffCount = users.filter((u) => u.role === 'STAFF').length;
   const instructorsCount = users.filter((u) => u.role === 'INSTRUCTOR').length;
   const vipassanaMastersCount = users.filter((u) => u.role === 'VIPASSANA_MASTER').length;
 
@@ -717,6 +754,7 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
     if (key === 'ADMIN') return adminsCount;
     if (key === 'OFFICER') return officersCount;
     if (key === 'ACTING_OFFICER') return actingOfficersCount;
+    if (key === 'STAFF') return staffCount;
     if (key === 'INSTRUCTOR') return instructorsCount;
     if (key === 'VIPASSANA_MASTER') return vipassanaMastersCount;
     if (key === 'STUDENT') return studentsCount;
@@ -727,7 +765,8 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
     if (key === 'SUPER_ADMIN') return <Crown className="w-5 h-5 text-amber-300" />;
     if (key === 'ADMIN') return <ShieldCheck className="w-5 h-5 text-indigo-200" />;
     if (key === 'OFFICER') return <UserCheck className="w-5 h-5 text-sky-100" />;
-    if (key === 'ACTING_OFFICER') return <Briefcase className="w-5 h-5 text-teal-100" />;
+    if (key === 'ACTING_OFFICER') return <GraduationCap className="w-5 h-5 text-teal-100" />;
+    if (key === 'STAFF') return <Briefcase className="w-5 h-5 text-blue-100" />;
     if (key === 'INSTRUCTOR') return <Users className="w-5 h-5 text-emerald-100" />;
     if (key === 'VIPASSANA_MASTER') return <Sparkles className="w-5 h-5 text-rose-100" />;
     if (key === 'STUDENT') return <GraduationCap className="w-5 h-5 text-amber-100" />;

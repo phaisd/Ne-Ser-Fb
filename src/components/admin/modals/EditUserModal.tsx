@@ -211,7 +211,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                 <>
                   {isOfficer ? (
                     <div className="p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-slate-700 font-semibold flex items-center justify-between text-xs">
-                      <span>{currentRoleSelection === 'ACTING_OFFICER' ? 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)' : 'อาจารย์ผู้สอน (INSTRUCTOR)'}</span>
+                      <span>{currentRoleSelection === 'ACTING_OFFICER' ? 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)' : 'อาจารย์ผู้สอน (INSTRUCTOR)'}</span>
                       <span className="text-[10px] text-slate-400 font-normal">(เฉพาะ Super Admin ที่เปลี่ยนได้)</span>
                     </div>
                   ) : (
@@ -227,8 +227,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                             isActingOfficer: true,
                             instructorType:
                               editUserForm.instructorType && !editUserForm.instructorType.includes('ผู้ช่วย')
-                                ? 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)'
-                                : editUserForm.instructorType || 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)',
+                                ? 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)'
+                                : editUserForm.instructorType || 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)',
                           });
                         } else if (val === 'OFFICER') {
                           setEditUserForm({
@@ -272,7 +272,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                     >
                       <option value="ADMIN">🛡️ ผู้ดูแลระบบ (ADMIN)</option>
                       <option value="OFFICER">📋 เจ้าหน้าที่หลักสูตร (OFFICER)</option>
-                      <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)</option>
+                      <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)</option>
                       <option value="STAFF">💼 เจ้าหน้าที่สายสนับสนุน / วิชาการ (STAFF)</option>
                       <option value="INSTRUCTOR">👨‍🏫 อาจารย์ผู้สอน (INSTRUCTOR)</option>
                       <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์ / วัดผลปฏิบัติ)</option>
@@ -303,7 +303,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                     <div className="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
                       <GraduationCap className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                       <div>
-                        <strong>🎓 ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน):</strong> อาจารย์ผู้สอนที่ได้รับมอบหมายให้ช่วยงานเจ้าหน้าที่หลักสูตร สามารถช่วยลงทะเบียน ตรวจสอบคำร้อง และออกเอกสารได้ โดยยังคงมีสถานะเป็นอาจารย์ผู้สอนและตารางสอนตามปกติ
+                        <strong>🎓 ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน):</strong> ผู้ได้รับมอบหมายให้ช่วยงานเจ้าหน้าที่หลักสูตร สามารถช่วยลงทะเบียน ตรวจสอบคำร้อง และออกเอกสารได้ โดยยังคงมีสถานะเดิมตามปกติ
                       </div>
                     </div>
                   )}
