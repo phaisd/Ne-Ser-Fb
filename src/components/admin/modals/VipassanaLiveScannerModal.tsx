@@ -23,6 +23,7 @@ import {
   Check,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, MeditationPeriodConfig } from '@/types/event';
+import { playBeep, triggerHaptic } from '@/lib/utils/audio-feedback';
 import jsQR from 'jsqr';
 
 interface BarcodeDetectorInstance {
@@ -48,42 +49,6 @@ const PERIOD_CONFIG: Record<
   p3: { nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', timeRange: '12.30-13.00', defaultStart: '11:30', defaultEnd: '15:00' },
   p4: { nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', timeRange: '17.30-18.00', defaultStart: '16:30', defaultEnd: '21:00' },
 };
-
-// Helper: Web Audio API Synthesizer for instant beeps
-function playBeep(type: 'SUCCESS' | 'WARN' | 'ERROR') {
-  try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    if (type === 'SUCCESS') {
-      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
-      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.08); // D6
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.25);
-    } else if (type === 'WARN') {
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(440, ctx.currentTime + 0.1); // A4
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.3);
-    } else {
-      osc.frequency.setValueAtTime(300, ctx.currentTime);
-      gain.gain.setValueAtTime(0.4, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
-    }
-  } catch {}
-}
 
 export function VipassanaLiveScannerModal({
   isOpen,
@@ -166,21 +131,6 @@ export function VipassanaLiveScannerModal({
     scannedCode?: string;
     status?: 'PRESENT' | 'LATE' | 'SICK';
   } | null>(null);
-
-  // Silent Haptic Vibration for Mobile Devices (replaces audio in silent environments)
-  const triggerHaptic = useCallback((type: 'SUCCESS' | 'WARN' | 'ERROR') => {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        if (type === 'SUCCESS') {
-          navigator.vibrate(120); // 1 single clean pulse
-        } else if (type === 'WARN') {
-          navigator.vibrate([100, 50, 100]); // 2 short pulses
-        } else {
-          navigator.vibrate([220, 80, 220]); // 2 alert pulses
-        }
-      } catch {}
-    }
-  }, []);
 
   // Camera states
   const [isCameraActive, setIsCameraActive] = useState(false);

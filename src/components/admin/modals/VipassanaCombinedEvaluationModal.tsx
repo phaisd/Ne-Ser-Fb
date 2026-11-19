@@ -26,6 +26,12 @@ import {
 import type { StudentEvent, EventRegistration } from '@/types';
 import { downloadCsvFile, downloadXlsx, type XlsxSheet } from '@/lib/utils';
 import { VipassanaExecutiveReportModal } from './vipassana';
+import {
+  StudentEvaluationRow,
+  VipassanaBatchCertDialog,
+} from './evaluation';
+
+export type { StudentEvaluationRow };
 
 interface VipassanaCombinedEvaluationModalProps {
   isOpen: boolean;
@@ -33,35 +39,6 @@ interface VipassanaCombinedEvaluationModalProps {
   event: StudentEvent;
   registrations: EventRegistration[];
   onRefresh?: () => void;
-}
-
-export interface StudentEvaluationRow {
-  registration: EventRegistration;
-  id: string;
-  studentCode: string;
-  groupSpecificCode?: string;
-  studentName: string;
-  groupNumber?: number;
-  degreeLevel?: string;
-  programType?: string;
-  yearLevel?: number;
-  vasa?: string | number;
-  // Dimension 1: Attendance
-  totalPeriodsRequired: number;
-  attendedPeriods: number;
-  absentPeriods: number;
-  attendancePercent: number;
-  attendancePassed: boolean;
-  // Dimension 2: Meditation Master Interviews
-  interviewS1?: 'PASS' | 'NOT_PASS' | 'PENDING';
-  interviewS2?: 'PASS' | 'NOT_PASS' | 'PENDING';
-  interviewS3?: 'PASS' | 'NOT_PASS' | 'PENDING';
-  interviewsPassed: boolean;
-  // Dimension 3: Combined Result
-  overallStatus: 'PASSED' | 'REVIEW' | 'FAILED';
-  // Dimension 4: Certificate
-  certificateIssued: boolean;
-  certificateDocNo?: string;
 }
 
 export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluationModalProps> = ({
@@ -1183,106 +1160,23 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
         </div>
 
         {/* Batch Certificate Issuance Dialog */}
-        {showCertDialog && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-emerald-100 text-emerald-800">
-                  <Award className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 text-base">
-                    อนุมัติผ่านโครงการและออกวุฒิบัตรดิจิทัล
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    ระบบจะสร้างเลขที่วุฒิบัตรและบันทึกข้อมูลเข้าสู่ระบบประกาศนียบัตรอัตโนมัติ
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs">
-                กำลังจะออกวุฒิบัตรให้นิสิตที่เลือกทั้งหมด <strong>{selectedRegIds.size}</strong> รูป/คน
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">หมวดหมู่เลขที่เอกสาร (Prefix):</label>
-                  <input
-                    type="text"
-                    value={docNoPrefix}
-                    onChange={(e) => setDocNoPrefix(e.target.value)}
-                    placeholder="เช่น 8002 หรือ 8002.1"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono text-xs outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-0.5 block">
-                    ตัวอย่างเลขที่: มจร {docNoPrefix}/ว.วป-2569-001
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">วันที่ออก (ภาษาไทย):</label>
-                    <input
-                      type="text"
-                      value={issueDateTh}
-                      onChange={(e) => setIssueDateTh(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Date (English):</label>
-                    <input
-                      type="text"
-                      value={issueDateEn}
-                      onChange={(e) => setIssueDateEn(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">ผู้ลงนาม (คณบดี/ผู้มีอำนาจ):</label>
-                  <input
-                    type="text"
-                    value={signerNameTh}
-                    onChange={(e) => setSignerNameTh(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">ตำแหน่งผู้ลงนาม:</label>
-                  <input
-                    type="text"
-                    value={signerTitleTh}
-                    onChange={(e) => setSignerTitleTh(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowCertDialog(false)}
-                  disabled={isIssuingCerts}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmIssueCertificates}
-                  disabled={isIssuingCerts}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <Award className="w-4 h-4" />
-                  <span>{isIssuingCerts ? 'กำลังออกวุฒิบัตร...' : `ยืนยันออกวุฒิบัตร (${selectedRegIds.size} รายการ)`}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <VipassanaBatchCertDialog
+          isOpen={showCertDialog}
+          onClose={() => setShowCertDialog(false)}
+          selectedCount={selectedRegIds.size}
+          docNoPrefix={docNoPrefix}
+          setDocNoPrefix={setDocNoPrefix}
+          issueDateTh={issueDateTh}
+          setIssueDateTh={setIssueDateTh}
+          issueDateEn={issueDateEn}
+          setIssueDateEn={setIssueDateEn}
+          signerNameTh={signerNameTh}
+          setSignerNameTh={setSignerNameTh}
+          signerTitleTh={signerTitleTh}
+          setSignerTitleTh={setSignerTitleTh}
+          isIssuingCerts={isIssuingCerts}
+          onConfirm={handleConfirmIssueCertificates}
+        />
 
         {/* Executive Summary Memo Modal for Dean */}
         {showExecutiveReport && (

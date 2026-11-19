@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, SatipatthanaChecklist } from '@/types/event';
 import type { EditableInterviewRow } from './VipassanaInterviewCardView';
+import { playBeep } from '@/lib/utils/audio-feedback';
 import jsQR from 'jsqr';
 
 interface BarcodeDetectorInstance {
@@ -52,41 +53,6 @@ const COMMON_ADVICE_TAGS = [
   'สติในอิริยาบถย่อยดีขึ้น มีความสำรวมระวัง',
   'ให้เพิ่มเวลาเดินจงกรมก่อนนั่งสมาธิ',
 ];
-
-function playBeep(type: 'SUCCESS' | 'WARN' | 'ERROR') {
-  try {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    if (type === 'SUCCESS') {
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.08);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.25);
-    } else if (type === 'WARN') {
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-      osc.frequency.setValueAtTime(440, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.3);
-    } else {
-      osc.frequency.setValueAtTime(300, ctx.currentTime);
-      gain.gain.setValueAtTime(0.4, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
-    }
-  } catch {}
-}
 
 export const VipassanaRapidQrScannerModal: React.FC<VipassanaRapidQrScannerModalProps> = ({
   isOpen,
