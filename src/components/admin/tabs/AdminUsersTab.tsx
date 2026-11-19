@@ -472,6 +472,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
           isOfficer={isOfficer}
           handleUpdateRole={handleUpdateRole}
           handleStartEditUser={handleStartEditUser}
+          onOpenVipassanaMasterModal={() => setIsVipassanaMasterModalOpen(true)}
         />
       ) : (
         <>

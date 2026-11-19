@@ -1,5 +1,97 @@
 [
   {
+    "id": "vp-05",
+    "name": "พระอาจารย์มหาเอกสิทธิ์",
+    "nameEn": "Phra Ajahn Maha Ekkasit",
+    "email": "vipassana05@mcu.ac.th",
+    "gmail": "vipassana05.mcu@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "ฝ่ายวิปัสสนาธุระ / คณะกรรมการวิปัสสนากัมมัฏฐาน",
+    "instructorType": "ผู้ช่วยเลขานุการพระวิปัสสนาจารย์",
+    "role": "VIPASSANA_MASTER",
+    "coursesCount": 0,
+    "isActive": true,
+    "aliases": [
+      "พระอาจารย์มหาเอกสิทธิ์"
+    ],
+    "createdAt": "2026-11-19T04:11:21.546Z"
+  },
+  {
+    "id": "vp-04",
+    "name": "พระครูปลัดสุวัฒนศีลคุณ",
+    "nameEn": "Phra Khru Palat Suwattanasinkun",
+    "email": "vipassana04@mcu.ac.th",
+    "gmail": "vipassana04.mcu@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "ฝ่ายวิปัสสนาธุระ / คณะกรรมการวิปัสสนากัมมัฏฐาน",
+    "instructorType": "พระวิปัสสนาจารย์",
+    "role": "VIPASSANA_MASTER",
+    "coursesCount": 0,
+    "isActive": true,
+    "aliases": [
+      "พระครูปลัดสุวัฒนศีลคุณ"
+    ],
+    "createdAt": "2026-11-19T04:11:21.546Z"
+  },
+  {
+    "id": "vp-03",
+    "name": "พระครูปลัดสุวัฒนบัณฑิตคุณ",
+    "nameEn": "Phra Khru Palat Suwattanabanditkun",
+    "email": "vipassana03@mcu.ac.th",
+    "gmail": "vipassana03.mcu@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "ฝ่ายวิปัสสนาธุระ / คณะกรรมการวิปัสสนากัมมัฏฐาน",
+    "instructorType": "เลขานุการพระวิปัสสนาจารย์",
+    "role": "VIPASSANA_MASTER",
+    "coursesCount": 0,
+    "isActive": true,
+    "aliases": [
+      "พระครูปลัดสุวัฒนบัณฑิตคุณ"
+    ],
+    "createdAt": "2026-11-19T04:11:21.546Z"
+  },
+  {
+    "id": "vp-02",
+    "name": "พระมหาบุญช่วย ปภสฺสโร",
+    "nameEn": "Phra Maha Boonchuay Pabhassaro",
+    "email": "vipassana02@mcu.ac.th",
+    "gmail": "vipassana02.mcu@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "ฝ่ายวิปัสสนาธุระ / คณะกรรมการวิปัสสนากัมมัฏฐาน",
+    "instructorType": "รองประธานพระวิปัสสนาจารย์",
+    "role": "VIPASSANA_MASTER",
+    "coursesCount": 0,
+    "isActive": true,
+    "aliases": [
+      "พระมหาบุญช่วย ปภสฺสโร",
+      "พระมหาบุญช่วย"
+    ],
+    "createdAt": "2026-11-19T04:11:21.546Z"
+  },
+  {
+    "id": "vp-01",
+    "name": "พระธรรมวชิรมุนี วิ.",
+    "nameEn": "Phra Dhammavajiramuni Vi.",
+    "email": "vipassana01@mcu.ac.th",
+    "gmail": "vipassana01.mcu@gmail.com",
+    "password": "mcu123456",
+    "defaultPassword": "mcu123456",
+    "department": "ฝ่ายวิปัสสนาธุระ / คณะกรรมการวิปัสสนากัมมัฏฐาน",
+    "instructorType": "ประธานพระวิปัสสนาจารย์",
+    "role": "VIPASSANA_MASTER",
+    "coursesCount": 0,
+    "isActive": true,
+    "aliases": [
+      "พระธรรมวชิรมุนี",
+      "พระธรรมวชิรมุนี วิ."
+    ],
+    "createdAt": "2026-11-19T04:11:21.545Z"
+  },
+  {
     "id": "inst-1794033514854-2717",
     "name": "Phramaha Khunpon Samacitto  Ph.D.",
     "email": "khunpon.sam@mcu.ac.th",
@@ -759,7 +851,7 @@
     "password": "mcu123456",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
-    "role": "INSTRUCTOR",
+    "role": "VIPASSANA_MASTER",
     "coursesCount": 5,
     "isActive": true,
     "createdAt": "2026-11-02T06:57:57.004Z",
@@ -778,7 +870,7 @@
     "nameEn": "Assoc. Prof. Dr. Phramaha Jeerawat Kantavanno",
     "hasChangedPassword": false,
     "updatedAt": "2026-11-07T06:38:59.493Z",
-    "instructorType": "อาจารย์ประจำ"
+    "instructorType": "พระวิปัสสนาจารย์"
   },
   {
     "id": "inst-2",
