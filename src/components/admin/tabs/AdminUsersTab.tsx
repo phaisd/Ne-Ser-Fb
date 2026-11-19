@@ -25,6 +25,11 @@ import {
   Archive,
   FileSpreadsheet,
   Award,
+  ChevronDown,
+  Settings,
+  Key,
+  Shield,
+  MoreVertical,
 } from 'lucide-react';
 import { UserAccount, Student } from '@/types';
 import type { AdminTab } from '../AdminSidebar';
@@ -33,6 +38,7 @@ import {
   ArchivedInstructorsModal,
   InstructorImportModal,
   VipassanaMasterImportExportModal,
+  OfficerImportExportModal,
 } from '../modals';
 import { RolePermissionsMatrixView } from './RolePermissionsMatrixView';
 
@@ -109,6 +115,8 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [isBatchImportOpen, setIsBatchImportOpen] = useState(false);
   const [isVipassanaMasterModalOpen, setIsVipassanaMasterModalOpen] = useState(false);
+  const [isOfficerModalOpen, setIsOfficerModalOpen] = useState(false);
+  const [activeActionDropdownId, setActiveActionDropdownId] = useState<string | null>(null);
   const [archivingId, setArchivingId] = useState<string | null>(null);
 
   const handleArchiveInstructor = async (u: UserAccount) => {
@@ -412,6 +420,17 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
             <span>🧘 พระวิปัสสนาจารย์ (Excel & รหัสผ่าน)</span>
           </button>
 
+          {/* Officer & Assistants Import/Export & Auto ID/Password Modal Button */}
+          <button
+            type="button"
+            onClick={() => setIsOfficerModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-600 via-teal-700 to-teal-800 hover:from-teal-700 hover:to-teal-900 text-white rounded-xl text-xs font-bold shadow-md shadow-teal-600/20 transition cursor-pointer"
+            title="นำเข้า/ส่งออก เจ้าหน้าที่หลักสูตร และผู้ช่วยเจ้าหน้าที่ พร้อมสร้างไอดี officerXX@mcu.ac.th และรหัสผ่านอัตโนมัติ (Fb8323mcu)"
+          >
+            <UserCog className="w-3.5 h-3.5 text-teal-200" />
+            <span>📋 เจ้าหน้าที่ & ผู้ช่วย (Excel & รหัสผ่าน)</span>
+          </button>
+
           <button
             onClick={() => setIsAddUserOpen(true)}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-600/20 transition cursor-pointer"
@@ -473,6 +492,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
           handleUpdateRole={handleUpdateRole}
           handleStartEditUser={handleStartEditUser}
           onOpenVipassanaMasterModal={() => setIsVipassanaMasterModalOpen(true)}
+          onOpenOfficerModal={() => setIsOfficerModalOpen(true)}
         />
       ) : (
         <>
@@ -920,11 +940,12 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                        <div className="flex items-center justify-end gap-1.5 flex-nowrap">
                           {/* Edit Email & Profile Button */}
                           <button
+                            type="button"
                             onClick={() => handleStartEditUser(u)}
-                            className="px-2 py-1 rounded-lg text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 transition flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-1 rounded-lg text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 transition flex items-center gap-1 cursor-pointer shrink-0"
                             title="แก้ไขอีเมลจริง, Gmail และข้อมูลผู้ใช้"
                           >
                             <Edit className="w-3 h-3" />
@@ -935,92 +956,165 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                           <button
                             type="button"
                             onClick={() => handleOpenTeachingSlip(u)}
-                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition flex items-center gap-1 cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition flex items-center gap-1 cursor-pointer shrink-0"
                             title="เปิดบัตรแจ้งภาระงานสอน ตารางวิชาที่สอน และรหัสผ่าน พร้อมพิมพ์เป็นทางการ"
                           >
                             <FileText className="w-3 h-3 text-indigo-600" />
                             <span>บัตรแจ้งภาระงาน</span>
                           </button>
 
-                          {/* Quick Copy LINE Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleCopyLineTeachingMessage(u)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
-                              copiedLineUserId === u.id
-                                ? 'bg-emerald-600 text-white shadow-sm'
-                                : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
-                            }`}
-                            title="คัดลอกข้อความสรุปภาระงานสอนและรหัสผ่าน สำหรับส่งใน LINE"
-                          >
-                            {copiedLineUserId === u.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3 text-emerald-600" />}
-                            <span>{copiedLineUserId === u.id ? 'คัดลอกแล้ว!' : 'ส่ง LINE'}</span>
-                          </button>
-
-                          {/* Suspend / Unsuspend Toggle */}
-                          {!isSuper ? (
-                            isSuspended ? (
-                              <button
-                                onClick={() => handleToggleSuspend(u.id, true, u.name)}
-                                className="px-2 py-1 rounded-lg text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition flex items-center gap-1 cursor-pointer"
-                                title="ปลดระงับการใช้งานบัญชีนี้"
-                              >
-                                <UserCheck className="w-3 h-3" />
-                                <span>ปลดระงับ</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleToggleSuspend(u.id, false, u.name)}
-                                className="px-2 py-1 rounded-lg text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 transition flex items-center gap-1 cursor-pointer"
-                                title="ระงับการใช้งานบัญชีนี้ชั่วคราว"
-                              >
-                                <Ban className="w-3 h-3" />
-                                <span>ระงับ</span>
-                              </button>
-                            )
-                          ) : null}
-
-                          {/* Change Role dropdown or Officer locked indicator */}
-                          {isOfficer ? (
-                            <span className="px-2 py-1 rounded-lg text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200" title="อาจารย์ผู้สอน">
-                              อาจารย์ผู้สอน
-                            </span>
-                          ) : (
-                            <select
-                              value={u.role || 'INSTRUCTOR'}
-                              disabled={isSuper}
-                              onChange={(e) => handleUpdateRole(u.id, e.target.value as any)}
-                              className="px-2 py-1 rounded-lg border border-slate-200 text-[11px] bg-white text-slate-700 cursor-pointer focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                            >
-                              {isSuper && <option value="SUPER_ADMIN">👑 Super Admin</option>}
-                              <option value="INSTRUCTOR">อาจารย์ผู้สอน</option>
-                              <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์/วัดผล)</option>
-                              <option value="OFFICER">เจ้าหน้าที่ดูแลระบบ</option>
-                              <option value="ADMIN">ผู้ดูแลระบบ</option>
-                            </select>
-                          )}
-
-                          {/* Reset password */}
-                          <button
-                            onClick={() => handleResetPassword(u.id, u.name)}
-                            className="px-2 py-1 rounded-lg text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition cursor-pointer"
-                            title="รีเซ็ตรหัสผ่านเป็น mcu123456"
-                          >
-                            รีเซ็ตรหัส
-                          </button>
-
-                          {/* Archive Instructor (เกษียณอายุ/ลาออก/จำหน่าย) */}
-                          {!isSuper && (
+                          {/* Action Dropdown Menu */}
+                          <div className="relative inline-block text-left shrink-0">
                             <button
-                              onClick={() => handleArchiveInstructor(u as UserAccount)}
-                              disabled={archivingId === u.id}
-                              className="px-2 py-1 rounded-lg text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                              title="ย้ายเข้าแฟ้มประวัติอาจารย์ที่เกษียณอายุ ลาออก หรือจำหน่ายออก (สามารถกู้คืนได้ทุกเมื่อ)"
+                              type="button"
+                              onClick={() => setActiveActionDropdownId(activeActionDropdownId === u.id ? null : u.id)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer border ${
+                                activeActionDropdownId === u.id
+                                  ? 'bg-slate-800 text-white border-slate-800 shadow-sm'
+                                  : 'text-slate-700 bg-slate-50 hover:bg-slate-100 border-slate-200'
+                              }`}
+                              title="เมนูจัดการเพิ่มเติม (ส่ง LINE, รีเซ็ตรหัส, เปลี่ยนบทบาท, ระงับ, ย้ายเก็บ)"
                             >
-                              <Archive className="w-3 h-3 text-rose-600" />
-                              <span>{archivingId === u.id ? 'กำลังย้าย...' : 'ย้ายเก็บ'}</span>
+                              <Settings className="w-3 h-3 text-slate-500" />
+                              <span>จัดการ</span>
+                              <ChevronDown className={`w-3 h-3 transition-transform ${activeActionDropdownId === u.id ? 'rotate-180' : ''}`} />
                             </button>
-                          )}
+
+                            {activeActionDropdownId === u.id && (
+                              <>
+                                {/* Backdrop for click-away */}
+                                <div
+                                  className="fixed inset-0 z-30"
+                                  onClick={() => setActiveActionDropdownId(null)}
+                                />
+                                <div
+                                  className={`absolute right-0 ${
+                                    paginatedUsers.indexOf(u) >= Math.max(2, paginatedUsers.length - 3)
+                                      ? 'bottom-full mb-1.5'
+                                      : 'top-full mt-1.5'
+                                  } w-64 rounded-xl bg-white shadow-xl border border-slate-200 z-40 py-1.5 text-left text-xs animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-100`}
+                                >
+                                  {/* Section 1: Quick Messaging & Credentials */}
+                                  <div className="py-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleCopyLineTeachingMessage(u);
+                                      }}
+                                      className="w-full px-3 py-1.5 text-left hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 flex items-center justify-between transition cursor-pointer font-medium"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        {copiedLineUserId === u.id ? (
+                                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                        ) : (
+                                          <Copy className="w-3.5 h-3.5 text-emerald-600" />
+                                        )}
+                                        <span>{copiedLineUserId === u.id ? 'คัดลอกข้อความ LINE แล้ว!' : 'ส่งข้อความ LINE (ภาระงาน/รหัส)'}</span>
+                                      </div>
+                                      <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">LINE</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveActionDropdownId(null);
+                                        handleResetPassword(u.id, u.name);
+                                      }}
+                                      className="w-full px-3 py-1.5 text-left hover:bg-amber-50 text-slate-700 hover:text-amber-800 flex items-center justify-between transition cursor-pointer font-medium"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <Key className="w-3.5 h-3.5 text-amber-600" />
+                                        <span>รีเซ็ตรหัสผ่าน</span>
+                                      </div>
+                                      <span className="text-[10px] text-amber-700 font-mono bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                        mcu123456
+                                      </span>
+                                    </button>
+                                  </div>
+
+                                  {/* Section 2: Role Management */}
+                                  <div className="px-3 py-2 bg-slate-50/70">
+                                    <div className="flex items-center justify-between mb-1.5">
+                                      <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                                        <Shield className="w-3 h-3 text-indigo-500" /> ปรับเปลี่ยนบทบาท (Role)
+                                      </span>
+                                      {isOfficer && (
+                                        <span className="text-[9px] text-amber-700 bg-amber-50 px-1 rounded border border-amber-200">
+                                          สิทธิ์ดูอย่างเดียว
+                                        </span>
+                                      )}
+                                    </div>
+                                    {isOfficer ? (
+                                      <div className="text-xs font-semibold text-emerald-800 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">
+                                        อาจารย์ผู้สอน
+                                      </div>
+                                    ) : (
+                                      <select
+                                        value={u.role || 'INSTRUCTOR'}
+                                        disabled={isSuper}
+                                        onChange={(e) => {
+                                          handleUpdateRole(u.id, e.target.value as any);
+                                          setActiveActionDropdownId(null);
+                                        }}
+                                        className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
+                                      >
+                                        {isSuper && <option value="SUPER_ADMIN">👑 Super Admin</option>}
+                                        <option value="INSTRUCTOR">👨‍🏫 อาจารย์ผู้สอน</option>
+                                        <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์/วัดผล)</option>
+                                        <option value="OFFICER">📋 เจ้าหน้าที่หลักสูตร / ดูแลระบบ</option>
+                                        <option value="ADMIN">🛡️ ผู้ดูแลระบบ (Admin)</option>
+                                      </select>
+                                    )}
+                                  </div>
+
+                                  {/* Section 3: Account Actions (Suspend / Archive) */}
+                                  {!isSuper && (
+                                    <div className="py-1">
+                                      {/* Suspend / Unsuspend */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveActionDropdownId(null);
+                                          handleToggleSuspend(u.id, isSuspended, u.name);
+                                        }}
+                                        className={`w-full px-3 py-1.5 text-left transition cursor-pointer font-medium flex items-center gap-2 ${
+                                          isSuspended
+                                            ? 'hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800'
+                                            : 'hover:bg-rose-50 text-rose-700 hover:text-rose-800'
+                                        }`}
+                                      >
+                                        {isSuspended ? (
+                                          <>
+                                            <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                            <span>ปลดระงับการใช้งาน</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Ban className="w-3.5 h-3.5 text-rose-600" />
+                                            <span>ระงับการใช้งานบัญชีชั่วคราว</span>
+                                          </>
+                                        )}
+                                      </button>
+
+                                      {/* Archive */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveActionDropdownId(null);
+                                          handleArchiveInstructor(u as UserAccount);
+                                        }}
+                                        disabled={archivingId === u.id}
+                                        className="w-full px-3 py-1.5 text-left hover:bg-rose-50 text-slate-600 hover:text-rose-800 flex items-center gap-2 transition cursor-pointer font-medium disabled:opacity-50"
+                                      >
+                                        <Archive className="w-3.5 h-3.5 text-rose-500" />
+                                        <span>{archivingId === u.id ? 'กำลังย้าย...' : 'ย้ายเก็บเข้าแฟ้มประวัติ (Archive)'}</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       )}
                     </td>
@@ -1061,6 +1155,17 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
       <VipassanaMasterImportExportModal
         isOpen={isVipassanaMasterModalOpen}
         onClose={() => setIsVipassanaMasterModalOpen(false)}
+        existingUsers={users}
+        onSuccess={() => {
+          if (onRefresh) onRefresh();
+          else if (typeof window !== 'undefined') window.location.reload();
+        }}
+      />
+
+      {/* Officer & Staff Import & Export & Auto ID/Password Modal */}
+      <OfficerImportExportModal
+        isOpen={isOfficerModalOpen}
+        onClose={() => setIsOfficerModalOpen(false)}
         existingUsers={users}
         onSuccess={() => {
           if (onRefresh) onRefresh();

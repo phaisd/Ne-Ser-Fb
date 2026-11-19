@@ -383,6 +383,7 @@ interface RolePermissionsMatrixViewProps {
   handleUpdateRole: (userId: string, newRole: any) => void;
   handleStartEditUser: (u: UserAccount) => void;
   onOpenVipassanaMasterModal?: () => void;
+  onOpenOfficerModal?: () => void;
 }
 
 export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps> = ({
@@ -390,6 +391,7 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
   studentsCount,
   isOfficer = false,
   onOpenVipassanaMasterModal,
+  onOpenOfficerModal,
 }) => {
   const [roleColumns, setRoleColumns] = useState<RoleColumnConfig[]>(DEFAULT_ROLE_COLUMNS);
   const [permissions, setPermissions] = useState<PermissionItem[]>(DEFAULT_PERMISSIONS_MATRIX);
@@ -820,6 +822,19 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
                   className="mt-2.5 w-full py-1.5 px-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl text-[11px] font-bold shadow-xs transition flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <span>🧘 จัดการ Excel & รหัสผ่าน</span>
+                </button>
+              )}
+
+              {rc.key === 'OFFICER' && onOpenOfficerModal && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenOfficerModal();
+                  }}
+                  className="mt-2.5 w-full py-1.5 px-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl text-[11px] font-bold shadow-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <span>📋 จัดการ Excel & รหัสผ่าน (Fb8323mcu)</span>
                 </button>
               )}
             </div>

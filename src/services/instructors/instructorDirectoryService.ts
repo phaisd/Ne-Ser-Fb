@@ -433,11 +433,13 @@ export interface BatchImportInstructorItem {
   nameEn?: string;
   email?: string;
   gmail?: string;
+  phoneNumber?: string;
   department?: string;
   instructorType?: string; // 'อาจารย์ประจำ' | 'อาจารย์พิเศษ' | 'ผู้ช่วยสอน (TA)'
   ecclesiasticalTitle?: string; // ตำแหน่งทางคณะสงฆ์ เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระมหา...
   contactAddress?: string; // ที่อยู่ติดต่อ / สังกัดวัด
   role?: UserRole;
+  isActingOfficer?: boolean;
   password?: string;
 }
 
@@ -445,12 +447,14 @@ export interface ProcessedBatchImportItem {
   name: string;
   nameEn?: string;
   email: string;
+  phoneNumber?: string;
   password?: string;
   instructorType?: string;
   ecclesiasticalTitle?: string;
   department?: string;
   contactAddress?: string;
   role?: UserRole;
+  isActingOfficer?: boolean;
   action: 'CREATED' | 'UPDATED';
 }
 
@@ -515,6 +519,12 @@ export async function batchImportInstructors(
       if (item.role) {
         found.role = item.role;
       }
+      if (item.isActingOfficer !== undefined) {
+        found.isActingOfficer = Boolean(item.isActingOfficer);
+      }
+      if (item.phoneNumber && item.phoneNumber.trim()) {
+        found.phoneNumber = item.phoneNumber.trim();
+      }
       if (item.password && item.password.trim()) {
         found.password = item.password.trim();
         found.defaultPassword = item.password.trim();
@@ -529,16 +539,18 @@ export async function batchImportInstructors(
         name: cleanName,
         nameEn: found.nameEn,
         email: found.email,
-        password: found.password || found.defaultPassword || 'mcu123456',
+        phoneNumber: found.phoneNumber,
+        password: found.password || found.defaultPassword || 'Fb8323mcu',
         instructorType: found.instructorType,
         ecclesiasticalTitle: found.ecclesiasticalTitle,
         department: found.department,
         contactAddress: found.contactAddress,
         role: found.role,
+        isActingOfficer: found.isActingOfficer,
         action: 'UPDATED',
       });
     } else {
-      // CREATE new instructor / meditation master
+      // CREATE new instructor / officer / meditation master
       const newId = 'inst-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
       let assignedEmail = cleanEmail;
       if (!assignedEmail) {
@@ -549,6 +561,13 @@ export async function batchImportInstructors(
             vpSeq++;
           }
           assignedEmail = `vipassana${String(vpSeq).padStart(2, '0')}@mcu.ac.th`;
+        } else if (item.role === 'OFFICER' || item.role === 'STAFF' || item.isActingOfficer) {
+          // Sequential ID for Program Officers / Assistants: officer01@mcu.ac.th, officer02, etc.
+          let offSeq = 1;
+          while (list.some((u) => (u.email || '').toLowerCase() === `officer${String(offSeq).padStart(2, '0')}@mcu.ac.th`.toLowerCase())) {
+            offSeq++;
+          }
+          assignedEmail = `officer${String(offSeq).padStart(2, '0')}@mcu.ac.th`;
         } else {
           const randomNum = Math.floor(100 + Math.random() * 900);
           assignedEmail = `teacher${randomNum}@mcu.ac.th`;
@@ -558,15 +577,25 @@ export async function batchImportInstructors(
       // Check if assignedEmail is already used by another account, if so add random salt
       while (list.some((u) => (u.email || '').toLowerCase() === assignedEmail.toLowerCase())) {
         const salt = Math.floor(1000 + Math.random() * 9000);
-        assignedEmail = item.role === 'VIPASSANA_MASTER' ? `vipassana${salt}@mcu.ac.th` : `teacher${salt}@mcu.ac.th`;
+        assignedEmail =
+          item.role === 'VIPASSANA_MASTER'
+            ? `vipassana${salt}@mcu.ac.th`
+            : item.role === 'OFFICER' || item.role === 'STAFF' || item.isActingOfficer
+            ? `officer${salt}@mcu.ac.th`
+            : `teacher${salt}@mcu.ac.th`;
       }
 
-      const defaultPwd = item.password && item.password.trim() ? item.password.trim() : 'mcu123456';
+      const fallbackPwd = (item.role === 'OFFICER' || item.role === 'STAFF' || item.isActingOfficer) ? 'Fb8323mcu' : 'mcu123456';
+      const defaultPwd = item.password && item.password.trim() ? item.password.trim() : fallbackPwd;
       const defaultDept = item.role === 'VIPASSANA_MASTER'
         ? 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์'
+        : (item.role === 'OFFICER' || item.role === 'STAFF' || item.isActingOfficer)
+        ? 'สำนักงานคณบดี คณะพุทธศาสตร์'
         : 'คณะพุทธศาสตร์ มจร';
       const defaultType = item.role === 'VIPASSANA_MASTER'
         ? (item.instructorType || 'พระวิปัสสนาจารย์')
+        : (item.role === 'OFFICER' || item.isActingOfficer)
+        ? (item.instructorType || 'เจ้าหน้าที่หลักสูตร')
         : 'อาจารย์ประจำ';
 
       const newAcc: InstructorAccount = {
@@ -575,13 +604,15 @@ export async function batchImportInstructors(
         nameEn: item.nameEn ? item.nameEn.trim() : undefined,
         email: assignedEmail,
         gmail: item.gmail ? item.gmail.trim().toLowerCase() : `${assignedEmail.split('@')[0]}@gmail.com`,
+        phoneNumber: item.phoneNumber ? item.phoneNumber.trim() : undefined,
         password: defaultPwd,
         defaultPassword: defaultPwd,
         department: item.department ? item.department.trim() : defaultDept,
         instructorType: item.instructorType ? item.instructorType.trim() : defaultType,
         ecclesiasticalTitle: item.ecclesiasticalTitle ? item.ecclesiasticalTitle.trim() : undefined,
         contactAddress: item.contactAddress ? item.contactAddress.trim() : undefined,
-        role: item.role || 'INSTRUCTOR',
+        role: item.role || (item.isActingOfficer ? 'INSTRUCTOR' : 'INSTRUCTOR'),
+        isActingOfficer: Boolean(item.isActingOfficer),
         coursesCount: 0,
         isActive: true,
         aliases: [cleanName],

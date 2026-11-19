@@ -25,6 +25,7 @@ export * from './StudentAccessSlipModal';
 export * from './BatchStudentAccessSlipsModal';
 export * from './VipassanaCombinedEvaluationModal';
 export * from './VipassanaMasterImportExportModal';
+export * from './OfficerImportExportModal';
 export * from './vipassana';
 
 

@@ -3,7 +3,8 @@ export type UserRole =
   | 'ADMIN'
   | 'OFFICER'
   | 'INSTRUCTOR'
-  | 'VIPASSANA_MASTER';
+  | 'VIPASSANA_MASTER'
+  | 'STAFF';
 
 export interface LoginAuditRecord {
   id: string;
@@ -29,6 +30,8 @@ export interface InstructorAccount {
   instructorType?: string; // ประเภทอาจารย์ เช่น 'อาจารย์ประจำ', 'อาจารย์พิเศษ', 'อาจารย์ผู้ช่วยสอน'
   ecclesiasticalTitle?: string; // ตำแหน่งทางคณะสงฆ์ เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระมหา...
   contactAddress?: string; // ที่อยู่ติดต่อ / สังกัดวัด
+  phoneNumber?: string; // เบอร์โทรศัพท์ติดต่อ
+  phone?: string; // เบอร์โทรศัพท์ (สำรอง)
   role?: UserRole;
   coursesCount?: number;
   isActive?: boolean;
