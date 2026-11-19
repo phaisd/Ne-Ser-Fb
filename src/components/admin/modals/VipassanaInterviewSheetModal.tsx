@@ -66,11 +66,20 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
   registrations,
   onSaved,
 }) => {
-  const isEnglishProgram =
-    event.targetProgram === 'ENGLISH' || event.title.toLowerCase().includes('inter');
+  const [programMode, setProgramMode] = useState<'AUTO' | 'THAI' | 'ENGLISH'>('AUTO');
+  const [selectedGroup, setSelectedGroup] = useState<number | 'ALL'>('ALL');
+
+  const isEnglishProgram = useMemo(() => {
+    if (programMode === 'ENGLISH') return true;
+    if (programMode === 'THAI') return false;
+    return (
+      event.targetProgram === 'ENGLISH' ||
+      event.title.toLowerCase().includes('inter') ||
+      selectedGroup === 12
+    );
+  }, [programMode, event, selectedGroup]);
 
   const [selectedSession, setSelectedSession] = useState<number>(1);
-  const [selectedGroup, setSelectedGroup] = useState<number | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [meditationMaster, setMeditationMaster] = useState('');
   const [sessionDate, setSessionDate] = useState(() => {
@@ -386,9 +395,23 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
                 <option value="ALL">ทุกกลุ่ม ({availableGroups.length})</option>
                 {availableGroups.map((g) => (
                   <option key={g} value={g}>
-                    กลุ่ม {g}
+                    {g === 12 ? 'กลุ่ม 12 (English)' : `กลุ่ม ${g}`}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Language / Program Mode */}
+            <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-amber-300/80 shadow-xs text-xs">
+              <span className="font-bold text-amber-900">แบบฟอร์ม:</span>
+              <select
+                value={programMode}
+                onChange={(e) => setProgramMode(e.target.value as any)}
+                className="bg-transparent font-bold text-amber-900 outline-none cursor-pointer"
+              >
+                <option value="AUTO">อัตโนมัติ ({isEnglishProgram ? 'Inter' : 'ไทย'})</option>
+                <option value="THAI">🇹🇭 ภาษาไทย (บรรพชิต)</option>
+                <option value="ENGLISH">🌐 English (Inter)</option>
               </select>
             </div>
 
@@ -482,27 +505,49 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
         {/* Scrollable Main Assessment Area */}
         <div className="flex-1 overflow-auto p-3 sm:p-6 print:p-0 print:overflow-visible bg-slate-50/30">
           {/* Printable Document Header (Visible ONLY when printed) */}
-          <div className="hidden print:block mb-4 text-center">
-            <h2 className="text-base font-extrabold text-black">
-              {isEnglishProgram
-                ? 'The Name List for the 1st - 4th students of the faculty of Buddhism. (Inter)'
-                : 'แบบสอบอารมณ์สติปัฏฐาน 4 ของนิสิตคณะพุทธศาสตร์ (บรรพชิต)'}
-            </h2>
-            <h3 className="text-sm font-bold text-black mt-0.5">
-              {isEnglishProgram
-                ? 'The Insight Meditation Practice AT Bodhiyanmahavijjalai, Nakhon Pathom'
-                : 'โครงการปฏิบัติวิปัสสนากัมมัฏฐาน ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย จ.นครปฐม'}
-            </h3>
-            <div className="flex items-center justify-between text-xs font-semibold mt-2 px-2 border-b border-black pb-1">
-              <span>กลุ่มที่ (Group) : {selectedGroup === 'ALL' ? 'ทั้งหมด' : selectedGroup}</span>
-              <span>
-                พระวิปัสสนาจารย์ (Meditation Master) : {meditationMaster || '...................................................'}
-              </span>
-              <span>
-                สอบอารมณ์ครั้งที่ : <strong>{selectedSession}</strong> ({sessionDate || '..../..../....'})
-              </span>
+          {isEnglishProgram ? (
+            <div className="hidden print:block mb-3 text-center">
+              <h2 className="text-base font-extrabold text-black uppercase">
+                The Name List for the 1<sup>ST</sup> - 4<sup>th</sup> students of the faculty of Buddhism. (Inter)
+              </h2>
+              <h3 className="text-sm font-bold text-black mt-0.5">
+                The Insight Meditation Practice, {new Date().getFullYear()}
+              </h3>
+              <p className="text-xs font-semibold text-black">
+                AT Bodhiyanmahavijjalai, Nakhon Pathom
+              </p>
+              <div className="grid grid-cols-2 border border-black mt-2 text-xs font-bold divide-x divide-black text-left">
+                <div className="p-1.5 flex items-center justify-between">
+                  <span className="text-sm font-black">25Group : {selectedGroup === 'ALL' ? 'All' : selectedGroup}</span>
+                  <span className="font-normal text-[10.5px]">Exam Session #{selectedSession}</span>
+                </div>
+                <div className="p-1.5 text-right space-y-0.5">
+                  <div>Name: <strong>{meditationMaster || '...................................................'}</strong> : Meditation Master</div>
+                  <div className="font-normal text-[10px]">Date: ({sessionDate || '......../............/...........'}) (At Bodhiyanmahavijjalai)</div>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="hidden print:block mb-3 text-center">
+              <h2 className="text-base font-extrabold text-black">
+                แบบสอบอารมณ์สติปัฏฐาน 4 ของนิสิตคณะพุทธศาสตร์ (บรรพชิต)
+              </h2>
+              <h3 className="text-sm font-bold text-black mt-0.5">
+                โครงการปฏิบัติวิปัสสนากัมมัฏฐาน {event.startDate && event.endDate ? `วันที่ ${event.startDate} - ${event.endDate}` : 'ประจำปี'}
+              </h3>
+              <p className="text-xs font-semibold text-black">
+                ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม
+              </p>
+              <div className="text-xs font-semibold mt-1">
+                สอบอารมณ์วันที่ {sessionDate ? new Date(sessionDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : '......... เดือน ................... พ.ศ. ...........'} ครั้งที่ : {selectedSession}
+              </div>
+              <div className="flex items-center justify-between text-xs font-bold mt-2 px-2 border-b-2 border-black pb-1">
+                <span>กลุ่มที่ : {selectedGroup === 'ALL' ? 'ทั้งหมด' : selectedGroup}</span>
+                <span>พระวิปัสสนาจารย์ : {meditationMaster || '..................................................................................'}</span>
+                <span>ครั้งที่ : {selectedSession}</span>
+              </div>
+            </div>
+          )}
 
           {/* VIEW 1: MOBILE CARD VIEW (Active when layoutMode === 'CARD', hidden on print) */}
           {layoutMode === 'CARD' && (
@@ -753,29 +798,58 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
           </div>
 
           {/* Printable Document Footer (Signatures & Rules) */}
-          <div className="hidden print:block mt-6 text-xs leading-relaxed">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1 text-[10px]">
-                <p>
-                  <strong>คำอธิบายสัญลักษณ์:</strong> ใส่เครื่องหมาย <strong>/ (ถูก)</strong> ในช่องที่สภาวธรรมปรากฏจริงและนิสิตกำหนดได้,{' '}
-                  ใส่เครื่องหมาย <strong>X</strong> ในช่องที่นิสิตกำหนดไม่ได้
-                </p>
-                <p>
-                  * แต่ละครั้งที่สอบอารมณ์ ให้ขึ้นอยู่กับดุลยพินิจของพระวิปัสสนาจารย์ (ผลการปฏิบัติ ผ่าน หรือ ไม่ผ่าน)
-                </p>
-              </div>
+          {isEnglishProgram ? (
+            <div className="hidden print:block mt-4 text-[10.5px] leading-relaxed border-t border-black pt-2">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1 max-w-xl text-[10px]">
+                  <p className="font-bold">หมายเหตุ (Remarks):</p>
+                  <p>
+                    กรุณาใส่หมายเลข / และ x ในช่องที่สภาวธรรมที่ปรากฎจริง เช่น ช่อง &quot;ขณะยืน&quot; นิสิตกำหนดได้ใส่ / แต่ถ้านิสิตกำหนดไม่ได้ใส่เลข x ในช่องนั้นๆ
+                  </p>
+                  <p>
+                    แต่ละครั้งที่สอบอารมณ์ ในการสอบอารมณ์ให้ขึ้นอยู่ที่ดุลยพินิจของพระวิปัสสนาจารย์
+                  </p>
+                  <p className="font-bold">
+                    ✓ = กำหนด , ผ่าน (Pass) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x = ไม่กำหนด , ไม่ผ่าน (Not pass)
+                  </p>
+                  <p className="italic text-[9.5px] pt-1">
+                    **หลังจากสรุปผลการสอบอารมณ์เสร็จเรียบร้อย กรุณาส่งบัญชีเล่มนี้คืนที่สำนักงานคณบดีคณะพุทธศาสตร์
+                  </p>
+                  <p className="italic text-[9.5px]">
+                    แต่ละครั้งที่สอบอารมณ์ ในการสอบอารมณ์ให้ขึ้นอยู่ที่ดุลยพินิจของพระวิปัสสนาจารย์ (ผลการปฏิบัติ ผ่าน หรือไม่ผ่าน)
+                  </p>
+                </div>
 
-              <div className="text-center pt-2 min-w-[250px]">
-                <p className="mb-8">รับรองตามนี้</p>
-                <p className="border-b border-black w-48 mx-auto"></p>
-                <p className="mt-1 font-bold">
-                  ( {meditationMaster || '...................................................'} )
-                </p>
-                <p className="text-[10px] text-slate-600">พระวิปัสสนาจารย์ (Meditation Master)</p>
-                <p className="text-[10px] text-slate-600">วันที่ {sessionDate || '..../..../....'}</p>
+                <div className="text-center pt-2 min-w-[220px]">
+                  <p className="mb-6">(..................................................................)</p>
+                  <p className="font-bold">Meditation Master</p>
+                  <p className="text-[10px] text-slate-600">{sessionDate || '......../............/...........'}</p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="hidden print:block mt-4 text-[10.5px] leading-relaxed border-t border-black pt-2">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1 text-[10px] max-w-xl">
+                  <p>
+                    กรุณาใส่หมายเลข / และ X ในช่องที่สภาวธรรมที่ปรากฏจริง เช่น ช่อง &quot;ขณะยืน&quot; นิสิตกำหนดได้ ใส่ เครื่องหมาย / (ถูก) แต่ถ้านิสิตกำหนดไม่ได้ ใส่ X ในช่องนั้นๆ
+                  </p>
+                  <p>
+                    * แต่ละครั้งที่สอบอารมณ์ ให้ขึ้นอยู่กับดุลยพินิจของพระวิปัสสนาจารย์ (ผลการปฏิบัติ ผ่าน หรือ ไม่ผ่าน)
+                  </p>
+                  <p className="font-semibold text-[9.5px] pt-1">
+                    **พ-พระพุทธศาสนา, ศ-ศาสนา, ป-ปรัชญา, บ-บาลีสันสกฤต, ว-วิปัสสนาภาวนา เช่น 2ว = ปี2 สาขาวิชาวิปัสสนาภาวนา
+                  </p>
+                </div>
+
+                <div className="text-center pt-2 min-w-[250px]">
+                  <p className="mb-6">รับรองตามนี้ ..........................................................................</p>
+                  <p className="font-bold">พระวิปัสสนาจารย์</p>
+                  <p className="text-[10px] text-slate-600">วันที่ {sessionDate || '......../............/...........'}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sticky Footer - Screen only */}

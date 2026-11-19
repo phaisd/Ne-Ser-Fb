@@ -20,10 +20,13 @@ import {
   Camera,
   Timer,
   Pencil,
+  Award,
 } from 'lucide-react';
 import { StudentEvent, EventRegistration } from '@/types';
 import { VipassanaBadgesModal } from './VipassanaBadgesModal';
 import { VipassanaLiveScannerModal } from './VipassanaLiveScannerModal';
+import { VipassanaInterviewSheetModal } from './VipassanaInterviewSheetModal';
+import { VipassanaCombinedEvaluationModal } from './VipassanaCombinedEvaluationModal';
 import { VipassanaAttendancePrintSheet } from './vipassana/VipassanaAttendancePrintSheet';
 
 interface VipassanaAttendanceSheetModalProps {
@@ -100,9 +103,11 @@ export function VipassanaAttendanceSheetModal({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
-  // Sub-modal states for Live Scanner & Badges Generator
+  // Sub-modal states for Live Scanner & Badges Generator & Interview & Combined Eval
   const [isBadgesModalOpen, setIsBadgesModalOpen] = useState(false);
   const [isLiveScannerOpen, setIsLiveScannerOpen] = useState(false);
+  const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
+  const [isCombinedEvalModalOpen, setIsCombinedEvalModalOpen] = useState(false);
 
   // Editable check-in times state & late threshold
   const [timeState, setTimeState] = useState<Record<string, {
@@ -544,6 +549,26 @@ export function VipassanaAttendanceSheetModal({
             >
               <Sparkles className="w-3.5 h-3.5 text-purple-600" />
               <span>🪪 พิมพ์ป้ายคล้องคอ</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsInterviewModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="เปิดแบบสอบอารมณ์สติปัฏฐาน 4 สำหรับพระวิปัสสนาจารย์ (กาย เวทนา จิต ธรรม)"
+            >
+              <Award className="w-3.5 h-3.5 text-amber-600" />
+              <span>🧘 สอบอารมณ์สติปัฏฐาน 4</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsCombinedEvalModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl border border-teal-300 bg-teal-50 hover:bg-teal-100 text-teal-900 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="เปิดระบบประมวลผลผ่านโครงการ 2 มิติ (เวลาเรียน + ผลสอบอารมณ์) และออกวุฒิบัตร"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+              <span>🏅 ประมวลผล & วุฒิบัตร</span>
             </button>
 
             <button
@@ -1335,6 +1360,28 @@ export function VipassanaAttendanceSheetModal({
           onCheckInRecorded={() => {
             if (onAttendanceSaved) onAttendanceSaved();
           }}
+        />
+      )}
+
+      {/* Vipassana Interview Sheet Modal (สติปัฏฐาน 4) */}
+      {isInterviewModalOpen && (
+        <VipassanaInterviewSheetModal
+          isOpen={isInterviewModalOpen}
+          onClose={() => setIsInterviewModalOpen(false)}
+          event={event}
+          registrations={registrations}
+          onSaved={onAttendanceSaved}
+        />
+      )}
+
+      {/* Vipassana Combined Evaluation Modal (ประเมินผล 2 มิติ & ออกวุฒิบัตร) */}
+      {isCombinedEvalModalOpen && (
+        <VipassanaCombinedEvaluationModal
+          isOpen={isCombinedEvalModalOpen}
+          onClose={() => setIsCombinedEvalModalOpen(false)}
+          event={event}
+          registrations={registrations}
+          onRefresh={onAttendanceSaved}
         />
       )}
     </div>
