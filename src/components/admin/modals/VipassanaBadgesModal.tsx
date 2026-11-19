@@ -20,7 +20,13 @@ import {
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types/event';
 
-export type BadgeLayoutMode = 'EIGHT_PER_PAGE' | 'SIX_PER_PAGE' | 'FOUR_PER_PAGE' | 'TEN_PER_PAGE';
+export type BadgeLayoutMode =
+  | 'TWELVE_4X3_PER_PAGE'
+  | 'TWELVE_3X4_PER_PAGE'
+  | 'EIGHT_PER_PAGE'
+  | 'SIX_PER_PAGE'
+  | 'FOUR_PER_PAGE'
+  | 'TEN_PER_PAGE';
 export type BadgeOrientation = 'VERTICAL' | 'HORIZONTAL';
 export type BadgeWatermarkMode = 'MCU_LOGO' | 'CUSTOM' | 'NONE';
 
@@ -39,7 +45,7 @@ export function VipassanaBadgesModal({
 }: VipassanaBadgesModalProps) {
   const [selectedGroup, setSelectedGroup] = useState<number | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [layoutMode, setLayoutMode] = useState<BadgeLayoutMode>('EIGHT_PER_PAGE');
+  const [layoutMode, setLayoutMode] = useState<BadgeLayoutMode>('TWELVE_4X3_PER_PAGE');
   const [orientation, setOrientation] = useState<BadgeOrientation>('VERTICAL');
   const [qrCodeUrls, setQrCodeUrls] = useState<Record<string, string>>({});
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
@@ -204,8 +210,11 @@ export function VipassanaBadgesModal({
         return 8;
       case 'TEN_PER_PAGE':
         return 10;
+      case 'TWELVE_4X3_PER_PAGE':
+      case 'TWELVE_3X4_PER_PAGE':
+        return 12;
       default:
-        return 8;
+        return 12;
     }
   }, [layoutMode]);
 
@@ -540,12 +549,14 @@ export function VipassanaBadgesModal({
               <select
                 value={layoutMode}
                 onChange={(e) => setLayoutMode(e.target.value as BadgeLayoutMode)}
-                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-semibold text-slate-800 focus:outline-none"
+                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-semibold text-slate-800 focus:outline-none cursor-pointer"
               >
-                <option value="EIGHT_PER_PAGE">8 ป้ายต่อหน้า A4 (ขนาด 7 x 10 ซม. - ยอดนิยมใส่ซอง)</option>
-                <option value="SIX_PER_PAGE">6 ป้ายต่อหน้า A4 (ขนาดมาตรฐาน 8.5 x 11 ซม.)</option>
-                <option value="FOUR_PER_PAGE">4 ป้ายต่อหน้า A4 (ขนาดใหญ่พิเศษ 10 x 14 ซม.)</option>
-                <option value="TEN_PER_PAGE">10 ป้ายต่อหน้า A4 (ขนาดนามบัตร 5.5 x 9 ซม. - ประหยัดกระดาษ)</option>
+                <option value="TWELVE_4X3_PER_PAGE">✨ 12 ป้ายต่อหน้า A4 (3 แถว x 4 คอลัมน์ - แนะนำ เต็มหน้า ไม่เหลือที่ว่าง)</option>
+                <option value="TWELVE_3X4_PER_PAGE">12 ป้ายต่อหน้า A4 (4 แถว x 3 คอลัมน์ - ขนาดกะทัดรัด)</option>
+                <option value="EIGHT_PER_PAGE">8 ป้ายต่อหน้า A4 (4 แถว x 2 คอลัมน์ - ขนาด 7 x 10 ซม.)</option>
+                <option value="SIX_PER_PAGE">6 ป้ายต่อหน้า A4 (3 แถว x 2 คอลัมน์ - ขนาดมาตรฐาน 8.5 x 11 ซม.)</option>
+                <option value="FOUR_PER_PAGE">4 ป้ายต่อหน้า A4 (2 แถว x 2 คอลัมน์ - ขนาดใหญ่พิเศษ 10 x 14 ซม.)</option>
+                <option value="TEN_PER_PAGE">10 ป้ายต่อหน้า A4 (5 แถว x 2 คอลัมน์ - ขนาดนามบัตร 5.5 x 9 ซม.)</option>
               </select>
             </div>
 
@@ -754,14 +765,18 @@ export function VipassanaBadgesModal({
 
                   {/* Grid of badges on this A4 sheet */}
                   <div
-                    className={`grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-3 print:gap-1.5 w-full h-full ${
-                      layoutMode === 'FOUR_PER_PAGE'
-                        ? 'print:grid-rows-2'
+                    className={`grid gap-2.5 sm:gap-3 print:gap-1.5 w-full h-full ${
+                      layoutMode === 'TWELVE_4X3_PER_PAGE'
+                        ? 'grid-cols-2 sm:grid-cols-4 print:grid-cols-4 print:grid-rows-3'
+                        : layoutMode === 'TWELVE_3X4_PER_PAGE'
+                        ? 'grid-cols-1 sm:grid-cols-3 print:grid-cols-3 print:grid-rows-4'
+                        : layoutMode === 'FOUR_PER_PAGE'
+                        ? 'grid-cols-1 sm:grid-cols-2 print:grid-cols-2 print:grid-rows-2'
                         : layoutMode === 'SIX_PER_PAGE'
-                        ? 'print:grid-rows-3'
+                        ? 'grid-cols-1 sm:grid-cols-2 print:grid-cols-2 print:grid-rows-3'
                         : layoutMode === 'EIGHT_PER_PAGE'
-                        ? 'print:grid-rows-4'
-                        : 'print:grid-rows-5'
+                        ? 'grid-cols-1 sm:grid-cols-2 print:grid-cols-2 print:grid-rows-4'
+                        : 'grid-cols-1 sm:grid-cols-2 print:grid-cols-2 print:grid-rows-5'
                     }`}
                   >
                     {pageRegistrations.map((reg, cardIdx) => {
@@ -775,6 +790,10 @@ export function VipassanaBadgesModal({
                           ? 'print:h-[136mm]'
                           : layoutMode === 'SIX_PER_PAGE'
                           ? 'print:h-[90mm]'
+                          : layoutMode === 'TWELVE_4X3_PER_PAGE'
+                          ? 'print:h-[91mm]'
+                          : layoutMode === 'TWELVE_3X4_PER_PAGE'
+                          ? 'print:h-[68mm]'
                           : layoutMode === 'EIGHT_PER_PAGE'
                           ? 'print:h-[67mm]'
                           : 'print:h-[53mm]';
@@ -791,6 +810,10 @@ export function VipassanaBadgesModal({
                                   ? '330px'
                                   : layoutMode === 'SIX_PER_PAGE'
                                   ? '260px'
+                                  : layoutMode === 'TWELVE_4X3_PER_PAGE'
+                                  ? '270px'
+                                  : layoutMode === 'TWELVE_3X4_PER_PAGE'
+                                  ? '210px'
                                   : layoutMode === 'EIGHT_PER_PAGE'
                                   ? '210px'
                                   : '175px',
@@ -844,7 +867,9 @@ export function VipassanaBadgesModal({
                                 )}
                               </div>
                               <div className={`font-extrabold text-slate-900 leading-snug line-clamp-2 px-1 ${
-                                layoutMode === 'TEN_PER_PAGE' ? 'text-[11px]' : 'text-xs sm:text-[13px]'
+                                layoutMode === 'TEN_PER_PAGE' || layoutMode === 'TWELVE_4X3_PER_PAGE' || layoutMode === 'TWELVE_3X4_PER_PAGE'
+                                  ? 'text-[10.5px] sm:text-[11px]'
+                                  : 'text-xs sm:text-[13px]'
                               }`}>
                                 {reg.studentName}
                               </div>
@@ -871,6 +896,10 @@ export function VipassanaBadgesModal({
                                           ? '90px'
                                           : layoutMode === 'EIGHT_PER_PAGE'
                                           ? '74px'
+                                          : layoutMode === 'TWELVE_4X3_PER_PAGE'
+                                          ? '64px'
+                                          : layoutMode === 'TWELVE_3X4_PER_PAGE'
+                                          ? '58px'
                                           : '58px',
                                       height:
                                         layoutMode === 'FOUR_PER_PAGE'
@@ -879,6 +908,10 @@ export function VipassanaBadgesModal({
                                           ? '90px'
                                           : layoutMode === 'EIGHT_PER_PAGE'
                                           ? '74px'
+                                          : layoutMode === 'TWELVE_4X3_PER_PAGE'
+                                          ? '64px'
+                                          : layoutMode === 'TWELVE_3X4_PER_PAGE'
+                                          ? '58px'
                                           : '58px',
                                     }}
                                   />
@@ -915,6 +948,10 @@ export function VipassanaBadgesModal({
                                 ? '330px'
                                 : layoutMode === 'SIX_PER_PAGE'
                                 ? '260px'
+                                : layoutMode === 'TWELVE_4X3_PER_PAGE'
+                                ? '260px'
+                                : layoutMode === 'TWELVE_3X4_PER_PAGE'
+                                ? '210px'
                                 : layoutMode === 'EIGHT_PER_PAGE'
                                 ? '210px'
                                 : '175px',
@@ -970,7 +1007,9 @@ export function VipassanaBadgesModal({
                               </div>
 
                               <div className={`font-extrabold text-slate-900 leading-snug line-clamp-2 pt-0.5 ${
-                                layoutMode === 'TEN_PER_PAGE' ? 'text-[11px]' : 'text-xs sm:text-[13px]'
+                                layoutMode === 'TEN_PER_PAGE' || layoutMode === 'TWELVE_4X3_PER_PAGE' || layoutMode === 'TWELVE_3X4_PER_PAGE'
+                                  ? 'text-[10.5px] sm:text-[11px]'
+                                  : 'text-xs sm:text-[13px]'
                               }`}>
                                 {reg.studentName}
                               </div>
@@ -1002,6 +1041,10 @@ export function VipassanaBadgesModal({
                                           ? '82px'
                                           : layoutMode === 'EIGHT_PER_PAGE'
                                           ? '68px'
+                                          : layoutMode === 'TWELVE_4X3_PER_PAGE'
+                                          ? '56px'
+                                          : layoutMode === 'TWELVE_3X4_PER_PAGE'
+                                          ? '54px'
                                           : '54px',
                                       height:
                                         layoutMode === 'FOUR_PER_PAGE'
@@ -1010,6 +1053,10 @@ export function VipassanaBadgesModal({
                                           ? '82px'
                                           : layoutMode === 'EIGHT_PER_PAGE'
                                           ? '68px'
+                                          : layoutMode === 'TWELVE_4X3_PER_PAGE'
+                                          ? '56px'
+                                          : layoutMode === 'TWELVE_3X4_PER_PAGE'
+                                          ? '54px'
                                           : '54px',
                                     }}
                                   />
