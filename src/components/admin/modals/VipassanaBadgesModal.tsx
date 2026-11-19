@@ -13,6 +13,9 @@ import {
   FileText,
   Smartphone,
   CreditCard,
+  FileDown,
+  Image as ImageIcon,
+  Loader2,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types/event';
 
@@ -38,6 +41,9 @@ export function VipassanaBadgesModal({
   const [orientation, setOrientation] = useState<BadgeOrientation>('VERTICAL');
   const [qrCodeUrls, setQrCodeUrls] = useState<Record<string, string>>({});
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingPng, setIsExportingPng] = useState(false);
+  const [exportProgress, setExportProgress] = useState<string | null>(null);
 
   // Available groups
   const availableGroups = useMemo(() => {
@@ -180,7 +186,155 @@ export function VipassanaBadgesModal({
   };
 
   const handlePrintBadges = () => {
-    window.print();
+    try {
+      window.print();
+    } catch (err) {
+      console.error('window.print error:', err);
+      alert('ไม่สามารถเปิดคำสั่งพิมพ์ได้ กรุณาใช้ปุ่ม "บันทึก PDF" หรือ "บันทึกรูป PNG" เพื่อนำไฟล์ไปใช้งานหรือสั่งพิมพ์แทน');
+    }
+  };
+
+  // Export all pages directly to a multi-page A4 PDF file
+  const handleExportPdf = async () => {
+    if (pages.length === 0) return;
+    setIsExportingPdf(true);
+    setExportProgress('กำลังเตรียมข้อมูลเอกสาร PDF...');
+
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+      });
+
+      for (let i = 0; i < pages.length; i++) {
+        setExportProgress(`กำลังสร้างหน้า PDF ที่ ${i + 1} จากทั้งหมด ${pages.length} หน้า...`);
+        const pageEl = document.getElementById(`vipassana-badge-page-${i}`);
+        if (!pageEl) continue;
+
+        // Hide screen-only indicator during canvas capture
+        const headers = pageEl.querySelectorAll('.screen-only-header');
+        headers.forEach((h) => ((h as HTMLElement).style.display = 'none'));
+
+        const origBorder = pageEl.style.border;
+        const origShadow = pageEl.style.boxShadow;
+        const origRadius = pageEl.style.borderRadius;
+        pageEl.style.border = 'none';
+        pageEl.style.boxShadow = 'none';
+        pageEl.style.borderRadius = '0';
+
+        const canvas = await html2canvas(pageEl, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: pageEl.scrollWidth,
+        });
+
+        pageEl.style.border = origBorder;
+        pageEl.style.boxShadow = origShadow;
+        pageEl.style.borderRadius = origRadius;
+        headers.forEach((h) => ((h as HTMLElement).style.display = ''));
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        if (i > 0) {
+          pdf.addPage('a4', 'portrait');
+        }
+
+        const pdfWidth = 210;
+        const pdfHeight = 297;
+        const canvasRatio = canvas.width / canvas.height;
+        let targetW = pdfWidth;
+        let targetH = pdfWidth / canvasRatio;
+        let x = 0;
+        let y = 0;
+
+        if (targetH > pdfHeight) {
+          targetH = pdfHeight;
+          targetW = pdfHeight * canvasRatio;
+          x = (pdfWidth - targetW) / 2;
+        } else {
+          y = (pdfHeight - targetH) / 2;
+        }
+
+        pdf.addImage(imgData, 'JPEG', x, y, targetW, targetH);
+      }
+
+      setExportProgress('กำลังบันทึกไฟล์ PDF...');
+      const cleanTitle = (event.title || 'vipassana').replace(/[\s/\\:*?"<>|]+/g, '_');
+      pdf.save(`ป้ายคล้องคอ_${cleanTitle}_กลุ่ม_${selectedGroup}.pdf`);
+    } catch (err) {
+      console.error('Failed to export badges PDF:', err);
+      alert('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsExportingPdf(false);
+      setExportProgress(null);
+    }
+  };
+
+  // Export each page directly as a high-resolution PNG image
+  const handleExportPng = async () => {
+    if (pages.length === 0) return;
+    setIsExportingPng(true);
+    setExportProgress('กำลังเตรียมรูปภาพ PNG...');
+
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const cleanTitle = (event.title || 'vipassana').replace(/[\s/\\:*?"<>|]+/g, '_');
+
+      for (let i = 0; i < pages.length; i++) {
+        setExportProgress(`กำลังบันทึกรูปภาพ PNG หน้าที่ ${i + 1} จากทั้งหมด ${pages.length} หน้า...`);
+        const pageEl = document.getElementById(`vipassana-badge-page-${i}`);
+        if (!pageEl) continue;
+
+        const headers = pageEl.querySelectorAll('.screen-only-header');
+        headers.forEach((h) => ((h as HTMLElement).style.display = 'none'));
+
+        const origBorder = pageEl.style.border;
+        const origShadow = pageEl.style.boxShadow;
+        const origRadius = pageEl.style.borderRadius;
+        pageEl.style.border = 'none';
+        pageEl.style.boxShadow = 'none';
+        pageEl.style.borderRadius = '0';
+
+        const canvas = await html2canvas(pageEl, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: pageEl.scrollWidth,
+        });
+
+        pageEl.style.border = origBorder;
+        pageEl.style.boxShadow = origShadow;
+        pageEl.style.borderRadius = origRadius;
+        headers.forEach((h) => ((h as HTMLElement).style.display = ''));
+
+        const imgData = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = imgData;
+        const fileName =
+          pages.length === 1
+            ? `ป้ายคล้องคอ_${cleanTitle}_กลุ่ม_${selectedGroup}.png`
+            : `ป้ายคล้องคอ_${cleanTitle}_กลุ่ม_${selectedGroup}_หน้า_${i + 1}.png`;
+        link.download = fileName;
+        link.click();
+
+        if (pages.length > 1) {
+          await new Promise((r) => setTimeout(r, 400));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to export badges PNG:', err);
+      alert('เกิดข้อผิดพลาดในการบันทึกรูปภาพ PNG กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsExportingPng(false);
+      setExportProgress(null);
+    }
   };
 
   if (!isOpen) return null;
@@ -213,26 +367,64 @@ export function VipassanaBadgesModal({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 self-end sm:self-auto flex-wrap">
+            {/* CSV Export */}
             <button
               type="button"
               onClick={handleExportCsv}
-              disabled={filteredRegistrations.length === 0}
-              className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              disabled={filteredRegistrations.length === 0 || isExportingPdf || isExportingPng}
+              className="px-2.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
               title="ส่งออกรายชื่อนิสิตและเลขเฉพาะกลุ่มเป็น CSV"
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">CSV</span>
+              <span className="hidden md:inline">CSV</span>
             </button>
+
+            {/* Save PDF */}
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={filteredRegistrations.length === 0 || isExportingPdf || isExportingPng}
+              className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              title="บันทึกป้ายทั้งหมดเป็นไฟล์เอกสาร PDF ทันที (รวมทุกหน้า A4)"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4" />
+              )}
+              <span>{isExportingPdf ? 'กำลังสร้าง PDF...' : 'บันทึก PDF'}</span>
+            </button>
+
+            {/* Save PNG */}
+            <button
+              type="button"
+              onClick={handleExportPng}
+              disabled={filteredRegistrations.length === 0 || isExportingPdf || isExportingPng}
+              className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              title="บันทึกป้ายเป็นไฟล์รูปภาพ PNG ความละเอียดสูง"
+            >
+              {isExportingPng ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ImageIcon className="w-4 h-4" />
+              )}
+              <span>{isExportingPng ? 'กำลังสร้างรูป...' : 'บันทึกรูป PNG'}</span>
+            </button>
+
+            {/* Print A4 */}
             <button
               type="button"
               onClick={handlePrintBadges}
-              disabled={filteredRegistrations.length === 0}
-              className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              disabled={filteredRegistrations.length === 0 || isExportingPdf || isExportingPng}
+              className="px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 active:scale-95 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              title="สั่งพิมพ์ออกเครื่องพิมพ์หรือเลือก Print to PDF"
             >
               <Printer className="w-4 h-4" />
-              <span>สั่งพิมพ์ป้าย A4 (Print Badges)</span>
+              <span>สั่งพิมพ์ป้าย A4</span>
             </button>
+
+            {/* Close Modal */}
             <button
               type="button"
               onClick={onClose}
@@ -242,6 +434,19 @@ export function VipassanaBadgesModal({
             </button>
           </div>
         </div>
+
+        {/* Export Progress Notification */}
+        {exportProgress && (
+          <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white px-4 py-2.5 text-xs flex items-center justify-between shrink-0 shadow-inner animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-amber-300" />
+              <span className="font-bold">{exportProgress}</span>
+            </div>
+            <span className="text-[11px] text-purple-200 hidden sm:inline">
+              ⚡ ระบบกำลังประมวลผลความละเอียดสูง (2x Retina) กรุณารอสักครู่...
+            </span>
+          </div>
+        )}
 
         {/* TOOLBAR CONTROLS (Hidden in Print) */}
         <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 print:hidden">
@@ -405,10 +610,11 @@ export function VipassanaBadgesModal({
               {pages.map((pageRegistrations, pageIdx) => (
                 <div
                   key={`page-${pageIdx}`}
+                  id={`vipassana-badge-page-${pageIdx}`}
                   className="a4-print-sheet bg-white p-4 sm:p-5 print:p-0 rounded-2xl border border-slate-200 print:border-none shadow-sm print:shadow-none mx-auto w-full max-w-[860px] print:max-w-none"
                 >
                   {/* Screen-only Sheet Indicator */}
-                  <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-200 text-xs text-slate-500 print:hidden font-medium">
+                  <div className="screen-only-header flex items-center justify-between pb-2 mb-3 border-b border-slate-200 text-xs text-slate-500 print:hidden font-medium">
                     <span className="font-bold text-purple-900 flex items-center gap-1.5">
                       <FileText className="w-3.5 h-3.5 text-purple-600" />
                       <span>หน้าที่ {pageIdx + 1} / {pages.length}</span>
