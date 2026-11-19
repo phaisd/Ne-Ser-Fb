@@ -233,6 +233,36 @@ export async function POST(request: Request) {
       });
     }
 
+    // Update Vipassana Evaluation Status (ดุลยพินิจ ผลรวมโครงการ: ผ่าน / ไม่ผ่าน / คืนค่า)
+    if (action === 'update_vipassana_evaluation_status') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, registrationId, registrationIds, decision } = body;
+      if (!eventId || (!registrationId && (!Array.isArray(registrationIds) || registrationIds.length === 0))) {
+        return NextResponse.json({ success: false, error: 'ข้อมูลไม่ครบถ้วน' }, { status: 400 });
+      }
+
+      const { updateVipassanaEvaluationStatus } = await import('@/services');
+      const result = await updateVipassanaEvaluationStatus({
+        eventId,
+        registrationId,
+        registrationIds,
+        decision,
+      });
+
+      return NextResponse.json({
+        success: result.success,
+        data: result,
+        message:
+          decision === 'PASS'
+            ? `ปรับผลการประเมินเป็น "ผ่านโครงการ" สำเร็จ (${result.updatedCount} รายการ)`
+            : decision === 'NOT_PASS'
+            ? `ปรับผลการประเมินเป็น "ไม่ผ่าน" สำเร็จ (${result.updatedCount} รายการ)`
+            : `คืนค่าผลการประเมินเป็นคำนวณตามเกณฑ์สำเร็จ (${result.updatedCount} รายการ)`,
+      });
+    }
+
     // Create a new event
     if (action === 'create_event' || action === 'add_event') {
       const adminAuth = requireAdminOrOfficer(request);

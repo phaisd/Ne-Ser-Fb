@@ -783,3 +783,51 @@ export async function batchApproveAndIssueVipassanaCertificates(
 
   return { success: true, issuedCount: certIds.length, certIds };
 }
+
+/**
+ * Updates manual committee evaluation decision (ดุลยพินิจ ผลรวมโครงการ: ผ่าน / ไม่ผ่าน / คืนค่า)
+ */
+export async function updateVipassanaEvaluationStatus(params: {
+  eventId: string;
+  registrationId?: string;
+  registrationIds?: string[];
+  decision: 'PASS' | 'NOT_PASS' | 'RESET';
+}): Promise<{ success: boolean; updatedCount: number }> {
+  const { eventId, registrationId, registrationIds, decision } = params;
+  const localRegs = readLocalJson<EventRegistration[]>('event_registrations.json', []);
+  const targetIds = new Set<string>(
+    registrationIds && registrationIds.length > 0
+      ? registrationIds
+      : registrationId
+      ? [registrationId]
+      : []
+  );
+
+  if (targetIds.size === 0) {
+    return { success: false, updatedCount: 0 };
+  }
+
+  const nowIso = new Date().toISOString();
+  let updatedCount = 0;
+
+  localRegs.forEach((r) => {
+    if (r.eventId !== eventId) return;
+    if (!targetIds.has(r.id)) return;
+
+    if (decision === 'PASS') {
+      r.passedMeditation = true;
+      r.finalMeditationResult = 'PASS';
+    } else if (decision === 'NOT_PASS') {
+      r.passedMeditation = false;
+      r.finalMeditationResult = 'NOT_PASS';
+    } else if (decision === 'RESET') {
+      delete r.finalMeditationResult;
+      delete r.passedMeditation;
+    }
+    r.updatedAt = nowIso;
+    updatedCount += 1;
+  });
+
+  writeLocalJson('event_registrations.json', localRegs);
+  return { success: true, updatedCount };
+}

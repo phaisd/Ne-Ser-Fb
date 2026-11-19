@@ -19,9 +19,12 @@ import {
   ExternalLink,
   ShieldCheck,
   Check,
+  ChevronDown,
+  FileSpreadsheet,
+  RotateCcw,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
-import { downloadCsvFile } from '@/lib/utils';
+import { downloadCsvFile, downloadXlsx, type XlsxSheet } from '@/lib/utils';
 
 interface VipassanaCombinedEvaluationModalProps {
   isOpen: boolean;
@@ -74,6 +77,13 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
   const [selectedGroup, setSelectedGroup] = useState<number | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PASSED' | 'REVIEW' | 'FAILED' | 'CERT_ISSUED'>('ALL');
   const [selectedRegIds, setSelectedRegIds] = useState<Set<string>>(new Set());
+
+  // Manual Committee Decision Overrides (ดุลยพินิจ ผลรวมโครงการ: ผ่าน / ไม่ผ่าน / คืนค่า)
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, 'PASS' | 'NOT_PASS' | 'RESET'>>({});
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Export Dropdown State
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // Batch Certificate Issuance Form State
   const [showCertDialog, setShowCertDialog] = useState(false);
@@ -130,9 +140,15 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
       const hasPass = s1 === 'PASS' || s2 === 'PASS' || s3 === 'PASS' || r.passedMeditation === true;
       const interviewsPassed = hasPass && !anyFail;
 
-      // 3. Combined Decision
+      // 3. Combined Decision with Committee Override
+      const override = statusOverrides[r.id];
       let overallStatus: 'PASSED' | 'REVIEW' | 'FAILED' = 'REVIEW';
-      if (attendancePassed && interviewsPassed) {
+
+      if (override === 'PASS' || (!override && r.finalMeditationResult === 'PASS')) {
+        overallStatus = 'PASSED';
+      } else if (override === 'NOT_PASS' || (!override && r.finalMeditationResult === 'NOT_PASS')) {
+        overallStatus = 'FAILED';
+      } else if (attendancePassed && interviewsPassed) {
         overallStatus = 'PASSED';
       } else if (anyFail || absentPeriods > 8) {
         overallStatus = 'FAILED';
@@ -167,7 +183,7 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
         certificateDocNo: r.certificateDocNo,
       };
     });
-  }, [registrations, totalPeriodsRequired]);
+  }, [registrations, totalPeriodsRequired, statusOverrides]);
 
   // Available groups
   const availableGroups = useMemo(() => {
@@ -237,6 +253,98 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
     setSelectedRegIds(new Set(passedIds));
   };
 
+  // Select only review
+  const handleSelectReview = () => {
+    const reviewIds = filteredRows.filter((r) => r.overallStatus === 'REVIEW').map((r) => r.id);
+    setSelectedRegIds(new Set(reviewIds));
+  };
+
+  // Update single evaluation status (ดุลยพินิจ ผลรวมโครงการ: ผ่าน / ไม่ผ่าน / คืนค่า)
+  const handleUpdateEvaluationStatus = async (
+    regId: string,
+    decision: 'PASS' | 'NOT_PASS' | 'RESET'
+  ) => {
+    setUpdatingId(regId);
+    setStatusOverrides((prev) => ({ ...prev, [regId]: decision }));
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_vipassana_evaluation_status',
+          eventId: event.id,
+          registrationId: regId,
+          decision,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert('ไม่สามารถปรับผลการประเมินได้: ' + (data.error || ''));
+        setStatusOverrides((prev) => {
+          const next = { ...prev };
+          delete next[regId];
+          return next;
+        });
+      } else if (onRefresh) {
+        onRefresh();
+      }
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
+      setStatusOverrides((prev) => {
+        const next = { ...prev };
+        delete next[regId];
+        return next;
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // Batch update evaluation status for all selected rows
+  const handleBatchUpdateStatus = async (decision: 'PASS' | 'NOT_PASS') => {
+    if (selectedRegIds.size === 0) return;
+    const targetIds = Array.from(selectedRegIds);
+    const actionLabel = decision === 'PASS' ? 'ผ่านโครงการ' : 'ไม่ผ่าน';
+    if (
+      !window.confirm(
+        `ยืนยันการปรับผลรวมโครงการของนิสิตที่เลือกจำนวน ${targetIds.length} รายการ เป็น "${actionLabel}" หรือไม่?`
+      )
+    ) {
+      return;
+    }
+
+    setUpdatingId('BATCH');
+    const newOverrides = { ...statusOverrides };
+    targetIds.forEach((id) => {
+      newOverrides[id] = decision;
+    });
+    setStatusOverrides(newOverrides);
+
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_vipassana_evaluation_status',
+          eventId: event.id,
+          registrationIds: targetIds,
+          decision,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert('ไม่สามารถปรับผลการประเมินเป็นชุดได้: ' + (data.error || ''));
+      } else {
+        alert(`ปรับผลรวมโครงการเป็น "${actionLabel}" สำเร็จ ${targetIds.length} รายการ!`);
+        if (onRefresh) onRefresh();
+      }
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   // Batch Issue Certificates
   const handleConfirmIssueCertificates = async () => {
     if (selectedRegIds.size === 0) {
@@ -277,51 +385,140 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
     }
   };
 
-  // Export Combined CSV
-  const handleExportCsv = () => {
+  // Export Combined XLSX / CSV (All, Passed Only, Failed Only, Review Only)
+  const exportData = (
+    mode: 'ALL' | 'PASSED' | 'FAILED' | 'REVIEW',
+    format: 'XLSX' | 'CSV'
+  ) => {
+    const targetRows = evaluationRows.filter((r) => {
+      if (mode === 'ALL') return true;
+      return r.overallStatus === mode;
+    });
+
+    if (targetRows.length === 0) {
+      alert(
+        `ไม่พบข้อมูลนิสิตในกลุ่ม "${
+          mode === 'PASSED'
+            ? 'ผู้ผ่านโครงการ'
+            : mode === 'FAILED'
+            ? 'ผู้ไม่ผ่านโครงการ'
+            : mode === 'REVIEW'
+            ? 'ผู้รอพิจารณา/ดุลยพินิจ'
+            : 'ทั้งหมด'
+        }" สำหรับการส่งออก`
+      );
+      return;
+    }
+
+    const modeLabel =
+      mode === 'ALL'
+        ? 'ทั้งหมด'
+        : mode === 'PASSED'
+        ? `ผู้ผ่าน_${targetRows.length}_รูป`
+        : mode === 'FAILED'
+        ? `ผู้ไม่ผ่าน_${targetRows.length}_รูป`
+        : `รอพิจารณา_${targetRows.length}_รูป`;
+
+    const safeTitle = (event.title || 'วิปัสสนากัมมัฏฐาน')
+      .replace(/[/\\?%*:|"<>]/g, '_')
+      .slice(0, 30);
+    const dateTag = new Date().toISOString().slice(0, 10);
+    const filename = `ผลประเมิน_${safeTitle}_${modeLabel}_${dateTag}`;
+
     const headers = [
+      'ลำดับ',
       'กลุ่ม',
       'เลขเฉพาะกลุ่ม',
       'รหัสนิสิต',
       'ชื่อ-ฉายา/นามสกุล',
       'พรรษา',
+      'ระดับการศึกษา',
       'หลักสูตร',
       'สาขาวิชา',
       'ชั้นปี',
-      'ช่วงเวลาที่เข้า (รอบ)',
+      'เวลาปฏิบัติที่เข้า (รอบ)',
       'ขาด (รอบ)',
-      'ร้อยละการเข้า (%)',
-      'สถานะเวลา',
+      'เกณฑ์รวม (รอบ)',
+      'ร้อยละเวลา (%)',
+      'สถานะเกณฑ์เวลา',
       'สอบอารมณ์ครั้งที่ 1',
       'สอบอารมณ์ครั้งที่ 2',
       'สอบอารมณ์ครั้งที่ 3',
       'สถานะสอบอารมณ์',
-      'ผลประเมินรวม',
+      'ผลรวมโครงการ',
+      'มติ/ดุลยพินิจ',
+      'สถานะวุฒิบัตร',
       'เลขที่วุฒิบัตร',
     ];
 
-    const rows = filteredRows.map((r) => [
-      r.groupNumber || '-',
-      r.groupSpecificCode || '-',
-      r.studentCode,
-      r.studentName,
-      r.vasa || '-',
-      r.programType || '-',
-      r.registration.major || '-',
-      r.yearLevel || 1,
-      r.attendedPeriods,
-      r.absentPeriods,
-      `${r.attendancePercent}%`,
-      r.attendancePassed ? 'ผ่านเกณฑ์เวลา' : 'เวลาไม่ถึง',
-      r.interviewS1 || '-',
-      r.interviewS2 || '-',
-      r.interviewS3 || '-',
-      r.interviewsPassed ? 'ผ่านครบ' : 'ยังไม่ครบ/มีไม่ผ่าน',
-      r.overallStatus === 'PASSED' ? 'ผ่านโครงการ' : r.overallStatus === 'REVIEW' ? 'รอพิจารณา' : 'ไม่ผ่าน',
-      r.certificateDocNo || '-',
-    ]);
+    const dataRows = targetRows.map((r, idx) => {
+      const interviewStatus = r.interviewsPassed ? 'ผ่านครบตามเกณฑ์' : 'ยังไม่ครบ/รอประเมิน';
+      const overallText =
+        r.overallStatus === 'PASSED'
+          ? 'ผ่านโครงการ'
+          : r.overallStatus === 'FAILED'
+          ? 'ไม่ผ่าน'
+          : 'ดุลยพินิจ/รอผล';
 
-    downloadCsvFile(`vipassana_combined_evaluation_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+      const overrideText =
+        r.registration.finalMeditationResult === 'PASS' || statusOverrides[r.id] === 'PASS'
+          ? 'มติผ่าน (ดุลยพินิจ)'
+          : r.registration.finalMeditationResult === 'NOT_PASS' || statusOverrides[r.id] === 'NOT_PASS'
+          ? 'มติไม่ผ่าน'
+          : 'คำนวณตามเกณฑ์';
+
+      return [
+        idx + 1,
+        r.groupNumber || '-',
+        r.groupSpecificCode || '-',
+        r.studentCode,
+        r.studentName,
+        r.vasa || '-',
+        r.degreeLevel || 'ปริญญาตรี',
+        r.programType === 'ENGLISH' ? 'นานาชาติ (Inter)' : 'ภาคภาษาไทย',
+        r.registration.major || '-',
+        r.yearLevel || 1,
+        r.attendedPeriods,
+        r.absentPeriods,
+        r.totalPeriodsRequired,
+        `${r.attendancePercent}%`,
+        r.attendancePassed ? 'ผ่านเกณฑ์เวลา' : 'เวลาไม่ถึง',
+        r.interviewS1 === 'PASS' ? 'ผ่าน' : r.interviewS1 === 'NOT_PASS' ? 'ไม่ผ่าน' : '-',
+        r.interviewS2 === 'PASS' ? 'ผ่าน' : r.interviewS2 === 'NOT_PASS' ? 'ไม่ผ่าน' : '-',
+        r.interviewS3 === 'PASS' ? 'ผ่าน' : r.interviewS3 === 'NOT_PASS' ? 'ไม่ผ่าน' : '-',
+        interviewStatus,
+        overallText,
+        overrideText,
+        r.certificateIssued ? 'ออกแล้ว' : 'ยังไม่ออก',
+        r.certificateDocNo || '-',
+      ];
+    });
+
+    if (format === 'CSV') {
+      downloadCsvFile(`${filename}.csv`, headers, dataRows);
+    } else {
+      const sheet: XlsxSheet = {
+        name:
+          mode === 'PASSED'
+            ? 'ผู้ผ่านโครงการ'
+            : mode === 'FAILED'
+            ? 'ผู้ไม่ผ่านโครงการ'
+            : mode === 'REVIEW'
+            ? 'ผู้รอพิจารณา'
+            : 'ผลการประเมินรวม',
+        title: `รายงานผลการประเมินโครงการ: ${event.title}`,
+        subtitle: `ประเภท: ${modeLabel} | ข้อมูล ณ วันที่ ${new Date().toLocaleDateString(
+          'th-TH'
+        )} | จำนวน ${targetRows.length} รายการ`,
+        headers,
+        rows: dataRows,
+        columnWidths: [
+          8, 8, 14, 15, 26, 8, 14, 16, 20, 8, 12, 10, 12, 14, 16, 12, 12, 12, 18, 16, 18, 14, 25,
+        ],
+      };
+      downloadXlsx(`${filename}.xlsx`, [sheet]);
+    }
+    setShowExportMenu(false);
   };
 
   // Copy LINE Broadcast Message
@@ -359,7 +556,7 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
-                  ระบบประมวลผลผ่านโครงการและออกวุฒิบัตร (Combined Evaluation & Certificates)
+                  ระบบประมวลผลผ่านโครงการ (Combined Evaluation)
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-400 text-emerald-950">
                   เกณฑ์พิจารณาร่วม 2 มิติ
@@ -486,7 +683,7 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap relative">
             <button
               type="button"
               onClick={handleCopyLineBroadcast}
@@ -497,14 +694,135 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
               <span>{copiedLineMsg ? '✓ คัดลอกสำเร็จ!' : 'สรุปข้อความส่ง LINE'}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={handleExportCsv}
-              className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-            >
-              <Download className="w-3.5 h-3.5 text-blue-700" />
-              <span>ส่งออก Excel / CSV</span>
-            </button>
+            {/* Export Dropdown with Separate File Options */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5 text-blue-700" />
+                <span>ส่งออก Excel / CSV</span>
+                <ChevronDown className={`w-3 h-3 text-blue-600 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showExportMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowExportMenu(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50 text-xs animate-in fade-in space-y-1">
+                    <div className="px-3 py-1 text-[10.5px] font-extrabold text-slate-400 uppercase tracking-wider">
+                      เลือกกลุ่มข้อมูลและรูปแบบที่ต้องการส่งออก
+                    </div>
+
+                    {/* Section 1: All Participants */}
+                    <div className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 transition">
+                      <div className="font-extrabold text-slate-800 text-[11px]">
+                        📊 รายชื่อทั้งหมด ({stats.total} รูป/คน)
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => exportData('ALL', 'XLSX')}
+                          className="flex-1 py-1 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10.5px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+                        >
+                          <FileSpreadsheet className="w-3 h-3" />
+                          <span>Excel (.xlsx)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => exportData('ALL', 'CSV')}
+                          className="flex-1 py-1 px-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-[10.5px] flex items-center justify-center gap-1 transition cursor-pointer"
+                        >
+                          <FileText className="w-3 h-3" />
+                          <span>CSV</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Section 2: Passed Only */}
+                    <div className="p-2 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/60 transition border border-emerald-100">
+                      <div className="font-extrabold text-emerald-900 text-[11px] flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>เฉพาะผู้ผ่านโครงการ ({stats.passed} รูป/คน)</span>
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => exportData('PASSED', 'XLSX')}
+                          className="flex-1 py-1 px-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10.5px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+                        >
+                          <FileSpreadsheet className="w-3 h-3" />
+                          <span>Excel (.xlsx)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => exportData('PASSED', 'CSV')}
+                          className="flex-1 py-1 px-2 rounded-lg bg-emerald-200/80 hover:bg-emerald-300 text-emerald-900 font-bold text-[10.5px] flex items-center justify-center gap-1 transition cursor-pointer"
+                        >
+                          <FileText className="w-3 h-3" />
+                          <span>CSV</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Section 3: Failed Only */}
+                    <div className="p-2 rounded-xl bg-rose-50/70 hover:bg-rose-100/60 transition border border-rose-100">
+                      <div className="font-extrabold text-rose-900 text-[11px] flex items-center gap-1">
+                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                        <span>เฉพาะผู้ไม่ผ่านโครงการ ({stats.failed} รูป/คน)</span>
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => exportData('FAILED', 'XLSX')}
+                          className="flex-1 py-1 px-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10.5px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+                        >
+                          <FileSpreadsheet className="w-3 h-3" />
+                          <span>Excel (.xlsx)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => exportData('FAILED', 'CSV')}
+                          className="flex-1 py-1 px-2 rounded-lg bg-rose-200/80 hover:bg-rose-300 text-rose-900 font-bold text-[10.5px] flex items-center justify-center gap-1 transition cursor-pointer"
+                        >
+                          <FileText className="w-3 h-3" />
+                          <span>CSV</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Section 4: Review / Discretion Only */}
+                    <div className="p-2 rounded-xl bg-amber-50/70 hover:bg-amber-100/60 transition border border-amber-100">
+                      <div className="font-extrabold text-amber-900 text-[11px] flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>เฉพาะผู้รอผล / ดุลยพินิจ ({stats.review} รูป/คน)</span>
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => exportData('REVIEW', 'XLSX')}
+                          className="flex-1 py-1 px-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10.5px] flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+                        >
+                          <FileSpreadsheet className="w-3 h-3" />
+                          <span>Excel (.xlsx)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => exportData('REVIEW', 'CSV')}
+                          className="flex-1 py-1 px-2 rounded-lg bg-amber-200/80 hover:bg-amber-300 text-amber-900 font-bold text-[10.5px] flex items-center justify-center gap-1 transition cursor-pointer"
+                        >
+                          <FileText className="w-3 h-3" />
+                          <span>CSV</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             <button
               type="button"
@@ -519,8 +837,8 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
         </div>
 
         {/* Selection Quick Bar */}
-        <div className="px-6 py-2 bg-slate-100/70 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="px-6 py-2 bg-slate-100/70 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={handleSelectAllFiltered}
@@ -536,6 +854,36 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
             >
               เลือกเฉพาะผู้ผ่านเกณฑ์ ({stats.passed})
             </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={handleSelectReview}
+              className="font-bold text-amber-800 hover:underline cursor-pointer"
+            >
+              เลือกเฉพาะผู้รอผล/ดุลยพินิจ ({stats.review})
+            </button>
+
+            {selectedRegIds.size > 0 && (
+              <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-slate-300">
+                <span className="font-bold text-slate-700">ดุลยพินิจเป็นชุด:</span>
+                <button
+                  type="button"
+                  disabled={updatingId === 'BATCH'}
+                  onClick={() => handleBatchUpdateStatus('PASS')}
+                  className="px-2.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  ✓ มติผ่าน ({selectedRegIds.size})
+                </button>
+                <button
+                  type="button"
+                  disabled={updatingId === 'BATCH'}
+                  onClick={() => handleBatchUpdateStatus('NOT_PASS')}
+                  className="px-2.5 py-0.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  ✕ มติไม่ผ่าน ({selectedRegIds.size})
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="text-[11px] text-slate-500">
@@ -586,7 +934,7 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
                     ผลสอบอารมณ์
                   </th>
                   {/* Overall & Cert Header */}
-                  <th className="p-3 bg-emerald-50 text-emerald-950 text-center border-l border-emerald-200">
+                  <th className="p-3 bg-emerald-50 text-emerald-950 text-center border-l border-emerald-200 min-w-[150px]">
                     ผลรวมโครงการ
                   </th>
                   <th className="p-3 text-right">วุฒิบัตรดิจิทัล</th>
@@ -704,23 +1052,85 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
                           )}
                         </td>
 
-                        {/* Combined Overall Decision */}
+                        {/* Combined Overall Decision: ผ่าน, ไม่ผ่าน, ดุลยพินิจ */}
                         <td className="p-3 text-center border-l border-emerald-200 bg-emerald-50/30">
                           {row.overallStatus === 'PASSED' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-600 text-white shadow-xs">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>ผ่านโครงการ</span>
-                            </span>
+                            <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-600 text-white shadow-xs">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>ผ่านโครงการ</span>
+                              </span>
+                              <button
+                                type="button"
+                                disabled={updatingId === row.id}
+                                onClick={() => handleUpdateEvaluationStatus(row.id, 'NOT_PASS')}
+                                title="คลิกเพื่อเปลี่ยนเป็น ไม่ผ่าน"
+                                className="text-[10.5px] font-bold text-slate-400 hover:text-rose-600 underline cursor-pointer p-0.5"
+                              >
+                                เปลี่ยน
+                              </button>
+                              {(row.registration.finalMeditationResult || statusOverrides[row.id]) && (
+                                <button
+                                  type="button"
+                                  disabled={updatingId === row.id}
+                                  onClick={() => handleUpdateEvaluationStatus(row.id, 'RESET')}
+                                  title="คืนค่าผลตามเกณฑ์คำนวณอัตโนมัติ"
+                                  className="text-[11px] font-bold text-slate-400 hover:text-indigo-600 cursor-pointer p-0.5"
+                                >
+                                  ↺
+                                </button>
+                              )}
+                            </div>
                           ) : row.overallStatus === 'FAILED' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
-                              <XCircle className="w-3.5 h-3.5" />
-                              <span>ไม่ผ่าน</span>
-                            </span>
+                            <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                                <span>ไม่ผ่าน</span>
+                              </span>
+                              <button
+                                type="button"
+                                disabled={updatingId === row.id}
+                                onClick={() => handleUpdateEvaluationStatus(row.id, 'PASS')}
+                                title="ดุลยพินิจ: คลิกเพื่อเปลี่ยนเป็น ผ่านโครงการ"
+                                className="text-[10.5px] font-bold text-slate-400 hover:text-emerald-700 underline cursor-pointer p-0.5"
+                              >
+                                เปลี่ยน
+                              </button>
+                              {(row.registration.finalMeditationResult || statusOverrides[row.id]) && (
+                                <button
+                                  type="button"
+                                  disabled={updatingId === row.id}
+                                  onClick={() => handleUpdateEvaluationStatus(row.id, 'RESET')}
+                                  title="คืนค่าผลตามเกณฑ์คำนวณอัตโนมัติ"
+                                  className="text-[11px] font-bold text-slate-400 hover:text-indigo-600 cursor-pointer p-0.5"
+                                >
+                                  ↺
+                                </button>
+                              )}
+                            </div>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900">
-                              <Clock className="w-3.5 h-3.5 text-amber-700" />
-                              <span>ดุลยพินิจ/รอผล</span>
-                            </span>
+                            <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                disabled={updatingId === row.id}
+                                onClick={() => handleUpdateEvaluationStatus(row.id, 'PASS')}
+                                title="ดุลยพินิจคณะกรรมการ: ปรับผลเป็น ผ่านโครงการ"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
+                              >
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                <span>ผ่าน</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={updatingId === row.id}
+                                onClick={() => handleUpdateEvaluationStatus(row.id, 'NOT_PASS')}
+                                title="ดุลยพินิจคณะกรรมการ: ปรับผลเป็น ไม่ผ่าน"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
+                              >
+                                <X className="w-3.5 h-3.5 stroke-[3]" />
+                                <span>ไม่ผ่าน</span>
+                              </button>
+                            </div>
                           )}
                         </td>
 
