@@ -47,13 +47,15 @@ export async function syncInstructorToSheet(instructor: InstructorAccount): Prom
       instructor.isActingOfficer ? 'TRUE' : 'FALSE',
       instructor.ecclesiasticalTitle || '',
       instructor.contactAddress || '',
+      instructor.phoneNumber || '',
+      instructor.defaultPassword || instructor.password || 'Fb8323mcu',
     ];
 
     if (rowIndex !== -1) {
       const sheetRowNum = rowIndex + 2;
-      await gClient.updateValues(`Instructors!A${sheetRowNum}:O${sheetRowNum}`, [rowData]);
+      await gClient.updateValues(`Instructors!A${sheetRowNum}:Q${sheetRowNum}`, [rowData]);
     } else {
-      await gClient.appendValues('Instructors!A:O', [rowData]);
+      await gClient.appendValues('Instructors!A:Q', [rowData]);
     }
   } catch (err) {
     console.warn('Google Sheets syncInstructorToSheet warning:', err);
@@ -65,7 +67,7 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Instructors!A2:M');
+      const rows = await gClient.getValues('Instructors!A2:Q');
       if (rows && rows.length > 0) {
         const localById = new Map<string, InstructorAccount>();
         const localByEmail = new Map<string, InstructorAccount>();
@@ -123,6 +125,8 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
 
           const sheetEcclesiastical = r[13] !== undefined && r[13] !== '' ? String(r[13]).trim() : undefined;
           const sheetContactAddress = r[14] !== undefined && r[14] !== '' ? String(r[14]).trim() : undefined;
+          const sheetPhoneNumber = r[15] !== undefined && r[15] !== '' ? String(r[15]).trim() : undefined;
+          const sheetPassword = r[16] !== undefined && r[16] !== '' ? String(r[16]).trim() : undefined;
 
           // Skip completely empty cleared rows
           if (!id && !name && !email && !gmail) {
@@ -177,6 +181,9 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
             instructorType: instructorType || localMatch?.instructorType || 'อาจารย์ประจำ',
             ecclesiasticalTitle: sheetEcclesiastical || localMatch?.ecclesiasticalTitle || undefined,
             contactAddress: sheetContactAddress || localMatch?.contactAddress || undefined,
+            phoneNumber: sheetPhoneNumber || localMatch?.phoneNumber || undefined,
+            defaultPassword: sheetPassword || localMatch?.defaultPassword || localMatch?.password || 'Fb8323mcu',
+            password: localMatch?.password || sheetPassword || 'Fb8323mcu',
             role: isSuper ? 'SUPER_ADMIN' : effectiveRole,
             isActive: isActive,
             isSuspended: isSuspended,
@@ -638,11 +645,68 @@ export async function batchImportInstructors(
 
   writeLocalJson('instructors.json', list);
 
-  // Sync to sheets in background for new or updated
-  for (const p of processed) {
-    const acc = list.find((u) => u.email === p.email);
-    if (acc) {
-      syncInstructorToSheet(acc).catch(() => {});
+  // Sync to Google Sheets for new or updated (Awaited for persistent storage on Vercel)
+  const gClient = getSheetsClient();
+  if (gClient && processed.length > 0) {
+    try {
+      await gClient.ensureSheetsExist(['Instructors']);
+      const rows = await gClient.getValues('Instructors!A2:E');
+      const rowMap = new Map<string, number>();
+      if (rows && rows.length > 0) {
+        rows.forEach((r, idx) => {
+          const rId = (r[0] || '').trim().toLowerCase();
+          const isCol2Email = (r[2] || '').includes('@');
+          const rEmail = isCol2Email ? (r[2] || '').trim().toLowerCase() : (r[3] || '').trim().toLowerCase();
+          const rGmail = isCol2Email ? (r[3] || '').trim().toLowerCase() : (r[4] || '').trim().toLowerCase();
+          if (rId) rowMap.set(rId, idx + 2);
+          if (rEmail) rowMap.set(rEmail, idx + 2);
+          if (rGmail) rowMap.set(rGmail, idx + 2);
+        });
+      }
+
+      const rowsToAppend: any[][] = [];
+
+      for (const p of processed) {
+        const acc = list.find((u) => u.email === p.email);
+        if (!acc) continue;
+
+        const rowData = [
+          acc.id || '',
+          acc.name || '',
+          acc.nameEn || '',
+          acc.email || '',
+          acc.gmail || '',
+          acc.department || 'คณะพุทธศาสตร์ มจร',
+          acc.instructorType || 'อาจารย์ประจำ',
+          acc.role || 'INSTRUCTOR',
+          acc.isActive !== false ? 'TRUE' : 'FALSE',
+          acc.isSuspended ? 'TRUE' : 'FALSE',
+          Array.isArray(acc.aliases) ? acc.aliases.join(';') : (acc.aliases || ''),
+          acc.updatedAt || new Date().toISOString(),
+          acc.isActingOfficer ? 'TRUE' : 'FALSE',
+          acc.ecclesiasticalTitle || '',
+          acc.contactAddress || '',
+          acc.phoneNumber || '',
+          acc.defaultPassword || acc.password || 'Fb8323mcu',
+        ];
+
+        const existingRowNum =
+          (acc.id ? rowMap.get(acc.id.toLowerCase()) : undefined) ||
+          (acc.email ? rowMap.get(acc.email.toLowerCase()) : undefined) ||
+          (acc.gmail ? rowMap.get(acc.gmail.toLowerCase()) : undefined);
+
+        if (existingRowNum) {
+          await gClient.updateValues(`Instructors!A${existingRowNum}:Q${existingRowNum}`, [rowData]);
+        } else {
+          rowsToAppend.push(rowData);
+        }
+      }
+
+      if (rowsToAppend.length > 0) {
+        await gClient.appendValues('Instructors!A:Q', rowsToAppend);
+      }
+    } catch (err) {
+      console.warn('Google Sheets batch sync warning in batchImportInstructors:', err);
     }
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   X,
   Upload,
@@ -81,7 +81,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
   const [rawText, setRawText] = useState('');
   const [passwordOption, setPasswordOption] = useState<'Fb8323mcu' | 'mcu123456' | 'custom'>('Fb8323mcu');
   const [customPassword, setCustomPassword] = useState('Fb8323mcu');
-  const [defaultRoleOption, setDefaultRoleOption] = useState<'OFFICER' | 'ACTING_OFFICER' | 'STAFF'>('OFFICER');
+  const [defaultRoleOption, setDefaultRoleOption] = useState<'AUTO' | 'OFFICER' | 'ACTING_OFFICER' | 'STAFF'>('AUTO');
   const [parsedList, setParsedList] = useState<ParsedOfficerItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -178,6 +178,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
 
     let colName = 0;
     let colPosition = -1;
+    let colRole = -1;
     let colDept = -1;
     let colPhone = -1;
     let colEmail = -1;
@@ -186,7 +187,8 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
     if (isHeaderPresent) {
       normalizedHeaders.forEach((h, idx) => {
         if (h.includes('ชื่อ') || h.includes('name')) colName = idx;
-        else if (h.includes('ตำแหน่ง') || h.includes('position') || h.includes('หน้าที่') || h.includes('บทบาท')) colPosition = idx;
+        else if (h.includes('บทบาท') || h.includes('role')) colRole = idx;
+        else if (h.includes('ตำแหน่ง') || h.includes('position') || h.includes('หน้าที่')) colPosition = idx;
         else if (h.includes('หน่วยงาน') || h.includes('ภาควิชา') || h.includes('สาขา') || h.includes('สังกัด') || h.includes('department')) colDept = idx;
         else if (h.includes('โทร') || h.includes('phone') || h.includes('tel') || h.includes('เบอร์')) colPhone = idx;
         else if (h.includes('อีเมล') || h.includes('email') || h.includes('ไอดี') || h.includes('username')) colEmail = idx;
@@ -213,6 +215,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
       if (!rawName || rawName === 'ชื่อ' || rawName === 'Name') return;
 
       const rawPosition = colPosition !== -1 && cols[colPosition] ? String(cols[colPosition]).trim() : '';
+      const rawRole = colRole !== -1 && cols[colRole] ? String(cols[colRole]).trim() : '';
       const rawDept = colDept !== -1 && cols[colDept] ? String(cols[colDept]).trim() : 'สำนักงานคณบดี คณะพุทธศาสตร์';
       const rawPhone = colPhone !== -1 && cols[colPhone] ? String(cols[colPhone]).trim() : '';
       const rawEmail = colEmail !== -1 && cols[colEmail] ? String(cols[colEmail]).trim().toLowerCase() : '';
@@ -221,17 +224,29 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
       // Determine Role & Acting status
       let role: 'OFFICER' | 'INSTRUCTOR' | 'STAFF' = 'OFFICER';
       let isActingOfficer = false;
-      const posLow = rawPosition.toLowerCase();
+      const posLow = (rawPosition + ' ' + rawRole).toLowerCase();
 
-      if (posLow.includes('ผู้ช่วย') || defaultRoleOption === 'ACTING_OFFICER') {
+      if (defaultRoleOption === 'ACTING_OFFICER') {
         role = 'INSTRUCTOR';
         isActingOfficer = true;
-      } else if (posLow.includes('วิชาการ') || posLow.includes('staff') || defaultRoleOption === 'STAFF') {
+      } else if (defaultRoleOption === 'OFFICER') {
+        role = 'OFFICER';
+        isActingOfficer = false;
+      } else if (defaultRoleOption === 'STAFF') {
         role = 'STAFF';
         isActingOfficer = false;
       } else {
-        role = 'OFFICER';
-        isActingOfficer = false;
+        // AUTO detection from rawRole and rawPosition
+        if (posLow.includes('ผู้ช่วย') || posLow.includes('acting') || posLow.includes('อาจารย์ช่วย')) {
+          role = 'INSTRUCTOR';
+          isActingOfficer = true;
+        } else if (posLow.includes('วิชาการ') || posLow.includes('staff') || posLow.includes('สนับ')) {
+          role = 'STAFF';
+          isActingOfficer = false;
+        } else {
+          role = 'OFFICER';
+          isActingOfficer = false;
+        }
       }
 
       // Check existing in database
@@ -266,6 +281,12 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
     setParsedList(staged);
   };
 
+  useEffect(() => {
+    if (rawText) {
+      parseRawTextToOfficers(rawText);
+    }
+  }, [defaultRoleOption]);
+
   // Textarea Change
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
@@ -298,34 +319,59 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
   };
 
   // Download Sample Templates
-  const handleDownloadTemplate = (type: 'XLSX' | 'CSV') => {
+  const handleDownloadTemplate = (
+    type: 'XLSX' | 'CSV',
+    roleMode: 'ALL' | 'OFFICER' | 'ACTING' = 'ALL'
+  ) => {
     const headers = [
       'คำนำหน้า/ชื่อ-สกุล',
+      'บทบาท (OFFICER / ผู้ช่วยเจ้าหน้าที่)',
       'ตำแหน่ง/หน้าที่',
       'ภาควิชา/หน่วยงาน',
       'เบอร์โทรศัพท์',
       'อีเมล (เว้นว่างเพื่อสร้างอัตโนมัติ officerXX@mcu.ac.th)',
       'รหัสผ่าน (เว้นว่างใช้ Fb8323mcu)',
     ];
-    const sampleRows = [
-      ['นางสาวจิตรา ศิริสุข', 'เจ้าหน้าที่หลักสูตร', 'ภาควิชาพระพุทธศาสนา', '081-234-5678', '', 'Fb8323mcu'],
-      ['ดร.สมเกียรติ กิจเจริญ', 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', 'สำนักงานคณบดี คณะพุทธศาสตร์', '089-876-5432', '', 'Fb8323mcu'],
-      ['พระมหาสุริยา สุริโย', 'เจ้าหน้าที่หลักสูตร', 'หลักสูตรนานาชาติ (Buddhism)', '035-248-000', '', 'Fb8323mcu'],
-      ['นายกิตติศักดิ์ พูลผล', 'เจ้าหน้าที่ฝ่ายวิชาการ', 'สำนักงานคณบดี คณะพุทธศาสตร์', '086-555-1234', '', 'Fb8323mcu'],
-    ];
+
+    let sampleRows: string[][] = [];
+    let fileTitle = '';
+
+    if (roleMode === 'OFFICER') {
+      fileTitle = 'เทมเพลต_เจ้าหน้าที่หลักสูตร_OFFICER_Fb8323mcu';
+      sampleRows = [
+        ['นางสาวจิตรา ศิริสุข', 'เจ้าหน้าที่หลักสูตร (OFFICER)', 'เจ้าหน้าที่หลักสูตร', 'ภาควิชาพระพุทธศาสนา', '081-234-5678', '', 'Fb8323mcu'],
+        ['พระมหาสุริยา สุริโย', 'เจ้าหน้าที่หลักสูตร (OFFICER)', 'เจ้าหน้าที่หลักสูตร', 'หลักสูตรนานาชาติ (Buddhism)', '035-248-000', '', 'Fb8323mcu'],
+        ['นายธนกฤต มณีรัตน์', 'เจ้าหน้าที่หลักสูตร (OFFICER)', 'เจ้าหน้าที่ประจำหลักสูตรบัณฑิตศึกษา', 'สำนักงานคณบดี คณะพุทธศาสตร์', '082-111-2233', '', 'Fb8323mcu'],
+      ];
+    } else if (roleMode === 'ACTING') {
+      fileTitle = 'เทมเพลต_ผู้ช่วยเจ้าหน้าที่_อาจารย์ช่วยงาน_Fb8323mcu';
+      sampleRows = [
+        ['ดร.สมเกียรติ กิจเจริญ', 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', 'ผู้ช่วยเจ้าหน้าที่หลักสูตร', 'สำนักงานคณบดี คณะพุทธศาสตร์', '089-876-5432', '', 'Fb8323mcu'],
+        ['พระครูสมุห์ประพันธ์ ญาณวโร', 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', 'อาจารย์ผู้ช่วยงานหลักสูตร', 'ภาควิชาปรัชญา', '084-555-6789', '', 'Fb8323mcu'],
+        ['ผศ.ดร.วิชัย ธัมมธีโร', 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', 'อาจารย์ผู้ช่วยงานหลักสูตร', 'ภาควิชาศาสนาและปรัชญา', '087-999-0011', '', 'Fb8323mcu'],
+      ];
+    } else {
+      fileTitle = 'เทมเพลต_รวมเจ้าหน้าที่และผู้ช่วย_Fb8323mcu';
+      sampleRows = [
+        ['นางสาวจิตรา ศิริสุข', 'เจ้าหน้าที่หลักสูตร (OFFICER)', 'เจ้าหน้าที่ประจำหลักสูตร', 'ภาควิชาพระพุทธศาสนา', '081-234-5678', '', 'Fb8323mcu'],
+        ['ดร.สมเกียรติ กิจเจริญ', 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', 'ผู้ช่วยเจ้าหน้าที่หลักสูตร', 'สำนักงานคณบดี คณะพุทธศาสตร์', '089-876-5432', '', 'Fb8323mcu'],
+        ['พระมหาสุริยา สุริโย', 'เจ้าหน้าที่หลักสูตร (OFFICER)', 'เจ้าหน้าที่หลักสูตร', 'หลักสูตรนานาชาติ (Buddhism)', '035-248-000', '', 'Fb8323mcu'],
+        ['นายกิตติศักดิ์ พูลผล', 'เจ้าหน้าที่สายสนับสนุน (STAFF)', 'เจ้าหน้าที่สนับสนุนวิชาการ', 'สำนักงานคณบดี คณะพุทธศาสตร์', '086-555-1234', '', 'Fb8323mcu'],
+      ];
+    }
 
     if (type === 'CSV') {
-      downloadCsvFile('เทมเพลต_นำเข้าเจ้าหน้าที่และผู้ช่วย_Fb8323mcu.csv', headers, sampleRows);
+      downloadCsvFile(`${fileTitle}.csv`, headers, sampleRows);
     } else {
       const sheet: XlsxSheet = {
-        name: 'เจ้าหน้าที่หลักสูตร',
+        name: 'เจ้าหน้าที่และผู้ช่วย',
         title: 'แบบฟอร์มนำเข้าเจ้าหน้าที่หลักสูตร & ผู้ช่วยเจ้าหน้าที่ คณะพุทธศาสตร์ มจร',
         subtitle: 'รหัสผ่านเริ่มต้นกำหนดเป็น Fb8323mcu อัตโนมัติ (หากเว้นว่างอีเมล ระบบจะสร้าง officerXX@mcu.ac.th ให้อัตโนมัติ)',
         headers,
         rows: sampleRows,
-        columnWidths: [28, 28, 30, 16, 36, 18],
+        columnWidths: [26, 26, 26, 30, 16, 36, 18],
       };
-      downloadXlsx('เทมเพลต_นำเข้าเจ้าหน้าที่และผู้ช่วย_Fb8323mcu.xlsx', [sheet]);
+      downloadXlsx(`${fileTitle}.xlsx`, [sheet]);
     }
   };
 
@@ -544,49 +590,82 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
                   className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <FileUp className="w-3.5 h-3.5" />
-                  <span>เลือกไฟล์ Excel (.xlsx) / CSV</span>
+                  <span>เลือกไฟล์ Excel / CSV</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleDownloadTemplate('XLSX')}
-                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-bold border border-slate-300 transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-500" />
-                  <span>เทมเพลต Excel (.xlsx)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDownloadTemplate('CSV')}
-                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-bold border border-slate-300 transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-500" />
-                  <span>เทมเพลต CSV</span>
-                </button>
+                {/* Template Download Group */}
+                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-300">
+                  <span className="text-[11px] font-bold text-slate-500 pl-1.5 flex items-center gap-1">
+                    <Download className="w-3 h-3 text-slate-400" />
+                    <span>เทมเพลต:</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadTemplate('XLSX', 'ALL')}
+                    className="px-2 py-1 rounded-lg hover:bg-slate-100 text-teal-800 font-bold transition cursor-pointer text-[11px]"
+                    title="เทมเพลตรวม เจ้าหน้าที่หลักสูตร และ ผู้ช่วยเจ้าหน้าที่"
+                  >
+                    รวม (.xlsx)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadTemplate('CSV', 'OFFICER')}
+                    className="px-2 py-1 rounded-lg hover:bg-teal-50 text-teal-700 font-bold transition cursor-pointer text-[11px] border-l border-slate-200"
+                    title="เทมเพลตเฉพาะ เจ้าหน้าที่หลักสูตร (OFFICER)"
+                  >
+                    เจ้าหน้าที่ (.csv)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadTemplate('CSV', 'ACTING')}
+                    className="px-2 py-1 rounded-lg hover:bg-amber-50 text-amber-700 font-bold transition cursor-pointer text-[11px] border-l border-slate-200"
+                    title="เทมเพลตเฉพาะ ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)"
+                  >
+                    ผู้ช่วยเจ้าหน้าที่ (.csv)
+                  </button>
+                </div>
               </div>
 
-              {/* Password Option: Fb8323mcu */}
-              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
-                <Key className="w-3.5 h-3.5 text-amber-600" />
-                <span className="font-bold text-slate-700">รหัสผ่านเริ่มต้น:</span>
-                <select
-                  value={passwordOption}
-                  onChange={(e) => setPasswordOption(e.target.value as any)}
-                  className="bg-transparent font-bold text-emerald-800 outline-none cursor-pointer"
-                >
-                  <option value="Fb8323mcu">🔑 Fb8323mcu (แนะนำตามโจทย์)</option>
-                  <option value="mcu123456">mcu123456 (ค่าเดิมระบบ)</option>
-                  <option value="custom">กำหนดเอง...</option>
-                </select>
-                {passwordOption === 'custom' && (
-                  <input
-                    type="text"
-                    value={customPassword}
-                    onChange={(e) => setCustomPassword(e.target.value)}
-                    className="w-24 px-2 py-0.5 rounded border border-slate-300 font-mono text-xs"
-                    placeholder="รหัสผ่าน"
-                  />
-                )}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {/* Target Role Selector */}
+                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
+                  <UserCog className="w-3.5 h-3.5 text-teal-600" />
+                  <span className="font-bold text-slate-700">กำหนดบทบาทนำเข้า:</span>
+                  <select
+                    value={defaultRoleOption}
+                    onChange={(e) => setDefaultRoleOption(e.target.value as any)}
+                    className="bg-transparent font-bold text-teal-800 outline-none cursor-pointer text-xs"
+                  >
+                    <option value="AUTO">🔍 ตรวจจับอัตโนมัติ (จากไฟล์)</option>
+                    <option value="OFFICER">👤 เจ้าหน้าที่หลักสูตร (OFFICER) ทั้งหมด</option>
+                    <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน) ทั้งหมด</option>
+                    <option value="STAFF">💼 เจ้าหน้าที่สายสนับสนุน (STAFF) ทั้งหมด</option>
+                  </select>
+                </div>
+
+                {/* Password Option: Fb8323mcu */}
+                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs">
+                  <Key className="w-3.5 h-3.5 text-amber-600" />
+                  <span className="font-bold text-slate-700">รหัสผ่าน:</span>
+                  <select
+                    value={passwordOption}
+                    onChange={(e) => setPasswordOption(e.target.value as any)}
+                    className="bg-transparent font-bold text-emerald-800 outline-none cursor-pointer text-xs"
+                  >
+                    <option value="Fb8323mcu">🔑 Fb8323mcu (แนะนำตามโจทย์)</option>
+                    <option value="mcu123456">mcu123456 (ค่าเดิมระบบ)</option>
+                    <option value="custom">กำหนดเอง...</option>
+                  </select>
+                  {passwordOption === 'custom' && (
+                    <input
+                      type="text"
+                      value={customPassword}
+                      onChange={(e) => setCustomPassword(e.target.value)}
+                      className="w-24 px-2 py-0.5 rounded border border-slate-300 font-mono text-xs"
+                      placeholder="รหัสผ่าน"
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
@@ -650,13 +729,57 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
                           <td className="py-2 px-3 text-slate-400 font-bold">{idx + 1}</td>
                           <td className="py-2 px-3 font-bold text-slate-900">{item.name}</td>
                           <td className="py-2 px-3">
-                            <span className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold ${
-                              item.isActingOfficer
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-teal-100 text-teal-800'
-                            }`}>
-                              {item.position}
-                            </span>
+                            <div className="flex flex-col gap-1 min-w-[170px]">
+                              <select
+                                value={item.isActingOfficer ? 'ACTING_OFFICER' : item.role === 'STAFF' ? 'STAFF' : 'OFFICER'}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setParsedList((prev) =>
+                                    prev.map((p, pIdx) => {
+                                      if (pIdx !== idx) return p;
+                                      if (val === 'ACTING_OFFICER') {
+                                        return {
+                                          ...p,
+                                          role: 'INSTRUCTOR',
+                                          isActingOfficer: true,
+                                          position: p.position.includes('เจ้าหน้าที่') && !p.position.includes('ผู้ช่วย')
+                                            ? p.position.replace('เจ้าหน้าที่', 'ผู้ช่วยเจ้าหน้าที่')
+                                            : p.position || 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)',
+                                        };
+                                      } else if (val === 'STAFF') {
+                                        return {
+                                          ...p,
+                                          role: 'STAFF',
+                                          isActingOfficer: false,
+                                          position: p.position || 'เจ้าหน้าที่สายสนับสนุน',
+                                        };
+                                      } else {
+                                        return {
+                                          ...p,
+                                          role: 'OFFICER',
+                                          isActingOfficer: false,
+                                          position: p.position || 'เจ้าหน้าที่หลักสูตร',
+                                        };
+                                      }
+                                    })
+                                  );
+                                }}
+                                className={`text-[11px] font-bold py-1 px-2 rounded-lg border outline-none cursor-pointer transition ${
+                                  item.isActingOfficer
+                                    ? 'bg-amber-50 text-amber-900 border-amber-300'
+                                    : item.role === 'STAFF'
+                                    ? 'bg-indigo-50 text-indigo-900 border-indigo-300'
+                                    : 'bg-teal-50 text-teal-900 border-teal-300'
+                                }`}
+                              >
+                                <option value="OFFICER">👤 เจ้าหน้าที่หลักสูตร (OFFICER)</option>
+                                <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)</option>
+                                <option value="STAFF">💼 เจ้าหน้าที่สายสนับสนุน (STAFF)</option>
+                              </select>
+                              <span className="text-[10px] text-slate-500 font-medium truncate max-w-[160px]" title={item.position}>
+                                {item.position}
+                              </span>
+                            </div>
                           </td>
                           <td className="py-2 px-3 text-slate-600">{item.department || '-'}</td>
                           <td className="py-2 px-3 text-slate-600 font-mono text-[11px]">{item.phoneNumber || '-'}</td>
