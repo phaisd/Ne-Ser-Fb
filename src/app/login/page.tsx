@@ -92,7 +92,11 @@ function LoginForm() {
         setIsGoogleAccountForgotten(true);
       }
     }
-  }, []);
+    const qEmail = searchParams.get('email');
+    if (qEmail) {
+      setEmail(qEmail);
+    }
+  }, [searchParams]);
 
   const handleForgetSavedAccount = async () => {
     try {

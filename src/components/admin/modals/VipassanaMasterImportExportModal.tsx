@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import QRCode from 'qrcode';
 import {
   X,
   Upload,
@@ -21,6 +22,11 @@ import {
   ChevronRight,
   FileUp,
   RefreshCw,
+  FileDown,
+  Image as ImageIcon,
+  Grid,
+  Loader2,
+  ExternalLink,
 } from 'lucide-react';
 import { UserAccount } from '@/types';
 import {
@@ -69,7 +75,7 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   existingUsers,
   onSuccess,
 }) => {
-  const [activeTab, setActiveTab] = useState<'IMPORT' | 'EXPORT'>('IMPORT');
+  const [activeTab, setActiveTab] = useState<'IMPORT' | 'EXPORT' | 'SLIPS'>('IMPORT');
 
   // ===================== IMPORT TAB STATES =====================
   const [rawText, setRawText] = useState('');
@@ -86,6 +92,15 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   // ===================== EXPORT TAB STATES =====================
   const [exportSearch, setExportSearch] = useState('');
   const [exportPositionFilter, setExportPositionFilter] = useState('ALL');
+
+  // ===================== SLIPS / BADGES TAB STATES =====================
+  const [slipsLayout, setSlipsLayout] = useState<'FOUR_PER_PAGE' | 'TWO_PER_PAGE' | 'ONE_PER_PAGE'>('FOUR_PER_PAGE');
+  const [slipsSearch, setSlipsSearch] = useState('');
+  const [slipsPositionFilter, setSlipsPositionFilter] = useState('ALL');
+  const [slipsQrCodes, setSlipsQrCodes] = useState<Record<string, string>>({});
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingPng, setIsExportingPng] = useState(false);
+  const [exportProgress, setExportProgress] = useState<string | null>(null);
 
   // List of current Vipassana Masters in the system
   const currentMasters = useMemo(() => {
@@ -557,6 +572,225 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
     URL.revokeObjectURL(url);
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Slips / Badges Generator & Export Logic
+  // ─────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (activeTab !== 'SLIPS') return;
+
+    let isMounted = true;
+    const generateSlipsQr = async () => {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const entries: Array<[string, string]> = [];
+
+      for (const m of currentMasters) {
+        const idKey = m.id || m.email;
+        if (!idKey) continue;
+        const loginUrl = `${origin}/login?email=${encodeURIComponent(m.email)}&role=VIPASSANA_MASTER`;
+        try {
+          const url = await QRCode.toDataURL(loginUrl, {
+            errorCorrectionLevel: 'M',
+            margin: 1,
+            width: 256,
+            color: {
+              dark: '#581c87', // Sacred deep purple
+              light: '#ffffff',
+            },
+          });
+          entries.push([idKey, url]);
+        } catch (e) {
+          console.error('Error generating master QR', e);
+        }
+      }
+
+      if (isMounted) {
+        setSlipsQrCodes(Object.fromEntries(entries));
+      }
+    };
+
+    generateSlipsQr();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, currentMasters]);
+
+  const slipsPerPage = slipsLayout === 'ONE_PER_PAGE' ? 1 : slipsLayout === 'TWO_PER_PAGE' ? 2 : 4;
+
+  const slipsFilteredMasters = useMemo(() => {
+    return currentMasters.filter((m) => {
+      if (slipsPositionFilter !== 'ALL') {
+        const pos = m.instructorType || (m as any).position || 'พระวิปัสสนาจารย์';
+        if (pos !== slipsPositionFilter) return false;
+      }
+      if (slipsSearch.trim()) {
+        const q = slipsSearch.toLowerCase();
+        return (
+          (m.name || '').toLowerCase().includes(q) ||
+          (m.nameEn || '').toLowerCase().includes(q) ||
+          (m.email || '').toLowerCase().includes(q) ||
+          (m.contactAddress || '').toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [currentMasters, slipsPositionFilter, slipsSearch]);
+
+  const slipsPages = useMemo(() => {
+    const chunks: UserAccount[][] = [];
+    for (let i = 0; i < slipsFilteredMasters.length; i += slipsPerPage) {
+      chunks.push(slipsFilteredMasters.slice(i, i + slipsPerPage));
+    }
+    return chunks;
+  }, [slipsFilteredMasters, slipsPerPage]);
+
+  const handlePrintSlips = () => {
+    try {
+      window.print();
+    } catch (err) {
+      console.error('Print failed:', err);
+      alert('ไม่สามารถเปิดคำสั่งพิมพ์ได้ กรุณาใช้ปุ่ม "บันทึก PDF" หรือ "บันทึกรูป PNG" แทน');
+    }
+  };
+
+  const handleExportSlipsPdf = async () => {
+    if (slipsPages.length === 0) return;
+    setIsExportingPdf(true);
+    setExportProgress('กำลังเตรียมข้อมูลเอกสาร PDF...');
+
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+      });
+
+      for (let i = 0; i < slipsPages.length; i++) {
+        setExportProgress(`กำลังสร้างหน้า PDF ที่ ${i + 1} จากทั้งหมด ${slipsPages.length} หน้า...`);
+        const pageEl = document.getElementById(`master-slip-page-${i}`);
+        if (!pageEl) continue;
+
+        const screenHeaders = pageEl.querySelectorAll('.screen-only-header');
+        screenHeaders.forEach((h) => ((h as HTMLElement).style.display = 'none'));
+
+        const origBorder = pageEl.style.border;
+        const origShadow = pageEl.style.boxShadow;
+        const origRadius = pageEl.style.borderRadius;
+        pageEl.style.border = 'none';
+        pageEl.style.boxShadow = 'none';
+        pageEl.style.borderRadius = '0';
+
+        const canvas = await html2canvas(pageEl, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: pageEl.scrollWidth,
+        });
+
+        pageEl.style.border = origBorder;
+        pageEl.style.boxShadow = origShadow;
+        pageEl.style.borderRadius = origRadius;
+        screenHeaders.forEach((h) => ((h as HTMLElement).style.display = ''));
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        if (i > 0) {
+          pdf.addPage('a4', 'portrait');
+        }
+
+        const pdfWidth = 210;
+        const pdfHeight = 297;
+        const canvasRatio = canvas.width / canvas.height;
+        let targetW = pdfWidth;
+        let targetH = pdfWidth / canvasRatio;
+        let x = 0;
+        let y = 0;
+
+        if (targetH > pdfHeight) {
+          targetH = pdfHeight;
+          targetW = pdfHeight * canvasRatio;
+          x = (pdfWidth - targetW) / 2;
+        } else {
+          y = (pdfHeight - targetH) / 2;
+        }
+
+        pdf.addImage(imgData, 'JPEG', x, y, targetW, targetH);
+      }
+
+      setExportProgress('กำลังบันทึกไฟล์ PDF...');
+      pdf.save(`บัตรประจำตัวพระวิปัสสนาจารย์_คณะพุทธศาสตร์_มจร.pdf`);
+    } catch (err) {
+      console.error('Failed to export slips PDF:', err);
+      alert('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsExportingPdf(false);
+      setExportProgress(null);
+    }
+  };
+
+  const handleExportSlipsPng = async () => {
+    if (slipsPages.length === 0) return;
+    setIsExportingPng(true);
+    setExportProgress('กำลังเตรียมรูปภาพ PNG...');
+
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+
+      for (let i = 0; i < slipsPages.length; i++) {
+        setExportProgress(`กำลังบันทึกรูปภาพ PNG หน้าที่ ${i + 1} จากทั้งหมด ${slipsPages.length} หน้า...`);
+        const pageEl = document.getElementById(`master-slip-page-${i}`);
+        if (!pageEl) continue;
+
+        const screenHeaders = pageEl.querySelectorAll('.screen-only-header');
+        screenHeaders.forEach((h) => ((h as HTMLElement).style.display = 'none'));
+
+        const origBorder = pageEl.style.border;
+        const origShadow = pageEl.style.boxShadow;
+        const origRadius = pageEl.style.borderRadius;
+        pageEl.style.border = 'none';
+        pageEl.style.boxShadow = 'none';
+        pageEl.style.borderRadius = '0';
+
+        const canvas = await html2canvas(pageEl, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: pageEl.scrollWidth,
+        });
+
+        pageEl.style.border = origBorder;
+        pageEl.style.boxShadow = origShadow;
+        pageEl.style.borderRadius = origRadius;
+        screenHeaders.forEach((h) => ((h as HTMLElement).style.display = ''));
+
+        const imgData = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = imgData;
+        const fileName =
+          slipsPages.length === 1
+            ? `บัตรประจำตัวพระวิปัสสนาจารย์.png`
+            : `บัตรประจำตัวพระวิปัสสนาจารย์_หน้า_${i + 1}.png`;
+        link.download = fileName;
+        link.click();
+
+        if (slipsPages.length > 1) {
+          await new Promise((r) => setTimeout(r, 400));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to export slips PNG:', err);
+      alert('เกิดข้อผิดพลาดในการบันทึกรูปภาพ PNG กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsExportingPng(false);
+      setExportProgress(null);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
@@ -590,8 +824,8 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
         </div>
 
         {/* Tab Switcher */}
-        <div className="px-6 pt-3 bg-amber-50/50 border-b border-amber-200/70 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="px-6 pt-3 bg-amber-50/50 border-b border-amber-200/70 flex items-center justify-between gap-3 shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={() => setActiveTab('IMPORT')}
@@ -616,6 +850,25 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
             >
               <Download className="w-4 h-4 text-amber-600" />
               <span>📤 ส่งออกรายชื่อและรหัสผ่าน (Export Excel: {currentMasters.length} รูป)</span>
+            </button>
+
+            {/* TAB 3: SLIPS / BADGES */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('SLIPS')}
+              className={`px-4 py-2.5 rounded-t-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border-t border-x ${
+                activeTab === 'SLIPS'
+                  ? 'bg-white text-purple-950 border-purple-300 shadow-xs ring-1 ring-purple-400/30'
+                  : 'text-slate-600 border-transparent hover:bg-white/50'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-purple-600" />
+              <span className="font-extrabold text-purple-900">
+                🪪 ออกบัตรประจำตัวและภาระงานสอบอารมณ์ ({currentMasters.length} รูป)
+              </span>
+              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-purple-100 text-purple-800">
+                พร้อม QR เข้าสู่ระบบ
+              </span>
             </button>
           </div>
         </div>
@@ -1003,6 +1256,371 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
               </div>
             </div>
           )}
+
+          {/* ======================= TAB 3: SLIPS / BADGES ======================= */}
+          {activeTab === 'SLIPS' && (
+            <div className="space-y-4">
+              {/* Progress Notification */}
+              {exportProgress && (
+                <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white px-4 py-2.5 rounded-2xl text-xs flex items-center justify-between shadow-md animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
+                    <span className="font-bold">{exportProgress}</span>
+                  </div>
+                  <span className="text-[11px] text-purple-200 hidden sm:inline">
+                    ⚡ ระบบกำลังสร้างเอกสารความละเอียดสูง (2x Retina) กรุณารอสักครู่...
+                  </span>
+                </div>
+              )}
+
+              {/* Slips Control Toolbar (Hidden in Print) */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs space-y-3 print:hidden">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  {/* Left: Layout Ratio Selector */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Grid className="w-4 h-4 text-purple-600" />
+                      อัตราส่วนจัดพิมพ์:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSlipsLayout('FOUR_PER_PAGE')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        slipsLayout === 'FOUR_PER_PAGE'
+                          ? 'bg-purple-700 text-white border-purple-800 shadow-xs'
+                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      4 รูปต่อ A4 (4:1 ป้ายคล้องคอ)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSlipsLayout('TWO_PER_PAGE')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        slipsLayout === 'TWO_PER_PAGE'
+                          ? 'bg-purple-700 text-white border-purple-800 shadow-xs'
+                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      2 รูปต่อ A4 (2:1 บัตรทางการ)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSlipsLayout('ONE_PER_PAGE')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        slipsLayout === 'ONE_PER_PAGE'
+                          ? 'bg-purple-700 text-white border-purple-800 shadow-xs'
+                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      1 รูปต่อ A4 (1:1 เต็มหน้า)
+                    </button>
+                  </div>
+
+                  {/* Right: Export & Print Action Buttons */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* PDF Button */}
+                    <button
+                      type="button"
+                      onClick={handleExportSlipsPdf}
+                      disabled={slipsFilteredMasters.length === 0 || isExportingPdf || isExportingPng}
+                      className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                      title="บันทึกบัตรพระวิปัสสนาจารย์เป็นเอกสาร PDF ทุกหน้ารวมกัน"
+                    >
+                      {isExportingPdf ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FileDown className="w-3.5 h-3.5" />
+                      )}
+                      <span>{isExportingPdf ? 'กำลังสร้าง PDF...' : 'บันทึก PDF (Save PDF)'}</span>
+                    </button>
+
+                    {/* PNG Button */}
+                    <button
+                      type="button"
+                      onClick={handleExportSlipsPng}
+                      disabled={slipsFilteredMasters.length === 0 || isExportingPdf || isExportingPng}
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                      title="บันทึกบัตรพระวิปัสสนาจารย์เป็นภาพ PNG ความคมชัดสูง"
+                    >
+                      {isExportingPng ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <ImageIcon className="w-3.5 h-3.5" />
+                      )}
+                      <span>{isExportingPng ? 'กำลังสร้างรูป...' : 'บันทึกรูป PNG (Save PNG)'}</span>
+                    </button>
+
+                    {/* Print Button */}
+                    <button
+                      type="button"
+                      onClick={handlePrintSlips}
+                      disabled={slipsFilteredMasters.length === 0 || isExportingPdf || isExportingPng}
+                      className="px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>สั่งพิมพ์ A4 (Print Now)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter and Search Bar */}
+                <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <span className="font-bold text-slate-600 shrink-0">ตำแหน่ง:</span>
+                    <select
+                      value={slipsPositionFilter}
+                      onChange={(e) => setSlipsPositionFilter(e.target.value)}
+                      className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-800 cursor-pointer"
+                    >
+                      <option value="ALL">-- ทุกตำแหน่ง ({currentMasters.length} รูป) --</option>
+                      {STANDARD_POSITIONS.map((pos) => (
+                        <option key={pos} value={pos}>
+                          {pos}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="relative w-full sm:w-72">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={slipsSearch}
+                      onChange={(e) => setSlipsSearch(e.target.value)}
+                      placeholder="ค้นหาชื่อ, ฉายา หรือสังกัดวัด..."
+                      className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Embedded Print Styles for Master Slips */}
+              <style
+                dangerouslySetInnerHTML={{
+                  __html: `
+                    @media print {
+                      @page {
+                        size: A4 portrait;
+                        margin: 6mm 6mm;
+                      }
+                      body {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        visibility: hidden !important;
+                      }
+                      .a4-master-slip-sheet,
+                      .a4-master-slip-sheet * {
+                        visibility: visible !important;
+                      }
+                      .a4-master-slip-sheet {
+                        position: static !important;
+                        display: block !important;
+                        width: 100% !important;
+                        height: 284mm !important;
+                        min-height: 284mm !important;
+                        max-height: 284mm !important;
+                        page-break-after: always !important;
+                        break-after: page !important;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
+                        overflow: hidden !important;
+                        box-sizing: border-box !important;
+                        margin: 0 auto !important;
+                        padding: 0 !important;
+                        background: white !important;
+                      }
+                      .a4-master-slip-sheet:last-of-type,
+                      .a4-master-slip-sheet:last-child {
+                        page-break-after: auto !important;
+                        break-after: auto !important;
+                      }
+                      .print\\:hidden, .no-print {
+                        display: none !important;
+                      }
+                    }
+                  `,
+                }}
+              />
+
+              {/* Printable Sheets Area */}
+              <div id="master-slips-container" className="space-y-6 print:space-y-0">
+                {slipsFilteredMasters.length === 0 ? (
+                  <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
+                    <Users className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                    <p className="font-bold text-slate-600 text-sm">ไม่พบข้อมูลพระวิปัสสนาจารย์ตามเงื่อนไขที่เลือก</p>
+                    <p className="text-xs text-slate-400 mt-1">กรุณานำเข้าข้อมูลในแท็บแรก หรือปรับตัวกรองการค้นหา</p>
+                  </div>
+                ) : (
+                  slipsPages.map((pageMasters, pageIdx) => (
+                    <div
+                      key={`slip-page-${pageIdx}`}
+                      id={`master-slip-page-${pageIdx}`}
+                      className="a4-master-slip-sheet bg-white p-4 sm:p-5 print:p-0 rounded-2xl border border-slate-200 print:border-none shadow-sm print:shadow-none mx-auto w-full max-w-[860px] print:max-w-none"
+                    >
+                      {/* Screen-only Sheet Header */}
+                      <div className="screen-only-header flex items-center justify-between pb-2 mb-3 border-b border-slate-200 text-xs text-slate-500 print:hidden font-medium">
+                        <span className="font-bold text-purple-900 flex items-center gap-1.5">
+                          <Award className="w-4 h-4 text-amber-600" />
+                          <span>บัตรประจำตัวพระวิปัสสนาจารย์ • หน้าที่ {pageIdx + 1} / {slipsPages.length}</span>
+                        </span>
+                        <span>({pageMasters.length} รูปในแผ่นนี้ • A4 Portrait)</span>
+                      </div>
+
+                      {/* Grid of Master Badges on this Sheet */}
+                      <div
+                        className={`grid w-full h-full ${
+                          slipsLayout === 'FOUR_PER_PAGE'
+                            ? 'grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-3 print:gap-2 print:grid-rows-2'
+                            : slipsLayout === 'TWO_PER_PAGE'
+                            ? 'grid-cols-1 print:grid-cols-1 gap-4 print:gap-3 print:grid-rows-2'
+                            : 'grid-cols-1 h-full'
+                        }`}
+                      >
+                        {pageMasters.map((m, cardIdx) => {
+                          const overallIndex = pageIdx * slipsPerPage + cardIdx;
+                          const qrData = slipsQrCodes[m.id || m.email];
+                          const posTitle = m.instructorType || (m as any).position || 'พระวิปัสสนาจารย์';
+                          const isLeader = posTitle.includes('ประธาน');
+
+                          return (
+                            <div
+                              key={m.id || m.email}
+                              className={`border-2 rounded-2xl bg-gradient-to-br from-amber-50/40 via-white to-purple-50/30 p-3.5 print:p-3 flex flex-col justify-between shadow-2xs print:shadow-none print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${
+                                isLeader
+                                  ? 'border-amber-400/90 ring-1 ring-amber-400/40'
+                                  : 'border-purple-300/80 ring-1 ring-purple-300/30'
+                              } ${
+                                slipsLayout === 'FOUR_PER_PAGE'
+                                  ? 'min-h-[295px] print:h-[135mm]'
+                                  : slipsLayout === 'TWO_PER_PAGE'
+                                  ? 'min-h-[380px] print:h-[138mm]'
+                                  : 'min-h-[550px] print:h-[280mm]'
+                              }`}
+                            >
+                              {/* Background Watermark Emblem */}
+                              <div className="absolute right-2 top-2 pointer-events-none opacity-5 text-7xl select-none">
+                                ☸️
+                              </div>
+
+                              {/* Card Header */}
+                              <div className="border-b border-amber-200/80 pb-2 flex items-start justify-between gap-2 shrink-0">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-base shrink-0 shadow-2xs">
+                                    ☸️
+                                  </div>
+                                  <div>
+                                    <div className="text-[9.5px] font-black uppercase text-amber-900 tracking-wide leading-tight">
+                                      คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
+                                    </div>
+                                    <div className="text-[10.5px] font-extrabold text-slate-800 leading-tight">
+                                      โครงการปฏิบัติวิปัสสนากัมมัฏฐาน ประจำปี ๒๕๖๙
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wide border shrink-0 ${
+                                    isLeader
+                                      ? 'bg-amber-100 text-amber-900 border-amber-300'
+                                      : 'bg-purple-100 text-purple-900 border-purple-200'
+                                  }`}
+                                >
+                                  {posTitle}
+                                </span>
+                              </div>
+
+                              {/* Master Profile & Ecclesiastical Details */}
+                              <div className="py-2 space-y-1 shrink-0">
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                  <h4 className="text-sm sm:text-base font-black text-slate-900 leading-snug">
+                                    {m.name}
+                                  </h4>
+                                  {m.ecclesiasticalTitle && (
+                                    <span className="text-[10.5px] font-bold text-amber-800 bg-amber-50 px-2 py-0.2 rounded border border-amber-200/60">
+                                      {m.ecclesiasticalTitle}
+                                    </span>
+                                  )}
+                                </div>
+                                {m.nameEn && (
+                                  <div className="text-[10px] text-slate-500 font-medium italic">
+                                    {m.nameEn}
+                                  </div>
+                                )}
+                                <div className="text-[10px] text-slate-600 flex items-center gap-2 flex-wrap pt-0.5">
+                                  <span className="font-semibold text-slate-700">สังกัด/ที่อยู่:</span>
+                                  <span>{m.contactAddress || m.department || 'ฝ่ายวิปัสสนาธุระ / คณะพุทธศาสตร์ มจร'}</span>
+                                </div>
+                              </div>
+
+                              {/* Workload Brief Box */}
+                              <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-2 text-[10px] text-purple-950 space-y-0.5 shrink-0">
+                                <div className="font-bold flex items-center gap-1.5 text-purple-900">
+                                  <Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                                  <span>ภาระงาน: สอบอารมณ์สติปัฏฐาน ๔ และประเมินผลการปฏิบัติธรรม</span>
+                                </div>
+                                <p className="text-[9.5px] text-purple-800/90 leading-tight">
+                                  รับผิดชอบตรวจอารมณ์กรรมฐาน (กาย เวทนา จิต ธรรม) ณ อาคารโพธิญาณมหาวิชชาลัย
+                                </p>
+                              </div>
+
+                              {/* Credentials & Quick Scan Login QR Box */}
+                              <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 my-auto flex items-center justify-between gap-3 shadow-2xs">
+                                <div className="space-y-1 text-[10.5px] flex-1">
+                                  <div className="text-[9.5px] font-extrabold uppercase text-slate-400 tracking-wider flex items-center gap-1">
+                                    <Key className="w-3 h-3 text-amber-600" />
+                                    <span>ข้อมูลสำหรับเข้าสู่ระบบ (Credentials):</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-slate-500 font-medium">ไอดี (Username):</span>
+                                    <span className="font-mono font-black text-amber-950 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/80 text-[11px]">
+                                      {m.email}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-slate-500 font-medium">รหัสผ่าน (Password):</span>
+                                    <span className="font-mono font-bold text-slate-800 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200 text-[10.5px]">
+                                      {m.defaultPassword || m.password || 'mcu123456'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* QR Code Box */}
+                                <div className="flex flex-col items-center shrink-0">
+                                  {qrData ? (
+                                    <img
+                                      src={qrData}
+                                      alt={`QR ${m.name}`}
+                                      className="w-16 h-16 sm:w-18 sm:h-18 object-contain rounded-lg border border-purple-200 p-0.5 bg-white shadow-2xs"
+                                    />
+                                  ) : (
+                                    <div className="w-16 h-16 bg-purple-50 rounded-lg animate-pulse border border-purple-200" />
+                                  )}
+                                  <span className="text-[7.5px] font-bold text-purple-900 tracking-tight mt-0.5 text-center leading-tight">
+                                    สแกนเข้าระบบด่วน
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Card Footer */}
+                              <div className="border-t border-slate-200/80 pt-1.5 text-[8.5px] text-slate-400 flex items-center justify-between shrink-0">
+                                <span className="font-medium text-slate-500">
+                                  คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
+                                </span>
+                                <span className="font-mono font-bold text-purple-900 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200">
+                                  #VIP-{String(overallIndex + 1).padStart(2, '0')}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Footer */}
@@ -1010,8 +1628,10 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
           <div className="text-xs text-slate-500">
             {activeTab === 'IMPORT' ? (
               <span>พร้อมสร้างบัญชีและรหัสผ่านอัตโนมัติสำหรับบทบาท <strong>พระวิปัสสนาจารย์ (VIPASSANA_MASTER)</strong></span>
-            ) : (
+            ) : activeTab === 'EXPORT' ? (
               <span>แสดงทั้งหมด <strong>{filteredMasters.length}</strong> รูป</span>
+            ) : (
+              <span>แสดงบัตรทั้งหมด <strong>{slipsFilteredMasters.length}</strong> รูป ({slipsPages.length} หน้า A4)</span>
             )}
           </div>
 
