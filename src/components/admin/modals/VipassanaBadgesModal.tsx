@@ -17,6 +17,9 @@ import {
   Image as ImageIcon,
   Loader2,
   Upload,
+  Palette,
+  Type,
+  QrCode as QrCodeIcon,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types/event';
 
@@ -30,6 +33,9 @@ export type BadgeLayoutMode =
   | 'TEN_PER_PAGE';
 export type BadgeOrientation = 'VERTICAL' | 'HORIZONTAL';
 export type BadgeWatermarkMode = 'MCU_LOGO' | 'CUSTOM' | 'NONE';
+export type BadgeColorTheme = 'GOLD' | 'PURPLE' | 'NAVY' | 'CRIMSON' | 'CLASSIC_BLACK';
+export type BadgeFontSize = 'SMALL' | 'MEDIUM' | 'LARGE';
+export type QrScaleMode = '1X' | '1.5X' | '2X' | '2.5X';
 
 interface VipassanaBadgesModalProps {
   isOpen: boolean;
@@ -48,6 +54,10 @@ export function VipassanaBadgesModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<BadgeLayoutMode>('NINE_3X3_PER_PAGE');
   const [orientation, setOrientation] = useState<BadgeOrientation>('VERTICAL');
+  const [colorTheme, setColorTheme] = useState<BadgeColorTheme>('GOLD');
+  const [fontSize, setFontSize] = useState<BadgeFontSize>('MEDIUM');
+  const [qrScale, setQrScale] = useState<QrScaleMode>('2X');
+  const [showScanPass, setShowScanPass] = useState(false);
   const [qrCodeUrls, setQrCodeUrls] = useState<Record<string, string>>({});
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -149,6 +159,23 @@ export function VipassanaBadgesModal({
     return filteredRegistrations.map((r) => r.id + ':' + (r.groupSpecificCode || r.studentCode)).join('|');
   }, [filteredRegistrations]);
 
+  // QR Code dark color synchronized with selected color theme
+  const qrColor = useMemo(() => {
+    switch (colorTheme) {
+      case 'GOLD':
+        return '#451a03'; // deep amber/brown
+      case 'NAVY':
+        return '#0f172a'; // deep navy
+      case 'CRIMSON':
+        return '#4c0519'; // deep maroon
+      case 'CLASSIC_BLACK':
+        return '#000000';
+      case 'PURPLE':
+      default:
+        return '#1e1b4b'; // deep indigo/purple
+    }
+  }, [colorTheme]);
+
   // Pre-generate QR codes for badges (Parallel for high performance)
   useEffect(() => {
     if (!isOpen) return;
@@ -167,10 +194,10 @@ export function VipassanaBadgesModal({
             try {
               const payload = (reg.groupSpecificCode || reg.studentCode).trim();
               const dataUrl = await QRCode.toDataURL(payload, {
-                width: 320,
+                width: 480,
                 margin: 1,
                 color: {
-                  dark: '#1e1b4b',
+                  dark: qrColor,
                   light: '#ffffff',
                 },
                 errorCorrectionLevel: 'M',
@@ -198,7 +225,137 @@ export function VipassanaBadgesModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, registrationKey]);
+  }, [isOpen, registrationKey, qrColor]);
+
+  // Color Theme Configuration
+  const themeConfig = useMemo(() => {
+    switch (colorTheme) {
+      case 'GOLD':
+        return {
+          headerOrg: 'text-amber-950',
+          headerUniv: 'text-stone-800',
+          headerProject: 'text-amber-600',
+          headerBorder: 'border-amber-300/80',
+          groupPill: 'bg-amber-100/90 text-amber-950 border-amber-300 shadow-2xs',
+          degreeText: 'text-stone-800',
+          majorText: 'text-amber-800',
+          participantCode: 'text-amber-950',
+          participantName: 'text-stone-900',
+          qrBorder: 'border-amber-300/80',
+          footerBorder: 'border-amber-200',
+          footerLabel: 'text-amber-700',
+          footerIndex: 'text-stone-600',
+        };
+      case 'NAVY':
+        return {
+          headerOrg: 'text-blue-950',
+          headerUniv: 'text-slate-800',
+          headerProject: 'text-blue-700',
+          headerBorder: 'border-blue-200/90',
+          groupPill: 'bg-blue-100 text-blue-900 border-blue-200 shadow-2xs',
+          degreeText: 'text-slate-800',
+          majorText: 'text-blue-900',
+          participantCode: 'text-blue-950',
+          participantName: 'text-slate-900',
+          qrBorder: 'border-blue-200/80',
+          footerBorder: 'border-blue-200/80',
+          footerLabel: 'text-blue-700',
+          footerIndex: 'text-slate-600',
+        };
+      case 'CRIMSON':
+        return {
+          headerOrg: 'text-rose-950',
+          headerUniv: 'text-slate-800',
+          headerProject: 'text-rose-700',
+          headerBorder: 'border-rose-200/90',
+          groupPill: 'bg-rose-100 text-rose-900 border-rose-200 shadow-2xs',
+          degreeText: 'text-slate-800',
+          majorText: 'text-rose-900',
+          participantCode: 'text-rose-950',
+          participantName: 'text-slate-900',
+          qrBorder: 'border-rose-200/80',
+          footerBorder: 'border-rose-200/80',
+          footerLabel: 'text-rose-700',
+          footerIndex: 'text-slate-600',
+        };
+      case 'CLASSIC_BLACK':
+        return {
+          headerOrg: 'text-black',
+          headerUniv: 'text-slate-800',
+          headerProject: 'text-slate-900',
+          headerBorder: 'border-slate-300',
+          groupPill: 'bg-slate-100 text-black border-slate-300 shadow-2xs',
+          degreeText: 'text-slate-800',
+          majorText: 'text-slate-900',
+          participantCode: 'text-black',
+          participantName: 'text-black',
+          qrBorder: 'border-slate-300',
+          footerBorder: 'border-slate-300',
+          footerLabel: 'text-slate-800',
+          footerIndex: 'text-slate-600',
+        };
+      case 'PURPLE':
+      default:
+        return {
+          headerOrg: 'text-purple-950',
+          headerUniv: 'text-slate-800',
+          headerProject: 'text-purple-700',
+          headerBorder: 'border-purple-200/90',
+          groupPill: 'bg-purple-100 text-purple-700 border-purple-200 shadow-2xs',
+          degreeText: 'text-slate-800',
+          majorText: 'text-purple-900',
+          participantCode: 'text-purple-950',
+          participantName: 'text-slate-900',
+          qrBorder: 'border-slate-200/90',
+          footerBorder: 'border-slate-200/80',
+          footerLabel: 'text-purple-700',
+          footerIndex: 'text-slate-500',
+        };
+    }
+  }, [colorTheme]);
+
+  // Typography Scaling Configuration
+  const fontScale = useMemo(() => {
+    switch (fontSize) {
+      case 'LARGE':
+        return {
+          headerOrg: 'text-[10.5px] sm:text-[11.5px]',
+          headerUniv: 'text-[8.5px] sm:text-[9.5px]',
+          headerProject: 'text-[9.5px] sm:text-[10.5px]',
+          groupPill: 'text-[11px] sm:text-[12px] px-2.5 py-0.5',
+          degree: 'text-[9px] sm:text-[10px]',
+          major: 'text-[8.5px] sm:text-[9.5px]',
+          code: 'text-[13px] sm:text-[14.5px]',
+          name: 'text-[12px] sm:text-[13.5px]',
+          footer: 'text-[9px] sm:text-[9.5px]',
+        };
+      case 'SMALL':
+        return {
+          headerOrg: 'text-[8.5px] sm:text-[9px]',
+          headerUniv: 'text-[7px] sm:text-[7.5px]',
+          headerProject: 'text-[7.5px] sm:text-[8px]',
+          groupPill: 'text-[9.5px] sm:text-[10px] px-2 py-0.5',
+          degree: 'text-[7.5px] sm:text-[8px]',
+          major: 'text-[7px] sm:text-[7.5px]',
+          code: 'text-[11px] sm:text-[12px]',
+          name: 'text-[10.5px] sm:text-[11px]',
+          footer: 'text-[7.5px] sm:text-[8px]',
+        };
+      case 'MEDIUM':
+      default:
+        return {
+          headerOrg: 'text-[9.5px] sm:text-[10px]',
+          headerUniv: 'text-[8px] sm:text-[8.5px]',
+          headerProject: 'text-[8.5px] sm:text-[9.2px]',
+          groupPill: 'text-[10px] sm:text-[11px] px-2.5 py-0.5',
+          degree: 'text-[8.5px] sm:text-[9px]',
+          major: 'text-[8px] sm:text-[8.5px]',
+          code: 'text-[12px] sm:text-[13px]',
+          name: 'text-[11.5px] sm:text-[12.5px]',
+          footer: 'text-[8px] sm:text-[8.5px]',
+        };
+    }
+  }, [fontSize]);
 
   // Thai Buddhist Year representation for header
   const eventYearTh = useMemo(() => {
@@ -669,6 +826,71 @@ export function VipassanaBadgesModal({
               />
             </div>
 
+            {/* QR Code Scale Selector */}
+            <div className="flex items-center gap-1.5 bg-emerald-50/80 px-2 py-1 rounded-xl border border-emerald-200">
+              <span className="font-bold text-emerald-950 flex items-center gap-1">
+                <QrCodeIcon className="w-3.5 h-3.5 text-emerald-700" />
+                ขนาด QR:
+              </span>
+              <select
+                value={qrScale}
+                onChange={(e) => setQrScale(e.target.value as QrScaleMode)}
+                className="px-2 py-1 bg-white rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 focus:outline-none cursor-pointer"
+              >
+                <option value="2.5X">🔥 ใหญ่ 2.5 เท่า (เต็มพื้นที่การ์ด)</option>
+                <option value="2X">⚡ ใหญ่ 2.0 เท่า (แนะนำ - คมชัด)</option>
+                <option value="1.5X">✨ ใหญ่ 1.5 เท่า</option>
+                <option value="1X">📐 ปกติ 1.0 เท่า</option>
+              </select>
+            </div>
+
+            {/* Color Theme Selector */}
+            <div className="flex items-center gap-1.5 bg-amber-50/80 px-2 py-1 rounded-xl border border-amber-200">
+              <span className="font-bold text-amber-950 flex items-center gap-1">
+                <Palette className="w-3.5 h-3.5 text-amber-600" />
+                สีข้อความ:
+              </span>
+              <select
+                value={colorTheme}
+                onChange={(e) => setColorTheme(e.target.value as BadgeColorTheme)}
+                className="px-2 py-1 bg-white rounded-lg border border-amber-300 text-xs font-bold text-amber-950 focus:outline-none cursor-pointer"
+              >
+                <option value="GOLD">🟡 เหลืองทองสง่างาม (แนะนำ - สวยงาม อ่านง่าย)</option>
+                <option value="PURPLE">🟣 ม่วงมหาจุฬาฯ (ดั้งเดิม)</option>
+                <option value="NAVY">🔵 น้ำเงินกรมท่าภูมิฐาน</option>
+                <option value="CRIMSON">🔴 แดงเลือดหมูมงคล</option>
+                <option value="CLASSIC_BLACK">⚫ ดำ-เทาเข้มทางการ (คมชัดสูงสุด)</option>
+              </select>
+            </div>
+
+            {/* Font Size Selector */}
+            <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-xl border border-slate-300">
+              <span className="font-bold text-slate-700 flex items-center gap-1">
+                <Type className="w-3.5 h-3.5 text-slate-600" />
+                ขนาดฟอนต์:
+              </span>
+              <select
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value as BadgeFontSize)}
+                className="px-2 py-1 bg-white rounded-lg border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+              >
+                <option value="MEDIUM">ปกติ (พอดีสัดส่วน)</option>
+                <option value="LARGE">ใหญ่ (เห็นชัดจากระยะไกล)</option>
+                <option value="SMALL">กะทัดรัด (สำหรับชื่อยาว)</option>
+              </select>
+            </div>
+
+            {/* Toggle SCAN PASS */}
+            <label className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer bg-white px-2 py-1 rounded-lg border border-slate-300 shadow-2xs" title="แสดงหรือซ่อนข้อความ SCAN PASS ใต้ QR code เพื่อเพิ่มพื้นที่ให้ QR Code ขยายใหญ่เต็มที่">
+              <input
+                type="checkbox"
+                checked={showScanPass}
+                onChange={(e) => setShowScanPass(e.target.checked)}
+                className="rounded text-purple-600 focus:ring-purple-500"
+              />
+              <span>แสดงคำว่า SCAN PASS</span>
+            </label>
+
             {/* Search */}
             <div className="relative min-w-[170px]">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -692,6 +914,16 @@ export function VipassanaBadgesModal({
         <style
           dangerouslySetInnerHTML={{
             __html: `
+              @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Sarabun:wght@300;400;500;600;700;800&display=swap');
+
+              .badge-font-th {
+                font-family: 'Sarabun', 'TH Sarabun New', Tahoma, sans-serif !important;
+              }
+
+              .badge-font-en {
+                font-family: 'Cinzel', 'Playfair Display', 'Georgia', serif !important;
+              }
+
               @media print {
                 @page {
                   size: A4 portrait;
@@ -820,8 +1052,8 @@ export function VipassanaBadgesModal({
                           ? 'print:h-[67mm]'
                           : 'print:h-[53mm]';
 
-                      // Proportional QR code dimensions
-                      const qrDimension =
+                      // Base QR code dimensions per layout
+                      const baseQrDimension =
                         layoutMode === 'FOUR_PER_PAGE'
                           ? 116
                           : layoutMode === 'SIX_PER_PAGE'
@@ -836,12 +1068,25 @@ export function VipassanaBadgesModal({
                           ? 54
                           : 52;
 
+                      // Apply QR scale multiplier (1x, 1.5x, 2.0x, 2.5x)
+                      const qrScaleMultiplier =
+                        qrScale === '2.5X'
+                          ? 2.15
+                          : qrScale === '2X'
+                          ? 1.8
+                          : qrScale === '1.5X'
+                          ? 1.4
+                          : 1.0;
+
+                      const qrDimension = Math.round(baseQrDimension * qrScaleMultiplier);
+                      const cardFontClass = isEnglish ? 'badge-font-en' : 'badge-font-th';
+
                       if (orientation === 'VERTICAL') {
                         /* ================== VERTICAL BADGE CARD (PORTRAIT - ACCORDING TO IMAGE 3) ================== */
                         return (
                           <div
                             key={reg.id}
-                            className={`border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-2 print:border-slate-300 print:rounded-2xl flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
+                            className={`${cardFontClass} border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-2 print:border-slate-300 print:rounded-2xl flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
                             style={{
                               minHeight:
                                 layoutMode === 'FOUR_PER_PAGE'
@@ -875,7 +1120,7 @@ export function VipassanaBadgesModal({
                             )}
 
                             {/* 1. Top: Official 3-Line Header with Emblem (Image 3) */}
-                            <div className="border-b border-purple-200/90 pb-1 shrink-0 relative z-10">
+                            <div className={`border-b ${themeConfig.headerBorder} pb-1 shrink-0 relative z-10`}>
                               <div className="flex items-center gap-1.5">
                                 {systemLogoUrl ? (
                                   <img
@@ -888,13 +1133,13 @@ export function VipassanaBadgesModal({
                                   <span className="text-sm">☸️</span>
                                 )}
                                 <div className="min-w-0 flex-1 text-left leading-[1.18]">
-                                  <div className="text-[9px] sm:text-[9.5px] font-extrabold text-purple-950 uppercase tracking-wide truncate">
+                                  <div className={`${fontScale.headerOrg} font-extrabold ${themeConfig.headerOrg} uppercase tracking-wide break-words`}>
                                     {isEnglish ? 'Faculty of Buddhism • MCU' : 'คณะพุทธศาสตร์ มจร'}
                                   </div>
-                                  <div className="text-[7.5px] sm:text-[8px] font-bold text-slate-700 truncate">
+                                  <div className={`${fontScale.headerUniv} font-bold ${themeConfig.headerUniv} break-words leading-tight`}>
                                     {isEnglish ? 'Mahachulalongkornrajavidyalaya University' : 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}
                                   </div>
-                                  <div className="text-[8px] sm:text-[8.5px] font-black text-purple-700 truncate">
+                                  <div className={`${fontScale.headerProject} font-black ${themeConfig.headerProject} break-words leading-tight line-clamp-2 pt-0.5`}>
                                     {isEnglish ? `Annual Vipassana Practice ${event.academicYear || '2026'}` : `โครงการปฏิบัติวิปัสสนากัมมัฏฐาน ปี ${eventYearTh}`}
                                   </div>
                                 </div>
@@ -902,16 +1147,16 @@ export function VipassanaBadgesModal({
                             </div>
 
                             {/* 2. Subheader: Group Pill + Degree Level & Major (Image 3) */}
-                            <div className="flex items-center gap-2 pt-1 pb-0.5 shrink-0 relative z-10">
-                              <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] sm:text-[11px] font-black border border-purple-200 shrink-0 shadow-2xs">
+                            <div className="flex items-center gap-1.5 pt-1 pb-0.5 shrink-0 relative z-10 flex-wrap">
+                              <span className={`rounded-full ${fontScale.groupPill} font-black border shrink-0 ${themeConfig.groupPill}`}>
                                 กลุ่ม {gNum || '-'}
                               </span>
-                              <div className="min-w-0 text-left leading-tight">
-                                <div className="text-[8px] sm:text-[8.5px] font-bold text-slate-800 truncate">
+                              <div className="min-w-0 text-left leading-tight flex-1">
+                                <div className={`${fontScale.degree} font-bold ${themeConfig.degreeText} break-words`}>
                                   {reg.degreeLevel || (isEnglish ? "Bachelor's Degree" : "ปริญญาตรี")}
                                   {reg.yearLevel ? ` (${isEnglish ? 'Yr' : 'ปี'} ${reg.yearLevel})` : ''}
                                 </div>
-                                <div className="text-[7.5px] sm:text-[8px] font-semibold text-purple-900 truncate" title={reg.major}>
+                                <div className={`${fontScale.major} font-semibold ${themeConfig.majorText} break-words line-clamp-2`} title={reg.major}>
                                   {reg.major
                                     ? reg.major.startsWith('สาขา')
                                       ? reg.major
@@ -923,20 +1168,20 @@ export function VipassanaBadgesModal({
                               </div>
                             </div>
 
-                            {/* 3. Participant: Group Code + Student Name (Image 3) */}
-                            <div className="flex items-baseline gap-1.5 px-0.5 py-0.5 shrink-0 min-w-0 relative z-10">
-                              <span className="font-mono font-black text-xs sm:text-[13px] text-purple-950 shrink-0">
+                            {/* 3. Participant: Group Code + Student Name (Image 3 - 2 Lines without ...) */}
+                            <div className="flex items-baseline gap-1.5 px-0.5 py-0.5 shrink-0 min-w-0 relative z-10 flex-wrap">
+                              <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0`}>
                                 {reg.groupSpecificCode || reg.studentCode}
                               </span>
-                              <span className="font-extrabold text-slate-900 text-xs sm:text-[12px] leading-snug truncate" title={reg.studentName}>
+                              <span className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug break-words line-clamp-2 flex-1 min-w-[120px]`} title={reg.studentName}>
                                 {reg.studentName}
                               </span>
                             </div>
 
-                            {/* 4. Center: Large High-Contrast QR Code + SCAN PASS (Image 3) */}
-                            <div className="flex flex-col items-center justify-center my-auto py-0.5 relative z-10">
+                            {/* 4. Center: High-Contrast Large QR Code (Scalable up to 2.5x) */}
+                            <div className="flex flex-col items-center justify-center my-auto py-1 relative z-10">
                               {qrCodeUrls[reg.id] ? (
-                                <div className="p-1 bg-white rounded-xl border border-slate-200/90 shadow-2xs">
+                                <div className={`p-1 bg-white rounded-xl border ${themeConfig.qrBorder} shadow-2xs transition-all duration-200`}>
                                   <img
                                     src={qrCodeUrls[reg.id]}
                                     alt={`QR ${reg.studentCode}`}
@@ -948,19 +1193,27 @@ export function VipassanaBadgesModal({
                                   />
                                 </div>
                               ) : (
-                                <div className="w-16 h-16 bg-slate-100 rounded-md animate-pulse" />
+                                <div
+                                  className="bg-slate-100 rounded-md animate-pulse"
+                                  style={{
+                                    width: `${qrDimension}px`,
+                                    height: `${qrDimension}px`,
+                                  }}
+                                />
                               )}
-                              <span className="text-[7px] sm:text-[7.5px] font-mono font-bold text-slate-400 tracking-widest mt-0.5">
-                                SCAN PASS
-                              </span>
+                              {showScanPass && (
+                                <span className="text-[7px] sm:text-[7.5px] font-mono font-bold text-slate-400 tracking-widest mt-0.5">
+                                  SCAN PASS
+                                </span>
+                              )}
                             </div>
 
                             {/* 5. Bottom: Footer with Participant Pass Label & Serial # (Image 3) */}
-                            <div className="border-t border-slate-200/80 pt-0.5 text-[8px] sm:text-[8.5px] flex items-center justify-between shrink-0 relative z-10">
-                              <span className="font-bold text-purple-700">
+                            <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8px] sm:text-[8.5px] flex items-center justify-between shrink-0 relative z-10`}>
+                              <span className={`font-bold ${themeConfig.footerLabel}`}>
                                 {isEnglish ? 'Participant Pass' : 'บัตรประจำตัวผู้เข้าปฏิบัติ'}
                               </span>
-                              <span className="font-mono font-bold text-slate-500">
+                              <span className={`font-mono font-bold ${themeConfig.footerIndex}`}>
                                 #{String(overallIdx + 1).padStart(3, '0')}
                               </span>
                             </div>
@@ -972,7 +1225,7 @@ export function VipassanaBadgesModal({
                       return (
                         <div
                           key={reg.id}
-                          className={`border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-1.5 print:border-slate-400 print:rounded-none flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
+                          className={`${cardFontClass} border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-1.5 print:border-slate-400 print:rounded-none flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
                           style={{
                             minHeight:
                               layoutMode === 'FOUR_PER_PAGE'
@@ -1006,8 +1259,8 @@ export function VipassanaBadgesModal({
                           )}
 
                           {/* Top: Header */}
-                          <div className="text-center border-b border-slate-200 pb-1 shrink-0 relative z-10">
-                            <div className="flex items-center justify-center gap-1.5 text-[9.5px] font-extrabold uppercase tracking-wide text-purple-900 leading-tight">
+                          <div className={`text-center border-b ${themeConfig.headerBorder} pb-1 shrink-0 relative z-10`}>
+                            <div className={`flex items-center justify-center gap-1.5 ${fontScale.headerOrg} font-extrabold uppercase tracking-wide ${themeConfig.headerOrg} leading-tight`}>
                               {systemLogoUrl ? (
                                 <img
                                   src={systemLogoUrl}
@@ -1020,8 +1273,8 @@ export function VipassanaBadgesModal({
                               )}
                               <span>{isEnglish ? 'Faculty of Buddhism • MCU' : 'คณะพุทธศาสตร์ มจร'}</span>
                             </div>
-                            <div className="text-[10px] font-bold text-slate-800 leading-tight pt-0.5 truncate">
-                              {isEnglish ? 'Annual Vipassana Meditation' : 'โครงการปฏิบัติวิปัสสนากัมมัฏฐาน'}
+                            <div className={`${fontScale.headerProject} font-bold ${themeConfig.headerProject} leading-tight pt-0.5 break-words line-clamp-2`}>
+                              {isEnglish ? 'Annual Vipassana Meditation' : `โครงการปฏิบัติวิปัสสนากัมมัฏฐาน ปี ${eventYearTh}`}
                             </div>
                           </div>
 
@@ -1029,25 +1282,21 @@ export function VipassanaBadgesModal({
                           <div className="py-1 flex items-center justify-between gap-2 flex-1 my-auto relative z-10">
                             <div className="flex-1 space-y-0.5 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="px-2 py-0.2 rounded-full bg-purple-100 text-purple-900 text-[10px] font-black border border-purple-200">
+                                <span className={`px-2 py-0.2 rounded-full ${fontScale.groupPill} font-black border ${themeConfig.groupPill}`}>
                                   กลุ่ม {gNum || '-'}
                                 </span>
                                 {reg.groupSpecificCode && (
-                                  <span className="font-mono font-black text-xs px-2 py-0.2 rounded bg-purple-800 text-white shadow-2xs">
+                                  <span className={`font-mono font-black ${fontScale.code} px-2 py-0.2 rounded ${themeConfig.participantCode} shadow-2xs`}>
                                     {reg.groupSpecificCode}
                                   </span>
                                 )}
                               </div>
 
-                              <div className={`font-extrabold text-slate-900 leading-snug line-clamp-2 pt-0.5 ${
-                                layoutMode === 'TEN_PER_PAGE' || layoutMode === 'TWELVE_4X3_PER_PAGE' || layoutMode === 'TWELVE_3X4_PER_PAGE'
-                                  ? 'text-[10.5px] sm:text-[11px]'
-                                  : 'text-xs sm:text-[13px]'
-                              }`}>
+                              <div className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug line-clamp-2 break-words pt-0.5`}>
                                 {reg.studentName}
                               </div>
 
-                              <div className="font-mono font-bold text-[10.5px] text-purple-950">
+                              <div className={`font-mono font-bold ${fontScale.code} ${themeConfig.participantCode}`}>
                                 {reg.studentCode}
                               </div>
 
@@ -1061,56 +1310,40 @@ export function VipassanaBadgesModal({
                             {/* Right QR Code */}
                             <div className="shrink-0 flex flex-col items-center relative z-10">
                               {qrCodeUrls[reg.id] ? (
-                                <div className="p-1 bg-white rounded-xl border border-slate-300 shadow-2xs">
+                                <div className={`p-1 bg-white rounded-xl border ${themeConfig.qrBorder} shadow-2xs`}>
                                   <img
                                     src={qrCodeUrls[reg.id]}
                                     alt={`QR ${reg.studentCode}`}
                                     className="object-contain block bg-white"
                                     style={{
-                                      width:
-                                        layoutMode === 'FOUR_PER_PAGE'
-                                          ? '105px'
-                                          : layoutMode === 'SIX_PER_PAGE'
-                                          ? '82px'
-                                          : layoutMode === 'NINE_3X3_PER_PAGE'
-                                          ? '68px'
-                                          : layoutMode === 'EIGHT_PER_PAGE'
-                                          ? '68px'
-                                          : layoutMode === 'TWELVE_4X3_PER_PAGE'
-                                          ? '56px'
-                                          : layoutMode === 'TWELVE_3X4_PER_PAGE'
-                                          ? '54px'
-                                          : '54px',
-                                      height:
-                                        layoutMode === 'FOUR_PER_PAGE'
-                                          ? '105px'
-                                          : layoutMode === 'SIX_PER_PAGE'
-                                          ? '82px'
-                                          : layoutMode === 'NINE_3X3_PER_PAGE'
-                                          ? '68px'
-                                          : layoutMode === 'EIGHT_PER_PAGE'
-                                          ? '68px'
-                                          : layoutMode === 'TWELVE_4X3_PER_PAGE'
-                                          ? '56px'
-                                          : layoutMode === 'TWELVE_3X4_PER_PAGE'
-                                          ? '54px'
-                                          : '54px',
+                                      width: `${Math.round(qrDimension * 0.9)}px`,
+                                      height: `${Math.round(qrDimension * 0.9)}px`,
                                     }}
                                   />
                                 </div>
                               ) : (
-                                <div className="w-16 h-16 bg-slate-100 rounded-md animate-pulse" />
+                                <div
+                                  className="bg-slate-100 rounded-md animate-pulse"
+                                  style={{
+                                    width: `${Math.round(qrDimension * 0.9)}px`,
+                                    height: `${Math.round(qrDimension * 0.9)}px`,
+                                  }}
+                                />
                               )}
-                              <span className="text-[7.5px] font-mono text-slate-500 mt-0.5">
-                                SCAN PASS
-                              </span>
+                              {showScanPass && (
+                                <span className="text-[7px] font-mono text-slate-500 mt-0.5">
+                                  SCAN PASS
+                                </span>
+                              )}
                             </div>
                           </div>
 
                           {/* Bottom Footer */}
-                          <div className="border-t border-slate-100 pt-0.5 text-[8.5px] text-slate-400 flex items-center justify-between shrink-0 relative z-10">
-                            <span>บัตรประจำตัวผู้เข้าปฏิบัติ</span>
-                            <span className="font-mono font-bold">
+                          <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8.5px] flex items-center justify-between shrink-0 relative z-10`}>
+                            <span className={themeConfig.footerLabel}>
+                              {isEnglish ? 'Participant Pass' : 'บัตรประจำตัวผู้เข้าปฏิบัติ'}
+                            </span>
+                            <span className={`font-mono font-bold ${themeConfig.footerIndex}`}>
                               #{String(overallIdx + 1).padStart(3, '0')}
                             </span>
                           </div>
