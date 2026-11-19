@@ -197,7 +197,12 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
 
               {/* Card Action Buttons */}
               <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100 flex-wrap">
-                {(e.eventType === 'MEDITATION' || e.durationFormat === 'LONG_TERM_MEDITATION') && (
+                {(e.eventType === 'MEDITATION' ||
+                  e.durationFormat === 'LONG_TERM_MEDITATION' ||
+                  e.meditationConfig?.isMeditationEvent ||
+                  e.title?.includes('วิปัสสนา') ||
+                  e.title?.includes('กัมมัฏฐาน') ||
+                  e.title?.toLowerCase().includes('meditation')) && (
                   <>
                     <button
                       type="button"

@@ -525,6 +525,27 @@ export function VipassanaAttendanceSheetModal({
               <span>{isEditingPeriods ? '✖ ปิดกล่องแก้ไข' : '⚙️ แก้ไขช่วงเวลา 4 รอบ'}</span>
             </button>
 
+            {/* Live Scanner & Badges Shortcuts in Header */}
+            <button
+              type="button"
+              onClick={() => setIsLiveScannerOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="เปิดจุดสแกนเช็คชื่ออัตโนมัติ (กล้องมือถือ/ปืนสแกนบาร์โค้ด)"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>📷 จุดสแกนสด</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsBadgesModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="พิมพ์ป้ายชื่อคล้องคอพร้อม QR Code สำหรับนิสิต"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <span>🪪 พิมพ์ป้ายคล้องคอ</span>
+            </button>
+
             <button
               type="button"
               onClick={onClose}

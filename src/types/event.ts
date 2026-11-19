@@ -47,6 +47,7 @@ export interface MeditationPeriodConfig {
 }
 
 export interface MeditationConfig {
+  isMeditationEvent?: boolean;
   periods?: MeditationPeriodConfig[];
   lateThresholdMinutes?: number;
   totalInterviewSessions?: number;

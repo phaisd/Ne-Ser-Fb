@@ -23,6 +23,7 @@ import {
   Check,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, MeditationPeriodConfig } from '@/types/event';
+import jsQR from 'jsqr';
 
 interface BarcodeDetectorInstance {
   detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>>;
@@ -164,10 +165,51 @@ export function VipassanaLiveScannerModal({
   const [cameraFacing, setCameraFacing] = useState<'environment' | 'user'>('environment');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scanThrottleRef = useRef<number>(0);
 
+  // Group Advisor (พระพี่เลี้ยง) States
+  const [selectedGroup, setSelectedGroup] = useState<number | 'ALL'>('ALL');
+  const [rightPanelTab, setRightPanelTab] = useState<'SCANS' | 'CHECKLIST'>('SCANS');
+  const [checklistSearch, setChecklistSearch] = useState('');
+
+  // Available groups
+  const availableGroups = useMemo(() => {
+    const groupNums = new Set<number>();
+    registrations.forEach((r) => {
+      if (r.groupNumber) groupNums.add(r.groupNumber);
+      else if (r.groupName) {
+        const m = r.groupName.match(/\d+/);
+        if (m) groupNums.add(parseInt(m[0], 10));
+      }
+    });
+    if (groupNums.size === 0) {
+      [1, 2, 3, 12].forEach((g) => groupNums.add(g));
+    }
+    return Array.from(groupNums).sort((a, b) => a - b);
+  }, [registrations]);
+
   const dayKey = `day_${selectedDayNumber}`;
+
+  // Filtered registrations for Group Checklist view
+  const groupRegistrations = useMemo(() => {
+    return registrations.filter((r) => {
+      if (selectedGroup !== 'ALL') {
+        const gNum = r.groupNumber || (r.groupName ? parseInt(r.groupName.replace(/\D/g, ''), 10) : 0);
+        if (gNum !== selectedGroup) return false;
+      }
+      if (checklistSearch.trim()) {
+        const q = checklistSearch.toLowerCase();
+        const matchCode =
+          r.studentCode.toLowerCase().includes(q) ||
+          (r.groupSpecificCode && r.groupSpecificCode.toLowerCase().includes(q));
+        const matchName = r.studentName.toLowerCase().includes(q);
+        if (!matchCode && !matchName) return false;
+      }
+      return true;
+    });
+  }, [registrations, selectedGroup, checklistSearch]);
 
   // Offline Cache Queue State
   const OFFLINE_QUEUE_KEY = `vipassana_scanner_offline_queue_${event.id}`;
@@ -314,16 +356,24 @@ export function VipassanaLiveScannerModal({
         if (data.success && data.registration) {
           const reg = data.registration;
           const isDuplicate = data.isAlreadyCheckedIn;
+          const regGroup = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
+          const isWrongGroup = selectedGroup !== 'ALL' && regGroup !== selectedGroup;
 
           if (soundEnabled) {
             playBeep(isDuplicate ? 'WARN' : 'SUCCESS');
           }
 
+          let msg = isDuplicate
+            ? `เช็คชื่อซ้ำ: ${reg.studentName} ลงชื่อรอบนี้ไปแล้ว (${checkInTime} น.)`
+            : `เช็คชื่อสำเร็จ: ${reg.studentName}${lateNote}`;
+
+          if (isWrongGroup) {
+            msg += ` ⚠️ (สังเกต: นิสิตสังกัดกลุ่มที่ ${regGroup || '-'})`;
+          }
+
           setLastFeedback({
             type: isDuplicate ? 'WARN' : 'SUCCESS',
-            message: isDuplicate
-              ? `เช็คชื่อซ้ำ: ${reg.studentName} ลงชื่อรอบนี้ไปแล้ว (${checkInTime} น.)`
-              : `เช็คชื่อสำเร็จ: ${reg.studentName}${lateNote}`,
+            message: msg,
             student: reg,
             time: checkInTime,
           });
@@ -484,7 +534,7 @@ export function VipassanaLiveScannerModal({
     };
   }, [isOpen, isCameraActive, cameraFacing]);
 
-  // Camera Barcode Scanning Loop via native BarcodeDetector if available
+  // Camera Barcode / QR Scanning Loop (Hardware BarcodeDetector with universal jsQR fallback)
   useEffect(() => {
     if (!isCameraActive || !isOpen) return;
 
@@ -505,13 +555,37 @@ export function VipassanaLiveScannerModal({
     }
 
     const checkFrame = async () => {
-      if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && detector) {
+      if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
         try {
-          const barcodes = await detector.detect(videoRef.current);
-          if (barcodes.length > 0) {
-            const rawVal = barcodes[0].rawValue;
-            if (rawVal) {
-              processScanCode(rawVal);
+          // 1. Try native BarcodeDetector if available
+          if (detector) {
+            const barcodes = await detector.detect(videoRef.current);
+            if (barcodes.length > 0 && barcodes[0].rawValue) {
+              processScanCode(barcodes[0].rawValue);
+            }
+          } else {
+            // 2. Fallback to jsQR via hidden canvas (iOS Safari, older tablets, etc.)
+            if (!canvasRef.current) {
+              canvasRef.current = document.createElement('canvas');
+            }
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
+              const targetWidth = Math.min(video.videoWidth, 640);
+              const targetHeight = Math.round((targetWidth / video.videoWidth) * video.videoHeight);
+              canvas.width = targetWidth;
+              canvas.height = targetHeight;
+              const ctx = canvas.getContext('2d', { willReadFrequently: true });
+              if (ctx) {
+                ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+                const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                  inversionAttempts: 'dontInvert',
+                });
+                if (code && code.data) {
+                  processScanCode(code.data);
+                }
+              }
             }
           }
         } catch {}
@@ -526,21 +600,29 @@ export function VipassanaLiveScannerModal({
     };
   }, [isCameraActive, isOpen, processScanCode]);
 
-  // Statistics for current period
+  // Statistics for current period (scoped to selectedGroup if filtered)
   const stats = useMemo(() => {
+    const targetPool =
+      selectedGroup === 'ALL'
+        ? registrations
+        : registrations.filter((r) => {
+            const gNum = r.groupNumber || (r.groupName ? parseInt(r.groupName.replace(/\D/g, ''), 10) : 0);
+            return gNum === selectedGroup;
+          });
+
     let checkedCount = 0;
-    registrations.forEach((r) => {
+    targetPool.forEach((r) => {
       const p = r.dailyAttendance?.[dayKey]?.[selectedPeriod];
       if (p && (p.status === 'PRESENT' || p.status === 'LATE')) {
         checkedCount++;
       }
     });
     return {
-      total: registrations.length,
+      total: targetPool.length,
       checkedCount,
-      percent: registrations.length > 0 ? Math.round((checkedCount / registrations.length) * 100) : 0,
+      percent: targetPool.length > 0 ? Math.round((checkedCount / targetPool.length) * 100) : 0,
     };
-  }, [registrations, dayKey, selectedPeriod]);
+  }, [registrations, dayKey, selectedPeriod, selectedGroup]);
 
   if (!isOpen) return null;
 
@@ -625,6 +707,29 @@ export function VipassanaLiveScannerModal({
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((d) => (
                   <option key={d} value={d}>
                     วันที่ {d} ({10 + d} ธ.ค.)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Group Selector for พระพี่เลี้ยง / Group Advisors */}
+            <div className="flex items-center gap-1.5 bg-purple-50/90 px-2.5 py-1 rounded-xl border border-purple-200 shadow-2xs">
+              <span className="font-extrabold text-purple-950 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-purple-700" />
+                กลุ่ม:
+              </span>
+              <select
+                value={selectedGroup}
+                onChange={(e) => {
+                  const val = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
+                  setSelectedGroup(val);
+                }}
+                className="px-2 py-0.5 bg-white rounded-lg border border-purple-300 font-bold text-purple-950 text-xs focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">ทุกกลุ่ม (ส่วนกลาง)</option>
+                {availableGroups.map((g) => (
+                  <option key={g} value={g}>
+                    {g === 12 ? 'กลุ่มที่ 12 (English)' : `กลุ่มที่ ${g}`}
                   </option>
                 ))}
               </select>
@@ -1012,14 +1117,38 @@ export function VipassanaLiveScannerModal({
             )}
           </div>
 
-          {/* RIGHT COLUMN: RECENT SCANS LOG & REALTIME LIST (5 COLS) */}
+          {/* RIGHT COLUMN: RECENT SCANS LOG & GROUP CHECKLIST (5 COLS) */}
           <div className="lg:col-span-5 flex flex-col space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-extrabold text-xs text-slate-800 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-purple-600" />
-                <span>ประวัติการสแกนรอบนี้ ({recentScans.length} รายการล่าสุด):</span>
-              </h4>
-              {recentScans.length > 0 && (
+            {/* Tab Switcher between Recent Scans and Group Checklist */}
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2 flex-wrap gap-2">
+              <div className="flex items-center p-0.5 bg-slate-100 rounded-xl text-xs font-bold border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setRightPanelTab('SCANS')}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                    rightPanelTab === 'SCANS'
+                      ? 'bg-white text-purple-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 text-purple-600" />
+                  <span>ประวัติสแกน ({recentScans.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRightPanelTab('CHECKLIST')}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                    rightPanelTab === 'CHECKLIST'
+                      ? 'bg-white text-emerald-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>รายชื่อกลุ่ม ({groupRegistrations.length})</span>
+                </button>
+              </div>
+
+              {rightPanelTab === 'SCANS' && recentScans.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setRecentScans([])}
@@ -1030,53 +1159,136 @@ export function VipassanaLiveScannerModal({
               )}
             </div>
 
-            <div className="border border-slate-200 rounded-2xl flex-1 max-h-[460px] overflow-y-auto bg-slate-50/50 p-2 space-y-1.5 shadow-2xs">
-              {recentScans.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 text-xs">
-                  ยังไม่มีรายการสแกนในรอบนี้<br />
-                  <span className="text-[11px] opacity-75">พร้อมรับสัญญาณสแกนจากป้ายชื่อ...</span>
+            {/* TAB 1: GROUP CHECKLIST VIEW (FOR พระพี่เลี้ยง) */}
+            {rightPanelTab === 'CHECKLIST' ? (
+              <div className="flex-1 flex flex-col space-y-2 min-h-0">
+                {/* Search in group checklist */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={checklistSearch}
+                    onChange={(e) => setChecklistSearch(e.target.value)}
+                    placeholder="ค้นหารหัส หรือชื่อในกลุ่ม..."
+                    className="w-full pl-8 pr-3 py-1.5 bg-white rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  />
                 </div>
-              ) : (
-                recentScans.map((scan) => (
-                  <div
-                    key={scan.id}
-                    className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between gap-2 text-xs"
-                  >
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="font-extrabold text-slate-900 truncate">
-                        {scan.studentName}
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
-                        <span className="font-bold text-purple-700">{scan.studentCode}</span>
-                        {scan.groupNumber && (
-                          <span className="bg-slate-100 text-slate-700 px-1 rounded font-sans">
-                            กลุ่ม {scan.groupNumber}
-                          </span>
-                        )}
-                        {scan.vasa && <span className="font-sans">พรรษา {scan.vasa}</span>}
-                      </div>
-                    </div>
 
-                    <div className="text-right shrink-0">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-black ${
-                          scan.status === 'PRESENT'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : scan.status === 'LATE'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {scan.status === 'PRESENT' ? 'มา' : scan.status === 'LATE' ? 'สาย' : 'ป่วย'}
-                      </span>
-                      <div className="text-[9.5px] font-mono text-slate-400 mt-0.5">
-                        {scan.time} น.
+                {/* Students list */}
+                <div className="border border-slate-200 rounded-2xl flex-1 max-h-[440px] overflow-y-auto bg-slate-50/50 p-2 space-y-1.5 shadow-2xs">
+                  {groupRegistrations.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 text-xs">
+                      ไม่พบนิสิตในกลุ่มที่เลือก หรือไม่มีรายการลงทะเบียน
+                    </div>
+                  ) : (
+                    groupRegistrations.map((r) => {
+                      const att = r.dailyAttendance?.[dayKey]?.[selectedPeriod];
+                      const isChecked = att && (att.status === 'PRESENT' || att.status === 'LATE');
+                      return (
+                        <div
+                          key={r.id}
+                          className={`p-2.5 rounded-xl border transition flex items-center justify-between gap-2 text-xs ${
+                            isChecked
+                              ? 'bg-emerald-50/80 border-emerald-200 shadow-2xs'
+                              : 'bg-white border-slate-200 hover:border-purple-200 shadow-2xs'
+                          }`}
+                        >
+                          <div className="min-w-0 space-y-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {r.groupSpecificCode && (
+                                <span className="font-mono font-bold text-[10px] px-1.5 py-0.2 rounded bg-purple-100 text-purple-900 border border-purple-200">
+                                  {r.groupSpecificCode}
+                                </span>
+                              )}
+                              <span className="font-extrabold text-slate-900 truncate">
+                                {r.studentName}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-mono flex items-center gap-2">
+                              <span>{r.studentCode}</span>
+                              {r.vasa && <span>• พรรษา {r.vasa}</span>}
+                              {r.groupNumber && <span>• กลุ่ม {r.groupNumber}</span>}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {isChecked ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-emerald-600 text-white shadow-xs">
+                                <Check className="w-3 h-3" />
+                                <span>
+                                  {att.status === 'LATE' ? 'มาสาย' : 'มาแล้ว'}
+                                  {att.checkInTime ? ` (${att.checkInTime})` : ''}
+                                </span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => processScanCode(r.studentCode)}
+                                disabled={isSubmitting}
+                                className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold cursor-pointer transition flex items-center gap-1 shadow-xs disabled:opacity-50"
+                                title="คลิกเพื่อเช็คชื่อให้นิสิตรูปนี้ทันที"
+                              >
+                                <Check className="w-3 h-3" />
+                                <span>เช็คชื่อด่วน</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* TAB 2: RECENT SCANS LOG */
+              <div className="border border-slate-200 rounded-2xl flex-1 max-h-[460px] overflow-y-auto bg-slate-50/50 p-2 space-y-1.5 shadow-2xs">
+                {recentScans.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 text-xs">
+                    ยังไม่มีรายการสแกนในรอบนี้<br />
+                    <span className="text-[11px] opacity-75">พร้อมรับสัญญาณสแกนจากป้ายชื่อ...</span>
+                  </div>
+                ) : (
+                  recentScans.map((scan) => (
+                    <div
+                      key={scan.id}
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between gap-2 text-xs"
+                    >
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="font-extrabold text-slate-900 truncate">
+                          {scan.studentName}
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+                          <span className="font-bold text-purple-700">{scan.studentCode}</span>
+                          {scan.groupNumber && (
+                            <span className="bg-slate-100 text-slate-700 px-1 rounded font-sans">
+                              กลุ่ม {scan.groupNumber}
+                            </span>
+                          )}
+                          {scan.vasa && <span className="font-sans">พรรษา {scan.vasa}</span>}
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-black ${
+                            scan.status === 'PRESENT'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : scan.status === 'LATE'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
+                        >
+                          {scan.status === 'PRESENT' ? 'มา' : scan.status === 'LATE' ? 'สาย' : 'ป่วย'}
+                        </span>
+                        <div className="text-[9.5px] font-mono text-slate-400 mt-0.5">
+                          {scan.time} น.
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
+            )}
 
             {/* Quick tips */}
             <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-[11px] text-amber-900 space-y-1">
