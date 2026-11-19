@@ -188,6 +188,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="INSTRUCTOR">อาจารย์ผู้สอน (INSTRUCTOR)</option>
+                <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์ / วัดผลปฏิบัติ)</option>
                 <option value="OFFICER">เจ้าหน้าที่บริการการศึกษา (OFFICER)</option>
                 <option value="ADMIN">ผู้ดูแลระบบ (ADMIN)</option>
                 {isSuper && (

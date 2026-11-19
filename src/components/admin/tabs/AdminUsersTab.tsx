@@ -608,6 +608,16 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
           >
             อาจารย์ ({isOfficer ? filteredUsers.length : users.filter((u) => u.role === 'INSTRUCTOR').length})
           </button>
+          {!isOfficer && (
+            <button
+              onClick={() => setUserRoleFilter('VIPASSANA_MASTER')}
+              className={`px-2.5 py-1.5 rounded-lg transition ${
+                userRoleFilter === 'VIPASSANA_MASTER' ? 'bg-rose-600 text-white shadow-sm' : 'text-rose-700'
+              }`}
+            >
+              🧘 พระวิปัสสนาจารย์ ({users.filter((u) => u.role === 'VIPASSANA_MASTER').length})
+            </button>
+          )}
           <button
             onClick={() => setUserRoleFilter('STUDENT')}
             className={`px-2.5 py-1.5 rounded-lg transition ${
@@ -753,6 +763,8 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                               ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                               : u.role === 'OFFICER'
                               ? 'bg-sky-50 text-sky-700 border-sky-200'
+                              : u.role === 'VIPASSANA_MASTER'
+                              ? 'bg-rose-50 text-rose-800 border-rose-300 shadow-2xs'
                               : isStudent
                               ? 'bg-amber-50 text-amber-800 border-amber-300'
                               : 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -764,13 +776,15 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                             ? 'ผู้ดูแลระบบ'
                             : u.role === 'OFFICER'
                             ? 'เจ้าหน้าที่'
+                            : u.role === 'VIPASSANA_MASTER'
+                            ? '🧘 พระวิปัสสนาจารย์'
                             : isStudent
                             ? '🎓 นิสิต (STUDENT)'
                             : 'อาจารย์ผู้สอน'}
                         </span>
 
                         {/* Checkbox: ☑️ ช่วยงานเจ้าหน้าที่ สำหรับทั้งอาจารย์และนิสิต */}
-                        {!isSuper && (u.role === 'INSTRUCTOR' || isStudent || !u.role) && (
+                        {!isSuper && (u.role === 'INSTRUCTOR' || u.role === 'VIPASSANA_MASTER' || isStudent || !u.role) && (
                           <label
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition select-none ${
                               isOfficer
@@ -925,6 +939,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                             >
                               {isSuper && <option value="SUPER_ADMIN">👑 Super Admin</option>}
                               <option value="INSTRUCTOR">อาจารย์ผู้สอน</option>
+                              <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์/วัดผล)</option>
                               <option value="OFFICER">เจ้าหน้าที่ดูแลระบบ</option>
                               <option value="ADMIN">ผู้ดูแลระบบ</option>
                             </select>

@@ -85,13 +85,13 @@ export function useAdminUsers({
     gmail: '',
     instructorType: 'อาจารย์ประจำ',
     department: 'คณะพุทธศาสตร์ มจร',
-    role: 'INSTRUCTOR' as 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR',
+    role: 'INSTRUCTOR' as UserRole,
     password: 'mcu123456',
   });
 
   const handleUpdateRole = async (
     userId: string,
-    newRole: 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR'
+    newRole: UserRole
   ) => {
     if (isOfficer) {
       alert('เจ้าหน้าที่ (OFFICER) ไม่มีสิทธิ์ในการปรับเปลี่ยนระดับสิทธิ์ของผู้ใช้งาน กรุณาติดต่อ Super Admin');

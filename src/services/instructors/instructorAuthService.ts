@@ -169,7 +169,7 @@ export async function authenticateStudent(
 
 export async function updateUserRole(
   userId: string,
-  newRole: 'SUPER_ADMIN' | 'ADMIN' | 'OFFICER' | 'INSTRUCTOR'
+  newRole: UserRole
 ): Promise<boolean> {
   const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
   const idx = list.findIndex((u) => u.id === userId || u.email === userId);
