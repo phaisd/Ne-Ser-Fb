@@ -20,12 +20,16 @@ import {
   parseGroupedParticipantsText,
   summarizeGroups,
 } from '@/lib/events/groupImport';
+import { parseXlsxToTsv } from '@/lib/utils/xlsx-import';
+import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
+import { getAuthUser } from '@/lib/auth-client';
 
 interface EventGroupImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   eventsList: StudentEvent[];
   initialEventId?: string;
+  initialEventTitle?: string;
   registrationsList: EventRegistration[];
   onImported: () => void;
 }
@@ -45,6 +49,7 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
   onClose,
   eventsList,
   initialEventId,
+  initialEventTitle,
   registrationsList,
   onImported,
 }) => {
@@ -207,9 +212,48 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const text = await file.text();
-    setRawText(text);
-    setErrorMsg(null);
+    try {
+      const lowerName = file.name.toLowerCase();
+      if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
+        const buffer = await file.arrayBuffer();
+        const tsv = await parseXlsxToTsv(buffer);
+        setRawText(tsv);
+      } else {
+        const text = await file.text();
+        setRawText(text);
+      }
+      setErrorMsg(null);
+    } catch (err: unknown) {
+      setErrorMsg('ไม่สามารถอ่านไฟล์ได้: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handleDownloadSampleXlsx = () => {
+    const headers = [
+      'กลุ่ม',
+      'เลขเฉพาะกลุ่ม',
+      'รหัสนิสิต',
+      'ชื่อ-นามสกุล',
+      'หลักสูตร',
+      'หลักสูตรภาษา',
+      'สาขาวิชา',
+      'ชั้นปี',
+    ];
+    const sampleRows = [
+      ['1', 'T101', '6701501011', 'พระมหาสมชาย กิตฺติโสภโณ', 'ปริญญาตรี', 'THAI', 'พระพุทธศาสนา', '2'],
+      ['1', 'T102', '6701501012', 'สามเณรธีรภัทร สุขใจ', 'ปริญญาโท', 'THAI', 'พระพุทธศาสนา', '2'],
+      ['2', 'T201', '6701501013', 'นายก้องภพ ใจดี', 'ปริญญาเอก', 'THAI', 'ศาสนาและปรัชญา', '3'],
+      ['3', 'I301', '6701501014', 'Ven. Dhammapalo', 'ปริญญาตรี', 'ENGLISH', 'Buddhism', '1'],
+    ];
+    const sheet: XlsxSheet = {
+      name: 'แบบฟอร์มจัดกลุ่มนิสิต',
+      title: 'แบบฟอร์มนำเข้ารายชื่อนิสิตแบบจัดกลุ่ม (เลขเฉพาะกลุ่ม)',
+      subtitle: 'ใส่รหัสประจำกลุ่มในคอลัมน์ "เลขเฉพาะกลุ่ม" (เช่น T101, T201, G01-01)',
+      headers,
+      rows: sampleRows,
+      columnWidths: [8, 16, 16, 32, 14, 16, 22, 10],
+    };
+    downloadXlsx('sample-grouped-participants.xlsx', [sheet]);
   };
 
   const handleDownloadSample = () => {
@@ -260,7 +304,7 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
-      const res = await fetch('/api/events', {
+      let res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -270,6 +314,35 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
           mode: importMode,
         }),
       });
+
+      // Auto-refresh signed server session cookie if client session exists
+      if (res.status === 401 || res.status === 403) {
+        const localUser = getAuthUser();
+        if (localUser && (localUser.email || localUser.id)) {
+          await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sync-session',
+              email: localUser.email,
+              gmail: localUser.gmail,
+              id: localUser.id,
+              rememberMe: true,
+            }),
+          });
+          res = await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'batch_import_registrations',
+              eventId: targetEventId,
+              items: previewItems,
+              mode: importMode,
+            }),
+          });
+        }
+      }
+
       const data = await res.json();
       if (!res.ok || !data.success) {
         setErrorMsg(data.error || 'นำเข้าผู้เข้าร่วมไม่สำเร็จ');
@@ -328,7 +401,12 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                 onChange={(e) => setTargetEventId(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-800"
               >
-                {eventsList.length === 0 ? (
+                {!eventsList.some((ev) => ev.id === targetEventId) && targetEventId && (
+                  <option value={targetEventId}>
+                    {initialEventTitle || 'โครงการที่เลือก'} (โครงการที่เพิ่งบันทึก)
+                  </option>
+                )}
+                {eventsList.length === 0 && !targetEventId ? (
                   <option value="">-- ยังไม่มีโครงการ/กิจกรรม --</option>
                 ) : (
                   eventsList.map((ev) => (
@@ -365,7 +443,7 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
               }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
-              <span>1. วางจาก Excel / อัปโหลด CSV (มีเลขเฉพาะกลุ่ม)</span>
+              <span>1. วางจาก Excel / อัปโหลดไฟล์ Excel & CSV</span>
             </button>
             <button
               type="button"
@@ -398,23 +476,33 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 font-semibold text-slate-700 flex items-center gap-1.5 cursor-pointer">
+                  <label className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 font-semibold text-slate-700 flex items-center gap-1.5 cursor-pointer shadow-sm">
                     <Upload className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>เลือกไฟล์ CSV / TSV</span>
+                    <span>เลือกไฟล์ Excel (.xlsx) / CSV</span>
                     <input
                       type="file"
-                      accept=".csv,.tsv,.txt"
+                      accept=".xlsx,.xls,.csv,.tsv,.txt"
                       onChange={handleFileUpload}
                       className="hidden"
                     />
                   </label>
                   <button
                     type="button"
-                    onClick={handleDownloadSample}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 font-semibold text-emerald-800 flex items-center gap-1.5 cursor-pointer"
+                    onClick={handleDownloadSampleXlsx}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-semibold text-white flex items-center gap-1.5 cursor-pointer shadow-sm transition"
+                    title="ดาวน์โหลดแม่แบบตาราง Excel (.xlsx) มีหัวตารางและตัวอย่างข้อมูล"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>ดาวน์โหลดไฟล์ตัวอย่าง CSV</span>
+                    <span>เทมเพลต Excel (.xlsx)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadSample}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 font-semibold text-emerald-800 flex items-center gap-1.5 cursor-pointer transition"
+                    title="ดาวน์โหลดแม่แบบ CSV (UTF-8 with BOM)"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>เทมเพลต CSV</span>
                   </button>
                 </div>
 

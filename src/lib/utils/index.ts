@@ -6,3 +6,4 @@ export * from './instructor-workload';
 export * from './instructor-dashboard';
 export * from './error';
 export * from './csv-export';
+export * from './xlsx-import';

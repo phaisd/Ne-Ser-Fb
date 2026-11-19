@@ -38,6 +38,7 @@ interface EventParticipantsTableProps {
   isSyncing: boolean;
   onSyncSheets: () => void;
   onExportCsv: () => void;
+  onExportXlsx?: () => void;
   onOpenGroupImport: (eventId: string) => void;
   onOpenVipassanaModal: (event: StudentEvent) => void;
   onOpenVipassanaBadges: (event: StudentEvent) => void;
@@ -69,6 +70,7 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
   isSyncing,
   onSyncSheets,
   onExportCsv,
+  onExportXlsx,
   onOpenGroupImport,
   onOpenVipassanaModal,
   onOpenVipassanaBadges,
@@ -214,14 +216,26 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
                   <span>นำเข้า / ดึงนิสิตเป็นกลุ่ม</span>
                 </button>
 
+                {onExportXlsx && (
+                  <button
+                    type="button"
+                    onClick={onExportXlsx}
+                    className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    title="ดาวน์โหลดรายชื่อผู้เข้าร่วมตามตัวกรองปัจจุบันเป็นไฟล์ Excel (.xlsx)"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-100" />
+                    <span>ส่งออก Excel (.xlsx)</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={onExportCsv}
                   className="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                  title="ดาวน์โหลดรายชื่อผู้เข้าร่วมตามตัวกรองปัจจุบันเป็น Excel / CSV"
+                  title="ดาวน์โหลดรายชื่อผู้เข้าร่วมตามตัวกรองปัจจุบันเป็นไฟล์ CSV"
                 >
                   <Download className="w-3.5 h-3.5 text-blue-700" />
-                  <span>ส่งออก Excel / CSV</span>
+                  <span>ส่งออก CSV</span>
                 </button>
               </>
             )}

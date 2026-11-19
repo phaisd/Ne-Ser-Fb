@@ -90,6 +90,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     isSyncing,
     handleSyncSheets,
     handleExportCsv,
+    handleExportXlsx,
     // Add/Edit Event Modal State
     isEventModalOpen,
     setIsEventModalOpen,
@@ -317,6 +318,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         isSyncing={isSyncing}
         onSyncSheets={handleSyncSheets}
         onExportCsv={handleExportCsv}
+        onExportXlsx={handleExportXlsx}
         onOpenGroupImport={setGroupImportEventId}
         onOpenVipassanaModal={setVipassanaModalEvent}
         onOpenVipassanaBadges={setVipassanaBadgesEvent}
@@ -452,6 +454,11 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           onClose={() => setGroupImportEventId(null)}
           eventsList={eventsList}
           initialEventId={groupImportEventId || undefined}
+          initialEventTitle={
+            eventsList.find((e) => e.id === groupImportEventId)?.title ||
+            eventForm.title ||
+            undefined
+          }
           registrationsList={registrationsList}
           onImported={onRefresh}
         />

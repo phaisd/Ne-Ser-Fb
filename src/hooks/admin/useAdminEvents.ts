@@ -3,6 +3,8 @@
 import { useState, useMemo } from 'react';
 import type { StudentEvent, EventRegistration, SystemSettings } from '@/types';
 import { downloadCsvFile } from '@/lib/utils';
+import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
+import { getAuthUser } from '@/lib/auth-client';
 
 export const DEFAULT_EVENT_FORM: Partial<StudentEvent> = {
   title: '',
@@ -211,7 +213,7 @@ export function useAdminEvents({
     setIsSubmittingEvent(true);
     try {
       if (editingEventId) {
-        const res = await fetch('/api/events', {
+        let res = await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -220,19 +222,48 @@ export function useAdminEvents({
             updates: eventForm,
           }),
         });
+
+        // Auto-refresh signed server session cookie if client session exists
+        if (res.status === 401 || res.status === 403) {
+          const localUser = getAuthUser();
+          if (localUser && (localUser.email || localUser.id)) {
+            await fetch('/api/auth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'sync-session',
+                email: localUser.email,
+                gmail: localUser.gmail,
+                id: localUser.id,
+                rememberMe: true,
+              }),
+            });
+            res = await fetch('/api/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'update_event',
+                id: editingEventId,
+                updates: eventForm,
+              }),
+            });
+          }
+        }
+
         const data = await res.json();
         if (data.success) {
           const savedId = editingEventId;
           setIsEventModalOpen(false);
           onRefresh();
           if (openGroupImportAfter) {
+            setSelectedEventId(savedId);
             setGroupImportEventId(savedId);
           }
         } else {
-          alert('แก้ไขโครงการไม่สำเร็จ: ' + data.error);
+          alert('แก้ไขโครงการไม่สำเร็จ: ' + (data.error || 'กรุณาลองใหม่อีกครั้ง'));
         }
       } else {
-        const res = await fetch('/api/events', {
+        let res = await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -240,6 +271,33 @@ export function useAdminEvents({
             eventData: eventForm,
           }),
         });
+
+        // Auto-refresh signed server session cookie if client session exists
+        if (res.status === 401 || res.status === 403) {
+          const localUser = getAuthUser();
+          if (localUser && (localUser.email || localUser.id)) {
+            await fetch('/api/auth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'sync-session',
+                email: localUser.email,
+                gmail: localUser.gmail,
+                id: localUser.id,
+                rememberMe: true,
+              }),
+            });
+            res = await fetch('/api/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'create_event',
+                eventData: eventForm,
+              }),
+            });
+          }
+        }
+
         const data = await res.json();
         if (data.success) {
           const createdId = data.data?.id || null;
@@ -250,7 +308,7 @@ export function useAdminEvents({
             setGroupImportEventId(createdId);
           }
         } else {
-          alert('เพิ่มโครงการไม่สำเร็จ: ' + data.error);
+          alert('เพิ่มโครงการไม่สำเร็จ: ' + (data.error || 'กรุณาลองใหม่อีกครั้ง'));
         }
       }
     } catch (err: unknown) {
@@ -321,6 +379,9 @@ export function useAdminEvents({
       alert('ไม่มีข้อมูลสำหรับส่งออก');
       return;
     }
+    const currentEvt = eventsList.find((e) => e.id === selectedEventId);
+    const eventName = currentEvt ? currentEvt.title : 'รายชื่อผู้เข้าร่วมโครงการ';
+
     const headers = [
       'กลุ่ม',
       'เลขเฉพาะกลุ่ม',
@@ -331,8 +392,8 @@ export function useAdminEvents({
       'ชั้นปี',
       'สาขาวิชา',
       'พรรษา',
-      'สถานะ',
-      'กิจกรรม',
+      'สถานะการเข้าร่วม',
+      'โครงการ/กิจกรรม',
       'วันที่เข้าร่วม',
       'หมายเหตุ',
     ];
@@ -346,12 +407,66 @@ export function useAdminEvents({
       r.yearLevel ? `ปี ${r.yearLevel}` : '-',
       r.major || '-',
       r.vasa || '-',
-      r.status === 'ATTENDED' ? 'เข้าร่วมแล้ว' : 'ยังไม่เข้าร่วม',
+      r.status === 'ATTENDED' ? 'ผ่านเข้าร่วมแล้ว' : 'รอเช็คชื่อ',
       r.eventTitle || '-',
       r.attendedAt ? new Date(r.attendedAt).toLocaleDateString('th-TH') : '-',
       r.remarks || '-',
     ]);
-    downloadCsvFile('รายชื่อผู้เข้าร่วมกิจกรรม.csv', headers, rowsData);
+    const safeTitle = (eventName || 'รายชื่อผู้เข้าร่วม').replace(/[/\\?%*:|"<>]/g, '_');
+    downloadCsvFile(`ผู้เข้าร่วม_${safeTitle}_${new Date().toISOString().substring(0, 10)}.csv`, headers, rowsData);
+  };
+
+  const handleExportXlsx = () => {
+    if (filteredRegistrations.length === 0) {
+      alert('ไม่มีข้อมูลสำหรับส่งออก');
+      return;
+    }
+    const currentEvt = eventsList.find((e) => e.id === selectedEventId);
+    const eventName = currentEvt ? currentEvt.title : 'รายชื่อผู้เข้าร่วมโครงการทั้งหมด';
+
+    const headers = [
+      'กลุ่ม',
+      'เลขเฉพาะกลุ่ม',
+      'รหัสนิสิต',
+      'ชื่อ-นามสกุล',
+      'ระดับการศึกษา',
+      'หลักสูตรภาษา',
+      'ชั้นปี',
+      'สาขาวิชา',
+      'พรรษา',
+      'สถานะการเข้าร่วม',
+      'โครงการ/กิจกรรม',
+      'วันที่เข้าร่วม',
+      'หมายเหตุ',
+    ];
+
+    const rows = filteredRegistrations.map((r) => [
+      r.groupNumber || (r.groupName ? r.groupName.replace(/\D/g, '') : '-'),
+      r.groupSpecificCode || '-',
+      r.studentCode,
+      r.studentName,
+      r.degreeLevel || '-',
+      r.programType || '-',
+      r.yearLevel ? `ปี ${r.yearLevel}` : '-',
+      r.major || '-',
+      r.vasa || '-',
+      r.status === 'ATTENDED' ? 'ผ่านเข้าร่วมแล้ว' : 'รอเช็คชื่อ',
+      r.eventTitle || '-',
+      r.attendedAt ? new Date(r.attendedAt).toLocaleDateString('th-TH') : '-',
+      r.remarks || '-',
+    ]);
+
+    const sheet: XlsxSheet = {
+      name: 'ผู้เข้าร่วมกิจกรรม',
+      title: eventName,
+      subtitle: `ส่งออกข้อมูล ณ วันที่ ${new Date().toLocaleDateString('th-TH')} • จำนวน ${filteredRegistrations.length} คน`,
+      headers,
+      rows,
+      columnWidths: [8, 14, 16, 30, 14, 14, 10, 22, 10, 16, 32, 14, 18],
+    };
+
+    const safeTitle = (eventName || 'กิจกรรม').replace(/[/\\?%*:|"<>]/g, '_');
+    downloadXlsx(`ผู้เข้าร่วม_${safeTitle}_${new Date().toISOString().substring(0, 10)}.xlsx`, [sheet]);
   };
 
   return {
@@ -382,6 +497,7 @@ export function useAdminEvents({
     isSyncing,
     handleSyncSheets,
     handleExportCsv,
+    handleExportXlsx,
     // Add/Edit Event Modal State
     isEventModalOpen,
     setIsEventModalOpen,
