@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Edit } from 'lucide-react';
+import { Edit, ShieldCheck, ClipboardList, Sparkles, Briefcase, GraduationCap } from 'lucide-react';
 import { UserAccount, UserRole } from '@/types';
 
 interface EditUserFormState {
@@ -200,48 +200,145 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
 
           <div>
             <label className="font-bold text-slate-700 block mb-1">บทบาทและสิทธิ์การใช้งาน (Role):</label>
-            {isOfficer ? (
-              <div className="p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-slate-700 font-semibold flex items-center justify-between text-xs">
-                <span>อาจารย์ผู้สอน (INSTRUCTOR)</span>
-                <span className="text-[10px] text-slate-400 font-normal">(เฉพาะ Super Admin ที่เปลี่ยนได้)</span>
-              </div>
-            ) : (
-              <select
-                value={editUserForm.role}
-                disabled={isSuper}
-                onChange={(e) => setEditUserForm({ ...editUserForm, role: e.target.value as any })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold disabled:bg-slate-100 disabled:text-slate-400"
-              >
-                <option value="INSTRUCTOR">อาจารย์ผู้สอน (INSTRUCTOR)</option>
-                <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์ / วัดผลปฏิบัติ)</option>
-                <option value="OFFICER">เจ้าหน้าที่บริการการศึกษา (OFFICER)</option>
-                <option value="ADMIN">ผู้ดูแลระบบ (ADMIN)</option>
-                {isSuper && (
-                  <option value="SUPER_ADMIN">👑 ผู้ดูแลระบบสูงสุด (SUPER_ADMIN)</option>
-                )}
-              </select>
-            )}
+            {(() => {
+              const currentRoleSelection: UserRole = isSuper
+                ? 'SUPER_ADMIN'
+                : editUserForm.isActingOfficer && (editUserForm.role === 'INSTRUCTOR' || !editUserForm.role)
+                ? 'ACTING_OFFICER'
+                : editUserForm.role || 'INSTRUCTOR';
 
-            {!isOfficer && !isSuper && editUserForm.role === 'INSTRUCTOR' && (
-              <label className="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl border border-sky-200 bg-sky-50/70 hover:bg-sky-50 cursor-pointer transition">
-                <input
-                  type="checkbox"
-                  checked={Boolean(editUserForm.isActingOfficer)}
-                  onChange={(e) =>
-                    setEditUserForm({ ...editUserForm, isActingOfficer: e.target.checked })
-                  }
-                  className="mt-0.5 w-4 h-4 rounded border-sky-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
-                />
-                <div className="text-xs leading-relaxed">
-                  <div className="font-bold text-sky-900">
-                    ☑️ ช่วยงานเจ้าหน้าที่ (เสริมสิทธิ์เจ้าหน้าที่โดยไม่เปลี่ยนบทบาทอาจารย์)
-                  </div>
-                  <div className="text-[11px] text-sky-700">
-                    เมื่อติ๊กเลือก อาจารย์ท่านนี้จะยังคงมีชื่อในตารางสอนและใบภาระงานสอนตามปกติทุกประการ แต่จะมีปุ่มเข้าหลังบ้าน (Admin Console) เพื่อช่วยตรวจเอกสารคำร้องและงานทะเบียนได้จนกว่าแอดมินจะติ๊กออก
-                  </div>
-                </div>
-              </label>
-            )}
+              return (
+                <>
+                  {isOfficer ? (
+                    <div className="p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-slate-700 font-semibold flex items-center justify-between text-xs">
+                      <span>{currentRoleSelection === 'ACTING_OFFICER' ? 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)' : 'อาจารย์ผู้สอน (INSTRUCTOR)'}</span>
+                      <span className="text-[10px] text-slate-400 font-normal">(เฉพาะ Super Admin ที่เปลี่ยนได้)</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={currentRoleSelection}
+                      disabled={isSuper}
+                      onChange={(e) => {
+                        const val = e.target.value as UserRole;
+                        if (val === 'ACTING_OFFICER') {
+                          setEditUserForm({
+                            ...editUserForm,
+                            role: 'INSTRUCTOR',
+                            isActingOfficer: true,
+                            instructorType:
+                              editUserForm.instructorType && !editUserForm.instructorType.includes('ผู้ช่วย')
+                                ? 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)'
+                                : editUserForm.instructorType || 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)',
+                          });
+                        } else if (val === 'OFFICER') {
+                          setEditUserForm({
+                            ...editUserForm,
+                            role: 'OFFICER',
+                            isActingOfficer: false,
+                          });
+                        } else if (val === 'STAFF') {
+                          setEditUserForm({
+                            ...editUserForm,
+                            role: 'STAFF',
+                            isActingOfficer: false,
+                          });
+                        } else if (val === 'ADMIN') {
+                          setEditUserForm({
+                            ...editUserForm,
+                            role: 'ADMIN',
+                            isActingOfficer: false,
+                          });
+                        } else if (val === 'VIPASSANA_MASTER') {
+                          setEditUserForm({
+                            ...editUserForm,
+                            role: 'VIPASSANA_MASTER',
+                            isActingOfficer: false,
+                          });
+                        } else if (val === 'SUPER_ADMIN') {
+                          setEditUserForm({
+                            ...editUserForm,
+                            role: 'SUPER_ADMIN',
+                            isActingOfficer: false,
+                          });
+                        } else {
+                          setEditUserForm({
+                            ...editUserForm,
+                            role: 'INSTRUCTOR',
+                            isActingOfficer: false,
+                          });
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer"
+                    >
+                      <option value="ADMIN">🛡️ ผู้ดูแลระบบ (ADMIN)</option>
+                      <option value="OFFICER">📋 เจ้าหน้าที่หลักสูตร (OFFICER)</option>
+                      <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)</option>
+                      <option value="STAFF">💼 เจ้าหน้าที่สายสนับสนุน / วิชาการ (STAFF)</option>
+                      <option value="INSTRUCTOR">👨‍🏫 อาจารย์ผู้สอน (INSTRUCTOR)</option>
+                      <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์ / วัดผลปฏิบัติ)</option>
+                      {isSuper && (
+                        <option value="SUPER_ADMIN">👑 ผู้ดูแลระบบสูงสุด (SUPER_ADMIN)</option>
+                      )}
+                    </select>
+                  )}
+
+                  {/* Role Explanation Card */}
+                  {currentRoleSelection === 'ADMIN' && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-[11px] text-purple-900 leading-relaxed flex items-start gap-2">
+                      <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>🛡️ ผู้ดูแลระบบ (ADMIN):</strong> มีสิทธิ์เข้าถึงและจัดการระบบทั้งหมด ตั้งค่าระบบ จัดการข้อมูลอาจารย์ นิสิต และนโยบายความปลอดภัย
+                      </div>
+                    </div>
+                  )}
+                  {currentRoleSelection === 'OFFICER' && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-[11px] text-teal-900 leading-relaxed flex items-start gap-2">
+                      <ClipboardList className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>📋 เจ้าหน้าที่หลักสูตร (OFFICER):</strong> มีสิทธิ์บริหารจัดการข้อมูลหลักสูตร ตารางสอน งานบริการการศึกษา ทะเบียนนิสิต และตรวจสอบคำร้อง
+                      </div>
+                    </div>
+                  )}
+                  {currentRoleSelection === 'ACTING_OFFICER' && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
+                      <GraduationCap className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>🎓 ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน):</strong> อาจารย์ผู้สอนที่ได้รับมอบหมายให้ช่วยงานเจ้าหน้าที่หลักสูตร สามารถช่วยลงทะเบียน ตรวจสอบคำร้อง และออกเอกสารได้ โดยยังคงมีสถานะเป็นอาจารย์ผู้สอนและตารางสอนตามปกติ
+                      </div>
+                    </div>
+                  )}
+                  {currentRoleSelection === 'STAFF' && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px] text-indigo-900 leading-relaxed flex items-start gap-2">
+                      <Briefcase className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>💼 เจ้าหน้าที่สายสนับสนุน (STAFF):</strong> บุคลากรสายสนับสนุนวิชาการ / ธุรการของคณะ
+                      </div>
+                    </div>
+                  )}
+
+                  {!isOfficer && !isSuper && editUserForm.role === 'INSTRUCTOR' && (
+                    <label className="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl border border-sky-200 bg-sky-50/70 hover:bg-sky-50 cursor-pointer transition">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(editUserForm.isActingOfficer)}
+                        onChange={(e) =>
+                          setEditUserForm({ ...editUserForm, isActingOfficer: e.target.checked })
+                        }
+                        className="mt-0.5 w-4 h-4 rounded border-sky-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                      />
+                      <div className="text-xs leading-relaxed">
+                        <div className="font-bold text-sky-900">
+                          ☑️ ช่วยงานเจ้าหน้าที่ (เสริมสิทธิ์เจ้าหน้าที่โดยไม่เปลี่ยนบทบาทอาจารย์)
+                        </div>
+                        <div className="text-[11px] text-sky-700">
+                          เมื่อติ๊กเลือก อาจารย์ท่านนี้จะยังคงมีชื่อในตารางสอนและใบภาระงานสอนตามปกติทุกประการ แต่จะมีปุ่มเข้าหลังบ้าน (Admin Console) เพื่อช่วยตรวจเอกสารคำร้องและงานทะเบียนได้จนกว่าแอดมินจะติ๊กออก
+                        </div>
+                      </div>
+                    </label>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           {/* Sticky Bottom Actions Bar */}

@@ -833,29 +833,37 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
                             isSuper
-                              ? 'bg-purple-50 text-purple-800 border-purple-300 shadow-xs'
+                              ? 'bg-purple-100 text-purple-800 border-purple-300 shadow-xs'
                               : u.role === 'ADMIN'
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
                               : u.role === 'OFFICER'
-                              ? 'bg-sky-50 text-sky-700 border-sky-200'
+                              ? 'bg-teal-100 text-teal-800 border-teal-300'
+                              : u.role === 'STAFF'
+                              ? 'bg-blue-100 text-blue-800 border-blue-300'
                               : u.role === 'VIPASSANA_MASTER'
-                              ? 'bg-rose-50 text-rose-800 border-rose-300 shadow-2xs'
+                              ? 'bg-rose-100 text-rose-800 border-rose-300 shadow-2xs'
                               : isStudent
                               ? 'bg-amber-50 text-amber-800 border-amber-300'
+                              : u.isActingOfficer
+                              ? 'bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30'
                               : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           }`}
                         >
                           {isSuper
                             ? '👑 ผู้ดูแลระบบสูงสุด'
                             : u.role === 'ADMIN'
-                            ? 'ผู้ดูแลระบบ'
+                            ? '🛡️ ผู้ดูแลระบบ (Admin)'
                             : u.role === 'OFFICER'
-                            ? 'เจ้าหน้าที่'
+                            ? '📋 เจ้าหน้าที่หลักสูตร'
+                            : u.role === 'STAFF'
+                            ? '💼 เจ้าหน้าที่สายสนับสนุน'
                             : u.role === 'VIPASSANA_MASTER'
                             ? '🧘 พระวิปัสสนาจารย์'
                             : isStudent
                             ? '🎓 นิสิต (STUDENT)'
-                            : 'อาจารย์ผู้สอน'}
+                            : u.isActingOfficer
+                            ? '🎓 ผู้ช่วยเจ้าหน้าที่'
+                            : '👨‍🏫 อาจารย์ผู้สอน'}
                         </span>
 
                         {/* Checkbox: ☑️ ช่วยงานเจ้าหน้าที่ สำหรับทั้งอาจารย์และนิสิต */}
@@ -1050,7 +1058,11 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                                       </div>
                                     ) : (
                                       <select
-                                        value={u.role || 'INSTRUCTOR'}
+                                        value={
+                                          u.isActingOfficer && (u.role === 'INSTRUCTOR' || !u.role)
+                                            ? 'ACTING_OFFICER'
+                                            : u.role || 'INSTRUCTOR'
+                                        }
                                         disabled={isSuper}
                                         onChange={(e) => {
                                           handleUpdateRole(u.id, e.target.value as any);
@@ -1059,10 +1071,12 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                                         className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
                                       >
                                         {isSuper && <option value="SUPER_ADMIN">👑 Super Admin</option>}
+                                        <option value="ADMIN">🛡️ ผู้ดูแลระบบ (Admin)</option>
+                                        <option value="OFFICER">📋 เจ้าหน้าที่หลักสูตร (OFFICER)</option>
+                                        <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)</option>
+                                        <option value="STAFF">💼 เจ้าหน้าที่สายสนับสนุน (STAFF)</option>
                                         <option value="INSTRUCTOR">👨‍🏫 อาจารย์ผู้สอน</option>
                                         <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์/วัดผล)</option>
-                                        <option value="OFFICER">📋 เจ้าหน้าที่หลักสูตร / ดูแลระบบ</option>
-                                        <option value="ADMIN">🛡️ ผู้ดูแลระบบ (Admin)</option>
                                       </select>
                                     )}
                                   </div>

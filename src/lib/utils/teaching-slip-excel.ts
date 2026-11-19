@@ -52,7 +52,13 @@ function roleLabelThai(role?: string): string {
     case 'ADMIN':
       return 'ผู้ดูแลระบบ (ADMIN)';
     case 'OFFICER':
-      return 'เจ้าหน้าที่ (OFFICER)';
+      return 'เจ้าหน้าที่หลักสูตร (OFFICER)';
+    case 'ACTING_OFFICER':
+      return 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)';
+    case 'STAFF':
+      return 'เจ้าหน้าที่สายสนับสนุน (STAFF)';
+    case 'VIPASSANA_MASTER':
+      return 'พระวิปัสสนาจารย์ (VIPASSANA_MASTER)';
     default:
       return 'อาจารย์ผู้สอน (INSTRUCTOR)';
   }

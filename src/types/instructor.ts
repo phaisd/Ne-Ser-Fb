@@ -4,7 +4,8 @@ export type UserRole =
   | 'OFFICER'
   | 'INSTRUCTOR'
   | 'VIPASSANA_MASTER'
-  | 'STAFF';
+  | 'STAFF'
+  | 'ACTING_OFFICER';
 
 export interface LoginAuditRecord {
   id: string;

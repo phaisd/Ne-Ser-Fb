@@ -172,15 +172,49 @@ export async function updateUserRole(
   newRole: UserRole
 ): Promise<boolean> {
   const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
-  const idx = list.findIndex((u) => u.id === userId || u.email === userId);
+  const cleanId = (userId || '').trim().toLowerCase();
+  let idx = list.findIndex(
+    (u) =>
+      (u.id || '').toLowerCase() === cleanId ||
+      (u.email || '').toLowerCase() === cleanId ||
+      u.previousIds?.some((p) => p.toLowerCase() === cleanId)
+  );
+
+  if (idx === -1) {
+    const allInstructors = await getInstructorAccounts();
+    const matched = allInstructors.find(
+      (u) =>
+        (u.id || '').toLowerCase() === cleanId ||
+        (u.email || '').toLowerCase() === cleanId
+    );
+    if (matched) {
+      list.push({ ...matched });
+      idx = list.length - 1;
+    }
+  }
+
   if (idx === -1) return false;
-  if (list[idx].email === 'phaisal.dis@mcu.ac.th' || list[idx].role === 'SUPER_ADMIN' || list[idx].isSuperAdmin) {
+  const target = list[idx];
+  if (!target) return false;
+
+  if (target.email === 'phaisal.dis@mcu.ac.th' || target.role === 'SUPER_ADMIN' || target.isSuperAdmin) {
     return false; // ห้ามลดสิทธิ์หรือเปลี่ยนแปลงบัญชี Super Admin
   }
-  list[idx].role = newRole;
-  list[idx].updatedAt = new Date().toISOString();
+
+  if (newRole === 'ACTING_OFFICER') {
+    target.role = 'INSTRUCTOR';
+    target.isActingOfficer = true;
+    if (target.instructorType && !target.instructorType.includes('ผู้ช่วย')) {
+      target.instructorType = 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)';
+    }
+  } else {
+    target.role = newRole;
+    target.isActingOfficer = false;
+  }
+
+  target.updatedAt = new Date().toISOString();
   writeLocalJson('instructors.json', list);
-  await syncInstructorToSheet(list[idx]);
+  await syncInstructorToSheet(target);
   return true;
 }
 
