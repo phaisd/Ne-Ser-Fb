@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
 import { downloadCsvFile, downloadXlsx, type XlsxSheet } from '@/lib/utils';
+import { VipassanaExecutiveReportModal } from './vipassana';
 
 interface VipassanaCombinedEvaluationModalProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ interface VipassanaCombinedEvaluationModalProps {
   onRefresh?: () => void;
 }
 
-interface StudentEvaluationRow {
+export interface StudentEvaluationRow {
   registration: EventRegistration;
   id: string;
   studentCode: string;
@@ -84,6 +85,7 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
 
   // Export Dropdown State
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showExecutiveReport, setShowExecutiveReport] = useState(false);
 
   // Batch Certificate Issuance Form State
   const [showCertDialog, setShowCertDialog] = useState(false);
@@ -686,6 +688,16 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
           <div className="flex items-center gap-2 flex-wrap relative">
             <button
               type="button"
+              onClick={() => setShowExecutiveReport(true)}
+              className="px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+              title="พิมพ์หรือส่งออกบันทึกข้อความสรุปผลโครงการวิปัสสนาเสนอคณบดี (Excel / PDF / A4)"
+            >
+              <FileText className="w-3.5 h-3.5 text-amber-700" />
+              <span>บันทึกข้อความเสนอคณบดี (PDF / Excel)</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleCopyLineBroadcast}
               className="px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
               title="คัดลอกข้อความสรุปผลโครงการสำหรับส่งเข้ากลุ่ม LINE นิสิต"
@@ -1270,6 +1282,18 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
               </div>
             </div>
           </div>
+        )}
+
+        {/* Executive Summary Memo Modal for Dean */}
+        {showExecutiveReport && (
+          <VipassanaExecutiveReportModal
+            isOpen={showExecutiveReport}
+            onClose={() => setShowExecutiveReport(false)}
+            event={event}
+            registrations={registrations}
+            evaluationRows={evaluationRows}
+            stats={stats}
+          />
         )}
       </div>
     </div>

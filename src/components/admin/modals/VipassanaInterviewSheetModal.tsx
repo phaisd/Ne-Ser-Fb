@@ -17,9 +17,15 @@ import {
   Info,
   LayoutGrid,
   Table as TableIcon,
+  Camera,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, SatipatthanaChecklist } from '@/types/event';
-import { VipassanaInterviewCardView, EditableInterviewRow, VipassanaGroupAssignmentModal } from './vipassana';
+import {
+  VipassanaInterviewCardView,
+  EditableInterviewRow,
+  VipassanaGroupAssignmentModal,
+  VipassanaRapidQrScannerModal,
+} from './vipassana';
 
 interface VipassanaInterviewSheetModalProps {
   isOpen: boolean;
@@ -94,6 +100,7 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isGroupAssignmentModalOpen, setIsGroupAssignmentModalOpen] = useState(false);
+  const [showRapidQrScanner, setShowRapidQrScanner] = useState(false);
 
   // Group Vipassana Masters from MeditationConfig
   const currentGroupMasters = useMemo(() => {
@@ -353,6 +360,17 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowRapidQrScanner(true)}
+              className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs flex items-center gap-1.5 transition border border-emerald-400/40 cursor-pointer shadow-md shadow-emerald-950/30"
+              title="เปิดกล้องสแกน QR Code บนป้ายคล้องคอของนิสิตเพื่อเปิดฟอร์มสอบอารมณ์ด่วนทันที"
+            >
+              <Camera className="w-4 h-4 text-emerald-100" />
+              <span className="hidden sm:inline">สแกน QR สอบอารมณ์ด่วน</span>
+              <span className="sm:hidden">สแกน QR</span>
+            </button>
+
             <button
               type="button"
               onClick={handlePrint}
@@ -951,6 +969,33 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
           registrations={registrations}
           onAssignmentsSaved={() => {
             if (onSaved) onSaved();
+          }}
+        />
+      )}
+
+      {/* Vipassana Rapid QR Interview Scanner Modal */}
+      {showRapidQrScanner && (
+        <VipassanaRapidQrScannerModal
+          isOpen={showRapidQrScanner}
+          onClose={() => setShowRapidQrScanner(false)}
+          event={event}
+          registrations={registrations}
+          rows={rows}
+          selectedSession={selectedSession}
+          sessionDate={sessionDate}
+          meditationMaster={meditationMaster}
+          onInterviewSaved={(regId, updatedRow) => {
+            setRows((prev) => ({
+              ...prev,
+              [regId]: updatedRow,
+            }));
+            if (onSaved) onSaved();
+          }}
+          onSelectStudentInMainView={(regId) => {
+            const found = registrations.find((r) => r.id === regId);
+            if (found) {
+              setSearchQuery(found.groupSpecificCode || found.studentCode);
+            }
           }}
         />
       )}
