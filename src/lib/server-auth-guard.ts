@@ -100,7 +100,7 @@ export function isServerStaffOrInstructor(user?: ServerAuthUser | null): boolean
   if (!user) return false;
   if (isServerAdminOrOfficer(user)) return true;
   const role = String(user.role || '').toUpperCase();
-  return role === 'INSTRUCTOR';
+  return role === 'INSTRUCTOR' || role === 'VIPASSANA_MASTER';
 }
 
 /**

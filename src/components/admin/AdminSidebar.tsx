@@ -44,6 +44,7 @@ export interface AdminSidebarProps {
   studentsTotalCount: number;
   isOfficer: boolean;
   isSuperAdmin: boolean;
+  isVipassanaMaster?: boolean;
   currentUser?: AuthUser | null;
   handleLogout: () => void;
 }
@@ -58,6 +59,7 @@ export function AdminSidebar({
   studentsTotalCount,
   isOfficer,
   isSuperAdmin,
+  isVipassanaMaster,
   currentUser,
   handleLogout,
 }: AdminSidebarProps) {
@@ -265,67 +267,69 @@ export function AdminSidebar({
               }`}
             >
               <Award className="w-4 h-4 text-amber-400" />
-              <span>งานกิจกรรมนิสิต</span>
+              <span>{isVipassanaMaster ? '🧘 สอบอารมณ์วิปัสสนา & กิจกรรม' : 'งานกิจกรรมนิสิต'}</span>
             </button>
           </nav>
         </div>
 
-        {/* Section 2: Administration & Configuration */}
-        <div>
-          <div className="px-3 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-            {isOfficer ? 'การจัดการอาจารย์ (Instructor Ops)' : 'การจัดการและตั้งค่า (Administration)'}
+        {/* Section 2: Administration & Configuration (Hidden for Vipassana Master) */}
+        {!isVipassanaMaster && (
+          <div>
+            <div className="px-3 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+              {isOfficer ? 'การจัดการอาจารย์ (Instructor Ops)' : 'การจัดการและตั้งค่า (Administration)'}
+            </div>
+            <nav className="space-y-1">
+              <button
+                onClick={() => {
+                  setActiveTab('USERS');
+                  setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  activeTab === 'USERS'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <UserCog className="w-4 h-4 text-sky-400" />
+                <span>{isOfficer ? 'จัดการไอดี & รหัสอาจารย์' : 'จัดการผู้ใช้และบทบาท'}</span>
+              </button>
+
+              {!isOfficer && (
+                <>
+                  <button
+                    onClick={() => {
+                      setActiveTab('BRANDING');
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                      activeTab === 'BRANDING'
+                        ? 'bg-pink-600 text-white shadow-md shadow-pink-600/30 font-bold'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <Palette className="w-4 h-4 text-pink-400" />
+                    <span>ตั้งค่าโลโก้ & ข้อความ</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('SHEETS');
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                      activeTab === 'SHEETS'
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <Table2 className="w-4 h-4 text-emerald-400" />
+                    <span>เชื่อมต่อ Google Sheets</span>
+                  </button>
+                </>
+              )}
+            </nav>
           </div>
-          <nav className="space-y-1">
-            <button
-              onClick={() => {
-                setActiveTab('USERS');
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'USERS'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <UserCog className="w-4 h-4 text-sky-400" />
-              <span>{isOfficer ? 'จัดการไอดี & รหัสอาจารย์' : 'จัดการผู้ใช้และบทบาท'}</span>
-            </button>
-
-            {!isOfficer && (
-              <>
-                <button
-                  onClick={() => {
-                    setActiveTab('BRANDING');
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                    activeTab === 'BRANDING'
-                      ? 'bg-pink-600 text-white shadow-md shadow-pink-600/30 font-bold'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <Palette className="w-4 h-4 text-pink-400" />
-                  <span>ตั้งค่าโลโก้ & ข้อความ</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('SHEETS');
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                    activeTab === 'SHEETS'
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <Table2 className="w-4 h-4 text-emerald-400" />
-                  <span>เชื่อมต่อ Google Sheets</span>
-                </button>
-              </>
-            )}
-          </nav>
-        </div>
+        )}
       </div>
 
       {/* Sidebar Bottom Profile & Public Site Link */}
@@ -337,10 +341,12 @@ export function AdminSidebar({
                 ? 'bg-gradient-to-tr from-purple-600 to-indigo-600 border border-purple-400/30'
                 : isOfficer
                 ? 'bg-sky-600'
+                : isVipassanaMaster
+                ? 'bg-rose-700 border border-rose-500/30'
                 : 'bg-orange-600'
             }`}
           >
-            {isSuperAdmin ? '👑' : isOfficer ? '👮' : currentUser?.name ? currentUser.name.charAt(0) : 'A'}
+            {isSuperAdmin ? '👑' : isOfficer ? '👮' : isVipassanaMaster ? '🧘' : currentUser?.name ? currentUser.name.charAt(0) : 'A'}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-xs font-bold text-white leading-snug break-words">
@@ -353,6 +359,8 @@ export function AdminSidebar({
                   ? 'ผู้ดูแลระบบสูงสุด'
                   : isOfficer
                   ? 'เจ้าหน้าที่'
+                  : isVipassanaMaster
+                  ? 'พระวิปัสสนาจารย์'
                   : currentUser?.role === 'ADMIN'
                   ? 'ผู้ดูแลระบบ'
                   : 'อาจารย์ผู้สอน';
@@ -372,6 +380,8 @@ export function AdminSidebar({
                 ? 'อาจารย์ (☑️ ช่วยงานเจ้าหน้าที่)'
                 : isOfficer
                 ? 'เจ้าหน้าที่ (OFFICER)'
+                : isVipassanaMaster
+                ? 'พระวิปัสสนาจารย์ (VIPASSANA MASTER)'
                 : currentUser?.role || 'ADMIN'}
             </div>
           </div>

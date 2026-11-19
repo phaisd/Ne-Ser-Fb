@@ -67,7 +67,9 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
 
   const canManageCheckin =
-    isAdminOrOfficer(currentUser) || currentUser?.role === 'INSTRUCTOR';
+    isAdminOrOfficer(currentUser) ||
+    currentUser?.role === 'INSTRUCTOR' ||
+    currentUser?.role === 'VIPASSANA_MASTER';
 
   // Student search for transcript
   const [searchStudentCode, setSearchStudentCode] = useState('');

@@ -114,6 +114,10 @@ export default function AdminConsolePage() {
     return (isRegularOfficer || isActing) && !isSuperAdmin;
   }, [currentUser, isSuperAdmin]);
 
+  const isVipassanaMaster = useMemo(() => {
+    return currentUser?.role === 'VIPASSANA_MASTER';
+  }, [currentUser]);
+
   // Load Data function definition (hoisted for hooks)
   const loadData = () => {
     setLoading(true);
@@ -351,12 +355,15 @@ export default function AdminConsolePage() {
     } catch (e) {}
   }, []);
 
-  // Redirect Officer away from restricted tabs (BRANDING, SHEETS) to DASHBOARD
+  // Redirect Officer and Vipassana Master away from restricted tabs
   useEffect(() => {
     if (isOfficer && (activeTab === 'BRANDING' || activeTab === 'SHEETS')) {
       setActiveTab('DASHBOARD');
     }
-  }, [isOfficer, activeTab]);
+    if (isVipassanaMaster && (activeTab === 'BRANDING' || activeTab === 'SHEETS' || activeTab === 'USERS')) {
+      setActiveTab('EVENTS');
+    }
+  }, [isOfficer, isVipassanaMaster, activeTab]);
 
   const handleArchiveYear = async () => {
     if (!confirm(`ยืนยันการสรุปปิดยอดและจัดเก็บประวัติปีการศึกษา ${archivingYear} หรือไม่?`)) return;
@@ -549,6 +556,7 @@ export default function AdminConsolePage() {
         studentsTotalCount={studentsCount.total}
         isOfficer={isOfficer}
         isSuperAdmin={isSuperAdmin}
+        isVipassanaMaster={isVipassanaMaster}
         currentUser={currentUser}
         handleLogout={handleLogout}
       />

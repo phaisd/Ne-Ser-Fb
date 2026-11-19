@@ -24,10 +24,16 @@ export function isAdminOrOfficer(user?: AuthUser | null): boolean {
     role === 'ADMIN' ||
     role === 'OFFICER' ||
     role === 'STAFF' ||
+    role === 'VIPASSANA_MASTER' ||
     user.isSuperAdmin === true ||
     user.isActingOfficer === true ||
     user.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th'
   );
+}
+
+export function isVipassanaMaster(user?: AuthUser | null): boolean {
+  if (!user) return false;
+  return String(user.role || '').toUpperCase() === 'VIPASSANA_MASTER';
 }
 
 /**
