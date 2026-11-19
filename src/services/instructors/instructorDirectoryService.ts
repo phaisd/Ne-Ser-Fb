@@ -45,13 +45,15 @@ export async function syncInstructorToSheet(instructor: InstructorAccount): Prom
       Array.isArray(instructor.aliases) ? instructor.aliases.join(';') : (instructor.aliases || ''),
       instructor.updatedAt || new Date().toISOString(),
       instructor.isActingOfficer ? 'TRUE' : 'FALSE',
+      instructor.ecclesiasticalTitle || '',
+      instructor.contactAddress || '',
     ];
 
     if (rowIndex !== -1) {
       const sheetRowNum = rowIndex + 2;
-      await gClient.updateValues(`Instructors!A${sheetRowNum}:M${sheetRowNum}`, [rowData]);
+      await gClient.updateValues(`Instructors!A${sheetRowNum}:O${sheetRowNum}`, [rowData]);
     } else {
-      await gClient.appendValues('Instructors!A:M', [rowData]);
+      await gClient.appendValues('Instructors!A:O', [rowData]);
     }
   } catch (err) {
     console.warn('Google Sheets syncInstructorToSheet warning:', err);
@@ -119,6 +121,9 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
             sheetActingOfficer = r[12] !== undefined && r[12] !== '' ? String(r[12]).trim().toUpperCase() : undefined;
           }
 
+          const sheetEcclesiastical = r[13] !== undefined && r[13] !== '' ? String(r[13]).trim() : undefined;
+          const sheetContactAddress = r[14] !== undefined && r[14] !== '' ? String(r[14]).trim() : undefined;
+
           // Skip completely empty cleared rows
           if (!id && !name && !email && !gmail) {
             return [];
@@ -170,6 +175,8 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
             gmail: effectiveGmail,
             department: department || localMatch?.department || 'คณะพุทธศาสตร์ มจร',
             instructorType: instructorType || localMatch?.instructorType || 'อาจารย์ประจำ',
+            ecclesiasticalTitle: sheetEcclesiastical || localMatch?.ecclesiasticalTitle || undefined,
+            contactAddress: sheetContactAddress || localMatch?.contactAddress || undefined,
             role: isSuper ? 'SUPER_ADMIN' : effectiveRole,
             isActive: isActive,
             isSuspended: isSuspended,
@@ -428,8 +435,23 @@ export interface BatchImportInstructorItem {
   gmail?: string;
   department?: string;
   instructorType?: string; // 'อาจารย์ประจำ' | 'อาจารย์พิเศษ' | 'ผู้ช่วยสอน (TA)'
+  ecclesiasticalTitle?: string; // ตำแหน่งทางคณะสงฆ์ เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระมหา...
+  contactAddress?: string; // ที่อยู่ติดต่อ / สังกัดวัด
   role?: UserRole;
   password?: string;
+}
+
+export interface ProcessedBatchImportItem {
+  name: string;
+  nameEn?: string;
+  email: string;
+  password?: string;
+  instructorType?: string;
+  ecclesiasticalTitle?: string;
+  department?: string;
+  contactAddress?: string;
+  role?: UserRole;
+  action: 'CREATED' | 'UPDATED';
 }
 
 export async function batchImportInstructors(
@@ -438,29 +460,13 @@ export async function batchImportInstructors(
   createdCount: number;
   updatedCount: number;
   errors: string[];
-  processed: Array<{
-    name: string;
-    nameEn?: string;
-    email: string;
-    password?: string;
-    instructorType?: string;
-    role?: UserRole;
-    action: 'CREATED' | 'UPDATED';
-  }>;
+  processed: ProcessedBatchImportItem[];
 }> {
   const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
   let createdCount = 0;
   let updatedCount = 0;
   const errors: string[] = [];
-  const processed: Array<{
-    name: string;
-    nameEn?: string;
-    email: string;
-    password?: string;
-    instructorType?: string;
-    role?: UserRole;
-    action: 'CREATED' | 'UPDATED';
-  }> = [];
+  const processed: ProcessedBatchImportItem[] = [];
 
   for (const item of items) {
     if (!item.name || !item.name.trim()) {
@@ -491,6 +497,12 @@ export async function batchImportInstructors(
       if (item.instructorType && item.instructorType.trim()) {
         found.instructorType = item.instructorType.trim();
       }
+      if (item.ecclesiasticalTitle && item.ecclesiasticalTitle.trim()) {
+        found.ecclesiasticalTitle = item.ecclesiasticalTitle.trim();
+      }
+      if (item.contactAddress && item.contactAddress.trim()) {
+        found.contactAddress = item.contactAddress.trim();
+      }
       if (item.nameEn && item.nameEn.trim()) {
         found.nameEn = item.nameEn.trim();
       }
@@ -519,6 +531,9 @@ export async function batchImportInstructors(
         email: found.email,
         password: found.password || found.defaultPassword || 'mcu123456',
         instructorType: found.instructorType,
+        ecclesiasticalTitle: found.ecclesiasticalTitle,
+        department: found.department,
+        contactAddress: found.contactAddress,
         role: found.role,
         action: 'UPDATED',
       });
@@ -564,6 +579,8 @@ export async function batchImportInstructors(
         defaultPassword: defaultPwd,
         department: item.department ? item.department.trim() : defaultDept,
         instructorType: item.instructorType ? item.instructorType.trim() : defaultType,
+        ecclesiasticalTitle: item.ecclesiasticalTitle ? item.ecclesiasticalTitle.trim() : undefined,
+        contactAddress: item.contactAddress ? item.contactAddress.trim() : undefined,
         role: item.role || 'INSTRUCTOR',
         coursesCount: 0,
         isActive: true,
@@ -579,6 +596,9 @@ export async function batchImportInstructors(
         email: assignedEmail,
         password: defaultPwd,
         instructorType: newAcc.instructorType,
+        ecclesiasticalTitle: newAcc.ecclesiasticalTitle,
+        department: newAcc.department,
+        contactAddress: newAcc.contactAddress,
         role: newAcc.role,
         action: 'CREATED',
       });

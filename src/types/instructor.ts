@@ -27,6 +27,8 @@ export interface InstructorAccount {
   defaultPassword?: string;
   department?: string;
   instructorType?: string; // ประเภทอาจารย์ เช่น 'อาจารย์ประจำ', 'อาจารย์พิเศษ', 'อาจารย์ผู้ช่วยสอน'
+  ecclesiasticalTitle?: string; // ตำแหน่งทางคณะสงฆ์ เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระมหา...
+  contactAddress?: string; // ที่อยู่ติดต่อ / สังกัดวัด
   role?: UserRole;
   coursesCount?: number;
   isActive?: boolean;
@@ -65,6 +67,8 @@ export interface AuthUser {
   isSuperAdmin?: boolean;
   isActingOfficer?: boolean;
   department?: string;
+  ecclesiasticalTitle?: string;
+  contactAddress?: string;
   avatarUrl?: string;
 }
 

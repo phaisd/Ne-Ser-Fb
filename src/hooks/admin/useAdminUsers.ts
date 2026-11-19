@@ -8,6 +8,7 @@ import type {
   ExistingInstructorMatch,
   ProvisionCandidate,
 } from '@/components/admin/modals/AutoProvisionModal';
+import type { NewUserFormData } from '@/components/admin/modals/AddUserModal';
 
 export type AdminUserFilterItem = Omit<UserAccount, 'role'> & {
   role?: UserRole | 'STUDENT';
@@ -67,6 +68,8 @@ export function useAdminUsers({
     aliasesText: '',
     instructorType: 'อาจารย์ประจำ',
     department: 'คณะพุทธศาสตร์ มจร',
+    ecclesiasticalTitle: '',
+    contactAddress: '',
     role: 'INSTRUCTOR' as UserRole,
     isActingOfficer: false,
   });
@@ -78,13 +81,15 @@ export function useAdminUsers({
   const [copiedLineUserId, setCopiedLineUserId] = useState<string | null>(null);
   const [isBatchTeachingSlipOpen, setIsBatchTeachingSlipOpen] = useState(false);
 
-  const [newUserForm, setNewUserForm] = useState({
+  const [newUserForm, setNewUserForm] = useState<NewUserFormData>({
     name: '',
     nameEn: '',
     email: '',
     gmail: '',
     instructorType: 'อาจารย์ประจำ',
     department: 'คณะพุทธศาสตร์ มจร',
+    ecclesiasticalTitle: '',
+    contactAddress: '',
     role: 'INSTRUCTOR' as UserRole,
     password: 'mcu123456',
   });
@@ -250,6 +255,8 @@ export function useAdminUsers({
       aliasesText: Array.isArray(user.aliases) ? user.aliases.join(', ') : '',
       instructorType: user.instructorType || 'อาจารย์ประจำ',
       department: user.department || 'คณะพุทธศาสตร์ มจร',
+      ecclesiasticalTitle: user.ecclesiasticalTitle || '',
+      contactAddress: user.contactAddress || '',
       role: user.role || 'INSTRUCTOR',
       isActingOfficer: Boolean(user.isActingOfficer),
     });
@@ -578,6 +585,8 @@ ${coursesText}
           gmail: '',
           instructorType: 'อาจารย์ประจำ',
           department: 'คณะพุทธศาสตร์ มจร',
+          ecclesiasticalTitle: '',
+          contactAddress: '',
           role: 'INSTRUCTOR',
           password: 'mcu123456',
         });

@@ -11,6 +11,8 @@ export interface NewUserFormData {
   gmail: string;
   instructorType: string;
   department: string;
+  ecclesiasticalTitle?: string;
+  contactAddress?: string;
   role: UserRole;
   password: string;
 }
@@ -192,6 +194,29 @@ export function AddUserModal({
                 onChange={(e) => setNewUserForm({ ...newUserForm, department: e.target.value })}
                 placeholder="เช่น คณะพุทธศาสตร์ หรือ อาจารย์พิเศษภายนอก"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">ตำแหน่งทางคณะสงฆ์ / สมณศักดิ์:</label>
+              <input
+                type="text"
+                value={newUserForm.ecclesiasticalTitle || ''}
+                onChange={(e) => setNewUserForm({ ...newUserForm, ecclesiasticalTitle: e.target.value })}
+                placeholder="เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระครู..."
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+              />
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">ที่อยู่ติดต่อ / สังกัดวัด:</label>
+              <input
+                type="text"
+                value={newUserForm.contactAddress || ''}
+                onChange={(e) => setNewUserForm({ ...newUserForm, contactAddress: e.target.value })}
+                placeholder="เช่น วัดมหาธาตุยุวราชรังสฤษฎิ์ กรุงเทพฯ"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
               />
             </div>
           </div>

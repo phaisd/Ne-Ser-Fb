@@ -294,6 +294,14 @@ export async function updateUserProfile(
     gmail: newGmail,
     department: updates.department !== undefined ? updates.department.trim() : current.department,
     instructorType: updates.instructorType !== undefined ? updates.instructorType.trim() : current.instructorType,
+    ecclesiasticalTitle:
+      updates.ecclesiasticalTitle !== undefined
+        ? updates.ecclesiasticalTitle.trim()
+        : current.ecclesiasticalTitle,
+    contactAddress:
+      updates.contactAddress !== undefined
+        ? updates.contactAddress.trim()
+        : current.contactAddress,
     role: updates.role || current.role,
     isSuperAdmin: isSuper || updates.isSuperAdmin || false,
     isActingOfficer:
@@ -516,6 +524,8 @@ export async function createUserAccount(accountData: Partial<InstructorAccount>)
     defaultPassword: 'mcu123456',
     department: accountData.department ? accountData.department.trim() : 'คณะพุทธศาสตร์ มจร',
     instructorType: accountData.instructorType ? accountData.instructorType.trim() : 'อาจารย์ประจำ',
+    ecclesiasticalTitle: accountData.ecclesiasticalTitle ? accountData.ecclesiasticalTitle.trim() : undefined,
+    contactAddress: accountData.contactAddress ? accountData.contactAddress.trim() : undefined,
     role: accountData.role || 'INSTRUCTOR',
     coursesCount: 0,
     isActive: true,

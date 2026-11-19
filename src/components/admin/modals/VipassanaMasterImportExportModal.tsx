@@ -31,6 +31,7 @@ import {
 } from '@/lib/parsers/csvParser';
 import { stripLeadingTitles } from '@/lib/utils/name-matcher';
 import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
+import { parseXlsxToTsv } from '@/lib/utils/xlsx-import';
 
 interface VipassanaMasterImportExportModalProps {
   isOpen: boolean;
@@ -44,6 +45,9 @@ export interface ParsedMasterItem {
   name: string;
   nameEn?: string;
   position: string; // ประธาน, รองประธาน, พระวิปัสสนาจารย์, เลขานุการ, ฯลฯ
+  ecclesiasticalTitle?: string; // ตำแหน่งทางคณะสงฆ์ เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระมหา...
+  department?: string; // หน่วยงาน / ภาควิชา
+  contactAddress?: string; // ที่อยู่ติดต่อ / สังกัดวัด
   email: string;
   password: string;
   isExisting?: boolean;
@@ -170,6 +174,9 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
       let name = '';
       let nameEn = '';
       let position = 'พระวิปัสสนาจารย์';
+      let ecclesiasticalTitle = '';
+      let department = '';
+      let contactAddress = '';
       let email = '';
       let password = '';
 
@@ -198,8 +205,35 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
         position =
           obj['position'] ||
           obj['ตำแหน่ง'] ||
+          obj['ตำแหน่งในโครงการ'] ||
           obj['หน้าที่'] ||
           'พระวิปัสสนาจารย์';
+
+        ecclesiasticalTitle =
+          obj['ecclesiasticaltitle'] ||
+          obj['ตำแหน่งทางคณะสงฆ์'] ||
+          obj['ตำแหน่งสงฆ์'] ||
+          obj['สมณศักดิ์'] ||
+          obj['สังกัดสงฆ์'] ||
+          '';
+
+        department =
+          obj['department'] ||
+          obj['หน่วยงาน'] ||
+          obj['ภาควิชา'] ||
+          obj['หน่วยงาน/ภาควิชา'] ||
+          obj['สังกัด'] ||
+          '';
+
+        contactAddress =
+          obj['contactaddress'] ||
+          obj['ที่อยู่ติดต่อ'] ||
+          obj['ที่อยู่'] ||
+          obj['สังกัดวัด'] ||
+          obj['วัด'] ||
+          obj['ที่อยู่วัด'] ||
+          obj['address'] ||
+          '';
 
         email = obj['email'] || obj['อีเมล'] || obj['ไอดี'] || obj['username'] || '';
         password = obj['password'] || obj['รหัสผ่าน'] || '';
@@ -253,6 +287,9 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
         name: cleanName,
         nameEn: nameEn.trim() || existingMatch?.nameEn,
         position: cleanPos,
+        ecclesiasticalTitle: ecclesiasticalTitle.trim() || existingMatch?.ecclesiasticalTitle || '',
+        department: department.trim() || existingMatch?.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
+        contactAddress: contactAddress.trim() || existingMatch?.contactAddress || '',
         email: finalEmail,
         password: finalPassword,
         isExisting: !!existingMatch,
@@ -269,15 +306,23 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
     parseRawTextToMasters(val);
   };
 
-  // File upload handler
+  // File upload handler (Excel .xlsx and CSV)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      const text = await file.text();
-      setRawText(text);
-      parseRawTextToMasters(text);
+      const lowerName = file.name.toLowerCase();
+      if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
+        const buffer = await file.arrayBuffer();
+        const tsv = await parseXlsxToTsv(buffer);
+        setRawText(tsv);
+        parseRawTextToMasters(tsv);
+      } else {
+        const text = await file.text();
+        setRawText(text);
+        parseRawTextToMasters(text);
+      }
     } catch (err) {
       alert('ไม่สามารถอ่านไฟล์ได้: ' + (err instanceof Error ? err.message : String(err)));
     }
@@ -291,38 +336,92 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
       'ลำดับ',
       'ชื่อ-ฉายา (ภาษาไทย)',
       'ชื่อ-ฉายา (ภาษาอังกฤษ)',
-      'ตำแหน่ง',
+      'ตำแหน่งในโครงการ',
+      'ตำแหน่งทางคณะสงฆ์',
+      'หน่วยงาน / ภาควิชา',
+      'ที่อยู่ติดต่อ / สังกัดวัด',
       'ไอดีเข้าใช้งาน/อีเมล (เว้นว่างได้ เพื่อสร้างอัตโนมัติ)',
       'รหัสผ่านเริ่มต้น (เว้นว่างได้ เพื่อสร้างอัตโนมัติ)',
     ];
 
     const sampleRows = [
-      [1, 'พระธรรมวชิรมุนี', 'Phra Dhammavajiramuni', 'ประธานพระวิปัสสนาจารย์', 'vipassana01@mcu.ac.th', 'mcu123456'],
-      [2, 'พระมหาบุญช่วย ปภสฺสโร', 'Phra Maha Boonchuay Pabhassaro', 'รองประธานพระวิปัสสนาจารย์', '', ''],
-      [3, 'พระครูปลัดสุวัฒนบัณฑิตคุณ', 'Phra Khru Palat Suwattanabanditkun', 'เลขานุการพระวิปัสสนาจารย์', '', ''],
-      [4, 'พระอาจารย์มหาเอกสิทธิ์', 'Phra Ajahn Ekkasit', 'พระวิปัสสนาจารย์', '', ''],
-      [5, 'Phra Ajahn John Smith', 'Phra Ajahn John Smith', 'พระวิปัสสนาจารย์', '', ''],
+      [
+        1,
+        'พระธรรมวชิรมุนี',
+        'Phra Dhammavajiramuni',
+        'ประธานพระวิปัสสนาจารย์',
+        'เจ้าคณะภาค ๑๐ / ที่ปรึกษาฯ',
+        'ฝ่ายวิปัสสนาธุระ คณะพุทธศาสตร์',
+        'วัดมหาธาตุยุวราชรังสฤษฎิ์ กรุงเทพฯ',
+        'vipassana01@mcu.ac.th',
+        'mcu123456',
+      ],
+      [
+        2,
+        'พระมหาบุญช่วย ปภสฺสโร',
+        'Phra Maha Boonchuay Pabhassaro',
+        'รองประธานพระวิปัสสนาจารย์',
+        'เจ้าอาวาสวัดวังผาหมู',
+        'คณะพุทธศาสตร์ ภาควิชาพระพุทธศาสนา',
+        'วัดวังผาหมู อ.พระพรหม จ.นครศรีธรรมราช',
+        '',
+        '',
+      ],
+      [
+        3,
+        'พระครูปลัดสุวัฒนบัณฑิตคุณ',
+        'Phra Khru Palat Suwattanabanditkun',
+        'เลขานุการพระวิปัสสนาจารย์',
+        'ผู้ช่วยเจ้าอาวาสวัดจากแดง',
+        'สำนักงานคณบดี คณะพุทธศาสตร์',
+        'วัดจากแดง อ.พระประแดง จ.สมุทรปราการ',
+        '',
+        '',
+      ],
+      [
+        4,
+        'พระอาจารย์มหาเอกสิทธิ์',
+        'Phra Ajahn Ekkasit',
+        'พระวิปัสสนาจารย์',
+        'พระวิปัสสนาจารย์ประจำศูนย์',
+        'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
+        'สถาบันวิปัสสนาธุระ มจร วังน้อย พระนครศรีอยุธยา',
+        '',
+        '',
+      ],
+      [
+        5,
+        'Phra Ajahn John Smith',
+        'Phra Ajahn John Smith',
+        'พระวิปัสสนาจารย์',
+        '-',
+        'วิทยาลัยพุทธศาสตร์นานาชาติ (IBSC)',
+        'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย วังน้อย',
+        '',
+        '',
+      ],
     ];
 
     const sheet: XlsxSheet = {
       name: 'พระวิปัสสนาจารย์',
       title: 'แบบฟอร์มนำเข้ารายชื่อพระวิปัสสนาจารย์ ประจำปีการศึกษา',
-      subtitle: 'ไอดีและรหัสผ่านหากเว้นว่างไว้ ระบบจะสร้างให้อัตโนมัติ (vipassana01@mcu.ac.th / mcu123456)',
+      subtitle: 'รองรับข้อมูลตำแหน่งทางคณะสงฆ์, หน่วยงาน/ภาควิชา และที่อยู่ติดต่อ (ไอดีและรหัสผ่านสร้างให้อัตโนมัติ)',
       headers,
       rows: sampleRows,
-      columnWidths: [8, 32, 32, 28, 30, 24],
+      columnWidths: [8, 30, 30, 26, 28, 28, 36, 30, 22],
     };
 
     downloadXlsx('เทมเพลตนำเข้า_พระวิปัสสนาจารย์.xlsx', [sheet]);
   };
 
   const handleDownloadTemplateCsv = () => {
-    const headers = 'ลำดับ,ชื่อ-ฉายา (ภาษาไทย),ชื่อ-ฉายา (ภาษาอังกฤษ),ตำแหน่ง,ไอดีเข้าใช้งาน,รหัสผ่าน';
+    const headers =
+      'ลำดับ,ชื่อ-ฉายา (ภาษาไทย),ชื่อ-ฉายา (ภาษาอังกฤษ),ตำแหน่งในโครงการ,ตำแหน่งทางคณะสงฆ์,หน่วยงาน / ภาควิชา,ที่อยู่ติดต่อ / สังกัดวัด,ไอดีเข้าใช้งาน,รหัสผ่าน';
     const sampleRows = [
-      '1,พระธรรมวชิรมุนี,Phra Dhammavajiramuni,ประธานพระวิปัสสนาจารย์,vipassana01@mcu.ac.th,mcu123456',
-      '2,พระมหาบุญช่วย ปภสฺสโร,Phra Maha Boonchuay Pabhassaro,รองประธานพระวิปัสสนาจารย์,,',
-      '3,พระครูปลัดสุวัฒนบัณฑิตคุณ,Phra Khru Palat Suwattanabanditkun,เลขานุการพระวิปัสสนาจารย์,,',
-      '4,พระอาจารย์มหาเอกสิทธิ์,Phra Ajahn Ekkasit,พระวิปัสสนาจารย์,,',
+      '1,พระธรรมวชิรมุนี,Phra Dhammavajiramuni,ประธานพระวิปัสสนาจารย์,เจ้าคณะภาค ๑๐,ฝ่ายวิปัสสนาธุระ คณะพุทธศาสตร์,วัดมหาธาตุยุวราชรังสฤษฎิ์ กรุงเทพฯ,vipassana01@mcu.ac.th,mcu123456',
+      '2,พระมหาบุญช่วย ปภสฺสโร,Phra Maha Boonchuay Pabhassaro,รองประธานพระวิปัสสนาจารย์,เจ้าอาวาสวัดวังผาหมู,คณะพุทธศาสตร์ ภาควิชาพระพุทธศาสนา,วัดวังผาหมู จ.นครศรีธรรมราช,,',
+      '3,พระครูปลัดสุวัฒนบัณฑิตคุณ,Phra Khru Palat Suwattanabanditkun,เลขานุการพระวิปัสสนาจารย์,ผู้ช่วยเจ้าอาวาสวัดจากแดง,สำนักงานคณบดี คณะพุทธศาสตร์,วัดจากแดง จ.สมุทรปราการ,,',
+      '4,พระอาจารย์มหาเอกสิทธิ์,Phra Ajahn Ekkasit,พระวิปัสสนาจารย์,พระวิปัสสนาจารย์ประจำศูนย์,ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์,สถาบันวิปัสสนาธุระ มจร วังน้อย,,',
     ];
     const csvContent = '\uFEFF' + [headers, ...sampleRows].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -358,7 +457,9 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
             email: item.email,
             password: item.password,
             instructorType: item.position,
-            department: 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
+            ecclesiasticalTitle: item.ecclesiasticalTitle,
+            department: item.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
+            contactAddress: item.contactAddress,
             role: 'VIPASSANA_MASTER',
           })),
         }),
@@ -391,7 +492,10 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
       'ลำดับ',
       'ชื่อ-ฉายา (ภาษาไทย)',
       'ชื่อ-ฉายา (ภาษาอังกฤษ)',
-      'ตำแหน่ง',
+      'ตำแหน่งในโครงการ',
+      'ตำแหน่งทางคณะสงฆ์',
+      'หน่วยงาน / ภาควิชา',
+      'ที่อยู่ติดต่อ / สังกัดวัด',
       'บทบาท (Role)',
       'ไอดีเข้าใช้งาน (Username/Email)',
       'รหัสผ่านเริ่มต้น (Default Password)',
@@ -402,7 +506,10 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
       idx + 1,
       m.name || '',
       m.nameEn || '',
-      m.instructorType || 'พระวิปัสสนาจารย์',
+      m.instructorType || m.position || 'พระวิปัสสนาจารย์',
+      m.ecclesiasticalTitle || '-',
+      m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
+      m.contactAddress || '-',
       m.role || 'VIPASSANA_MASTER',
       m.email || '',
       m.defaultPassword || m.password || 'mcu123456',
@@ -415,22 +522,27 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
       subtitle: `ส่งออกเมื่อ ${new Date().toLocaleDateString('th-TH')} • จำนวนทั้งหมด ${rows.length} รูป`,
       headers,
       rows,
-      columnWidths: [8, 30, 30, 26, 20, 32, 22, 14],
+      columnWidths: [8, 30, 30, 26, 26, 28, 34, 20, 32, 22, 14],
     };
 
     downloadXlsx(`บัญชีพระวิปัสสนาจารย์_${new Date().toISOString().split('T')[0]}.xlsx`, [sheet]);
   };
 
   const handleExportCsv = (dataToExport: any[] = filteredMasters) => {
-    const headers = 'ลำดับ,ชื่อ-ฉายา (ภาษาไทย),ชื่อ-ฉายา (ภาษาอังกฤษ),ตำแหน่ง,ไอดีเข้าใช้งาน,รหัสผ่านเริ่มต้น,สถานะ';
+    const headers =
+      'ลำดับ,ชื่อ-ฉายา (ภาษาไทย),ชื่อ-ฉายา (ภาษาอังกฤษ),ตำแหน่งในโครงการ,ตำแหน่งทางคณะสงฆ์,หน่วยงาน / ภาควิชา,ที่อยู่ติดต่อ / สังกัดวัด,บทบาท,ไอดีเข้าใช้งาน,รหัสผ่านเริ่มต้น,สถานะ';
     const rows = dataToExport.map((m, idx) => {
       const name = `"${(m.name || '').replace(/"/g, '""')}"`;
       const nameEn = `"${(m.nameEn || '').replace(/"/g, '""')}"`;
-      const pos = `"${(m.instructorType || 'พระวิปัสสนาจารย์').replace(/"/g, '""')}"`;
+      const pos = `"${(m.instructorType || m.position || 'พระวิปัสสนาจารย์').replace(/"/g, '""')}"`;
+      const sangha = `"${(m.ecclesiasticalTitle || '-').replace(/"/g, '""')}"`;
+      const dept = `"${(m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์').replace(/"/g, '""')}"`;
+      const addr = `"${(m.contactAddress || '-').replace(/"/g, '""')}"`;
+      const role = m.role || 'VIPASSANA_MASTER';
       const email = m.email || '';
       const pwd = m.defaultPassword || m.password || 'mcu123456';
       const status = m.isActive !== false ? 'เปิดใช้งาน' : 'ระงับ';
-      return `${idx + 1},${name},${nameEn},${pos},${email},${pwd},${status}`;
+      return `${idx + 1},${name},${nameEn},${pos},${sangha},${dept},${addr},${role},${email},${pwd},${status}`;
     });
 
     const csvContent = '\uFEFF' + [headers, ...rows].join('\r\n');
@@ -521,7 +633,7 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                     <h4 className="text-sm font-bold text-amber-950">ขั้นตอนที่ 1: เตรียมไฟล์รายชื่อพระวิปัสสนาจารย์</h4>
                   </div>
                   <p className="text-xs text-slate-600">
-                    ดาวน์โหลดเทมเพลต Excel ที่จัดคอลัมน์ชื่อไทย, ชื่ออังกฤษ, ตำแหน่ง (ประธาน, รองประธาน, พระวิปัสสนาจารย์, เลขานุการ) ไว้อย่างถูกต้อง
+                    ดาวน์โหลดเทมเพลต Excel ที่จัดคอลัมน์ชื่อไทย, ชื่ออังกฤษ, ตำแหน่งในโครงการ, ตำแหน่งทางคณะสงฆ์, หน่วยงาน/ภาควิชา และที่อยู่ติดต่อ ไว้อย่างถูกต้อง
                   </p>
                 </div>
 
@@ -610,16 +722,17 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                       type="file"
                       ref={fileInputRef}
                       onChange={handleFileUpload}
-                      accept=".csv, .txt, .tsv"
+                      accept=".xlsx, .xls, .csv, .txt, .tsv"
                       className="hidden"
                     />
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                      title="เลือกไฟล์ Excel (.xlsx) หรือ CSV เพื่อนำเข้าข้อมูล"
                     >
                       <Upload className="w-3.5 h-3.5" />
-                      <span>เลือกไฟล์ (.csv/.tsv)</span>
+                      <span>เลือกไฟล์ Excel (.xlsx) / CSV</span>
                     </button>
                     {rawText && (
                       <button
@@ -671,7 +784,10 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                           <th className="p-2.5 text-center w-12">ลำดับ</th>
                           <th className="p-2.5">ชื่อ-ฉายา (ไทย)</th>
                           <th className="p-2.5">ชื่ออังกฤษ (English)</th>
-                          <th className="p-2.5">ตำแหน่ง</th>
+                          <th className="p-2.5">ตำแหน่งโครงการ</th>
+                          <th className="p-2.5">ตำแหน่งทางคณะสงฆ์</th>
+                          <th className="p-2.5">หน่วยงาน/ภาควิชา</th>
+                          <th className="p-2.5">ที่อยู่ติดต่อ/วัด</th>
                           <th className="p-2.5">ไอดีเข้าใช้งาน (Login ID)</th>
                           <th className="p-2.5">รหัสผ่าน (Password)</th>
                           <th className="p-2.5 text-center">สถานะ</th>
@@ -697,6 +813,11 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                               >
                                 {item.position}
                               </span>
+                            </td>
+                            <td className="p-2.5 text-slate-700">{item.ecclesiasticalTitle || '-'}</td>
+                            <td className="p-2.5 text-slate-600 text-[11px]">{item.department || '-'}</td>
+                            <td className="p-2.5 text-slate-600 text-[11px] max-w-[160px] truncate" title={item.contactAddress}>
+                              {item.contactAddress || '-'}
                             </td>
                             <td className="p-2.5 font-mono text-[11px] font-semibold text-amber-900">
                               {item.email}
@@ -816,7 +937,10 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                         <th className="p-3 text-center w-12">ลำดับ</th>
                         <th className="p-3">ชื่อ-ฉายา (ไทย)</th>
                         <th className="p-3">ชื่ออังกฤษ</th>
-                        <th className="p-3">ตำแหน่ง</th>
+                        <th className="p-3">ตำแหน่งโครงการ</th>
+                        <th className="p-3">ตำแหน่งทางคณะสงฆ์</th>
+                        <th className="p-3">หน่วยงาน/ภาควิชา</th>
+                        <th className="p-3">ที่อยู่ติดต่อ/สังกัดวัด</th>
                         <th className="p-3">ไอดีเข้าใช้งาน (Login ID)</th>
                         <th className="p-3">รหัสผ่านเริ่มต้น</th>
                         <th className="p-3 text-center">สถานะ</th>
@@ -825,7 +949,7 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                     <tbody className="divide-y divide-slate-100">
                       {filteredMasters.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-8 text-center text-slate-400 italic">
+                          <td colSpan={10} className="p-8 text-center text-slate-400 italic">
                             ไม่พบรายชื่อพระวิปัสสนาจารย์ตามเงื่อนไขที่ค้นหา
                           </td>
                         </tr>
@@ -849,6 +973,11 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                               >
                                 {m.instructorType || 'พระวิปัสสนาจารย์'}
                               </span>
+                            </td>
+                            <td className="p-3 text-slate-700">{m.ecclesiasticalTitle || '-'}</td>
+                            <td className="p-3 text-slate-600 text-[11px]">{m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์'}</td>
+                            <td className="p-3 text-slate-600 text-[11px] max-w-[180px] truncate" title={m.contactAddress}>
+                              {m.contactAddress || '-'}
                             </td>
                             <td className="p-3 font-mono font-semibold text-amber-950">{m.email}</td>
                             <td className="p-3 font-mono text-slate-700 bg-slate-50/70 px-2 rounded">

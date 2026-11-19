@@ -11,6 +11,8 @@ interface EditUserFormState {
   gmail: string;
   instructorType?: string;
   department: string;
+  ecclesiasticalTitle?: string;
+  contactAddress?: string;
   role: UserRole;
   aliasesText?: string;
   isActingOfficer?: boolean;
@@ -171,6 +173,29 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
               placeholder="เช่น คณะพุทธศาสตร์ ภาควิชาพระพุทธศาสนา"
               className="w-full px-3 py-2 rounded-xl border border-slate-200"
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1 text-xs">ตำแหน่งทางคณะสงฆ์ / สมณศักดิ์:</label>
+              <input
+                type="text"
+                value={editUserForm.ecclesiasticalTitle || ''}
+                onChange={(e) => setEditUserForm({ ...editUserForm, ecclesiasticalTitle: e.target.value })}
+                placeholder="เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระครู..."
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+              />
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1 text-xs">ที่อยู่ติดต่อ / สังกัดวัด:</label>
+              <input
+                type="text"
+                value={editUserForm.contactAddress || ''}
+                onChange={(e) => setEditUserForm({ ...editUserForm, contactAddress: e.target.value })}
+                placeholder="เช่น วัดมหาธาตุยุวราชรังสฤษฎิ์ กรุงเทพฯ"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
+              />
+            </div>
           </div>
 
           <div>
