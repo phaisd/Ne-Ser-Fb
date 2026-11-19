@@ -125,8 +125,6 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
     });
   }, [currentOfficers, exportRoleFilter, exportSearch]);
 
-  if (!isOpen) return null;
-
   // Helper: Next sequential officer email
   const getNextOfficerEmail = (offsetIndex: number, currentList: UserAccount[], staged: ParsedOfficerItem[]) => {
     let seq = 1;
@@ -510,6 +508,8 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
     setCopiedAllTable(true);
     setTimeout(() => setCopiedAllTable(false), 3000);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">

@@ -128,8 +128,6 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
     });
   }, [currentMasters, exportPositionFilter, exportSearch]);
 
-  if (!isOpen) return null;
-
   // ─────────────────────────────────────────────────────────────────────────
   // Helper: Get next available vipassana sequential email
   // ─────────────────────────────────────────────────────────────────────────
@@ -790,6 +788,8 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
       setExportProgress(null);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">

@@ -1166,26 +1166,30 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
       />
 
       {/* Vipassana Masters Import & Export & Auto ID/Password Modal */}
-      <VipassanaMasterImportExportModal
-        isOpen={isVipassanaMasterModalOpen}
-        onClose={() => setIsVipassanaMasterModalOpen(false)}
-        existingUsers={users}
-        onSuccess={() => {
-          if (onRefresh) onRefresh();
-          else if (typeof window !== 'undefined') window.location.reload();
-        }}
-      />
+      {isVipassanaMasterModalOpen && (
+        <VipassanaMasterImportExportModal
+          isOpen={isVipassanaMasterModalOpen}
+          onClose={() => setIsVipassanaMasterModalOpen(false)}
+          existingUsers={users}
+          onSuccess={() => {
+            if (onRefresh) onRefresh();
+            else if (typeof window !== 'undefined') window.location.reload();
+          }}
+        />
+      )}
 
       {/* Officer & Staff Import & Export & Auto ID/Password Modal */}
-      <OfficerImportExportModal
-        isOpen={isOfficerModalOpen}
-        onClose={() => setIsOfficerModalOpen(false)}
-        existingUsers={users}
-        onSuccess={() => {
-          if (onRefresh) onRefresh();
-          else if (typeof window !== 'undefined') window.location.reload();
-        }}
-      />
+      {isOfficerModalOpen && (
+        <OfficerImportExportModal
+          isOpen={isOfficerModalOpen}
+          onClose={() => setIsOfficerModalOpen(false)}
+          existingUsers={users}
+          onSuccess={() => {
+            if (onRefresh) onRefresh();
+            else if (typeof window !== 'undefined') window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 };
