@@ -57,6 +57,15 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
   const [systemUsers, setSystemUsers] = useState<UserAccount[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
+  // Grouped system users for easy selection
+  const vipassanaMasterUsers = useMemo(() => {
+    return systemUsers.filter((u) => u.role === 'VIPASSANA_MASTER' || (u.instructorType || '').includes('วิปัสสนา'));
+  }, [systemUsers]);
+
+  const regularStaffUsers = useMemo(() => {
+    return systemUsers.filter((u) => u.role !== 'VIPASSANA_MASTER' && !(u.instructorType || '').includes('วิปัสสนา'));
+  }, [systemUsers]);
+
   // Input states for adding new advisor/master
   const [selectedUserAdvisorId, setSelectedUserAdvisorId] = useState<string>('');
   const [customAdvisorName, setCustomAdvisorName] = useState<string>('');
@@ -478,11 +487,22 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                       className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
                     >
                       <option value="">-- เลือกจากรายชื่อระบบ ({systemUsers.length}) --</option>
-                      {systemUsers.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name} {u.role ? `[${u.role}]` : ''}
-                        </option>
-                      ))}
+                      <optgroup label="อาจารย์และเจ้าหน้าที่ประจำ">
+                        {regularStaffUsers.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name} [{u.role || 'อาจารย์'}]
+                          </option>
+                        ))}
+                      </optgroup>
+                      {vipassanaMasterUsers.length > 0 && (
+                        <optgroup label="พระวิปัสสนาจารย์">
+                          {vipassanaMasterUsers.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name} {u.instructorType ? `(${u.instructorType})` : ''}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -590,11 +610,22 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                       className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-amber-500 outline-none"
                     >
                       <option value="">-- เลือกจากรายชื่อระบบ ({systemUsers.length}) --</option>
-                      {systemUsers.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name} {u.role === 'VIPASSANA_MASTER' ? '⭐ (พระวิปัสสนาจารย์)' : `[${u.role || 'อาจารย์'}]`}
-                        </option>
-                      ))}
+                      {vipassanaMasterUsers.length > 0 && (
+                        <optgroup label="⭐ พระวิปัสสนาจารย์ (VIPASSANA_MASTER)">
+                          {vipassanaMasterUsers.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name} {u.instructorType ? `(${u.instructorType})` : ''}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      <optgroup label="อาจารย์และพระภิกษุรูปอื่นในระบบ">
+                        {regularStaffUsers.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name} [{u.role || 'อาจารย์'}]
+                          </option>
+                        ))}
+                      </optgroup>
                     </select>
                   </div>
                 </div>
