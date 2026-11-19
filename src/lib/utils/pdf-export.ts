@@ -3,8 +3,10 @@
  */
 
 export interface MultiPagePdfExportOptions {
-  pageElements: HTMLElement[];
-  filename: string;
+  pageElements?: HTMLElement[] | HTMLElement;
+  elementId?: string;
+  filename?: string;
+  fileName?: string;
   orientation?: 'portrait' | 'landscape';
   format?: 'a4';
   scale?: number;
@@ -13,18 +15,30 @@ export interface MultiPagePdfExportOptions {
 }
 
 /**
- * Captures an array of DOM elements and compiles them into a single multi-page A4 PDF
+ * Captures an array of DOM elements or elementId and compiles them into a single multi-page A4 PDF
  */
 export async function exportMultiPagePdf({
   pageElements,
+  elementId,
   filename,
+  fileName,
   orientation = 'portrait',
   format = 'a4',
   scale = 2,
   hideSelector = '.screen-only-header, .no-print',
   onProgress,
 }: MultiPagePdfExportOptions): Promise<void> {
-  if (pageElements.length === 0) return;
+  const resolvedFilename = fileName || filename || 'export.pdf';
+
+  let elements: HTMLElement[] = [];
+  if (pageElements) {
+    elements = Array.isArray(pageElements) ? pageElements : [pageElements];
+  } else if (elementId) {
+    const el = document.getElementById(elementId);
+    if (el) elements = [el];
+  }
+
+  if (elements.length === 0) return;
 
   const html2canvas = (await import('html2canvas-pro')).default;
   const { jsPDF } = await import('jspdf');
@@ -39,12 +53,12 @@ export async function exportMultiPagePdf({
   const pdfWidth = orientation === 'portrait' ? 210 : 297;
   const pdfHeight = orientation === 'portrait' ? 297 : 210;
 
-  for (let i = 0; i < pageElements.length; i++) {
-    const pageEl = pageElements[i];
+  for (let i = 0; i < elements.length; i++) {
+    const pageEl = elements[i];
     if (!pageEl) continue;
 
     if (onProgress) {
-      onProgress(`กำลังสร้างหน้า PDF ที่ ${i + 1} จากทั้งหมด ${pageElements.length} หน้า...`, i + 1, pageElements.length);
+      onProgress(`กำลังสร้างหน้า PDF ที่ ${i + 1} จากทั้งหมด ${elements.length} หน้า...`, i + 1, elements.length);
     }
 
     // Hide screen-only indicator during canvas capture
@@ -97,9 +111,9 @@ export async function exportMultiPagePdf({
   }
 
   if (onProgress) {
-    onProgress('กำลังบันทึกไฟล์ PDF...', pageElements.length, pageElements.length);
+    onProgress('กำลังบันทึกไฟล์ PDF...', elements.length, elements.length);
   }
 
-  const cleanFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+  const cleanFilename = resolvedFilename.endsWith('.pdf') ? resolvedFilename : `${resolvedFilename}.pdf`;
   pdf.save(cleanFilename);
 }
