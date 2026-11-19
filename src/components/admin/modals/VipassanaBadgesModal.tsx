@@ -5,37 +5,42 @@ import QRCode from 'qrcode';
 import {
   X,
   Printer,
-  Search,
-  Users,
-  Grid,
   Sparkles,
   Download,
   FileText,
-  Smartphone,
-  CreditCard,
   FileDown,
   Image as ImageIcon,
   Loader2,
-  Upload,
-  Palette,
-  Type,
-  QrCode as QrCodeIcon,
+  Users,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types/event';
+import { useWatermarkSettings } from '@/hooks/useWatermarkSettings';
+import { downloadCsvFile } from '@/lib/utils/csv-helpers';
+import { exportMultiPagePdf } from '@/lib/utils/pdf-export';
+import { extractThaiYear } from '@/lib/utils/thai-formatters';
 
-export type BadgeLayoutMode =
-  | 'NINE_3X3_PER_PAGE'
-  | 'TWELVE_4X3_PER_PAGE'
-  | 'TWELVE_3X4_PER_PAGE'
-  | 'EIGHT_PER_PAGE'
-  | 'SIX_PER_PAGE'
-  | 'FOUR_PER_PAGE'
-  | 'TEN_PER_PAGE';
-export type BadgeOrientation = 'VERTICAL' | 'HORIZONTAL';
+import type {
+  BadgeLayoutMode,
+  BadgeOrientation,
+  BadgeColorTheme,
+  BadgeFontSize,
+  QrScaleMode,
+  BadgeThemeStyles,
+  BadgeFontScale,
+} from './badges/types';
+import { VipassanaBadgeToolbar } from './badges/VipassanaBadgeToolbar';
+import { VipassanaBadgeCardVertical } from './badges/VipassanaBadgeCardVertical';
+import { VipassanaBadgeCardHorizontal } from './badges/VipassanaBadgeCardHorizontal';
+
+export type {
+  BadgeLayoutMode,
+  BadgeOrientation,
+  BadgeColorTheme,
+  BadgeFontSize,
+  QrScaleMode,
+};
+
 export type BadgeWatermarkMode = 'MCU_LOGO' | 'CUSTOM' | 'NONE';
-export type BadgeColorTheme = 'GOLD' | 'PURPLE' | 'NAVY' | 'CRIMSON' | 'CLASSIC_BLACK';
-export type BadgeFontSize = 'SMALL' | 'MEDIUM' | 'LARGE';
-export type QrScaleMode = '1X' | '1.5X' | '2X' | '2.5X';
 
 interface VipassanaBadgesModalProps {
   isOpen: boolean;
@@ -64,60 +69,19 @@ export function VipassanaBadgesModal({
   const [isExportingPng, setIsExportingPng] = useState(false);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
 
-  // Watermark / Custom Background states
-  const [watermarkMode, setWatermarkMode] = useState<BadgeWatermarkMode>('MCU_LOGO');
-  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(0.10);
-  const [customWatermarkUrl, setCustomWatermarkUrl] = useState<string>('');
-  const [systemLogoUrl, setSystemLogoUrl] = useState<string>('/uploads/logo-1793607763771.jpg');
-  const watermarkFileInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Fetch official MCU logo from system settings
-  useEffect(() => {
-    if (!isOpen) return;
-    let isMounted = true;
-    async function loadLogo() {
-      try {
-        const res = await fetch('/api/system-settings');
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && data.data?.logoUrl) {
-            setSystemLogoUrl(data.data.logoUrl);
-          }
-        }
-      } catch {
-        // Fallback default logo is already set
-      }
-    }
-    loadLogo();
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen]);
-
-  // Compute active watermark image url
-  const activeWatermark = useMemo(() => {
-    if (watermarkMode === 'NONE') return '';
-    if (watermarkMode === 'CUSTOM') return customWatermarkUrl;
-    return systemLogoUrl || '/uploads/logo-1793607763771.jpg';
-  }, [watermarkMode, customWatermarkUrl, systemLogoUrl]);
-
-  // Handle custom watermark / background upload
-  const handleWatermarkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('ขนาดไฟล์ภาพต้องไม่เกิน 5 MB');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setCustomWatermarkUrl(reader.result);
-        setWatermarkMode('CUSTOM');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
+  // Watermark / Custom Background hook
+  const {
+    watermarkMode,
+    setWatermarkMode,
+    watermarkOpacity,
+    setWatermarkOpacity,
+    customWatermarkUrl,
+    systemLogoUrl,
+    activeWatermark,
+    fileInputRef,
+    handleFileUpload,
+    clearCustomWatermark,
+  } = useWatermarkSettings({ isOpen });
 
   // Available groups
   const availableGroups = useMemo(() => {
@@ -154,7 +118,7 @@ export function VipassanaBadgesModal({
     });
   }, [registrations, selectedGroup, searchQuery]);
 
-  // Stable key for registrations to prevent infinite effect triggers
+  // Stable key for registrations to prevent unnecessary triggers
   const registrationKey = useMemo(() => {
     return filteredRegistrations.map((r) => r.id + ':' + (r.groupSpecificCode || r.studentCode)).join('|');
   }, [filteredRegistrations]);
@@ -163,20 +127,20 @@ export function VipassanaBadgesModal({
   const qrColor = useMemo(() => {
     switch (colorTheme) {
       case 'GOLD':
-        return '#451a03'; // deep amber/brown
+        return '#451a03';
       case 'NAVY':
-        return '#0f172a'; // deep navy
+        return '#0f172a';
       case 'CRIMSON':
-        return '#4c0519'; // deep maroon
+        return '#4c0519';
       case 'CLASSIC_BLACK':
         return '#000000';
       case 'PURPLE':
       default:
-        return '#1e1b4b'; // deep indigo/purple
+        return '#1e1b4b';
     }
   }, [colorTheme]);
 
-  // Pre-generate QR codes for badges (Parallel for high performance)
+  // Pre-generate QR codes for badges
   useEffect(() => {
     if (!isOpen) return;
     if (filteredRegistrations.length === 0) {
@@ -228,7 +192,7 @@ export function VipassanaBadgesModal({
   }, [isOpen, registrationKey, qrColor]);
 
   // Color Theme Configuration
-  const themeConfig = useMemo(() => {
+  const themeConfig: BadgeThemeStyles = useMemo(() => {
     switch (colorTheme) {
       case 'GOLD':
         return {
@@ -315,7 +279,7 @@ export function VipassanaBadgesModal({
   }, [colorTheme]);
 
   // Typography Scaling Configuration
-  const fontScale = useMemo(() => {
+  const fontScale: BadgeFontScale = useMemo(() => {
     switch (fontSize) {
       case 'LARGE':
         return {
@@ -359,16 +323,7 @@ export function VipassanaBadgesModal({
 
   // Thai Buddhist Year representation for header
   const eventYearTh = useMemo(() => {
-    if (event.academicYear) {
-      const thaiDigits = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
-      return String(event.academicYear).replace(/\d/g, (d) => thaiDigits[parseInt(d, 10)] || d);
-    }
-    const match = event.title?.match(/(?:๒๕\d{2}|25\d{2})/);
-    if (match) {
-      const thaiDigits = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
-      return match[0].replace(/\d/g, (d) => thaiDigits[parseInt(d, 10)] || d);
-    }
-    return '๒๕๖๙';
+    return extractThaiYear(event.academicYear, event.title);
   }, [event.academicYear, event.title]);
 
   // Number of badges per A4 sheet
@@ -404,25 +359,20 @@ export function VipassanaBadgesModal({
   // Export CSV
   const handleExportCsv = () => {
     if (filteredRegistrations.length === 0) return;
-    const headers = ['ลำดับ', 'กลุ่ม', 'เลขเฉพาะกลุ่ม', 'รหัสนิสิต', 'ชื่อ-นามสกุล', 'หลักสูตรภาษา', 'สาขาวิชา', 'ชั้นปี'];
-    const rows = filteredRegistrations.map((r, idx) => [
-      idx + 1,
-      r.groupNumber || '',
-      r.groupSpecificCode || '',
-      r.studentCode,
-      `"${r.studentName}"`,
-      r.programType || 'THAI',
-      `"${r.major || ''}"`,
-      r.yearLevel || '',
-    ]);
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `vipassana_badges_${event.id}_group_${selectedGroup}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCsvFile({
+      filename: `vipassana_badges_${event.id}_group_${selectedGroup}`,
+      headers: ['ลำดับ', 'กลุ่ม', 'เลขเฉพาะกลุ่ม', 'รหัสนิสิต', 'ชื่อ-นามสกุล', 'หลักสูตรภาษา', 'สาขาวิชา', 'ชั้นปี'],
+      rows: filteredRegistrations.map((r, idx) => [
+        idx + 1,
+        r.groupNumber || '',
+        r.groupSpecificCode || '',
+        r.studentCode,
+        r.studentName,
+        r.programType || 'THAI',
+        r.major || '',
+        r.yearLevel || '',
+      ]),
+    });
   };
 
   const handlePrintBadges = () => {
@@ -434,79 +384,26 @@ export function VipassanaBadgesModal({
     }
   };
 
-  // Export all pages directly to a multi-page A4 PDF file
+  // Export all pages directly to a multi-page A4 PDF file using the unified exporter
   const handleExportPdf = async () => {
     if (pages.length === 0) return;
     setIsExportingPdf(true);
     setExportProgress('กำลังเตรียมข้อมูลเอกสาร PDF...');
 
     try {
-      const html2canvas = (await import('html2canvas-pro')).default;
-      const { jsPDF } = await import('jspdf');
+      const pageElements = pages
+        .map((_, i) => document.getElementById(`vipassana-badge-page-${i}`))
+        .filter(Boolean) as HTMLElement[];
 
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true,
-      });
-
-      for (let i = 0; i < pages.length; i++) {
-        setExportProgress(`กำลังสร้างหน้า PDF ที่ ${i + 1} จากทั้งหมด ${pages.length} หน้า...`);
-        const pageEl = document.getElementById(`vipassana-badge-page-${i}`);
-        if (!pageEl) continue;
-
-        // Hide screen-only indicator during canvas capture
-        const headers = pageEl.querySelectorAll('.screen-only-header');
-        headers.forEach((h) => ((h as HTMLElement).style.display = 'none'));
-
-        const origBorder = pageEl.style.border;
-        const origShadow = pageEl.style.boxShadow;
-        const origRadius = pageEl.style.borderRadius;
-        pageEl.style.border = 'none';
-        pageEl.style.boxShadow = 'none';
-        pageEl.style.borderRadius = '0';
-
-        const canvas = await html2canvas(pageEl, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          windowWidth: pageEl.scrollWidth,
-        });
-
-        pageEl.style.border = origBorder;
-        pageEl.style.boxShadow = origShadow;
-        pageEl.style.borderRadius = origRadius;
-        headers.forEach((h) => ((h as HTMLElement).style.display = ''));
-
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        if (i > 0) {
-          pdf.addPage('a4', 'portrait');
-        }
-
-        const pdfWidth = 210;
-        const pdfHeight = 297;
-        const canvasRatio = canvas.width / canvas.height;
-        let targetW = pdfWidth;
-        let targetH = pdfWidth / canvasRatio;
-        let x = 0;
-        let y = 0;
-
-        if (targetH > pdfHeight) {
-          targetH = pdfHeight;
-          targetW = pdfHeight * canvasRatio;
-          x = (pdfWidth - targetW) / 2;
-        } else {
-          y = (pdfHeight - targetH) / 2;
-        }
-
-        pdf.addImage(imgData, 'JPEG', x, y, targetW, targetH);
-      }
-
-      setExportProgress('กำลังบันทึกไฟล์ PDF...');
       const cleanTitle = (event.title || 'vipassana').replace(/[\s/\\:*?"<>|]+/g, '_');
-      pdf.save(`ป้ายคล้องคอ_${cleanTitle}_กลุ่ม_${selectedGroup}.pdf`);
+      await exportMultiPagePdf({
+        pageElements,
+        filename: `ป้ายคล้องคอ_${cleanTitle}_กลุ่ม_${selectedGroup}`,
+        orientation: 'portrait',
+        format: 'a4',
+        scale: 2,
+        onProgress: (msg) => setExportProgress(msg),
+      });
     } catch (err) {
       console.error('Failed to export badges PDF:', err);
       alert('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF กรุณาลองใหม่อีกครั้ง');
@@ -688,227 +585,38 @@ export function VipassanaBadgesModal({
           </div>
         )}
 
-        {/* TOOLBAR CONTROLS (Hidden in Print) */}
-        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 print:hidden">
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Group Selector */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-700 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-purple-600" />
-                กลุ่ม:
-              </span>
-              <select
-                value={selectedGroup}
-                onChange={(e) => {
-                  const val = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
-                  setSelectedGroup(val);
-                }}
-                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-bold text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-              >
-                <option value="ALL">ทุกกลุ่ม ({registrations.length} รูป/คน)</option>
-                {availableGroups.map((g) => (
-                  <option key={g} value={g}>
-                    {g === 12 ? `กลุ่มที่ 12 (Inter)` : `กลุ่มที่ ${g}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Layout Mode (Badges Per Page) */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-700 flex items-center gap-1">
-                <Grid className="w-3.5 h-3.5 text-blue-600" />
-                ขนาดป้าย:
-              </span>
-              <select
-                value={layoutMode}
-                onChange={(e) => setLayoutMode(e.target.value as BadgeLayoutMode)}
-                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-semibold text-slate-800 focus:outline-none cursor-pointer"
-              >
-                <option value="NINE_3X3_PER_PAGE">🌟 9 ป้ายต่อหน้า A4 (3 แถว x 3 คอลัมน์ - แนะนำสำหรับป้ายแนวตั้ง)</option>
-                <option value="TWELVE_4X3_PER_PAGE">✨ 12 ป้ายต่อหน้า A4 (3 แถว x 4 คอลัมน์ - เต็มหน้า ไม่เหลือที่ว่าง)</option>
-                <option value="TWELVE_3X4_PER_PAGE">12 ป้ายต่อหน้า A4 (4 แถว x 3 คอลัมน์ - ขนาดกะทัดรัด)</option>
-                <option value="EIGHT_PER_PAGE">8 ป้ายต่อหน้า A4 (4 แถว x 2 คอลัมน์ - ขนาด 7 x 10 ซม.)</option>
-                <option value="SIX_PER_PAGE">6 ป้ายต่อหน้า A4 (3 แถว x 2 คอลัมน์ - ขนาดมาตรฐาน 8.5 x 11 ซม.)</option>
-                <option value="FOUR_PER_PAGE">4 ป้ายต่อหน้า A4 (2 แถว x 2 คอลัมน์ - ขนาดใหญ่พิเศษ 10 x 14 ซม.)</option>
-                <option value="TEN_PER_PAGE">10 ป้ายต่อหน้า A4 (5 แถว x 2 คอลัมน์ - ขนาดนามบัตร 5.5 x 9 ซม.)</option>
-              </select>
-            </div>
-
-            {/* Orientation (Vertical vs Horizontal) */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-700 flex items-center gap-1">
-                {orientation === 'VERTICAL' ? (
-                  <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-                ) : (
-                  <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
-                )}
-                รูปแบบ:
-              </span>
-              <select
-                value={orientation}
-                onChange={(e) => setOrientation(e.target.value as BadgeOrientation)}
-                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-semibold text-slate-800 focus:outline-none"
-              >
-                <option value="VERTICAL">📱 การ์ดแนวตั้ง (แนะนำ - ซองคล้องคอ QR ใหญ่)</option>
-                <option value="HORIZONTAL">💳 การ์ดแนวนอน (รูปแบบดั้งเดิม)</option>
-              </select>
-            </div>
-
-            {/* Watermark / Background Controls */}
-            <div className="flex items-center gap-1.5 bg-purple-50/70 px-2 py-1 rounded-xl border border-purple-200/80">
-              <span className="font-bold text-purple-900 flex items-center gap-1">
-                <ImageIcon className="w-3.5 h-3.5 text-purple-700" />
-                ลายน้ำ:
-              </span>
-              <select
-                value={watermarkMode}
-                onChange={(e) => {
-                  const mode = e.target.value as BadgeWatermarkMode;
-                  setWatermarkMode(mode);
-                  if (mode === 'CUSTOM' && !customWatermarkUrl) {
-                    watermarkFileInputRef.current?.click();
-                  }
-                }}
-                className="px-2 py-1 bg-white rounded-lg border border-purple-200 text-xs font-bold text-purple-950 focus:outline-none cursor-pointer"
-              >
-                <option value="MCU_LOGO">☸️ ตราสัญลักษณ์ มจร</option>
-                <option value="CUSTOM">🖼️ อัปโหลดภาพพื้นหลังเอง</option>
-                <option value="NONE">🚫 ไม่ใส่ลายน้ำ</option>
-              </select>
-
-              {watermarkMode !== 'NONE' && (
-                <select
-                  value={watermarkOpacity}
-                  onChange={(e) => setWatermarkOpacity(parseFloat(e.target.value))}
-                  className="px-1.5 py-1 bg-white rounded-lg border border-purple-200 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-                  title="ระดับความโปร่งแสงของลายน้ำ"
-                >
-                  <option value={0.06}>จาง 6%</option>
-                  <option value={0.10}>พอดี 10% (แนะนำ)</option>
-                  <option value={0.15}>ชัด 15%</option>
-                  <option value={0.20}>เข้ม 20%</option>
-                </select>
-              )}
-
-              {watermarkMode === 'CUSTOM' && (
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => watermarkFileInputRef.current?.click()}
-                    className="px-2 py-1 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer"
-                    title="เลือกรูปภาพพื้นหลังลายน้ำจากเครื่อง"
-                  >
-                    <Upload className="w-3 h-3" />
-                    <span>{customWatermarkUrl ? 'เปลี่ยนรูป' : 'เลือกรูป'}</span>
-                  </button>
-                  {customWatermarkUrl && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCustomWatermarkUrl('');
-                        setWatermarkMode('MCU_LOGO');
-                      }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                      title="ยกเลิกภาพพื้นหลังที่อัปโหลด กลับไปใช้ตรา มจร"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              )}
-              <input
-                ref={watermarkFileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleWatermarkUpload}
-              />
-            </div>
-
-            {/* QR Code Scale Selector */}
-            <div className="flex items-center gap-1.5 bg-emerald-50/80 px-2 py-1 rounded-xl border border-emerald-200">
-              <span className="font-bold text-emerald-950 flex items-center gap-1">
-                <QrCodeIcon className="w-3.5 h-3.5 text-emerald-700" />
-                ขนาด QR:
-              </span>
-              <select
-                value={qrScale}
-                onChange={(e) => setQrScale(e.target.value as QrScaleMode)}
-                className="px-2 py-1 bg-white rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 focus:outline-none cursor-pointer"
-              >
-                <option value="2.5X">🔥 ใหญ่ 2.5 เท่า (เต็มพื้นที่การ์ด)</option>
-                <option value="2X">⚡ ใหญ่ 2.0 เท่า (แนะนำ - คมชัด)</option>
-                <option value="1.5X">✨ ใหญ่ 1.5 เท่า</option>
-                <option value="1X">📐 ปกติ 1.0 เท่า</option>
-              </select>
-            </div>
-
-            {/* Color Theme Selector */}
-            <div className="flex items-center gap-1.5 bg-amber-50/80 px-2 py-1 rounded-xl border border-amber-200">
-              <span className="font-bold text-amber-950 flex items-center gap-1">
-                <Palette className="w-3.5 h-3.5 text-amber-600" />
-                สีข้อความ:
-              </span>
-              <select
-                value={colorTheme}
-                onChange={(e) => setColorTheme(e.target.value as BadgeColorTheme)}
-                className="px-2 py-1 bg-white rounded-lg border border-amber-300 text-xs font-bold text-amber-950 focus:outline-none cursor-pointer"
-              >
-                <option value="GOLD">🟡 เหลืองทองสง่างาม (แนะนำ - สวยงาม อ่านง่าย)</option>
-                <option value="PURPLE">🟣 ม่วงมหาจุฬาฯ (ดั้งเดิม)</option>
-                <option value="NAVY">🔵 น้ำเงินกรมท่าภูมิฐาน</option>
-                <option value="CRIMSON">🔴 แดงเลือดหมูมงคล</option>
-                <option value="CLASSIC_BLACK">⚫ ดำ-เทาเข้มทางการ (คมชัดสูงสุด)</option>
-              </select>
-            </div>
-
-            {/* Font Size Selector */}
-            <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-xl border border-slate-300">
-              <span className="font-bold text-slate-700 flex items-center gap-1">
-                <Type className="w-3.5 h-3.5 text-slate-600" />
-                ขนาดฟอนต์:
-              </span>
-              <select
-                value={fontSize}
-                onChange={(e) => setFontSize(e.target.value as BadgeFontSize)}
-                className="px-2 py-1 bg-white rounded-lg border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
-              >
-                <option value="MEDIUM">ปกติ (พอดีสัดส่วน)</option>
-                <option value="LARGE">ใหญ่ (เห็นชัดจากระยะไกล)</option>
-                <option value="SMALL">กะทัดรัด (สำหรับชื่อยาว)</option>
-              </select>
-            </div>
-
-            {/* Toggle SCAN PASS */}
-            <label className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer bg-white px-2 py-1 rounded-lg border border-slate-300 shadow-2xs" title="แสดงหรือซ่อนข้อความ SCAN PASS ใต้ QR code เพื่อเพิ่มพื้นที่ให้ QR Code ขยายใหญ่เต็มที่">
-              <input
-                type="checkbox"
-                checked={showScanPass}
-                onChange={(e) => setShowScanPass(e.target.checked)}
-                className="rounded text-purple-600 focus:ring-purple-500"
-              />
-              <span>แสดงคำว่า SCAN PASS</span>
-            </label>
-
-            {/* Search */}
-            <div className="relative min-w-[170px]">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="ค้นหารหัส หรือชื่อ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-2.5 py-1.5 bg-white rounded-lg border border-slate-300 text-xs focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="text-[11px] text-slate-500 font-medium">
-            แสดงผล <strong className="text-purple-700 font-bold">{filteredRegistrations.length}</strong> ใบ
-            {isGeneratingQr ? ' (กำลังสร้าง QR...)' : ` (${pages.length} หน้า A4)`}
-          </div>
-        </div>
+        {/* TOOLBAR CONTROLS (Modularized Component) */}
+        <VipassanaBadgeToolbar
+          selectedGroup={selectedGroup}
+          setSelectedGroup={setSelectedGroup}
+          availableGroups={availableGroups}
+          registrationsCount={registrations.length}
+          filteredCount={filteredRegistrations.length}
+          pagesCount={pages.length}
+          isGeneratingQr={isGeneratingQr}
+          layoutMode={layoutMode}
+          setLayoutMode={setLayoutMode}
+          orientation={orientation}
+          setOrientation={setOrientation}
+          watermarkMode={watermarkMode}
+          setWatermarkMode={setWatermarkMode}
+          watermarkOpacity={watermarkOpacity}
+          setWatermarkOpacity={setWatermarkOpacity}
+          customWatermarkUrl={customWatermarkUrl}
+          fileInputRef={fileInputRef}
+          handleFileUpload={handleFileUpload}
+          clearCustomWatermark={clearCustomWatermark}
+          qrScale={qrScale}
+          setQrScale={setQrScale}
+          colorTheme={colorTheme}
+          setColorTheme={setColorTheme}
+          fontSize={fontSize}
+          setFontSize={setFontSize}
+          showScanPass={showScanPass}
+          setShowScanPass={setShowScanPass}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
 
         {/* EMBEDDED PRINT STYLES FOR EXACT MULTI-PAGE A4 OUTPUT WITHOUT BLANK PAGES */}
         <style
@@ -1079,275 +787,48 @@ export function VipassanaBadgesModal({
                           : 1.0;
 
                       const qrDimension = Math.round(baseQrDimension * qrScaleMultiplier);
-                      const cardFontClass = isEnglish ? 'badge-font-en' : 'badge-font-th';
 
                       if (orientation === 'VERTICAL') {
-                        /* ================== VERTICAL BADGE CARD (PORTRAIT - ACCORDING TO IMAGE 3) ================== */
                         return (
-                          <div
+                          <VipassanaBadgeCardVertical
                             key={reg.id}
-                            className={`${cardFontClass} border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-2 print:border-slate-300 print:rounded-2xl flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
-                            style={{
-                              minHeight:
-                                layoutMode === 'FOUR_PER_PAGE'
-                                  ? '330px'
-                                  : layoutMode === 'SIX_PER_PAGE'
-                                  ? '270px'
-                                  : layoutMode === 'NINE_3X3_PER_PAGE'
-                                  ? '265px'
-                                  : layoutMode === 'TWELVE_4X3_PER_PAGE'
-                                  ? '270px'
-                                  : layoutMode === 'TWELVE_3X4_PER_PAGE'
-                                  ? '210px'
-                                  : layoutMode === 'EIGHT_PER_PAGE'
-                                  ? '210px'
-                                  : '175px',
-                            }}
-                          >
-                            {/* Background Watermark Layer - subtle & safe for QR scanning */}
-                            {watermarkMode !== 'NONE' && activeWatermark && (
-                              <div
-                                className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
-                                style={{ opacity: watermarkOpacity }}
-                              >
-                                <img
-                                  src={activeWatermark}
-                                  alt="Watermark"
-                                  className="object-contain max-w-[70%] max-h-[70%] filter grayscale contrast-125"
-                                  crossOrigin="anonymous"
-                                />
-                              </div>
-                            )}
-
-                            {/* 1. Top: Official 3-Line Header with Emblem (Image 3) */}
-                            <div className={`border-b ${themeConfig.headerBorder} pb-1 shrink-0 relative z-10`}>
-                              <div className="flex items-center gap-1.5">
-                                {systemLogoUrl ? (
-                                  <img
-                                    src={systemLogoUrl}
-                                    alt="MCU Logo"
-                                    className="w-5 h-5 sm:w-6 sm:h-6 object-contain shrink-0 rounded-xs"
-                                    crossOrigin="anonymous"
-                                  />
-                                ) : (
-                                  <span className="text-sm">☸️</span>
-                                )}
-                                <div className="min-w-0 flex-1 text-left leading-[1.18]">
-                                  <div className={`${fontScale.headerOrg} font-extrabold ${themeConfig.headerOrg} uppercase tracking-wide break-words`}>
-                                    {isEnglish ? 'Faculty of Buddhism • MCU' : 'คณะพุทธศาสตร์ มจร'}
-                                  </div>
-                                  <div className={`${fontScale.headerUniv} font-bold ${themeConfig.headerUniv} break-words leading-tight`}>
-                                    {isEnglish ? 'Mahachulalongkornrajavidyalaya University' : 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}
-                                  </div>
-                                  <div className={`${fontScale.headerProject} font-black ${themeConfig.headerProject} break-words leading-tight line-clamp-2 pt-0.5`}>
-                                    {isEnglish ? `Annual Vipassana Practice ${event.academicYear || '2026'}` : `โครงการปฏิบัติวิปัสสนากัมมัฏฐาน ปี ${eventYearTh}`}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* 2. Subheader: Group Pill + Degree Level & Major (Image 3) */}
-                            <div className="flex items-center gap-1.5 pt-1 pb-0.5 shrink-0 relative z-10 flex-wrap">
-                              <span className={`rounded-full ${fontScale.groupPill} font-black border shrink-0 ${themeConfig.groupPill}`}>
-                                กลุ่ม {gNum || '-'}
-                              </span>
-                              <div className="min-w-0 text-left leading-tight flex-1">
-                                <div className={`${fontScale.degree} font-bold ${themeConfig.degreeText} break-words`}>
-                                  {reg.degreeLevel || (isEnglish ? "Bachelor's Degree" : "ปริญญาตรี")}
-                                  {reg.yearLevel ? ` (${isEnglish ? 'Yr' : 'ปี'} ${reg.yearLevel})` : ''}
-                                </div>
-                                <div className={`${fontScale.major} font-semibold ${themeConfig.majorText} break-words line-clamp-2`} title={reg.major}>
-                                  {reg.major
-                                    ? reg.major.startsWith('สาขา')
-                                      ? reg.major
-                                      : `สาขาวิชา ${reg.major}`
-                                    : isEnglish
-                                    ? 'Buddhism'
-                                    : 'สาขาวิชา พระพุทธศาสนา'}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* 3. Participant: Group Code + Student Name (Image 3 - 2 Lines without ...) */}
-                            <div className="flex items-baseline gap-1.5 px-0.5 py-0.5 shrink-0 min-w-0 relative z-10 flex-wrap">
-                              <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0`}>
-                                {reg.groupSpecificCode || reg.studentCode}
-                              </span>
-                              <span className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug break-words line-clamp-2 flex-1 min-w-[120px]`} title={reg.studentName}>
-                                {reg.studentName}
-                              </span>
-                            </div>
-
-                            {/* 4. Center: High-Contrast Large QR Code (Scalable up to 2.5x) */}
-                            <div className="flex flex-col items-center justify-center my-auto py-1 relative z-10">
-                              {qrCodeUrls[reg.id] ? (
-                                <div className={`p-1 bg-white rounded-xl border ${themeConfig.qrBorder} shadow-2xs transition-all duration-200`}>
-                                  <img
-                                    src={qrCodeUrls[reg.id]}
-                                    alt={`QR ${reg.studentCode}`}
-                                    className="object-contain block bg-white"
-                                    style={{
-                                      width: `${qrDimension}px`,
-                                      height: `${qrDimension}px`,
-                                    }}
-                                  />
-                                </div>
-                              ) : (
-                                <div
-                                  className="bg-slate-100 rounded-md animate-pulse"
-                                  style={{
-                                    width: `${qrDimension}px`,
-                                    height: `${qrDimension}px`,
-                                  }}
-                                />
-                              )}
-                              {showScanPass && (
-                                <span className="text-[7px] sm:text-[7.5px] font-mono font-bold text-slate-400 tracking-widest mt-0.5">
-                                  SCAN PASS
-                                </span>
-                              )}
-                            </div>
-
-                            {/* 5. Bottom: Footer with Participant Pass Label & Serial # (Image 3) */}
-                            <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8px] sm:text-[8.5px] flex items-center justify-between shrink-0 relative z-10`}>
-                              <span className={`font-bold ${themeConfig.footerLabel}`}>
-                                {isEnglish ? 'Participant Pass' : 'บัตรประจำตัวผู้เข้าปฏิบัติ'}
-                              </span>
-                              <span className={`font-mono font-bold ${themeConfig.footerIndex}`}>
-                                #{String(overallIdx + 1).padStart(3, '0')}
-                              </span>
-                            </div>
-                          </div>
+                            reg={reg}
+                            overallIdx={overallIdx}
+                            printCardHeight={printCardHeight}
+                            watermarkMode={watermarkMode}
+                            activeWatermark={activeWatermark}
+                            watermarkOpacity={watermarkOpacity}
+                            systemLogoUrl={systemLogoUrl}
+                            isEnglish={isEnglish}
+                            eventYearTh={eventYearTh}
+                            eventAcademicYear={event.academicYear}
+                            themeConfig={themeConfig}
+                            fontScale={fontScale}
+                            qrDimension={qrDimension}
+                            qrCodeUrl={qrCodeUrls[reg.id]}
+                            showScanPass={showScanPass}
+                          />
                         );
                       }
 
-                      /* ================== HORIZONTAL BADGE CARD (LANDSCAPE) ================== */
                       return (
-                        <div
+                        <VipassanaBadgeCardHorizontal
                           key={reg.id}
-                          className={`${cardFontClass} border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-1.5 print:border-slate-400 print:rounded-none flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
-                          style={{
-                            minHeight:
-                              layoutMode === 'FOUR_PER_PAGE'
-                                ? '330px'
-                                : layoutMode === 'SIX_PER_PAGE'
-                                ? '260px'
-                                : layoutMode === 'NINE_3X3_PER_PAGE'
-                                ? '260px'
-                                : layoutMode === 'TWELVE_4X3_PER_PAGE'
-                                ? '260px'
-                                : layoutMode === 'TWELVE_3X4_PER_PAGE'
-                                ? '210px'
-                                : layoutMode === 'EIGHT_PER_PAGE'
-                                ? '210px'
-                                : '175px',
-                          }}
-                        >
-                          {/* Background Watermark Layer - subtle & safe for QR scanning */}
-                          {watermarkMode !== 'NONE' && activeWatermark && (
-                            <div
-                              className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
-                              style={{ opacity: watermarkOpacity }}
-                            >
-                              <img
-                                src={activeWatermark}
-                                alt="Watermark"
-                                className="object-contain max-w-[70%] max-h-[70%] filter grayscale contrast-125"
-                                crossOrigin="anonymous"
-                              />
-                            </div>
-                          )}
-
-                          {/* Top: Header */}
-                          <div className={`text-center border-b ${themeConfig.headerBorder} pb-1 shrink-0 relative z-10`}>
-                            <div className={`flex items-center justify-center gap-1.5 ${fontScale.headerOrg} font-extrabold uppercase tracking-wide ${themeConfig.headerOrg} leading-tight`}>
-                              {systemLogoUrl ? (
-                                <img
-                                  src={systemLogoUrl}
-                                  alt="MCU Logo"
-                                  className="w-4 h-4 object-contain inline-block shrink-0 rounded-xs"
-                                  crossOrigin="anonymous"
-                                />
-                              ) : (
-                                <span>☸️</span>
-                              )}
-                              <span>{isEnglish ? 'Faculty of Buddhism • MCU' : 'คณะพุทธศาสตร์ มจร'}</span>
-                            </div>
-                            <div className={`${fontScale.headerProject} font-bold ${themeConfig.headerProject} leading-tight pt-0.5 break-words line-clamp-2`}>
-                              {isEnglish ? 'Annual Vipassana Meditation' : `โครงการปฏิบัติวิปัสสนากัมมัฏฐาน ปี ${eventYearTh}`}
-                            </div>
-                          </div>
-
-                          {/* Middle: Left Info + Right QR */}
-                          <div className="py-1 flex items-center justify-between gap-2 flex-1 my-auto relative z-10">
-                            <div className="flex-1 space-y-0.5 min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className={`px-2 py-0.2 rounded-full ${fontScale.groupPill} font-black border ${themeConfig.groupPill}`}>
-                                  กลุ่ม {gNum || '-'}
-                                </span>
-                                {reg.groupSpecificCode && (
-                                  <span className={`font-mono font-black ${fontScale.code} px-2 py-0.2 rounded ${themeConfig.participantCode} shadow-2xs`}>
-                                    {reg.groupSpecificCode}
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug line-clamp-2 break-words pt-0.5`}>
-                                {reg.studentName}
-                              </div>
-
-                              <div className={`font-mono font-bold ${fontScale.code} ${themeConfig.participantCode}`}>
-                                {reg.studentCode}
-                              </div>
-
-                              <div className="text-[8.5px] text-slate-500 flex flex-wrap gap-x-1.5 leading-tight">
-                                {reg.yearLevel && <span>ปี {reg.yearLevel}</span>}
-                                {reg.vasa && <span>({reg.vasa} พรรษา)</span>}
-                                {reg.major && <span className="truncate max-w-[110px]">{reg.major}</span>}
-                              </div>
-                            </div>
-
-                            {/* Right QR Code */}
-                            <div className="shrink-0 flex flex-col items-center relative z-10">
-                              {qrCodeUrls[reg.id] ? (
-                                <div className={`p-1 bg-white rounded-xl border ${themeConfig.qrBorder} shadow-2xs`}>
-                                  <img
-                                    src={qrCodeUrls[reg.id]}
-                                    alt={`QR ${reg.studentCode}`}
-                                    className="object-contain block bg-white"
-                                    style={{
-                                      width: `${Math.round(qrDimension * 0.9)}px`,
-                                      height: `${Math.round(qrDimension * 0.9)}px`,
-                                    }}
-                                  />
-                                </div>
-                              ) : (
-                                <div
-                                  className="bg-slate-100 rounded-md animate-pulse"
-                                  style={{
-                                    width: `${Math.round(qrDimension * 0.9)}px`,
-                                    height: `${Math.round(qrDimension * 0.9)}px`,
-                                  }}
-                                />
-                              )}
-                              {showScanPass && (
-                                <span className="text-[7px] font-mono text-slate-500 mt-0.5">
-                                  SCAN PASS
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Bottom Footer */}
-                          <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8.5px] flex items-center justify-between shrink-0 relative z-10`}>
-                            <span className={themeConfig.footerLabel}>
-                              {isEnglish ? 'Participant Pass' : 'บัตรประจำตัวผู้เข้าปฏิบัติ'}
-                            </span>
-                            <span className={`font-mono font-bold ${themeConfig.footerIndex}`}>
-                              #{String(overallIdx + 1).padStart(3, '0')}
-                            </span>
-                          </div>
-                        </div>
+                          reg={reg}
+                          overallIdx={overallIdx}
+                          printCardHeight={printCardHeight}
+                          watermarkMode={watermarkMode}
+                          activeWatermark={activeWatermark}
+                          watermarkOpacity={watermarkOpacity}
+                          systemLogoUrl={systemLogoUrl}
+                          isEnglish={isEnglish}
+                          eventYearTh={eventYearTh}
+                          themeConfig={themeConfig}
+                          fontScale={fontScale}
+                          qrDimension={qrDimension}
+                          qrCodeUrl={qrCodeUrls[reg.id]}
+                          showScanPass={showScanPass}
+                        />
                       );
                     })}
                   </div>
