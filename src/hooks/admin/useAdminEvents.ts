@@ -283,9 +283,9 @@ export function useAdminEvents({
           setSelectedEventId('ALL');
         }
         setDeletingEvent(null);
-        onRefresh();
+        await onRefresh();
       } else {
-        alert('ลบโครงการไม่สำเร็จ: ' + data.error);
+        alert('ลบโครงการไม่สำเร็จ: ' + (data.error || 'ไม่สามารถลบโครงการได้'));
       }
     } catch (err: unknown) {
       alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));

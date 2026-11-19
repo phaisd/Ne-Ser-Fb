@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   batchImportEventRegistrations,
   createEvent,
+  deleteEvent,
   getEventRegistrations,
   saveVipassanaAttendance,
   recordVipassanaScanCheckin,
@@ -235,5 +236,51 @@ describe('eventService unit tests', () => {
         }),
       ])
     );
+  });
+
+  it('deletes an event, cascade cleans its registrations, and syncs with Google Sheets', async () => {
+    const mockDeleteRows = vi.fn(async () => 1);
+    const mockGetValues = vi.fn(async (range: string) => {
+      if (range === 'Events!A2:A') {
+        return [['ev-to-delete'], ['ev-stay']];
+      }
+      if (range === 'EventRegistrations!A2:B') {
+        return [['reg-1', 'ev-to-delete'], ['reg-2', 'ev-stay']];
+      }
+      return [];
+    });
+
+    vi.mocked(storageHelper.getSheetsClient).mockReturnValue({
+      deleteRows: mockDeleteRows,
+      getValues: mockGetValues,
+    } as any);
+
+    vi.mocked(storageHelper.readLocalJson).mockImplementation((file) => {
+      if (file === 'events.json') {
+        return [{ id: 'ev-to-delete', title: 'ลบทิ้ง' }, { id: 'ev-stay', title: 'ยังอยู่' }];
+      }
+      if (file === 'event_registrations.json') {
+        return [
+          { id: 'r1', eventId: 'ev-to-delete', studentCode: '6701' },
+          { id: 'r2', eventId: 'ev-stay', studentCode: '6702' },
+        ];
+      }
+      return [];
+    });
+
+    const deleted = await deleteEvent('ev-to-delete');
+    expect(deleted).toBe(true);
+
+    expect(storageHelper.writeLocalJson).toHaveBeenCalledWith(
+      'events.json',
+      [{ id: 'ev-stay', title: 'ยังอยู่' }]
+    );
+    expect(storageHelper.writeLocalJson).toHaveBeenCalledWith(
+      'event_registrations.json',
+      [{ id: 'r2', eventId: 'ev-stay', studentCode: '6702' }]
+    );
+
+    expect(mockDeleteRows).toHaveBeenCalledWith('Events', [1]);
+    expect(mockDeleteRows).toHaveBeenCalledWith('EventRegistrations', [1]);
   });
 });

@@ -268,10 +268,10 @@ export async function POST(request: Request) {
       if (adminAuth.response) return adminAuth.response;
       const { id } = body;
       if (!id) {
-        return NextResponse.json({ success: false, error: 'Missing event id' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'กรุณาระบุรหัสโครงการที่ต้องการลบ (Missing event id)' }, { status: 400 });
       }
       const deleted = await deleteEvent(id);
-      return NextResponse.json({ success: deleted });
+      return NextResponse.json({ success: true, deleted, message: 'ลบโครงการและข้อมูลที่เกี่ยวข้องเรียบร้อยแล้ว' });
     }
 
     // Default action: Register student

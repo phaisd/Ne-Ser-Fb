@@ -151,11 +151,66 @@ export async function updateEvent(id: string, updates: Partial<StudentEvent>): P
 }
 
 export async function deleteEvent(id: string): Promise<boolean> {
-  const localList = readLocalJson<any[]>('events.json', []);
-  const nextList = localList.filter((e) => e.id !== id);
-  if (nextList.length === localList.length) return false;
+  const targetId = String(id || '').trim();
+  if (!targetId) return false;
 
+  // 1. Delete from local events.json
+  const localList = readLocalJson<any[]>('events.json', []);
+  const nextList = localList.filter((e) => String(e.id || '').trim() !== targetId);
   writeLocalJson('events.json', nextList);
+
+  // 2. Cascade delete from local event_registrations.json
+  try {
+    const rawRegs = readLocalJson<any[]>('event_registrations.json', []);
+    const nextRegs = rawRegs.filter((r) => String(r.eventId || '').trim() !== targetId);
+    if (nextRegs.length !== rawRegs.length) {
+      writeLocalJson('event_registrations.json', nextRegs);
+    }
+  } catch (err) {
+    console.warn('Failed to clean up registrations for deleted event:', err);
+  }
+
+  // 3. Delete from Google Sheets (if connected)
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const rows = await gClient.getValues('Events!A2:A');
+      if (rows && rows.length > 0) {
+        const rowsToDelete: number[] = [];
+        rows.forEach((r, idx) => {
+          if (String(r[0] || '').trim() === targetId) {
+            rowsToDelete.push(idx + 1); // zero-based index in sheet (row 2 is index 1)
+          }
+        });
+
+        if (rowsToDelete.length > 0) {
+          await gClient.deleteRows('Events', rowsToDelete);
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets delete event row error:', err);
+    }
+
+    // Also clean up EventRegistrations in Google Sheets if available
+    try {
+      const regRows = await gClient.getValues('EventRegistrations!A2:B');
+      if (regRows && regRows.length > 0) {
+        const regIndicesToDelete: number[] = [];
+        regRows.forEach((r, idx) => {
+          // Column B is eventId (Column A is regId)
+          if (String(r[1] || '').trim() === targetId) {
+            regIndicesToDelete.push(idx + 1);
+          }
+        });
+        if (regIndicesToDelete.length > 0) {
+          await gClient.deleteRows('EventRegistrations', regIndicesToDelete);
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets delete event registrations error:', err);
+    }
+  }
+
   return true;
 }
 
