@@ -162,7 +162,25 @@ export function VipassanaLiveScannerModal({
     message: string;
     student?: EventRegistration;
     time?: string;
+    isDuplicate?: boolean;
+    scannedCode?: string;
+    status?: 'PRESENT' | 'LATE' | 'SICK';
   } | null>(null);
+
+  // Silent Haptic Vibration for Mobile Devices (replaces audio in silent environments)
+  const triggerHaptic = useCallback((type: 'SUCCESS' | 'WARN' | 'ERROR') => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        if (type === 'SUCCESS') {
+          navigator.vibrate(120); // 1 single clean pulse
+        } else if (type === 'WARN') {
+          navigator.vibrate([100, 50, 100]); // 2 short pulses
+        } else {
+          navigator.vibrate([220, 80, 220]); // 2 alert pulses
+        }
+      } catch {}
+    }
+  }, []);
 
   // Camera states
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -366,6 +384,7 @@ export function VipassanaLiveScannerModal({
           if (soundEnabled) {
             playBeep(isDuplicate ? 'WARN' : 'SUCCESS');
           }
+          triggerHaptic(isDuplicate ? 'WARN' : targetStatus === 'LATE' ? 'WARN' : 'SUCCESS');
 
           let msg = isDuplicate
             ? `เช็คชื่อซ้ำ: ${reg.studentName} ลงชื่อรอบนี้ไปแล้ว (${checkInTime} น.)`
@@ -376,10 +395,12 @@ export function VipassanaLiveScannerModal({
           }
 
           setLastFeedback({
-            type: isDuplicate ? 'WARN' : 'SUCCESS',
+            type: isDuplicate ? 'WARN' : targetStatus === 'LATE' ? 'WARN' : 'SUCCESS',
             message: msg,
             student: reg,
             time: checkInTime,
+            isDuplicate,
+            status: targetStatus,
           });
 
           // Add to recent scans list
@@ -403,9 +424,11 @@ export function VipassanaLiveScannerModal({
           }
         } else {
           if (soundEnabled) playBeep('ERROR');
+          triggerHaptic('ERROR');
           setLastFeedback({
             type: 'ERROR',
-            message: data.error || 'ไม่พบข้อมูลนิสิตในโครงการนี้',
+            message: data.error || `ไม่พบข้อมูลนิสิต (รหัส: ${cleanCode}) ในโครงการนี้`,
+            scannedCode: cleanCode,
           });
         }
       } catch (err: unknown) {
@@ -435,12 +458,14 @@ export function VipassanaLiveScannerModal({
           } catch {}
 
           if (soundEnabled) playBeep('SUCCESS');
+          triggerHaptic(targetStatus === 'LATE' ? 'WARN' : 'SUCCESS');
 
           setLastFeedback({
-            type: 'SUCCESS',
+            type: targetStatus === 'LATE' ? 'WARN' : 'SUCCESS',
             message: `📦 บันทึกออฟไลน์สำเร็จ: ${localReg.studentName} (${checkInTime} น. • รอซิงค์เมื่อต่อเน็ต)`,
             student: localReg,
             time: checkInTime,
+            status: targetStatus,
           });
 
           setRecentScans((prev) => [
@@ -459,10 +484,12 @@ export function VipassanaLiveScannerModal({
           ]);
         } else {
           if (soundEnabled) playBeep('ERROR');
+          triggerHaptic('ERROR');
           const errText = err instanceof Error ? err.message : String(err);
           setLastFeedback({
             type: 'ERROR',
-            message: 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + errText,
+            message: `ไม่พบข้อมูลนิสิต (รหัส: ${cleanCode}) - ${errText}`,
+            scannedCode: cleanCode,
           });
         }
       } finally {
@@ -710,15 +737,15 @@ export function VipassanaLiveScannerModal({
             <button
               type="button"
               onClick={() => setSoundEnabled((v) => !v)}
-              className={`p-2 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold ${
+              className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
                 soundEnabled
                   ? 'bg-purple-800/80 text-purple-200 hover:bg-purple-700'
-                  : 'bg-rose-900/60 text-rose-300 hover:bg-rose-800'
+                  : 'bg-rose-900/60 text-rose-300 hover:bg-rose-800 border border-rose-400/40'
               }`}
-              title={soundEnabled ? 'ปิดเสียงแจ้งเตือน' : 'เปิดเสียงแจ้งเตือน'}
+              title={soundEnabled ? 'ปิดเสียงแจ้งเตือน (ใช้ข้อความแจ้งบนจอและสั่นแทน)' : 'เปิดเสียงแจ้งเตือน'}
             >
               {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
-              <span className="hidden sm:inline">{soundEnabled ? 'เสียงเปิด' : 'ปิดเสียง'}</span>
+              <span className="hidden sm:inline">{soundEnabled ? 'เสียงเปิด' : 'โหมดเงียบ (แจ้งเตือนบนจอ)'}</span>
             </button>
 
             <button
@@ -1070,6 +1097,98 @@ export function VipassanaLiveScannerModal({
 
               {/* Camera Preview Area */}
               <div className="relative min-h-[220px] max-h-[320px] flex items-center justify-center bg-black/60 overflow-hidden">
+                {/* On-Screen Heads-Up Display (HUD) Visual Notification (Silent Meditation Friendly) */}
+                {lastFeedback && (
+                  <div
+                    className={`absolute top-2 left-2 right-2 z-30 p-2.5 sm:p-3 rounded-2xl shadow-2xl border backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-top-3 flex items-center gap-2.5 sm:gap-3 ${
+                      lastFeedback.type === 'SUCCESS'
+                        ? 'bg-emerald-600/95 text-white border-emerald-300 shadow-emerald-950/50'
+                        : lastFeedback.type === 'WARN'
+                        ? 'bg-amber-500/95 text-white border-amber-200 shadow-amber-950/50'
+                        : 'bg-rose-600/95 text-white border-rose-300 shadow-rose-950/50'
+                    }`}
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black shadow-md ${
+                        lastFeedback.type === 'SUCCESS'
+                          ? 'bg-white text-emerald-700'
+                          : lastFeedback.type === 'WARN'
+                          ? 'bg-white text-amber-600'
+                          : 'bg-white text-rose-700 animate-bounce'
+                      }`}
+                    >
+                      {lastFeedback.type === 'SUCCESS' ? (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                      ) : lastFeedback.type === 'WARN' ? (
+                        <AlertTriangle className="w-6 h-6 text-amber-600" />
+                      ) : (
+                        <X className="w-6 h-6 text-rose-600" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-black tracking-wide uppercase shadow-2xs ${
+                            lastFeedback.type === 'SUCCESS'
+                              ? 'bg-emerald-900/60 text-emerald-100'
+                              : lastFeedback.type === 'WARN'
+                              ? 'bg-amber-900/60 text-amber-100'
+                              : 'bg-rose-900/60 text-rose-100'
+                          }`}
+                        >
+                          {lastFeedback.type === 'SUCCESS'
+                            ? '✓ สแกนสำเร็จ (SUCCESS)'
+                            : lastFeedback.type === 'WARN'
+                            ? lastFeedback.isDuplicate
+                              ? 'ℹ️ เช็คชื่อซ้ำ (ALREADY CHECKED)'
+                              : '⚠️ สแกนสำเร็จ (สาย)'
+                            : '✗ ไม่พบข้อมูล (NOT FOUND)'}
+                        </span>
+                        {lastFeedback.time && (
+                          <span className="font-mono text-[10.5px] text-white/90">
+                            {lastFeedback.time} น.
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="font-black text-sm sm:text-base text-white leading-tight truncate mt-0.5">
+                        {lastFeedback.student?.studentName || lastFeedback.message}
+                      </div>
+
+                      {lastFeedback.student ? (
+                        <div className="flex items-center gap-2 text-xs text-white/90 font-mono flex-wrap pt-0.5">
+                          {lastFeedback.student.groupSpecificCode && (
+                            <span className="bg-white/25 px-1.5 py-0.2 rounded font-black text-white">
+                              {lastFeedback.student.groupSpecificCode}
+                            </span>
+                          )}
+                          <span>{lastFeedback.student.studentCode}</span>
+                          {lastFeedback.student.groupNumber && (
+                            <span className="font-sans font-semibold">กลุ่ม {lastFeedback.student.groupNumber}</span>
+                          )}
+                          {lastFeedback.student.vasa && (
+                            <span className="font-sans text-[11px]">({lastFeedback.student.vasa} พรรษา)</span>
+                          )}
+                        </div>
+                      ) : lastFeedback.scannedCode ? (
+                        <div className="text-[11px] text-white/85 font-mono pt-0.5">
+                          รหัสที่สแกน: <strong>{lastFeedback.scannedCode}</strong> (ไม่มีในทะเบียนโครงการ)
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setLastFeedback(null)}
+                      className="p-1 rounded-lg text-white/70 hover:text-white hover:bg-white/20 transition cursor-pointer self-start"
+                      title="ปิดการแจ้งเตือน"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
                 {isCameraActive ? (
                   <>
                     <video
@@ -1106,50 +1225,87 @@ export function VipassanaLiveScannerModal({
             {/* LIVE FEEDBACK CARD */}
             {lastFeedback && (
               <div
-                className={`p-4 rounded-2xl border transition-all animate-in fade-in slide-in-from-top-2 duration-200 ${
+                className={`p-4 sm:p-5 rounded-2xl border-2 transition-all animate-in fade-in slide-in-from-top-2 duration-200 shadow-md ${
                   lastFeedback.type === 'SUCCESS'
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                    ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-emerald-400 text-emerald-950'
                     : lastFeedback.type === 'WARN'
-                    ? 'bg-amber-50 border-amber-200 text-amber-950'
-                    : 'bg-rose-50 border-rose-200 text-rose-950'
+                    ? 'bg-gradient-to-r from-amber-50 via-orange-50 to-white border-amber-400 text-amber-950'
+                    : 'bg-gradient-to-r from-rose-50 via-red-50 to-white border-rose-400 text-rose-950'
                 }`}
               >
-                <div className="flex items-start gap-3">
-                  {lastFeedback.type === 'SUCCESS' ? (
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
-                  ) : lastFeedback.type === 'WARN' ? (
-                    <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
-                  ) : (
-                    <X className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
-                  )}
+                <div className="flex items-start gap-3.5">
+                  <div
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
+                      lastFeedback.type === 'SUCCESS'
+                        ? 'bg-emerald-600 text-white'
+                        : lastFeedback.type === 'WARN'
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-rose-600 text-white'
+                    }`}
+                  >
+                    {lastFeedback.type === 'SUCCESS' ? (
+                      <CheckCircle2 className="w-7 h-7" />
+                    ) : lastFeedback.type === 'WARN' ? (
+                      <AlertTriangle className="w-7 h-7" />
+                    ) : (
+                      <X className="w-7 h-7" />
+                    )}
+                  </div>
 
-                  <div className="flex-1 space-y-1">
-                    <div className="font-extrabold text-sm sm:text-base leading-tight">
+                  <div className="flex-1 space-y-1.5 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs ${
+                          lastFeedback.type === 'SUCCESS'
+                            ? 'bg-emerald-700 text-white'
+                            : lastFeedback.type === 'WARN'
+                            ? 'bg-amber-600 text-white'
+                            : 'bg-rose-700 text-white'
+                        }`}
+                      >
+                        {lastFeedback.type === 'SUCCESS'
+                          ? '✓ สแกนสำเร็จ (CHECK-IN SUCCESS)'
+                          : lastFeedback.type === 'WARN'
+                          ? lastFeedback.isDuplicate
+                            ? 'ℹ️ เช็คชื่อซ้ำ (ALREADY CHECKED)'
+                            : '⚠️ สแกนสำเร็จแต่สาย (LATE)'
+                          : '✗ ไม่พบข้อมูลนิสิต (NOT FOUND)'}
+                      </span>
+                      {lastFeedback.time && (
+                        <span className="font-mono font-bold text-xs text-slate-500 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{lastFeedback.time} น.</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="font-black text-base sm:text-lg text-slate-900 leading-tight">
                       {lastFeedback.message}
                     </div>
 
                     {lastFeedback.student && (
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs pt-1 opacity-90">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs pt-1 text-slate-700">
                         {lastFeedback.student.groupSpecificCode && (
-                          <span className="px-2 py-0.5 rounded bg-white/90 text-purple-950 font-black font-mono shadow-xs">
+                          <span className="px-2 py-0.5 rounded-md bg-purple-800 text-white font-black font-mono shadow-xs">
                             {lastFeedback.student.groupSpecificCode}
                           </span>
                         )}
-                        <span>
-                          รหัสนิสิต: <strong className="font-mono">{lastFeedback.student.studentCode}</strong>
+                        <span className="font-mono font-bold text-purple-950">
+                          {lastFeedback.student.studentCode}
                         </span>
                         {lastFeedback.student.groupNumber && (
-                          <span className="px-2 py-0.5 rounded bg-white/70 font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 font-bold border border-purple-200">
                             กลุ่มที่ {lastFeedback.student.groupNumber}
                           </span>
                         )}
-                        {lastFeedback.student.vasa && <span>พรรษา: {lastFeedback.student.vasa}</span>}
-                        {lastFeedback.time && (
-                          <span className="flex items-center gap-1 font-mono">
-                            <Clock className="w-3 h-3" />
-                            {lastFeedback.time} น.
-                          </span>
-                        )}
+                        {lastFeedback.student.vasa && <span>พรรษา: <strong>{lastFeedback.student.vasa}</strong></span>}
+                        {lastFeedback.student.major && <span className="truncate max-w-[160px]">สาขา: {lastFeedback.student.major}</span>}
+                      </div>
+                    )}
+
+                    {lastFeedback.scannedCode && !lastFeedback.student && (
+                      <div className="text-xs text-rose-700 font-mono pt-0.5">
+                        รหัสที่ตรวจจับได้: <strong>{lastFeedback.scannedCode}</strong> (กรุณาตรวจสอบว่านิสิตได้ลงทะเบียนในโครงการนี้หรือไม่)
                       </div>
                     )}
                   </div>
