@@ -92,6 +92,7 @@ export function VipassanaAttendanceSheetModal({
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [printBlankRows, setPrintBlankRows] = useState(false);
+  const [hideCheckmarks, setHideCheckmarks] = useState(false);
 
   // 3. Local working copy of attendance for current day
   const dayKey = `day_${selectedDayNumber}`;
@@ -867,15 +868,27 @@ export function VipassanaAttendanceSheetModal({
               </>
             ) : (
               <>
-                <label className="flex items-center gap-1.5 text-xs text-slate-600 font-medium cursor-pointer mr-2">
+                <label className="flex items-center gap-1.5 text-xs text-slate-600 font-medium cursor-pointer mr-1">
                   <input
                     type="checkbox"
                     checked={printBlankRows}
                     onChange={(e) => setPrintBlankRows(e.target.checked)}
                     className="rounded text-purple-600 focus:ring-purple-500"
                   />
-                  <span>พิมพ์แบบฟอร์มเปล่า (สำหรับเซ็นสด)</span>
+                  <span>พิมพ์แบบฟอร์มเปล่า</span>
                 </label>
+
+                {!printBlankRows && (
+                  <label className="flex items-center gap-1.5 text-xs text-purple-950 font-bold bg-purple-50 px-2 py-1 rounded-lg border border-purple-200 cursor-pointer mr-1" title="ซ่อนเครื่องหมาย ✓ ใน 4 ช่องเวลา เพื่อให้เป็นช่องว่างสำหรับเดินตรวจและเซ็นสด">
+                    <input
+                      type="checkbox"
+                      checked={hideCheckmarks}
+                      onChange={(e) => setHideCheckmarks(e.target.checked)}
+                      className="rounded text-purple-600 focus:ring-purple-500"
+                    />
+                    <span>ซ่อนเครื่องหมาย ✓ (เว้น 4 ช่องว่างสำหรับเซ็นสด)</span>
+                  </label>
+                )}
 
                 {/* Save PDF Button */}
                 <button
@@ -1531,6 +1544,7 @@ export function VipassanaAttendanceSheetModal({
                 p3Conf={p3Conf}
                 p4Conf={p4Conf}
                 printBlankRows={printBlankRows}
+                hideCheckmarks={hideCheckmarks}
                 attendanceRows={attendanceRows}
                 advisors={currentGroupAssignment?.advisors}
                 scannerStaff={scannerStaff}
@@ -1571,7 +1585,30 @@ export function VipassanaAttendanceSheetModal({
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Print Options & Actions */}
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <label className="flex items-center gap-1.5 text-xs text-slate-700 font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={printBlankRows}
+                      onChange={(e) => setPrintBlankRows(e.target.checked)}
+                      className="rounded text-purple-600 focus:ring-purple-500"
+                    />
+                    <span>พิมพ์แบบฟอร์มเปล่า</span>
+                  </label>
+
+                  {!printBlankRows && (
+                    <label className="flex items-center gap-1.5 text-xs text-purple-950 font-bold bg-white px-2 py-1 rounded-lg border border-purple-200 cursor-pointer shadow-2xs" title="ซ่อนเครื่องหมาย ✓ ใน 4 ช่องเวลา เพื่อให้เป็นช่องว่างสำหรับเดินตรวจและเซ็นสด">
+                      <input
+                        type="checkbox"
+                        checked={hideCheckmarks}
+                        onChange={(e) => setHideCheckmarks(e.target.checked)}
+                        className="rounded text-purple-600 focus:ring-purple-500"
+                      />
+                      <span>ซ่อนเครื่องหมาย ✓ (เว้น 4 ช่องว่าง)</span>
+                    </label>
+                  )}
+
                   {/* Save to PDF button */}
                   <button
                     type="button"
@@ -1609,6 +1646,7 @@ export function VipassanaAttendanceSheetModal({
                 p3Conf={p3Conf}
                 p4Conf={p4Conf}
                 printBlankRows={printBlankRows}
+                hideCheckmarks={hideCheckmarks}
                 attendanceRows={attendanceRows}
                 advisors={currentGroupAssignment?.advisors}
                 scannerStaff={scannerStaff}

@@ -27,6 +27,7 @@ interface VipassanaAttendancePrintSheetProps {
   p3Conf: MeditationPeriodConfig;
   p4Conf: MeditationPeriodConfig;
   printBlankRows: boolean;
+  hideCheckmarks?: boolean;
   attendanceRows: PrintAttendanceRow[];
   advisors?: string[]; // รายนามอาจารย์ประจำกลุ่ม และผู้ช่วย
   scannerStaff?: string; // อาจารย์ผู้ดูแล หรือเจ้าหน้าที่ ที่สแกนตรวจเช็ค (กรณีสแกน QR Code)
@@ -41,6 +42,7 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
   p3Conf,
   p4Conf,
   printBlankRows,
+  hideCheckmarks = false,
   attendanceRows,
   advisors,
   scannerStaff,
@@ -196,16 +198,16 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                           {row.groupNumber || (selectedGroup !== 'ALL' ? selectedGroup : '')}
                         </td>
                         <td className="border-r border-black/70 p-0.5 text-center">
-                          {row.p1 === 'PRESENT' ? '✓' : row.p1 === 'LATE' ? 'สาย' : row.p1 === 'SICK' ? 'ป่วย' : row.p1 === 'ABSENT' ? 'ขาด' : ''}
+                          {!hideCheckmarks && (row.p1 === 'PRESENT' ? '✓' : row.p1 === 'LATE' ? 'สาย' : row.p1 === 'SICK' ? 'ป่วย' : row.p1 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
                         <td className="border-r border-black/70 p-0.5 text-center">
-                          {row.p2 === 'PRESENT' ? '✓' : row.p2 === 'LATE' ? 'สาย' : row.p2 === 'SICK' ? 'ป่วย' : row.p2 === 'ABSENT' ? 'ขาด' : ''}
+                          {!hideCheckmarks && (row.p2 === 'PRESENT' ? '✓' : row.p2 === 'LATE' ? 'สาย' : row.p2 === 'SICK' ? 'ป่วย' : row.p2 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
                         <td className="border-r border-black/70 p-0.5 text-center">
-                          {row.p3 === 'PRESENT' ? '✓' : row.p3 === 'LATE' ? 'สาย' : row.p3 === 'SICK' ? 'ป่วย' : row.p3 === 'ABSENT' ? 'ขาด' : ''}
+                          {!hideCheckmarks && (row.p3 === 'PRESENT' ? '✓' : row.p3 === 'LATE' ? 'สาย' : row.p3 === 'SICK' ? 'ป่วย' : row.p3 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
                         <td className="border-r border-black/70 p-0.5 text-center">
-                          {row.p4 === 'PRESENT' ? '✓' : row.p4 === 'LATE' ? 'สาย' : row.p4 === 'SICK' ? 'ป่วย' : row.p4 === 'ABSENT' ? 'ขาด' : ''}
+                          {!hideCheckmarks && (row.p4 === 'PRESENT' ? '✓' : row.p4 === 'LATE' ? 'สาย' : row.p4 === 'SICK' ? 'ป่วย' : row.p4 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
                         <td className="p-0.5 text-left text-[9px] px-1 truncate">{row.remark || ''}</td>
                       </tr>
@@ -346,16 +348,16 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                           {row.groupNumber || (selectedGroup !== 'ALL' ? selectedGroup : '')}
                         </td>
                         <td className="border-r border-black/70 p-0.5 text-center">
-                          {row.p1 === 'PRESENT' ? '✓' : row.p1 === 'LATE' ? 'สาย' : row.p1 === 'SICK' ? 'ป่วย' : row.p1 === 'ABSENT' ? 'ขาด' : ''}
+                          {!hideCheckmarks && (row.p1 === 'PRESENT' ? '✓' : row.p1 === 'LATE' ? 'สาย' : row.p1 === 'SICK' ? 'ป่วย' : row.p1 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
                         <td className="border-r border-black/70 p-0.5 text-center">
-                          {row.p2 === 'PRESENT' ? '✓' : row.p2 === 'LATE' ? 'สาย' : row.p2 === 'SICK' ? 'ป่วย' : row.p2 === 'ABSENT' ? 'ขาด' : ''}
+                          {!hideCheckmarks && (row.p2 === 'PRESENT' ? '✓' : row.p2 === 'LATE' ? 'สาย' : row.p2 === 'SICK' ? 'ป่วย' : row.p2 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
                         <td className="border-r border-black/70 p-0.5 text-center">
-                          {row.p3 === 'PRESENT' ? '✓' : row.p3 === 'LATE' ? 'สาย' : row.p3 === 'SICK' ? 'ป่วย' : row.p3 === 'ABSENT' ? 'ขาด' : ''}
+                          {!hideCheckmarks && (row.p3 === 'PRESENT' ? '✓' : row.p3 === 'LATE' ? 'สาย' : row.p3 === 'SICK' ? 'ป่วย' : row.p3 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
                         <td className="border-r border-black/70 p-0.5 text-center">
-                          {row.p4 === 'PRESENT' ? '✓' : row.p4 === 'LATE' ? 'สาย' : row.p4 === 'SICK' ? 'ป่วย' : row.p4 === 'ABSENT' ? 'ขาด' : ''}
+                          {!hideCheckmarks && (row.p4 === 'PRESENT' ? '✓' : row.p4 === 'LATE' ? 'สาย' : row.p4 === 'SICK' ? 'ป่วย' : row.p4 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
                         <td className="p-0.5 text-left text-[9px] px-1 truncate">{row.remark || ''}</td>
                       </tr>
