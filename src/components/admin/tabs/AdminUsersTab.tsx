@@ -24,11 +24,16 @@ import {
   ChevronsRight,
   Archive,
   FileSpreadsheet,
+  Award,
 } from 'lucide-react';
 import { UserAccount, Student } from '@/types';
 import type { AdminTab } from '../AdminSidebar';
 import type { AdminUserFilterItem } from '@/hooks/admin/useAdminUsers';
-import { ArchivedInstructorsModal, InstructorImportModal } from '../modals';
+import {
+  ArchivedInstructorsModal,
+  InstructorImportModal,
+  VipassanaMasterImportExportModal,
+} from '../modals';
 import { RolePermissionsMatrixView } from './RolePermissionsMatrixView';
 
 interface AdminUsersTabProps {
@@ -103,6 +108,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
   const [pageSize, setPageSize] = useState(15);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [isBatchImportOpen, setIsBatchImportOpen] = useState(false);
+  const [isVipassanaMasterModalOpen, setIsVipassanaMasterModalOpen] = useState(false);
   const [archivingId, setArchivingId] = useState<string | null>(null);
 
   const handleArchiveInstructor = async (u: UserAccount) => {
@@ -392,7 +398,18 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
             title="นำเข้าและอัปเดตข้อมูลอาจารย์หลายท่านพร้อมกันเป็นชุดด้วย Excel / CSV หรือคัดลอกมาวาง"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>📥 นำเข้าและอัปเดตอาจารย์เป็นชุด (Batch Import)</span>
+            <span>📥 นำเข้าอาจารย์เป็นชุด (Batch)</span>
+          </button>
+
+          {/* Vipassana Masters Import/Export & Auto ID/Password Modal Button */}
+          <button
+            type="button"
+            onClick={() => setIsVipassanaMasterModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-600/20 transition cursor-pointer"
+            title="นำเข้า/ส่งออก พระวิปัสสนาจารย์ พร้อมสร้างไอดี-รหัสผ่านอัตโนมัติ (ประธาน, รองประธาน, พระวิปัสสนาจารย์, เลขานุการ)"
+          >
+            <Award className="w-3.5 h-3.5 text-amber-200" />
+            <span>🧘 พระวิปัสสนาจารย์ (Excel & รหัสผ่าน)</span>
           </button>
 
           <button
@@ -648,6 +665,17 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
           >
             ⛔ ถูกระงับ ({users.filter((u) => u.isSuspended || u.isActive === false).length})
           </button>
+
+          {userRoleFilter === 'VIPASSANA_MASTER' && (
+            <button
+              type="button"
+              onClick={() => setIsVipassanaMasterModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition ml-auto cursor-pointer"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>นำเข้า/ส่งออก Excel พระวิปัสสนาจารย์</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -995,6 +1023,17 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
       <InstructorImportModal
         isOpen={isBatchImportOpen}
         onClose={() => setIsBatchImportOpen(false)}
+        existingUsers={users}
+        onSuccess={() => {
+          if (onRefresh) onRefresh();
+          else if (typeof window !== 'undefined') window.location.reload();
+        }}
+      />
+
+      {/* Vipassana Masters Import & Export & Auto ID/Password Modal */}
+      <VipassanaMasterImportExportModal
+        isOpen={isVipassanaMasterModalOpen}
+        onClose={() => setIsVipassanaMasterModalOpen(false)}
         existingUsers={users}
         onSuccess={() => {
           if (onRefresh) onRefresh();

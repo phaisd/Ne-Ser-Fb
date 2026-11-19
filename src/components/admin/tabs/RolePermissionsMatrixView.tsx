@@ -736,6 +736,11 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
                     ☑️ ช่วยงาน
                   </span>
                 )}
+                {rc.key === 'VIPASSANA_MASTER' && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                    🧘 วิปัสสนา
+                  </span>
+                )}
               </div>
             </div>
           );

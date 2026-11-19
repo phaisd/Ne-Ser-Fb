@@ -438,13 +438,29 @@ export async function batchImportInstructors(
   createdCount: number;
   updatedCount: number;
   errors: string[];
-  processed: Array<{ name: string; email: string; action: 'CREATED' | 'UPDATED' }>;
+  processed: Array<{
+    name: string;
+    nameEn?: string;
+    email: string;
+    password?: string;
+    instructorType?: string;
+    role?: UserRole;
+    action: 'CREATED' | 'UPDATED';
+  }>;
 }> {
   const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
   let createdCount = 0;
   let updatedCount = 0;
   const errors: string[] = [];
-  const processed: Array<{ name: string; email: string; action: 'CREATED' | 'UPDATED' }> = [];
+  const processed: Array<{
+    name: string;
+    nameEn?: string;
+    email: string;
+    password?: string;
+    instructorType?: string;
+    role?: UserRole;
+    action: 'CREATED' | 'UPDATED';
+  }> = [];
 
   for (const item of items) {
     if (!item.name || !item.name.trim()) {
@@ -487,27 +503,56 @@ export async function batchImportInstructors(
       if (item.role) {
         found.role = item.role;
       }
+      if (item.password && item.password.trim()) {
+        found.password = item.password.trim();
+        found.defaultPassword = item.password.trim();
+      }
       if (!found.aliases) found.aliases = [found.name];
       if (!found.aliases.includes(cleanName)) {
         found.aliases.push(cleanName);
       }
       found.updatedAt = new Date().toISOString();
       updatedCount++;
-      processed.push({ name: cleanName, email: found.email, action: 'UPDATED' });
+      processed.push({
+        name: cleanName,
+        nameEn: found.nameEn,
+        email: found.email,
+        password: found.password || found.defaultPassword || 'mcu123456',
+        instructorType: found.instructorType,
+        role: found.role,
+        action: 'UPDATED',
+      });
     } else {
-      // CREATE new instructor
+      // CREATE new instructor / meditation master
       const newId = 'inst-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
       let assignedEmail = cleanEmail;
       if (!assignedEmail) {
-        const randomNum = Math.floor(100 + Math.random() * 900);
-        assignedEmail = `teacher${randomNum}@mcu.ac.th`;
+        if (item.role === 'VIPASSANA_MASTER') {
+          // Sequential ID for Vipassana Masters: vipassana01@mcu.ac.th, vipassana02, etc.
+          let vpSeq = 1;
+          while (list.some((u) => (u.email || '').toLowerCase() === `vipassana${String(vpSeq).padStart(2, '0')}@mcu.ac.th`.toLowerCase())) {
+            vpSeq++;
+          }
+          assignedEmail = `vipassana${String(vpSeq).padStart(2, '0')}@mcu.ac.th`;
+        } else {
+          const randomNum = Math.floor(100 + Math.random() * 900);
+          assignedEmail = `teacher${randomNum}@mcu.ac.th`;
+        }
       }
 
       // Check if assignedEmail is already used by another account, if so add random salt
       while (list.some((u) => (u.email || '').toLowerCase() === assignedEmail.toLowerCase())) {
         const salt = Math.floor(1000 + Math.random() * 9000);
-        assignedEmail = `teacher${salt}@mcu.ac.th`;
+        assignedEmail = item.role === 'VIPASSANA_MASTER' ? `vipassana${salt}@mcu.ac.th` : `teacher${salt}@mcu.ac.th`;
       }
+
+      const defaultPwd = item.password && item.password.trim() ? item.password.trim() : 'mcu123456';
+      const defaultDept = item.role === 'VIPASSANA_MASTER'
+        ? 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์'
+        : 'คณะพุทธศาสตร์ มจร';
+      const defaultType = item.role === 'VIPASSANA_MASTER'
+        ? (item.instructorType || 'พระวิปัสสนาจารย์')
+        : 'อาจารย์ประจำ';
 
       const newAcc: InstructorAccount = {
         id: newId,
@@ -515,10 +560,10 @@ export async function batchImportInstructors(
         nameEn: item.nameEn ? item.nameEn.trim() : undefined,
         email: assignedEmail,
         gmail: item.gmail ? item.gmail.trim().toLowerCase() : `${assignedEmail.split('@')[0]}@gmail.com`,
-        password: item.password || 'mcu123456',
-        defaultPassword: 'mcu123456',
-        department: item.department ? item.department.trim() : 'คณะพุทธศาสตร์ มจร',
-        instructorType: item.instructorType ? item.instructorType.trim() : 'อาจารย์ประจำ',
+        password: defaultPwd,
+        defaultPassword: defaultPwd,
+        department: item.department ? item.department.trim() : defaultDept,
+        instructorType: item.instructorType ? item.instructorType.trim() : defaultType,
         role: item.role || 'INSTRUCTOR',
         coursesCount: 0,
         isActive: true,
@@ -528,7 +573,15 @@ export async function batchImportInstructors(
 
       list.unshift(newAcc);
       createdCount++;
-      processed.push({ name: cleanName, email: assignedEmail, action: 'CREATED' });
+      processed.push({
+        name: cleanName,
+        nameEn: newAcc.nameEn,
+        email: assignedEmail,
+        password: defaultPwd,
+        instructorType: newAcc.instructorType,
+        role: newAcc.role,
+        action: 'CREATED',
+      });
     }
   }
 
