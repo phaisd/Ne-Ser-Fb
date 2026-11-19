@@ -16,11 +16,13 @@ import {
   FileDown,
   Image as ImageIcon,
   Loader2,
+  Upload,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types/event';
 
 export type BadgeLayoutMode = 'EIGHT_PER_PAGE' | 'SIX_PER_PAGE' | 'FOUR_PER_PAGE' | 'TEN_PER_PAGE';
 export type BadgeOrientation = 'VERTICAL' | 'HORIZONTAL';
+export type BadgeWatermarkMode = 'MCU_LOGO' | 'CUSTOM' | 'NONE';
 
 interface VipassanaBadgesModalProps {
   isOpen: boolean;
@@ -44,6 +46,61 @@ export function VipassanaBadgesModal({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingPng, setIsExportingPng] = useState(false);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
+
+  // Watermark / Custom Background states
+  const [watermarkMode, setWatermarkMode] = useState<BadgeWatermarkMode>('MCU_LOGO');
+  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(0.10);
+  const [customWatermarkUrl, setCustomWatermarkUrl] = useState<string>('');
+  const [systemLogoUrl, setSystemLogoUrl] = useState<string>('/uploads/logo-1793607763771.jpg');
+  const watermarkFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Fetch official MCU logo from system settings
+  useEffect(() => {
+    if (!isOpen) return;
+    let isMounted = true;
+    async function loadLogo() {
+      try {
+        const res = await fetch('/api/system-settings');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data.data?.logoUrl) {
+            setSystemLogoUrl(data.data.logoUrl);
+          }
+        }
+      } catch {
+        // Fallback default logo is already set
+      }
+    }
+    loadLogo();
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]);
+
+  // Compute active watermark image url
+  const activeWatermark = useMemo(() => {
+    if (watermarkMode === 'NONE') return '';
+    if (watermarkMode === 'CUSTOM') return customWatermarkUrl;
+    return systemLogoUrl || '/uploads/logo-1793607763771.jpg';
+  }, [watermarkMode, customWatermarkUrl, systemLogoUrl]);
+
+  // Handle custom watermark / background upload
+  const handleWatermarkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ขนาดไฟล์ภาพต้องไม่เกิน 5 MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setCustomWatermarkUrl(reader.result);
+        setWatermarkMode('CUSTOM');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Available groups
   const availableGroups = useMemo(() => {
@@ -512,6 +569,77 @@ export function VipassanaBadgesModal({
               </select>
             </div>
 
+            {/* Watermark / Background Controls */}
+            <div className="flex items-center gap-1.5 bg-purple-50/70 px-2 py-1 rounded-xl border border-purple-200/80">
+              <span className="font-bold text-purple-900 flex items-center gap-1">
+                <ImageIcon className="w-3.5 h-3.5 text-purple-700" />
+                ลายน้ำ:
+              </span>
+              <select
+                value={watermarkMode}
+                onChange={(e) => {
+                  const mode = e.target.value as BadgeWatermarkMode;
+                  setWatermarkMode(mode);
+                  if (mode === 'CUSTOM' && !customWatermarkUrl) {
+                    watermarkFileInputRef.current?.click();
+                  }
+                }}
+                className="px-2 py-1 bg-white rounded-lg border border-purple-200 text-xs font-bold text-purple-950 focus:outline-none cursor-pointer"
+              >
+                <option value="MCU_LOGO">☸️ ตราสัญลักษณ์ มจร</option>
+                <option value="CUSTOM">🖼️ อัปโหลดภาพพื้นหลังเอง</option>
+                <option value="NONE">🚫 ไม่ใส่ลายน้ำ</option>
+              </select>
+
+              {watermarkMode !== 'NONE' && (
+                <select
+                  value={watermarkOpacity}
+                  onChange={(e) => setWatermarkOpacity(parseFloat(e.target.value))}
+                  className="px-1.5 py-1 bg-white rounded-lg border border-purple-200 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                  title="ระดับความโปร่งแสงของลายน้ำ"
+                >
+                  <option value={0.06}>จาง 6%</option>
+                  <option value={0.10}>พอดี 10% (แนะนำ)</option>
+                  <option value={0.15}>ชัด 15%</option>
+                  <option value={0.20}>เข้ม 20%</option>
+                </select>
+              )}
+
+              {watermarkMode === 'CUSTOM' && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => watermarkFileInputRef.current?.click()}
+                    className="px-2 py-1 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                    title="เลือกรูปภาพพื้นหลังลายน้ำจากเครื่อง"
+                  >
+                    <Upload className="w-3 h-3" />
+                    <span>{customWatermarkUrl ? 'เปลี่ยนรูป' : 'เลือกรูป'}</span>
+                  </button>
+                  {customWatermarkUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomWatermarkUrl('');
+                        setWatermarkMode('MCU_LOGO');
+                      }}
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                      title="ยกเลิกภาพพื้นหลังที่อัปโหลด กลับไปใช้ตรา มจร"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )}
+              <input
+                ref={watermarkFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleWatermarkUpload}
+              />
+            </div>
+
             {/* Search */}
             <div className="relative min-w-[170px]">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -656,7 +784,7 @@ export function VipassanaBadgesModal({
                         return (
                           <div
                             key={reg.id}
-                            className={`border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-1.5 print:border-slate-400 print:rounded-none flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid ${printCardHeight}`}
+                            className={`border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-1.5 print:border-slate-400 print:rounded-none flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
                             style={{
                               minHeight:
                                 layoutMode === 'FOUR_PER_PAGE'
@@ -668,10 +796,34 @@ export function VipassanaBadgesModal({
                                   : '175px',
                             }}
                           >
+                            {/* Background Watermark Layer - subtle & safe for QR scanning */}
+                            {watermarkMode !== 'NONE' && activeWatermark && (
+                              <div
+                                className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
+                                style={{ opacity: watermarkOpacity }}
+                              >
+                                <img
+                                  src={activeWatermark}
+                                  alt="Watermark"
+                                  className="object-contain max-w-[70%] max-h-[70%] filter grayscale contrast-125"
+                                  crossOrigin="anonymous"
+                                />
+                              </div>
+                            )}
+
                             {/* Top: Header */}
-                            <div className="text-center border-b border-slate-200 pb-1 shrink-0">
-                              <div className="flex items-center justify-center gap-1 text-[9.5px] font-extrabold uppercase tracking-wide text-purple-900 leading-tight">
-                                <span>☸️</span>
+                            <div className="text-center border-b border-slate-200 pb-1 shrink-0 relative z-10">
+                              <div className="flex items-center justify-center gap-1.5 text-[9.5px] font-extrabold uppercase tracking-wide text-purple-900 leading-tight">
+                                {systemLogoUrl ? (
+                                  <img
+                                    src={systemLogoUrl}
+                                    alt="MCU Logo"
+                                    className="w-4 h-4 object-contain inline-block shrink-0 rounded-xs"
+                                    crossOrigin="anonymous"
+                                  />
+                                ) : (
+                                  <span>☸️</span>
+                                )}
                                 <span>{isEnglish ? 'Faculty of Buddhism • MCU' : 'คณะพุทธศาสตร์ มจร'}</span>
                               </div>
                               <div className="text-[10px] font-bold text-slate-800 leading-tight pt-0.5 truncate">
@@ -680,7 +832,7 @@ export function VipassanaBadgesModal({
                             </div>
 
                             {/* Middle: Group & Student Name */}
-                            <div className="text-center py-0.5 shrink-0 space-y-0.5">
+                            <div className="text-center py-0.5 shrink-0 space-y-0.5 relative z-10">
                               <div className="flex items-center justify-center gap-1.5 flex-wrap">
                                 <span className="px-2 py-0.2 rounded-full bg-purple-100 text-purple-900 text-[10px] font-black border border-purple-200">
                                   กลุ่ม {gNum || '-'}
@@ -704,31 +856,33 @@ export function VipassanaBadgesModal({
                             </div>
 
                             {/* Center: Large High-Contrast QR Code */}
-                            <div className="flex flex-col items-center justify-center my-auto py-0.5">
+                            <div className="flex flex-col items-center justify-center my-auto py-0.5 relative z-10">
                               {qrCodeUrls[reg.id] ? (
-                                <img
-                                  src={qrCodeUrls[reg.id]}
-                                  alt={`QR ${reg.studentCode}`}
-                                  className="object-contain rounded-md border border-slate-300 p-0.5 bg-white shadow-2xs"
-                                  style={{
-                                    width:
-                                      layoutMode === 'FOUR_PER_PAGE'
-                                        ? '120px'
-                                        : layoutMode === 'SIX_PER_PAGE'
-                                        ? '90px'
-                                        : layoutMode === 'EIGHT_PER_PAGE'
-                                        ? '74px'
-                                        : '58px',
-                                    height:
-                                      layoutMode === 'FOUR_PER_PAGE'
-                                        ? '120px'
-                                        : layoutMode === 'SIX_PER_PAGE'
-                                        ? '90px'
-                                        : layoutMode === 'EIGHT_PER_PAGE'
-                                        ? '74px'
-                                        : '58px',
-                                  }}
-                                />
+                                <div className="p-1 bg-white rounded-xl border border-slate-300 shadow-2xs">
+                                  <img
+                                    src={qrCodeUrls[reg.id]}
+                                    alt={`QR ${reg.studentCode}`}
+                                    className="object-contain block bg-white"
+                                    style={{
+                                      width:
+                                        layoutMode === 'FOUR_PER_PAGE'
+                                          ? '120px'
+                                          : layoutMode === 'SIX_PER_PAGE'
+                                          ? '90px'
+                                          : layoutMode === 'EIGHT_PER_PAGE'
+                                          ? '74px'
+                                          : '58px',
+                                      height:
+                                        layoutMode === 'FOUR_PER_PAGE'
+                                          ? '120px'
+                                          : layoutMode === 'SIX_PER_PAGE'
+                                          ? '90px'
+                                          : layoutMode === 'EIGHT_PER_PAGE'
+                                          ? '74px'
+                                          : '58px',
+                                    }}
+                                  />
+                                </div>
                               ) : (
                                 <div className="w-16 h-16 bg-slate-100 rounded-md animate-pulse" />
                               )}
@@ -738,7 +892,7 @@ export function VipassanaBadgesModal({
                             </div>
 
                             {/* Bottom Footer */}
-                            <div className="border-t border-slate-100 pt-0.5 text-[8.5px] text-slate-400 flex items-center justify-between shrink-0">
+                            <div className="border-t border-slate-100 pt-0.5 text-[8.5px] text-slate-400 flex items-center justify-between shrink-0 relative z-10">
                               <span className="truncate max-w-[140px] text-slate-500">
                                 {reg.major || (isEnglish ? 'Buddhism' : 'พุทธศาสตร์')}
                               </span>
@@ -754,7 +908,7 @@ export function VipassanaBadgesModal({
                       return (
                         <div
                           key={reg.id}
-                          className={`border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-1.5 print:border-slate-400 print:rounded-none flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid ${printCardHeight}`}
+                          className={`border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-1.5 print:border-slate-400 print:rounded-none flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
                           style={{
                             minHeight:
                               layoutMode === 'FOUR_PER_PAGE'
@@ -766,10 +920,34 @@ export function VipassanaBadgesModal({
                                 : '175px',
                           }}
                         >
+                          {/* Background Watermark Layer - subtle & safe for QR scanning */}
+                          {watermarkMode !== 'NONE' && activeWatermark && (
+                            <div
+                              className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
+                              style={{ opacity: watermarkOpacity }}
+                            >
+                              <img
+                                src={activeWatermark}
+                                alt="Watermark"
+                                className="object-contain max-w-[70%] max-h-[70%] filter grayscale contrast-125"
+                                crossOrigin="anonymous"
+                              />
+                            </div>
+                          )}
+
                           {/* Top: Header */}
-                          <div className="text-center border-b border-slate-200 pb-1 shrink-0">
-                            <div className="flex items-center justify-center gap-1 text-[9.5px] font-extrabold uppercase tracking-wide text-purple-900 leading-tight">
-                              <span>☸️</span>
+                          <div className="text-center border-b border-slate-200 pb-1 shrink-0 relative z-10">
+                            <div className="flex items-center justify-center gap-1.5 text-[9.5px] font-extrabold uppercase tracking-wide text-purple-900 leading-tight">
+                              {systemLogoUrl ? (
+                                <img
+                                  src={systemLogoUrl}
+                                  alt="MCU Logo"
+                                  className="w-4 h-4 object-contain inline-block shrink-0 rounded-xs"
+                                  crossOrigin="anonymous"
+                                />
+                              ) : (
+                                <span>☸️</span>
+                              )}
                               <span>{isEnglish ? 'Faculty of Buddhism • MCU' : 'คณะพุทธศาสตร์ มจร'}</span>
                             </div>
                             <div className="text-[10px] font-bold text-slate-800 leading-tight pt-0.5 truncate">
@@ -778,7 +956,7 @@ export function VipassanaBadgesModal({
                           </div>
 
                           {/* Middle: Left Info + Right QR */}
-                          <div className="py-1 flex items-center justify-between gap-2 flex-1 my-auto">
+                          <div className="py-1 flex items-center justify-between gap-2 flex-1 my-auto relative z-10">
                             <div className="flex-1 space-y-0.5 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="px-2 py-0.2 rounded-full bg-purple-100 text-purple-900 text-[10px] font-black border border-purple-200">
@@ -809,31 +987,33 @@ export function VipassanaBadgesModal({
                             </div>
 
                             {/* Right QR Code */}
-                            <div className="shrink-0 flex flex-col items-center">
+                            <div className="shrink-0 flex flex-col items-center relative z-10">
                               {qrCodeUrls[reg.id] ? (
-                                <img
-                                  src={qrCodeUrls[reg.id]}
-                                  alt={`QR ${reg.studentCode}`}
-                                  className="object-contain rounded-md border border-slate-300 p-0.5 bg-white shadow-2xs"
-                                  style={{
-                                    width:
-                                      layoutMode === 'FOUR_PER_PAGE'
-                                        ? '105px'
-                                        : layoutMode === 'SIX_PER_PAGE'
-                                        ? '82px'
-                                        : layoutMode === 'EIGHT_PER_PAGE'
-                                        ? '68px'
-                                        : '54px',
-                                    height:
-                                      layoutMode === 'FOUR_PER_PAGE'
-                                        ? '105px'
-                                        : layoutMode === 'SIX_PER_PAGE'
-                                        ? '82px'
-                                        : layoutMode === 'EIGHT_PER_PAGE'
-                                        ? '68px'
-                                        : '54px',
-                                  }}
-                                />
+                                <div className="p-1 bg-white rounded-xl border border-slate-300 shadow-2xs">
+                                  <img
+                                    src={qrCodeUrls[reg.id]}
+                                    alt={`QR ${reg.studentCode}`}
+                                    className="object-contain block bg-white"
+                                    style={{
+                                      width:
+                                        layoutMode === 'FOUR_PER_PAGE'
+                                          ? '105px'
+                                          : layoutMode === 'SIX_PER_PAGE'
+                                          ? '82px'
+                                          : layoutMode === 'EIGHT_PER_PAGE'
+                                          ? '68px'
+                                          : '54px',
+                                      height:
+                                        layoutMode === 'FOUR_PER_PAGE'
+                                          ? '105px'
+                                          : layoutMode === 'SIX_PER_PAGE'
+                                          ? '82px'
+                                          : layoutMode === 'EIGHT_PER_PAGE'
+                                          ? '68px'
+                                          : '54px',
+                                    }}
+                                  />
+                                </div>
                               ) : (
                                 <div className="w-16 h-16 bg-slate-100 rounded-md animate-pulse" />
                               )}
@@ -844,7 +1024,7 @@ export function VipassanaBadgesModal({
                           </div>
 
                           {/* Bottom Footer */}
-                          <div className="border-t border-slate-100 pt-0.5 text-[8.5px] text-slate-400 flex items-center justify-between shrink-0">
+                          <div className="border-t border-slate-100 pt-0.5 text-[8.5px] text-slate-400 flex items-center justify-between shrink-0 relative z-10">
                             <span>บัตรประจำตัวผู้เข้าปฏิบัติ</span>
                             <span className="font-mono font-bold">
                               #{String(overallIdx + 1).padStart(3, '0')}

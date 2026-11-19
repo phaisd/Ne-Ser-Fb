@@ -102,6 +102,60 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   const [isExportingPng, setIsExportingPng] = useState(false);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
 
+  // Watermark / Custom Background states
+  const [slipsWatermarkMode, setSlipsWatermarkMode] = useState<'MCU_LOGO' | 'CUSTOM' | 'NONE'>('MCU_LOGO');
+  const [slipsWatermarkOpacity, setSlipsWatermarkOpacity] = useState<number>(0.10);
+  const [slipsCustomWatermarkUrl, setSlipsCustomWatermarkUrl] = useState<string>('');
+  const [slipsSystemLogoUrl, setSlipsSystemLogoUrl] = useState<string>('/uploads/logo-1793607763771.jpg');
+  const slipsWatermarkInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch official MCU logo from system settings
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLogo() {
+      try {
+        const res = await fetch('/api/system-settings');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data.data?.logoUrl) {
+            setSlipsSystemLogoUrl(data.data.logoUrl);
+          }
+        }
+      } catch {
+        // Fallback default
+      }
+    }
+    loadLogo();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Compute active watermark image url
+  const slipsActiveWatermark = useMemo(() => {
+    if (slipsWatermarkMode === 'NONE') return '';
+    if (slipsWatermarkMode === 'CUSTOM') return slipsCustomWatermarkUrl;
+    return slipsSystemLogoUrl || '/uploads/logo-1793607763771.jpg';
+  }, [slipsWatermarkMode, slipsCustomWatermarkUrl, slipsSystemLogoUrl]);
+
+  // Handle custom watermark / background upload
+  const handleSlipsWatermarkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ขนาดไฟล์ภาพต้องไม่เกิน 5 MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setSlipsCustomWatermarkUrl(reader.result);
+        setSlipsWatermarkMode('CUSTOM');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // List of current Vipassana Masters in the system
   const currentMasters = useMemo(() => {
     return existingUsers.filter((u) => {
@@ -1365,21 +1419,94 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                 </div>
 
                 {/* Filter and Search Bar */}
-                <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <span className="font-bold text-slate-600 shrink-0">ตำแหน่ง:</span>
-                    <select
-                      value={slipsPositionFilter}
-                      onChange={(e) => setSlipsPositionFilter(e.target.value)}
-                      className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-800 cursor-pointer"
-                    >
-                      <option value="ALL">-- ทุกตำแหน่ง ({currentMasters.length} รูป) --</option>
-                      {STANDARD_POSITIONS.map((pos) => (
-                        <option key={pos} value={pos}>
-                          {pos}
-                        </option>
-                      ))}
-                    </select>
+                <div className="pt-2 border-t border-slate-100 flex flex-col lg:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-600 shrink-0">ตำแหน่ง:</span>
+                      <select
+                        value={slipsPositionFilter}
+                        onChange={(e) => setSlipsPositionFilter(e.target.value)}
+                        className="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-800 cursor-pointer"
+                      >
+                        <option value="ALL">-- ทุกตำแหน่ง ({currentMasters.length} รูป) --</option>
+                        {STANDARD_POSITIONS.map((pos) => (
+                          <option key={pos} value={pos}>
+                            {pos}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Watermark / Background Controls */}
+                    <div className="flex items-center gap-1.5 bg-purple-50/70 px-2 py-1 rounded-xl border border-purple-200/80">
+                      <span className="font-bold text-purple-900 flex items-center gap-1">
+                        <ImageIcon className="w-3.5 h-3.5 text-purple-700" />
+                        ลายน้ำ:
+                      </span>
+                      <select
+                        value={slipsWatermarkMode}
+                        onChange={(e) => {
+                          const mode = e.target.value as 'MCU_LOGO' | 'CUSTOM' | 'NONE';
+                          setSlipsWatermarkMode(mode);
+                          if (mode === 'CUSTOM' && !slipsCustomWatermarkUrl) {
+                            slipsWatermarkInputRef.current?.click();
+                          }
+                        }}
+                        className="px-2 py-1 bg-white rounded-lg border border-purple-200 text-xs font-bold text-purple-950 focus:outline-none cursor-pointer"
+                      >
+                        <option value="MCU_LOGO">☸️ ตราสัญลักษณ์ มจร</option>
+                        <option value="CUSTOM">🖼️ อัปโหลดภาพพื้นหลังเอง</option>
+                        <option value="NONE">🚫 ไม่ใส่ลายน้ำ</option>
+                      </select>
+
+                      {slipsWatermarkMode !== 'NONE' && (
+                        <select
+                          value={slipsWatermarkOpacity}
+                          onChange={(e) => setSlipsWatermarkOpacity(parseFloat(e.target.value))}
+                          className="px-1.5 py-1 bg-white rounded-lg border border-purple-200 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                          title="ระดับความโปร่งแสงของลายน้ำ"
+                        >
+                          <option value={0.06}>จาง 6%</option>
+                          <option value={0.10}>พอดี 10% (แนะนำ)</option>
+                          <option value={0.15}>ชัด 15%</option>
+                          <option value={0.20}>เข้ม 20%</option>
+                        </select>
+                      )}
+
+                      {slipsWatermarkMode === 'CUSTOM' && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => slipsWatermarkInputRef.current?.click()}
+                            className="px-2 py-1 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                            title="เลือกรูปภาพพื้นหลังลายน้ำจากเครื่อง"
+                          >
+                            <Upload className="w-3 h-3" />
+                            <span>{slipsCustomWatermarkUrl ? 'เปลี่ยนรูป' : 'เลือกรูป'}</span>
+                          </button>
+                          {slipsCustomWatermarkUrl && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSlipsCustomWatermarkUrl('');
+                                setSlipsWatermarkMode('MCU_LOGO');
+                              }}
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                              title="ยกเลิกภาพพื้นหลังที่อัปโหลด กลับไปใช้ตรา มจร"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      <input
+                        ref={slipsWatermarkInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleSlipsWatermarkUpload}
+                      />
+                    </div>
                   </div>
 
                   <div className="relative w-full sm:w-72">
@@ -1498,17 +1625,36 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                                   : 'min-h-[550px] print:h-[280mm]'
                               }`}
                             >
-                              {/* Background Watermark Emblem */}
-                              <div className="absolute right-2 top-2 pointer-events-none opacity-5 text-7xl select-none">
-                                ☸️
-                              </div>
+                              {/* Background Watermark Layer - subtle & safe for QR scanning */}
+                              {slipsWatermarkMode !== 'NONE' && slipsActiveWatermark && (
+                                <div
+                                  className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
+                                  style={{ opacity: slipsWatermarkOpacity }}
+                                >
+                                  <img
+                                    src={slipsActiveWatermark}
+                                    alt="Watermark"
+                                    className="object-contain max-w-[65%] max-h-[65%] filter grayscale contrast-125"
+                                    crossOrigin="anonymous"
+                                  />
+                                </div>
+                              )}
 
                               {/* Card Header */}
-                              <div className="border-b border-amber-200/80 pb-2 flex items-start justify-between gap-2 shrink-0">
+                              <div className="border-b border-amber-200/80 pb-2 flex items-start justify-between gap-2 shrink-0 relative z-10">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-base shrink-0 shadow-2xs">
-                                    ☸️
-                                  </div>
+                                  {slipsSystemLogoUrl ? (
+                                    <img
+                                      src={slipsSystemLogoUrl}
+                                      alt="MCU Logo"
+                                      className="w-8 h-8 rounded-xl object-contain p-0.5 bg-white border border-amber-400/40 shrink-0 shadow-2xs"
+                                      crossOrigin="anonymous"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-base shrink-0 shadow-2xs">
+                                      ☸️
+                                    </div>
+                                  )}
                                   <div>
                                     <div className="text-[9.5px] font-black uppercase text-amber-900 tracking-wide leading-tight">
                                       คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
@@ -1531,7 +1677,7 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                               </div>
 
                               {/* Master Profile & Ecclesiastical Details */}
-                              <div className="py-2 space-y-1 shrink-0">
+                              <div className="py-2 space-y-1 shrink-0 relative z-10">
                                 <div className="flex items-baseline gap-2 flex-wrap">
                                   <h4 className="text-sm sm:text-base font-black text-slate-900 leading-snug">
                                     {m.name}
@@ -1554,7 +1700,7 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                               </div>
 
                               {/* Workload Brief Box */}
-                              <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-2 text-[10px] text-purple-950 space-y-0.5 shrink-0">
+                              <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-2 text-[10px] text-purple-950 space-y-0.5 shrink-0 relative z-10">
                                 <div className="font-bold flex items-center gap-1.5 text-purple-900">
                                   <Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                                   <span>ภาระงาน: สอบอารมณ์สติปัฏฐาน ๔ และประเมินผลการปฏิบัติธรรม</span>
@@ -1565,7 +1711,7 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                               </div>
 
                               {/* Credentials & Quick Scan Login QR Box */}
-                              <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 my-auto flex items-center justify-between gap-3 shadow-2xs">
+                              <div className="bg-white/95 rounded-xl border border-slate-200/90 p-2.5 my-auto flex items-center justify-between gap-3 shadow-2xs relative z-10">
                                 <div className="space-y-1 text-[10.5px] flex-1">
                                   <div className="text-[9.5px] font-extrabold uppercase text-slate-400 tracking-wider flex items-center gap-1">
                                     <Key className="w-3 h-3 text-amber-600" />
@@ -1588,11 +1734,13 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                                 {/* QR Code Box */}
                                 <div className="flex flex-col items-center shrink-0">
                                   {qrData ? (
-                                    <img
-                                      src={qrData}
-                                      alt={`QR ${m.name}`}
-                                      className="w-16 h-16 sm:w-18 sm:h-18 object-contain rounded-lg border border-purple-200 p-0.5 bg-white shadow-2xs"
-                                    />
+                                    <div className="p-1 bg-white rounded-xl border border-purple-200 shadow-2xs">
+                                      <img
+                                        src={qrData}
+                                        alt={`QR ${m.name}`}
+                                        className="w-16 h-16 sm:w-18 sm:h-18 object-contain block bg-white"
+                                      />
+                                    </div>
                                   ) : (
                                     <div className="w-16 h-16 bg-purple-50 rounded-lg animate-pulse border border-purple-200" />
                                   )}
@@ -1603,7 +1751,7 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                               </div>
 
                               {/* Card Footer */}
-                              <div className="border-t border-slate-200/80 pt-1.5 text-[8.5px] text-slate-400 flex items-center justify-between shrink-0">
+                              <div className="border-t border-slate-200/80 pt-1.5 text-[8.5px] text-slate-400 flex items-center justify-between shrink-0 relative z-10">
                                 <span className="font-medium text-slate-500">
                                   คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
                                 </span>
