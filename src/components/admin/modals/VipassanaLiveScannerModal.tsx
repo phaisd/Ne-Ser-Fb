@@ -493,6 +493,40 @@ export function VipassanaLiveScannerModal({
     }
   };
 
+  // Quick status override for Group Advisor Checklist
+  const handleOverrideStudentStatus = async (
+    studentCode: string,
+    newStatus: 'PRESENT' | 'LATE' | 'SICK'
+  ) => {
+    try {
+      const now = new Date();
+      const checkInTime = `${String(now.getHours()).padStart(2, '0')}:${String(
+        now.getMinutes()
+      ).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'vipassana_scan_checkin',
+          eventId: event.id,
+          studentCodeOrId: studentCode,
+          dayKey,
+          periodKey: selectedPeriod,
+          status: newStatus,
+          checkInTime,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (soundEnabled) playBeep('SUCCESS');
+        if (onCheckInRecorded) onCheckInRecorded();
+      }
+    } catch (e) {
+      console.error('Failed to override status:', e);
+    }
+  };
+
   // Camera stream lifecycle
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -796,13 +830,16 @@ export function VipassanaLiveScannerModal({
                   <select
                     value={lateGraceMinutes}
                     onChange={(e) => setLateGraceMinutes(parseInt(e.target.value, 10))}
-                    className="px-1.5 py-0.5 bg-white rounded border border-amber-300 font-extrabold text-amber-900 text-xs focus:outline-none"
+                    className="px-1.5 py-0.5 bg-white rounded border border-amber-300 font-extrabold text-amber-900 text-xs focus:outline-none cursor-pointer"
                   >
+                    <option value={5}>5 นาที (เข้มงวด)</option>
                     <option value={10}>10 นาที</option>
                     <option value={15}>15 นาที (มาตรฐาน)</option>
                     <option value={20}>20 นาที</option>
+                    <option value={25}>25 นาที</option>
                     <option value={30}>30 นาที (ผ่อนปรน)</option>
                     <option value={45}>45 นาที</option>
+                    <option value={60}>60 นาที (1 ชั่วโมง)</option>
                   </select>
                   <span className="text-[11px] font-bold">= สาย</span>
                 </div>
@@ -1213,13 +1250,38 @@ export function VipassanaLiveScannerModal({
 
                           <div className="flex items-center gap-1.5 shrink-0">
                             {isChecked ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-emerald-600 text-white shadow-xs">
-                                <Check className="w-3 h-3" />
-                                <span>
-                                  {att.status === 'LATE' ? 'มาสาย' : 'มาแล้ว'}
-                                  {att.checkInTime ? ` (${att.checkInTime})` : ''}
+                              <div className="flex items-center gap-1">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-black shadow-xs ${
+                                    att.status === 'LATE'
+                                      ? 'bg-amber-500 text-white'
+                                      : att.status === 'SICK'
+                                      ? 'bg-blue-600 text-white'
+                                      : 'bg-emerald-600 text-white'
+                                  }`}
+                                >
+                                  <Check className="w-3 h-3" />
+                                  <span>
+                                    {att.status === 'LATE' ? 'มาสาย' : att.status === 'SICK' ? 'ป่วย' : 'มา'}
+                                    {att.checkInTime ? ` (${att.checkInTime})` : ''}
+                                  </span>
                                 </span>
-                              </span>
+                                <select
+                                  value={att.status || 'PRESENT'}
+                                  onChange={(e) =>
+                                    handleOverrideStudentStatus(
+                                      r.studentCode,
+                                      e.target.value as 'PRESENT' | 'LATE' | 'SICK'
+                                    )
+                                  }
+                                  className="text-[10px] font-bold bg-white border border-slate-300 rounded px-1 py-0.5 text-slate-700 cursor-pointer focus:outline-none"
+                                  title="คลิกเพื่อเปลี่ยนสถานะ เช่น เปลี่ยนเป็นมา หรือ เปลี่ยนเป็นสาย"
+                                >
+                                  <option value="PRESENT">ปกติ (มา)</option>
+                                  <option value="LATE">สาย</option>
+                                  <option value="SICK">ป่วย</option>
+                                </select>
+                              </div>
                             ) : (
                               <button
                                 type="button"
