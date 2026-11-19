@@ -47,10 +47,10 @@ export interface MeditationPeriodConfig {
 }
 
 export const DEFAULT_PERIODS: MeditationPeriodConfig[] = [
-  { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.00-04.30' },
-  { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-08.30' },
-  { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '12.30-13.00' },
-  { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '17.30-18.00' },
+  { id: 'p1', nameTh: 'ภาคเช้ามืด', nameEn: 'Dawn Period', time: '04.30-06.00' },
+  { id: 'p2', nameTh: 'ภาคเช้า', nameEn: 'Morning Period', time: '08.00-11.00' },
+  { id: 'p3', nameTh: 'ภาคบ่าย', nameEn: 'Afternoon Period', time: '13.00-15.30' },
+  { id: 'p4', nameTh: 'ภาคค่ำ', nameEn: 'Evening Period', time: '18.00-21.30' },
 ];
 
 interface StudentAttendanceRow {

@@ -99,9 +99,13 @@ export function VipassanaLiveScannerModal({
     const curMin = now.getMinutes();
     const curTime = curHour * 60 + curMin;
 
-    if (curTime >= 3 * 60 && curTime < 6 * 60 + 30) return 'p1';
-    if (curTime >= 6 * 60 + 30 && curTime < 11 * 60) return 'p2';
-    if (curTime >= 11 * 60 && curTime < 15 * 60 + 30) return 'p3';
+    // p1: รอบเช้ามืด (03.30 - 07.00 น.)
+    if (curTime >= 3 * 60 + 30 && curTime < 7 * 60) return 'p1';
+    // p2: รอบเช้า (07.00 - 12.00 น.)
+    if (curTime >= 7 * 60 && curTime < 12 * 60) return 'p2';
+    // p3: รอบบ่าย (12.00 - 16.30 น.)
+    if (curTime >= 12 * 60 && curTime < 16 * 60 + 30) return 'p3';
+    // p4: รอบค่ำ (16.30 - 23.59 น. และ 00.00 - 03.30 น.)
     return 'p4';
   }, []);
 
@@ -116,10 +120,10 @@ export function VipassanaLiveScannerModal({
   const [showConfigDrawer, setShowConfigDrawer] = useState<boolean>(false);
   const [periodPolicies, setPeriodPolicies] = useState<Record<PeriodKey, { startTime: string; endTime: string }>>(() => {
     const defaultPol: Record<PeriodKey, { startTime: string; endTime: string }> = {
-      p1: { startTime: '04:00', endTime: '04:30' },
-      p2: { startTime: '08:00', endTime: '08:30' },
-      p3: { startTime: '12:30', endTime: '13:00' },
-      p4: { startTime: '17:30', endTime: '18:00' },
+      p1: { startTime: '04:30', endTime: '06:00' },
+      p2: { startTime: '08:00', endTime: '11:00' },
+      p3: { startTime: '13:00', endTime: '15:30' },
+      p4: { startTime: '18:00', endTime: '21:30' },
     };
     if (event.meditationConfig?.periods && Array.isArray(event.meditationConfig.periods)) {
       event.meditationConfig.periods.forEach((p: MeditationPeriodConfig) => {
