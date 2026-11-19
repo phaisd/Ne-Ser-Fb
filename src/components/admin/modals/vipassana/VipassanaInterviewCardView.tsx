@@ -243,27 +243,27 @@ export const VipassanaInterviewCardView: React.FC<VipassanaInterviewCardViewProp
                   <button
                     type="button"
                     onClick={() => onSetResult(row.regId, 'PASS')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs min-h-[44px] ${
+                    className={`py-2 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer shadow-xs min-h-[44px] ${
                       row.result === 'PASS'
                         ? 'bg-emerald-600 text-white shadow-emerald-600/30 ring-2 ring-emerald-500'
                         : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
                     }`}
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>✓ ผ่านการสอบอารมณ์</span>
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span className="truncate">✓ ผ่านการสอบอารมณ์</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => onSetResult(row.regId, 'NOT_PASS')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs min-h-[44px] ${
+                    className={`py-2 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer shadow-xs min-h-[44px] ${
                       row.result === 'NOT_PASS'
                         ? 'bg-rose-600 text-white shadow-rose-600/30 ring-2 ring-rose-500'
                         : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200'
                     }`}
                   >
-                    <XCircle className="w-4 h-4" />
-                    <span>✗ ยังไม่ผ่าน</span>
+                    <XCircle className="w-4 h-4 shrink-0" />
+                    <span className="truncate">✗ ยังไม่ผ่าน</span>
                   </button>
                 </div>
               </div>
