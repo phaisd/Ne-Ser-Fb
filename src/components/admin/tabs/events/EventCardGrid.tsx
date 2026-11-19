@@ -17,6 +17,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
+import { getAuthUser } from '@/lib/auth-client';
 
 interface EventCardGridProps {
   eventsList: StudentEvent[];
@@ -30,6 +31,7 @@ interface EventCardGridProps {
   onOpenVipassanaModal: (event: StudentEvent) => void;
   onOpenVipassanaInterview: (event: StudentEvent) => void;
   onOpenVipassanaEvaluation: (event: StudentEvent) => void;
+  currentUser?: any;
 }
 
 export const EventCardGrid: React.FC<EventCardGridProps> = ({
@@ -44,7 +46,31 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
   onOpenVipassanaModal,
   onOpenVipassanaInterview,
   onOpenVipassanaEvaluation,
+  currentUser,
 }) => {
+  const activeUser = currentUser || (typeof window !== 'undefined' ? getAuthUser() : null);
+  const userRole = String(activeUser?.role || '').toUpperCase();
+  const isSuper =
+    activeUser?.role === 'SUPER_ADMIN' ||
+    activeUser?.isSuperAdmin === true ||
+    activeUser?.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th';
+  const isAdmin = !activeUser || isSuper || userRole === 'ADMIN';
+  const isVipassanaMaster = userRole === 'VIPASSANA_MASTER';
+  const isAdvisorOrOfficer =
+    !isAdmin &&
+    !isVipassanaMaster &&
+    (userRole === 'OFFICER' ||
+      userRole === 'STAFF' ||
+      userRole === 'INSTRUCTOR' ||
+      Boolean(activeUser?.isActingOfficer));
+
+  // Role permissions based on user requirements:
+  // - Advisor & Officer (ผู้ดูแลช่วงเวลาปฏิบัติ): only red-circled buttons (Scanner, Attendance 4 rounds)
+  // - Vipassana Master (พระวิปัสสนาจารย์): only blue-circled button (Interview 4 Satipatthana)
+  // - Admins (Admin ทุกระดับ): all buttons
+  const canAccessScanner = isAdmin || isAdvisorOrOfficer;
+  const canAccessAttendance = isAdmin || isAdvisorOrOfficer;
+  const canAccessInterview = isAdmin || isVipassanaMaster;
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1">
@@ -204,85 +230,110 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                   e.title?.includes('กัมมัฏฐาน') ||
                   e.title?.toLowerCase().includes('meditation')) && (
                   <>
+                    {/* ปุ่มเส้นสีแดง 1: จุดสแกนสด (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
+                    {canAccessScanner && (
+                      <button
+                        type="button"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          onOpenVipassanaScanner(e);
+                        }}
+                        className="px-2.5 py-1 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                        title="เปิดจุดสแกนเช็คชื่ออัตโนมัติ (กล้องมือถือ/ปืนสแกนบาร์โค้ด)"
+                      >
+                        <Camera className="w-3 h-3 text-emerald-200" />
+                        <span>จุดสแกนสด</span>
+                      </button>
+                    )}
+
+                    {/* ปุ่มพิมพ์ป้ายคล้องคอ (เฉพาะ Admin ทุกระดับ) */}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          onOpenVipassanaBadges(e);
+                        }}
+                        className="px-2.5 py-1 text-xs rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                        title="พิมพ์ป้ายชื่อคล้องคอพร้อม QR Code"
+                      >
+                        <Sparkles className="w-3 h-3 text-purple-600" />
+                        <span>พิมพ์ป้ายคล้องคอ</span>
+                      </button>
+                    )}
+
+                    {/* ปุ่มเส้นสีแดง 2: เช็คชื่อ 4 รอบ & พิมพ์ (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
+                    {canAccessAttendance && (
+                      <button
+                        type="button"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          onOpenVipassanaModal(e);
+                        }}
+                        className="px-2.5 py-1 text-xs rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                        title="เปิดแบบฟอร์มบันทึกเวลา 4 รอบ และพิมพ์เอกสาร A4"
+                      >
+                        <FileSpreadsheet className="w-3 h-3 text-purple-200" />
+                        <span>เช็คชื่อ 4 รอบ & พิมพ์</span>
+                      </button>
+                    )}
+
+                    {/* ปุ่มเส้นสีน้ำเงิน: สอบอารมณ์สติปัฏฐาน 4 (สำหรับ Admin ทุกระดับ และ พระวิปัสสนาจารย์) */}
+                    {canAccessInterview && (
+                      <button
+                        type="button"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          onOpenVipassanaInterview(e);
+                        }}
+                        className="px-2.5 py-1 text-xs rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                        title="เปิดแบบสอบอารมณ์สติปัฏฐาน 4 สำหรับพระวิปัสสนาจารย์"
+                      >
+                        <Award className="w-3 h-3 text-amber-200" />
+                        <span>สอบอารมณ์สติปัฏฐาน 4</span>
+                      </button>
+                    )}
+
+                    {/* ปุ่มประมวลผล & วุฒิบัตร (เฉพาะ Admin ทุกระดับ) */}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          onOpenVipassanaEvaluation(e);
+                        }}
+                        className="px-2.5 py-1 text-xs rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                        title="เปิดระบบประมวลผลผ่านโครงการร่วม 2 มิติ และออกวุฒิบัตรดิจิทัล"
+                      >
+                        <Award className="w-3 h-3 text-teal-200" />
+                        <span>ประมวลผล & วุฒิบัตร</span>
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {/* ปุ่มแก้ไข & ลบโครงการ (เฉพาะ Admin ทุกระดับ) */}
+                {isAdmin && (
+                  <>
                     <button
                       type="button"
-                      onClick={(evt) => {
-                        evt.stopPropagation();
-                        onOpenVipassanaScanner(e);
-                      }}
-                      className="px-2.5 py-1 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
-                      title="เปิดจุดสแกนเช็คชื่ออัตโนมัติ (กล้องมือถือ/ปืนสแกนบาร์โค้ด)"
+                      onClick={(evt) => onOpenEditEvent(e, evt)}
+                      className="px-2.5 py-1 text-xs rounded-lg text-slate-700 hover:bg-slate-100 border border-slate-200 transition font-medium flex items-center gap-1 cursor-pointer"
+                      title="แก้ไขรายละเอียดโครงการ"
                     >
-                      <Camera className="w-3 h-3 text-emerald-200" />
-                      <span>จุดสแกนสด</span>
+                      <Edit3 className="w-3 h-3 text-slate-500" />
+                      <span>แก้ไข</span>
                     </button>
                     <button
                       type="button"
-                      onClick={(evt) => {
-                        evt.stopPropagation();
-                        onOpenVipassanaBadges(e);
-                      }}
-                      className="px-2.5 py-1 text-xs rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
-                      title="พิมพ์ป้ายชื่อคล้องคอพร้อม QR Code"
+                      onClick={(evt) => onOpenDeleteEvent(e, evt)}
+                      className="p-1 rounded-lg text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
+                      title="ลบโครงการนี้"
                     >
-                      <Sparkles className="w-3 h-3 text-purple-600" />
-                      <span>พิมพ์ป้ายคล้องคอ</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(evt) => {
-                        evt.stopPropagation();
-                        onOpenVipassanaModal(e);
-                      }}
-                      className="px-2.5 py-1 text-xs rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
-                      title="เปิดแบบฟอร์มบันทึกเวลา 4 รอบ และพิมพ์เอกสาร A4"
-                    >
-                      <FileSpreadsheet className="w-3 h-3 text-purple-200" />
-                      <span>เช็คชื่อ 4 รอบ & พิมพ์</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(evt) => {
-                        evt.stopPropagation();
-                        onOpenVipassanaInterview(e);
-                      }}
-                      className="px-2.5 py-1 text-xs rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
-                      title="เปิดแบบสอบอารมณ์สติปัฏฐาน 4 สำหรับพระวิปัสสนาจารย์"
-                    >
-                      <Award className="w-3 h-3 text-amber-200" />
-                      <span>สอบอารมณ์สติปัฏฐาน 4</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(evt) => {
-                        evt.stopPropagation();
-                        onOpenVipassanaEvaluation(e);
-                      }}
-                      className="px-2.5 py-1 text-xs rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
-                      title="เปิดระบบประมวลผลผ่านโครงการร่วม 2 มิติ และออกวุฒิบัตรดิจิทัล"
-                    >
-                      <Award className="w-3 h-3 text-teal-200" />
-                      <span>ประมวลผล & วุฒิบัตร</span>
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </>
                 )}
-                <button
-                  type="button"
-                  onClick={(evt) => onOpenEditEvent(e, evt)}
-                  className="px-2.5 py-1 text-xs rounded-lg text-slate-700 hover:bg-slate-100 border border-slate-200 transition font-medium flex items-center gap-1 cursor-pointer"
-                  title="แก้ไขรายละเอียดโครงการ"
-                >
-                  <Edit3 className="w-3 h-3 text-slate-500" />
-                  <span>แก้ไข</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={(evt) => onOpenDeleteEvent(e, evt)}
-                  className="p-1 rounded-lg text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
-                  title="ลบโครงการนี้"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
               </div>
             </div>
           );

@@ -31,7 +31,7 @@ import {
   Briefcase
 } from 'lucide-react';
 import { translations, Language } from '@/lib/translations';
-import { getAuthUser, isAdminOrOfficer, clearAuthSession } from '@/lib/auth-client';
+import { getAuthUser, isAdminOrOfficer, canAccessAdminConsole, clearAuthSession } from '@/lib/auth-client';
 import UserProfileModal from '@/components/UserProfileModal';
 import ThemeModeToggle from './ThemeModeToggle';
 
@@ -333,7 +333,7 @@ export default function Navbar() {
   ];
 
   const adminNavItems = [
-    ...(isAdmin ? [{ href: '/admin', label: t.navAdmin, icon: ShieldCheck }] : []),
+    ...(canAccessAdminConsole(currentUser) ? [{ href: '/admin', label: t.navAdmin, icon: ShieldCheck }] : []),
     ...(isStaffOrInstructor ? [{ href: '/workload', label: 'ภาระงานสอนของฉัน', icon: Briefcase }] : []),
     ...(settings?.showCoursesMenu !== false ? [{ href: '/courses', label: t.navCourses, icon: BookOpen }] : []),
     { href: '/attendance', label: t.navAttendance, icon: CheckSquare },

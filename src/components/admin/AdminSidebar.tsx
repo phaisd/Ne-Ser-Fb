@@ -19,7 +19,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { SystemSettings, AuthUser } from '@/types';
-import { isAdminOrOfficer } from '@/lib/auth-client';
+import { isAdminOrOfficer, canAccessAdminConsole } from '@/lib/auth-client';
 
 export type AdminTab =
   | 'DASHBOARD'
@@ -45,6 +45,7 @@ export interface AdminSidebarProps {
   isOfficer: boolean;
   isSuperAdmin: boolean;
   isVipassanaMaster?: boolean;
+  isInstructorOnly?: boolean;
   currentUser?: AuthUser | null;
   handleLogout: () => void;
 }
@@ -60,10 +61,11 @@ export function AdminSidebar({
   isOfficer,
   isSuperAdmin,
   isVipassanaMaster,
+  isInstructorOnly,
   currentUser,
   handleLogout,
 }: AdminSidebarProps) {
-  if (!isAdminOrOfficer(currentUser)) {
+  if (!canAccessAdminConsole(currentUser)) {
     return null;
   }
 
@@ -124,136 +126,146 @@ export function AdminSidebar({
         {/* Section 1: Main Backend Operations */}
         <div>
           <div className="px-3 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-            ระบบหลัก (Operations)
+            {isVipassanaMaster
+              ? 'ระบบสอบอารมณ์วิปัสสนา'
+              : isInstructorOnly
+              ? 'ระบบการสอน & ปฏิบัติธรรม'
+              : 'ระบบหลัก (Operations)'}
           </div>
           <nav className="space-y-1">
-            <button
-              onClick={() => {
-                setActiveTab('DASHBOARD');
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'DASHBOARD'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4 text-blue-400" />
-              <span>แดชบอร์ดภาพรวม</span>
-            </button>
+            {!isVipassanaMaster && !isInstructorOnly && (
+              <>
+                <button
+                  onClick={() => {
+                    setActiveTab('DASHBOARD');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    activeTab === 'DASHBOARD'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4 text-blue-400" />
+                  <span>แดชบอร์ดภาพรวม</span>
+                </button>
 
-            <button
-              onClick={() => {
-                setActiveTab('CERTIFICATES');
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'CERTIFICATES'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-bold'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="w-4 h-4 text-purple-400" />
-                <span>อนุมัติหนังสือรับรอง</span>
-              </div>
-              {pendingRequestsCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
-                  {pendingRequestsCount}
-                </span>
-              )}
-            </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('CERTIFICATES');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    activeTab === 'CERTIFICATES'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-bold'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-purple-400" />
+                    <span>อนุมัติหนังสือรับรอง</span>
+                  </div>
+                  {pendingRequestsCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
+                      {pendingRequestsCount}
+                    </span>
+                  )}
+                </button>
 
-            <button
-              onClick={() => {
-                setActiveTab('STUDENTS');
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'STUDENTS'
-                  ? 'bg-orange-600 text-white shadow-md shadow-orange-600/30 font-bold'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Users className="w-4 h-4 text-orange-400" />
-                <span>ทะเบียนนิสิต</span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono">
-                {studentsTotalCount}
-              </span>
-            </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('STUDENTS');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    activeTab === 'STUDENTS'
+                      ? 'bg-orange-600 text-white shadow-md shadow-orange-600/30 font-bold'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Users className="w-4 h-4 text-orange-400" />
+                    <span>ทะเบียนนิสิต</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {studentsTotalCount}
+                  </span>
+                </button>
 
-            <button
-              onClick={() => {
-                setActiveTab('ADMISSIONS');
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'ADMISSIONS'
-                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 font-bold'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <GraduationCap className="w-4 h-4 text-amber-400" />
-                <span>รับสมัครนิสิตใหม่</span>
-              </div>
-              <span
-                className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                  settings.showEnrollmentMenu !== false
-                    ? 'bg-emerald-500/20 text-emerald-300'
-                    : 'bg-slate-700 text-slate-400'
+                <button
+                  onClick={() => {
+                    setActiveTab('ADMISSIONS');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    activeTab === 'ADMISSIONS'
+                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 font-bold'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <GraduationCap className="w-4 h-4 text-amber-400" />
+                    <span>รับสมัครนิสิตใหม่</span>
+                  </div>
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                      settings.showEnrollmentMenu !== false
+                        ? 'bg-emerald-500/20 text-emerald-300'
+                        : 'bg-slate-700 text-slate-400'
+                    }`}
+                  >
+                    {settings.showEnrollmentMenu !== false ? 'เปิด' : 'ซ่อน'}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('COURSES');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    activeTab === 'COURSES'
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4 text-emerald-400" />
+                  <span>หลักสูตร & รายวิชา</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('TIMETABLES');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    activeTab === 'TIMETABLES'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <Calendar className="w-4 h-4 text-indigo-400" />
+                  <span>ตารางเรียน & ตารางสอน</span>
+                </button>
+              </>
+            )}
+
+            {!isVipassanaMaster && (
+              <button
+                onClick={() => {
+                  setActiveTab('ATTENDANCE');
+                  setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  activeTab === 'ATTENDANCE'
+                    ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30 font-bold'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
               >
-                {settings.showEnrollmentMenu !== false ? 'เปิด' : 'ซ่อน'}
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('COURSES');
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'COURSES'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 text-emerald-400" />
-              <span>หลักสูตร & รายวิชา</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('TIMETABLES');
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'TIMETABLES'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <Calendar className="w-4 h-4 text-indigo-400" />
-              <span>ตารางเรียน & ตารางสอน</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('ATTENDANCE');
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'ATTENDANCE'
-                  ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30 font-bold'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <CheckSquare className="w-4 h-4 text-teal-400" />
-              <span>เวลาเรียน & ใบกรอกคะแนน</span>
-            </button>
+                <CheckSquare className="w-4 h-4 text-teal-400" />
+                <span>เวลาเรียน & ใบกรอกคะแนน</span>
+              </button>
+            )}
 
             <button
               onClick={() => {
@@ -267,13 +279,19 @@ export function AdminSidebar({
               }`}
             >
               <Award className="w-4 h-4 text-amber-400" />
-              <span>{isVipassanaMaster ? '🧘 สอบอารมณ์วิปัสสนา & กิจกรรม' : 'งานกิจกรรมนิสิต'}</span>
+              <span>
+                {isVipassanaMaster
+                  ? '🧘 สอบอารมณ์วิปัสสนา'
+                  : isInstructorOnly
+                  ? '📋 บันทึกเวลาปฏิบัติธรรม 4 รอบ'
+                  : 'งานกิจกรรมนิสิต'}
+              </span>
             </button>
           </nav>
         </div>
 
-        {/* Section 2: Administration & Configuration (Hidden for Vipassana Master) */}
-        {!isVipassanaMaster && (
+        {/* Section 2: Administration & Configuration (Hidden for Vipassana Master & Instructor-only) */}
+        {!isVipassanaMaster && !isInstructorOnly && (
           <div>
             <div className="px-3 mb-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               {isOfficer ? 'การจัดการอาจารย์ (Instructor Ops)' : 'การจัดการและตั้งค่า (Administration)'}

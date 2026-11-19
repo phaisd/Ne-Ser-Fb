@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, SystemSettings } from '@/types';
 import { useAdminEvents } from '@/hooks/admin';
+import { getAuthUser } from '@/lib/auth-client';
 import {
   EventFormModal,
   EventGroupImportModal,
@@ -35,6 +36,7 @@ interface AdminEventsTabProps {
   onToggleStatus: (registrationId: string, currentStatus: string) => Promise<void>;
   onRefresh: () => void;
   settings?: SystemSettings;
+  currentUser?: any;
 }
 
 export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
@@ -43,7 +45,23 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
   onToggleStatus,
   onRefresh,
   settings,
+  currentUser,
 }) => {
+  const activeUser = currentUser || (typeof window !== 'undefined' ? getAuthUser() : null);
+  const userRole = String(activeUser?.role || '').toUpperCase();
+  const isSuper =
+    activeUser?.role === 'SUPER_ADMIN' ||
+    activeUser?.isSuperAdmin === true ||
+    activeUser?.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th';
+  const isAdmin = !activeUser || isSuper || userRole === 'ADMIN';
+  const isVipassanaMaster = userRole === 'VIPASSANA_MASTER';
+  const isAdvisorOrOfficer =
+    !isAdmin &&
+    !isVipassanaMaster &&
+    (userRole === 'OFFICER' ||
+      userRole === 'STAFF' ||
+      userRole === 'INSTRUCTOR' ||
+      Boolean(activeUser?.isActingOfficer));
   const {
     selectedEventId,
     setSelectedEventId,
@@ -117,21 +135,31 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         <div>
           <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
             <Award className="w-5 h-5 text-amber-600" />
-            งานกิจกรรมและโครงการนิสิต (Student Activities & Events Management)
+            {isVipassanaMaster
+              ? '🧘 โครงการวิปัสสนากัมมัฏฐาน & ระบบสอบอารมณ์สติปัฏฐาน 4'
+              : isAdvisorOrOfficer
+              ? '📋 โครงการปฏิบัติธรรม & บันทึกเวลาปฏิบัติ 4 รอบ'
+              : 'งานกิจกรรมและโครงการนิสิต (Student Activities & Events Management)'}
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            จัดการโครงการ กำหนดหลักสูตร/ชั้นปีเป้าหมาย วันเวลา สถานที่ ผู้รับผิดชอบ และระบบเช็คชื่อเข้าร่วมกิจกรรม
+            {isVipassanaMaster
+              ? 'บันทึกการสอบอารมณ์สติปัฏฐาน 4 (กาย เวทนา จิต ธรรม) ให้คำแนะนำสภาวะธรรม และประเมินผลสำหรับพระวิปัสสนาจารย์'
+              : isAdvisorOrOfficer
+              ? 'จุดสแกนเช็คชื่อสดด้วย QR Code และแบบฟอร์มบันทึกเวลาปฏิบัติธรรม 4 รอบต่อวันสำหรับอาจารย์และเจ้าหน้าที่ผู้ดูแล'
+              : 'จัดการโครงการ กำหนดหลักสูตร/ชั้นปีเป้าหมาย วันเวลา สถานที่ ผู้รับผิดชอบ และระบบเช็คชื่อเข้าร่วมกิจกรรม'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleOpenAddEvent}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-600/20 transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>➕ เพิ่มโครงการ/กิจกรรมใหม่</span>
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleOpenAddEvent}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-600/20 transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>➕ เพิ่มโครงการ/กิจกรรมใหม่</span>
+            </button>
+          )}
           <Link
             href="/events"
             target="_blank"
@@ -143,66 +171,68 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         </div>
       </div>
 
-      {/* Public Visibility Toggle Banner */}
-      <div
-        className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition ${
-          settings?.showEventsMenu === true
-            ? 'bg-emerald-50/70 border-emerald-200'
-            : 'bg-slate-50 border-slate-200'
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-              settings?.showEventsMenu === true
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-slate-200 text-slate-600'
-            }`}
-          >
-            {settings?.showEventsMenu === true ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-          </div>
-          <div>
-            <div className="font-bold text-slate-900 flex items-center gap-2">
-              <span>การแสดงผลระบบกิจกรรมนิสิตบนหน้าเว็บหลัก:</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${
-                  settings?.showEventsMenu === true
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                    : 'bg-rose-100 text-rose-800 border border-rose-200'
-                }`}
-              >
-                {settings?.showEventsMenu === true ? '🟢 กำลังเปิดแสดงที่หน้าหลัก' : '🔴 ปิดซ่อนอยู่ (หน้าหลักไม่แสดง)'}
-              </span>
-            </div>
-            <p className="text-slate-500 text-[11px] mt-0.5">
-              {settings?.showEventsMenu === true
-                ? 'นิสิตและบุคคลภายนอกสามารถมองเห็นเมนู "กิจกรรมนิสิต" บนแถบเมนูหลัก (Navbar) และหน้าแรกได้'
-                : 'ระบบนี้ถูกปิดซ่อนไว้จากหน้าเว็บหลักแล้ว เพื่อให้ผู้ดูแลระบบเตรียมข้อมูลโครงการให้เรียบร้อยก่อนเปิดตัว'}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          disabled={isTogglingVisibility}
-          onClick={handleToggleEventsVisibility}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shrink-0 disabled:opacity-50 ${
+      {/* Public Visibility Toggle Banner (เฉพาะ Admin ทุกระดับ) */}
+      {isAdmin && (
+        <div
+          className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition ${
             settings?.showEventsMenu === true
-              ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
-              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              ? 'bg-emerald-50/70 border-emerald-200'
+              : 'bg-slate-50 border-slate-200'
           }`}
         >
-          {isTogglingVisibility ? (
-            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-          ) : settings?.showEventsMenu === true ? (
-            <EyeOff className="w-3.5 h-3.5" />
-          ) : (
-            <Eye className="w-3.5 h-3.5" />
-          )}
-          <span>
-            {settings?.showEventsMenu === true ? 'คลิกเพื่อปิดซ่อนจากหน้าหลัก' : 'คลิกเพื่อเปิดแสดงที่หน้าหลัก'}
-          </span>
-        </button>
-      </div>
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                settings?.showEventsMenu === true
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-slate-200 text-slate-600'
+              }`}
+            >
+              {settings?.showEventsMenu === true ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+            </div>
+            <div>
+              <div className="font-bold text-slate-900 flex items-center gap-2">
+                <span>การแสดงผลระบบกิจกรรมนิสิตบนหน้าเว็บหลัก:</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold ${
+                    settings?.showEventsMenu === true
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : 'bg-rose-100 text-rose-800 border border-rose-200'
+                  }`}
+                >
+                  {settings?.showEventsMenu === true ? '🟢 กำลังเปิดแสดงที่หน้าหลัก' : '🔴 ปิดซ่อนอยู่ (หน้าหลักไม่แสดง)'}
+                </span>
+              </div>
+              <p className="text-slate-500 text-[11px] mt-0.5">
+                {settings?.showEventsMenu === true
+                  ? 'นิสิตและบุคคลภายนอกสามารถมองเห็นเมนู "กิจกรรมนิสิต" บนแถบเมนูหลัก (Navbar) และหน้าแรกได้'
+                  : 'ระบบนี้ถูกปิดซ่อนไว้จากหน้าเว็บหลักแล้ว เพื่อให้ผู้ดูแลระบบเตรียมข้อมูลโครงการให้เรียบร้อยก่อนเปิดตัว'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={isTogglingVisibility}
+            onClick={handleToggleEventsVisibility}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shrink-0 disabled:opacity-50 ${
+              settings?.showEventsMenu === true
+                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            }`}
+          >
+            {isTogglingVisibility ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : settings?.showEventsMenu === true ? (
+              <EyeOff className="w-3.5 h-3.5" />
+            ) : (
+              <Eye className="w-3.5 h-3.5" />
+            )}
+            <span>
+              {settings?.showEventsMenu === true ? 'คลิกเพื่อปิดซ่อนจากหน้าหลัก' : 'คลิกเพื่อเปิดแสดงที่หน้าหลัก'}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -260,6 +290,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         onOpenVipassanaModal={setVipassanaModalEvent}
         onOpenVipassanaInterview={setVipassanaInterviewEvent}
         onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
+        currentUser={activeUser}
       />
 
       {/* Registrations List with Filter Toolbar */}
@@ -291,6 +322,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         onOpenVipassanaBadges={setVipassanaBadgesEvent}
         onOpenVipassanaInterview={setVipassanaInterviewEvent}
         onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
+        currentUser={activeUser}
       />
 
       {/* Modal: Add / Edit Event */}

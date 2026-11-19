@@ -12,7 +12,7 @@ import {
   ArrowLeft,
   Loader2,
 } from 'lucide-react';
-import { getAuthUser, saveAuthSession, clearAuthSession, isAdminOrOfficer } from '@/lib/auth-client';
+import { getAuthUser, saveAuthSession, clearAuthSession, isAdminOrOfficer, canAccessAdminConsole } from '@/lib/auth-client';
 import {
   AdminSheetsTab,
   AdminTimetablesTab,
@@ -117,6 +117,15 @@ export default function AdminConsolePage() {
   const isVipassanaMaster = useMemo(() => {
     return currentUser?.role === 'VIPASSANA_MASTER';
   }, [currentUser]);
+
+  const isInstructorOnly = useMemo(() => {
+    return (
+      currentUser?.role === 'INSTRUCTOR' &&
+      !isOfficer &&
+      !isSuperAdmin &&
+      !currentUser?.isActingOfficer
+    );
+  }, [currentUser, isOfficer, isSuperAdmin]);
 
   // Load Data function definition (hoisted for hooks)
   const loadData = () => {
@@ -355,7 +364,7 @@ export default function AdminConsolePage() {
     } catch (e) {}
   }, []);
 
-  // Redirect Officer and Vipassana Master away from restricted tabs
+  // Redirect Officer, Vipassana Master, and Instructor away from restricted tabs
   useEffect(() => {
     if (isOfficer && (activeTab === 'BRANDING' || activeTab === 'SHEETS')) {
       setActiveTab('DASHBOARD');
@@ -363,7 +372,10 @@ export default function AdminConsolePage() {
     if (isVipassanaMaster && (activeTab === 'BRANDING' || activeTab === 'SHEETS' || activeTab === 'USERS')) {
       setActiveTab('EVENTS');
     }
-  }, [isOfficer, isVipassanaMaster, activeTab]);
+    if (isInstructorOnly && (activeTab !== 'EVENTS' && activeTab !== 'ATTENDANCE')) {
+      setActiveTab('EVENTS');
+    }
+  }, [isOfficer, isVipassanaMaster, isInstructorOnly, activeTab]);
 
   const handleArchiveYear = async () => {
     if (!confirm(`ยืนยันการสรุปปิดยอดและจัดเก็บประวัติปีการศึกษา ${archivingYear} หรือไม่?`)) return;
@@ -496,8 +508,8 @@ export default function AdminConsolePage() {
     );
   }
 
-  // Strictly block non-admin / instructor / unauthenticated users from Admin Console
-  if (!currentUser || !isAdminOrOfficer(currentUser)) {
+  // Strictly block non-admin / non-staff / unauthenticated users from Admin Console
+  if (!currentUser || !canAccessAdminConsole(currentUser)) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl p-8 text-center space-y-4">
@@ -506,12 +518,12 @@ export default function AdminConsolePage() {
           </div>
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-white">
-              สงวนสิทธิ์เฉพาะผู้ดูแลระบบและเจ้าหน้าที่ (Admin Only)
+              สงวนสิทธิ์เฉพาะผู้ดูแลระบบ เจ้าหน้าที่ อาจารย์ และพระวิปัสสนาจารย์
             </h2>
             <p className="text-xs text-slate-400 leading-relaxed">
               {currentUser
-                ? `บัญชีของคุณ (${currentUser.name}) เป็นสิทธิ์อาจารย์ผู้สอน ซึ่งไม่มีสิทธิ์เข้าถึงส่วนหลังบ้าน Admin Console กรุณาใช้งานผ่านระบบบันทึกเวลาเรียน`
-                : 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบหรือเจ้าหน้าที่เพื่อเข้าใช้งานส่วนนี้'}
+                ? `บัญชีของคุณ (${currentUser.name}) ไม่มีสิทธิ์เข้าถึงส่วนงานนี้ กรุณาติดต่อผู้ดูแลระบบ`
+                : 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ เจ้าหน้าที่ หรือพระวิปัสสนาจารย์เพื่อเข้าใช้งาน'}
             </p>
           </div>
           <div className="pt-2 flex flex-col gap-2">
@@ -557,6 +569,7 @@ export default function AdminConsolePage() {
         isOfficer={isOfficer}
         isSuperAdmin={isSuperAdmin}
         isVipassanaMaster={isVipassanaMaster}
+        isInstructorOnly={isInstructorOnly}
         currentUser={currentUser}
         handleLogout={handleLogout}
       />
@@ -868,6 +881,7 @@ export default function AdminConsolePage() {
               eventsList={eventsList}
               registrationsList={eventRegistrationsList}
               onToggleStatus={handleToggleEventStatus}
+              currentUser={currentUser}
               onRefresh={() => {
                 fetch('/api/events')
                   .then((r) => r.json())

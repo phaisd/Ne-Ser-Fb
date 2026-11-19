@@ -13,6 +13,7 @@ import {
   Clock,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
+import { getAuthUser } from '@/lib/auth-client';
 
 interface EventParticipantsTableProps {
   eventsList: StudentEvent[];
@@ -42,6 +43,7 @@ interface EventParticipantsTableProps {
   onOpenVipassanaBadges: (event: StudentEvent) => void;
   onOpenVipassanaInterview: (event: StudentEvent) => void;
   onOpenVipassanaEvaluation?: (event: StudentEvent) => void;
+  currentUser?: any;
 }
 
 export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
@@ -72,7 +74,31 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
   onOpenVipassanaBadges,
   onOpenVipassanaInterview,
   onOpenVipassanaEvaluation,
+  currentUser,
 }) => {
+  const activeUser = currentUser || (typeof window !== 'undefined' ? getAuthUser() : null);
+  const userRole = String(activeUser?.role || '').toUpperCase();
+  const isSuper =
+    activeUser?.role === 'SUPER_ADMIN' ||
+    activeUser?.isSuperAdmin === true ||
+    activeUser?.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th';
+  const isAdmin = !activeUser || isSuper || userRole === 'ADMIN';
+  const isVipassanaMaster = userRole === 'VIPASSANA_MASTER';
+  const isAdvisorOrOfficer =
+    !isAdmin &&
+    !isVipassanaMaster &&
+    (userRole === 'OFFICER' ||
+      userRole === 'STAFF' ||
+      userRole === 'INSTRUCTOR' ||
+      Boolean(activeUser?.isActingOfficer));
+
+  // Role permissions based on user requirements:
+  // - Advisor & Officer: only Attendance 4 rounds
+  // - Vipassana Master: only Interview 4 Satipatthana
+  // - Admins: all action buttons
+  const canAccessAttendance = isAdmin || isAdvisorOrOfficer;
+  const canAccessInterview = isAdmin || isVipassanaMaster;
+
   return (
     <>
       {/* Advanced Filters Toolbar */}
@@ -90,6 +116,7 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* VIPASSANA ACTION BUTTONS */}
             {(() => {
               const currentEvt =
                 eventsList.find(
@@ -102,82 +129,102 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
 
               return (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => onOpenVipassanaBadges(currentEvt)}
-                    className="px-3 py-2 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                    title="พิมพ์ป้ายชื่อคล้องคอพร้อม QR Code"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-purple-700" />
-                    <span>🪪 พิมพ์ป้ายคล้องคอ</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onOpenVipassanaModal(currentEvt)}
-                    className="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                    title="เปิดแบบฟอร์มบันทึกเวลา 4 รอบ และพิมพ์เอกสาร A4 ทางการ"
-                  >
-                    <Calendar className="w-3.5 h-3.5 text-purple-200" />
-                    <span>📋 เช็คชื่อ 4 รอบ & พิมพ์ A4</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onOpenVipassanaInterview(currentEvt)}
-                    className="px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                    title="เปิดแบบสอบอารมณ์สติปัฏฐาน 4 และประเมินผลสำหรับพระวิปัสสนาจารย์"
-                  >
-                    <Award className="w-3.5 h-3.5 text-amber-200" />
-                    <span>🧘 สอบอารมณ์สติปัฏฐาน 4</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onOpenVipassanaEvaluation?.(currentEvt)}
-                    className="px-3 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                    title="เปิดระบบประมวลผลผ่านโครงการร่วม 2 มิติ และออกวุฒิบัตรดิจิทัล"
-                  >
-                    <Award className="w-3.5 h-3.5 text-teal-200" />
-                    <span>🎓 ประมวลผล & วุฒิบัตร</span>
-                  </button>
+                  {/* พิมพ์ป้ายคล้องคอ (เฉพาะ Admin ทุกระดับ) */}
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenVipassanaBadges(currentEvt)}
+                      className="px-3 py-2 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      title="พิมพ์ป้ายชื่อคล้องคอพร้อม QR Code"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-purple-700" />
+                      <span>🪪 พิมพ์ป้ายคล้องคอ</span>
+                    </button>
+                  )}
+
+                  {/* เช็คชื่อ 4 รอบ & พิมพ์ A4 (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
+                  {canAccessAttendance && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenVipassanaModal(currentEvt)}
+                      className="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      title="เปิดแบบฟอร์มบันทึกเวลา 4 รอบ และพิมพ์เอกสาร A4 ทางการ"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-purple-200" />
+                      <span>📋 เช็คชื่อ 4 รอบ & พิมพ์ A4</span>
+                    </button>
+                  )}
+
+                  {/* สอบอารมณ์สติปัฏฐาน 4 (สำหรับ Admin ทุกระดับ และ พระวิปัสสนาจารย์) */}
+                  {canAccessInterview && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenVipassanaInterview(currentEvt)}
+                      className="px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      title="เปิดแบบสอบอารมณ์สติปัฏฐาน 4 และประเมินผลสำหรับพระวิปัสสนาจารย์"
+                    >
+                      <Award className="w-3.5 h-3.5 text-amber-200" />
+                      <span>🧘 สอบอารมณ์สติปัฏฐาน 4</span>
+                    </button>
+                  )}
+
+                  {/* ประมวลผล & วุฒิบัตร (เฉพาะ Admin ทุกระดับ) */}
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenVipassanaEvaluation?.(currentEvt)}
+                      className="px-3 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      title="เปิดระบบประมวลผลผ่านโครงการร่วม 2 มิติ และออกวุฒิบัตรดิจิทัล"
+                    >
+                      <Award className="w-3.5 h-3.5 text-teal-200" />
+                      <span>🎓 ประมวลผล & วุฒิบัตร</span>
+                    </button>
+                  )}
                 </>
               );
             })()}
 
-            <button
-              type="button"
-              onClick={onSyncSheets}
-              disabled={isSyncing}
-              className="px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs disabled:opacity-50"
-              title="ซิงค์ข้อมูลกิจกรรมและผู้เข้าร่วมกับ Google Sheets"
-            >
-              <FileSpreadsheet
-                className={`w-3.5 h-3.5 text-emerald-700 ${isSyncing ? 'animate-spin' : ''}`}
-              />
-              <span>{isSyncing ? 'กำลังซิงค์...' : 'ซิงค์ Google Sheets'}</span>
-            </button>
+            {/* General Administrative Buttons (เฉพาะ Admin ทุกระดับ) */}
+            {isAdmin && (
+              <>
+                <button
+                  type="button"
+                  onClick={onSyncSheets}
+                  disabled={isSyncing}
+                  className="px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs disabled:opacity-50"
+                  title="ซิงค์ข้อมูลกิจกรรมและผู้เข้าร่วมกับ Google Sheets"
+                >
+                  <FileSpreadsheet
+                    className={`w-3.5 h-3.5 text-emerald-700 ${isSyncing ? 'animate-spin' : ''}`}
+                  />
+                  <span>{isSyncing ? 'กำลังซิงค์...' : 'ซิงค์ Google Sheets'}</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() =>
-                onOpenGroupImport(
-                  selectedEventId !== 'ALL' ? selectedEventId : eventsList[0]?.id || ''
-                )
-              }
-              className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-              title="นำเข้าหรือดึงรายชื่อนิสิตแบบจัดกลุ่มพร้อมเลขเฉพาะกลุ่ม"
-            >
-              <Upload className="w-3.5 h-3.5 text-emerald-700" />
-              <span>นำเข้า / ดึงนิสิตเป็นกลุ่ม</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onOpenGroupImport(
+                      selectedEventId !== 'ALL' ? selectedEventId : eventsList[0]?.id || ''
+                    )
+                  }
+                  className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                  title="นำเข้าหรือดึงรายชื่อนิสิตแบบจัดกลุ่มพร้อมเลขเฉพาะกลุ่ม"
+                >
+                  <Upload className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>นำเข้า / ดึงนิสิตเป็นกลุ่ม</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={onExportCsv}
-              className="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-              title="ดาวน์โหลดรายชื่อผู้เข้าร่วมตามตัวกรองปัจจุบันเป็น Excel / CSV"
-            >
-              <Download className="w-3.5 h-3.5 text-blue-700" />
-              <span>ส่งออก Excel / CSV</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={onExportCsv}
+                  className="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                  title="ดาวน์โหลดรายชื่อผู้เข้าร่วมตามตัวกรองปัจจุบันเป็น Excel / CSV"
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-700" />
+                  <span>ส่งออก Excel / CSV</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 

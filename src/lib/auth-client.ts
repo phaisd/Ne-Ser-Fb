@@ -37,6 +37,16 @@ export function isVipassanaMaster(user?: AuthUser | null): boolean {
 }
 
 /**
+ * Checks whether a user can access the Admin Console workspace.
+ * Allows Admins, Officers, Vipassana Masters, and Instructors (with restricted tabs).
+ */
+export function canAccessAdminConsole(user?: AuthUser | null): boolean {
+  if (!user) return false;
+  const role = String(user.role || '').toUpperCase();
+  return isAdminOrOfficer(user) || role === 'INSTRUCTOR';
+}
+
+/**
  * Returns the list of Google / MCU accounts previously used on this browser
  * so the user can sign back in with 1 click without re-typing their email.
  */
