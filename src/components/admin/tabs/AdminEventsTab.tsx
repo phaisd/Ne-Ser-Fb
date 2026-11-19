@@ -452,7 +452,35 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         <EventGroupImportModal
           isOpen={groupImportEventId !== null}
           onClose={() => setGroupImportEventId(null)}
-          eventsList={eventsList}
+          eventsList={
+            eventsList.some((e) => e.id === groupImportEventId)
+              ? eventsList
+              : [
+                  {
+                    id: groupImportEventId,
+                    title:
+                      eventsList.find((e) => e.id === groupImportEventId)?.title ||
+                      eventForm.title ||
+                      'โครงการที่เลือก',
+                    academicYear: eventForm.academicYear || '2569',
+                    eventType: eventForm.eventType || 'SPECIAL',
+                    startDate: eventForm.startDate || '',
+                    endDate: eventForm.endDate || '',
+                    eventTime: eventForm.eventTime || '',
+                    location: eventForm.location || '',
+                    semester: eventForm.semester || 1,
+                    maxParticipants: eventForm.maxParticipants || 100,
+                    activityHours: eventForm.activityHours || 3,
+                    status: eventForm.status || 'ACTIVE',
+                    isActive: true,
+                    targetDegree: eventForm.targetDegree || 'ALL',
+                    targetProgram: eventForm.targetProgram || 'ALL',
+                    targetYearLevels: eventForm.targetYearLevels || [1, 2, 3, 4],
+                    targetMajors: eventForm.targetMajors || [],
+                  } as StudentEvent,
+                  ...eventsList,
+                ]
+          }
           initialEventId={groupImportEventId || undefined}
           initialEventTitle={
             eventsList.find((e) => e.id === groupImportEventId)?.title ||

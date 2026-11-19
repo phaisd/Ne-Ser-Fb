@@ -537,12 +537,22 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-4 border-t bg-slate-50 shrink-0">
                 <button
                   type="button"
-                  onClick={onSubmitAndOpenGroupImport}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSubmitAndOpenGroupImport();
+                  }}
                   disabled={isSubmittingEvent}
                   className="px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>บันทึก &amp; นำเข้านิสิตเป็นกลุ่ม</span>
+                  {isSubmittingEvent ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5" />
+                  )}
+                  <span>
+                    {isSubmittingEvent ? 'กำลังบันทึกข้อมูล...' : 'บันทึก & นำเข้านิสิตเป็นกลุ่ม'}
+                  </span>
                 </button>
                 <div className="flex items-center gap-2">
                   <button

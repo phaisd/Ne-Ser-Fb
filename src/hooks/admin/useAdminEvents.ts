@@ -254,11 +254,11 @@ export function useAdminEvents({
         if (data.success) {
           const savedId = editingEventId;
           setIsEventModalOpen(false);
-          onRefresh();
           if (openGroupImportAfter) {
             setSelectedEventId(savedId);
             setGroupImportEventId(savedId);
           }
+          if (onRefresh) onRefresh();
         } else {
           alert('แก้ไขโครงการไม่สำเร็จ: ' + (data.error || 'กรุณาลองใหม่อีกครั้ง'));
         }
@@ -302,11 +302,11 @@ export function useAdminEvents({
         if (data.success) {
           const createdId = data.data?.id || null;
           setIsEventModalOpen(false);
-          onRefresh();
           if (openGroupImportAfter && createdId) {
             setSelectedEventId(createdId);
             setGroupImportEventId(createdId);
           }
+          if (onRefresh) onRefresh();
         } else {
           alert('เพิ่มโครงการไม่สำเร็จ: ' + (data.error || 'กรุณาลองใหม่อีกครั้ง'));
         }

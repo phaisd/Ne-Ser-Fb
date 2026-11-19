@@ -99,6 +99,11 @@ export async function createEvent(data: Partial<StudentEvent>): Promise<StudentE
     coordinatorPhone: data.coordinatorPhone || '',
     coordinatorEmail: data.coordinatorEmail || '',
     showCoordinator: data.showCoordinator !== false,
+    durationFormat: data.durationFormat || 'SINGLE_DAY',
+    totalDays: data.totalDays || 1,
+    attendanceMode: data.attendanceMode || 'SINGLE_SCAN',
+    meditationDaysRequired: data.meditationDaysRequired || 10,
+    meditationConfig: data.meditationConfig || {},
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -136,18 +141,106 @@ export async function createEvent(data: Partial<StudentEvent>): Promise<StudentE
 }
 
 export async function updateEvent(id: string, updates: Partial<StudentEvent>): Promise<StudentEvent | null> {
-  const localList = readLocalJson<any[]>('events.json', []);
-  const idx = localList.findIndex((e) => e.id === id);
-  if (idx === -1) return null;
+  const targetId = String(id || '').trim();
+  if (!targetId) return null;
 
-  localList[idx] = {
+  const localList = readLocalJson<any[]>('events.json', []);
+  let idx = localList.findIndex((e) => String(e.id || '').trim() === targetId);
+
+  // If not found in localList, attempt to find in getEvents() (which includes Google Sheets)
+  if (idx === -1) {
+    const allEvents = await getEvents();
+    const found = allEvents.find((e) => String(e.id || '').trim() === targetId);
+    if (found) {
+      localList.push(found);
+      idx = localList.length - 1;
+    }
+  }
+
+  // If still not found, construct a shell event from updates
+  if (idx === -1) {
+    const fallbackEvent: StudentEvent = {
+      id: targetId,
+      title: updates.title || 'โครงการปฏิบัติวิปัสสนากัมมัฏฐาน',
+      description: updates.description || '',
+      eventType: updates.eventType || 'SPECIAL',
+      startDate: updates.startDate || new Date().toISOString().substring(0, 10),
+      endDate: updates.endDate || new Date().toISOString().substring(0, 10),
+      eventTime: updates.eventTime || '08:30 - 16:30 น.',
+      location: updates.location || 'คณะพุทธศาสตร์ มจร',
+      academicYear: updates.academicYear || '2569',
+      semester: updates.semester || 1,
+      maxParticipants: updates.maxParticipants || 100,
+      activityHours: updates.activityHours || 3,
+      status: updates.status || 'ACTIVE',
+      isActive: true,
+      targetDegree: updates.targetDegree || 'ALL',
+      targetProgram: updates.targetProgram || 'ALL',
+      targetMajors: updates.targetMajors || [],
+      targetYearLevels: updates.targetYearLevels || [1, 2, 3, 4],
+      coordinatorName: updates.coordinatorName || '',
+      coordinatorTitle: updates.coordinatorTitle || 'ผู้รับผิดชอบโครงการ',
+      coordinatorPhone: updates.coordinatorPhone || '',
+      coordinatorEmail: updates.coordinatorEmail || '',
+      showCoordinator: updates.showCoordinator !== false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...updates,
+    };
+    localList.unshift(fallbackEvent);
+    idx = 0;
+  }
+
+  const updated: StudentEvent = {
     ...localList[idx],
     ...updates,
+    id: targetId,
     updatedAt: new Date().toISOString(),
   };
 
+  localList[idx] = updated;
   writeLocalJson('events.json', localList);
-  return localList[idx];
+
+  // Sync update to Google Sheets if connected
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const rows = await gClient.getValues('Events!A2:A');
+      let sheetRowIndex = -1;
+      if (rows && rows.length > 0) {
+        sheetRowIndex = rows.findIndex((r) => String(r[0] || '').trim() === targetId);
+      }
+
+      const rowValues = [
+        updated.id,
+        updated.title,
+        updated.eventType,
+        updated.startDate,
+        updated.endDate,
+        updated.eventTime,
+        updated.location,
+        updated.academicYear,
+        updated.semester,
+        updated.maxParticipants,
+        updated.status,
+        updated.targetDegree,
+        updated.targetProgram,
+        updated.coordinatorName,
+        updated.showCoordinator ? 'TRUE' : 'FALSE',
+      ];
+
+      if (sheetRowIndex !== -1) {
+        const rowNum = sheetRowIndex + 2;
+        await gClient.updateValues(`Events!A${rowNum}:O${rowNum}`, [rowValues]);
+      } else {
+        await gClient.appendValues('Events!A:O', [rowValues]);
+      }
+    } catch (err) {
+      console.warn('Google Sheets update failed for Events:', err);
+    }
+  }
+
+  return updated;
 }
 
 export async function deleteEvent(id: string): Promise<boolean> {

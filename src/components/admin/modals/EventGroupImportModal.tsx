@@ -53,6 +53,8 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
   registrationsList,
   onImported,
 }) => {
+  if (!isOpen) return null;
+
   const defaultTargetId = useMemo(() => {
     if (initialEventId && initialEventId !== 'ALL') return initialEventId;
     return eventsList[0]?.id || '';
@@ -362,7 +364,7 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
       <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200">
         {/* Sticky Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70 shrink-0">
@@ -403,7 +405,7 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
               >
                 {!eventsList.some((ev) => ev.id === targetEventId) && targetEventId && (
                   <option value={targetEventId}>
-                    {initialEventTitle || 'โครงการที่เลือก'} (โครงการที่เพิ่งบันทึก)
+                    {initialEventTitle || 'โครงการที่เลือก'}
                   </option>
                 )}
                 {eventsList.length === 0 && !targetEventId ? (
