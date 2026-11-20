@@ -3,3 +3,8 @@ export * from './BrandHeroSection';
 export * from './BrandSignatoriesSection';
 export * from './BrandTimetableSection';
 export * from './BrandSecuritySection';
+export * from './LogoSettingsCard';
+export * from './InstitutionNamesCard';
+export * from './ThemeColorsCard';
+export * from './TypographySettingsCard';
+export * from './ContactAndSocialCard';
