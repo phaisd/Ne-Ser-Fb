@@ -307,9 +307,9 @@ export function VipassanaLiveScannerModal({
     };
   }, [isOpen, offlineQueue.length, syncOfflineQueue]);
 
-  // Keep input focused for physical USB barcode/QR scanner
+  // Keep input focused for physical USB barcode/QR scanner (Desktop only — avoid popping up mobile keyboard)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && typeof window !== 'undefined' && window.innerWidth >= 1024) {
       inputRef.current?.focus();
     }
   }, [isOpen, isSubmitting, lastFeedback]);
@@ -688,20 +688,20 @@ export function VipassanaLiveScannerModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-1 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 w-full max-w-5xl h-[98vh] sm:max-h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        {/* HEADER */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500 text-slate-950 flex items-center gap-1 shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
+        {/* HEADER (Compact on Mobile so Camera Scanner is immediately visible) */}
+        <div className="px-3.5 py-2.5 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white flex items-center justify-between gap-2 shrink-0">
+          <div className="min-w-0 space-y-0.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-black bg-emerald-500 text-slate-950 flex items-center gap-1 shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping" />
                 <span>LIVE SCANNER</span>
               </span>
               {/* Online / Offline Sync Badge */}
               {offlineQueue.length === 0 ? (
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                   <span>🟢 พร้อมใช้งาน</span>
                 </span>
               ) : (
@@ -709,31 +709,31 @@ export function VipassanaLiveScannerModal({
                   type="button"
                   onClick={syncOfflineQueue}
                   disabled={isSyncingOffline}
-                  className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center gap-1 shadow-sm transition cursor-pointer animate-pulse"
+                  className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center gap-1 shadow-sm transition cursor-pointer animate-pulse"
                   title="คลิกเพื่อส่งข้อมูลที่บันทึกออฟไลน์ขึ้นเซิร์ฟเวอร์ทันที"
                 >
                   <RefreshCw className={`w-3 h-3 ${isSyncingOffline ? 'animate-spin' : ''}`} />
-                  <span>รอซิงค์ {offlineQueue.length} รายการ (คลิกซิงค์)</span>
+                  <span>รอซิงค์ {offlineQueue.length}</span>
                 </button>
               )}
-              <span className="text-xs text-purple-200 font-medium">
+              <span className="hidden md:inline text-xs text-purple-200 font-medium">
                 จุดสแกนเช็คชื่ออัตโนมัติ (Barcode / QR / ป้ายคล้องคอ)
               </span>
             </div>
-            <h3 className="font-extrabold text-base sm:text-lg tracking-tight">
-              ระบบสแกนเช็คชื่อปฏิบัติธรรม 4 รอบต่อวัน
+            <h3 className="font-extrabold text-sm sm:text-lg tracking-tight truncate">
+              สแกนเช็คชื่อปฏิบัติธรรม 4 รอบ ({PERIOD_CONFIG[selectedPeriod].nameTh})
             </h3>
-            <p className="text-xs text-purple-200/80 line-clamp-1">
+            <p className="hidden sm:block text-xs text-purple-200/80 line-clamp-1">
               {event.title}
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-1.5 shrink-0">
             {/* Sound Mute Toggle */}
             <button
               type="button"
               onClick={() => setSoundEnabled((v) => !v)}
-              className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
+              className={`p-2 sm:px-3 sm:py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
                 soundEnabled
                   ? 'bg-purple-800/80 text-purple-200 hover:bg-purple-700'
                   : 'bg-rose-900/60 text-rose-300 hover:bg-rose-800 border border-rose-400/40'
@@ -741,7 +741,7 @@ export function VipassanaLiveScannerModal({
               title={soundEnabled ? 'ปิดเสียงแจ้งเตือน (ใช้ข้อความแจ้งบนจอและสั่นแทน)' : 'เปิดเสียงแจ้งเตือน'}
             >
               {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
-              <span className="hidden sm:inline">{soundEnabled ? 'เสียงเปิด' : 'โหมดเงียบ (แจ้งเตือนบนจอ)'}</span>
+              <span className="hidden sm:inline">{soundEnabled ? 'เสียงเปิด' : 'โหมดเงียบ'}</span>
             </button>
 
             <button
@@ -755,16 +755,14 @@ export function VipassanaLiveScannerModal({
         </div>
 
         {/* SETTINGS / PERIOD SELECTOR TOOLBAR */}
-        <div className="px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex flex-col gap-2 text-xs shrink-0">
-          {/* Primary Always-Visible Row: Group, Day, Options & Collapse/Expand */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+        <div className="px-3 sm:px-4 py-2 bg-slate-50 border-b border-slate-200 flex flex-col gap-1.5 text-xs shrink-0">
+          {/* Primary Always-Visible Row: Group, Day, Progress, Options & Collapse/Expand */}
+          <div className="flex items-center justify-between gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {/* Group Selector for พระพี่เลี้ยง / Group Advisors */}
-              <div className="flex items-center gap-1 bg-purple-50/90 px-2.5 py-1 rounded-xl border border-purple-200 shadow-2xs">
-                <span className="font-extrabold text-purple-950 flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-purple-700" />
-                  กลุ่ม:
-                </span>
+              <div className="flex items-center gap-1 bg-purple-50/90 px-2 py-1 rounded-xl border border-purple-200 shadow-2xs">
+                <Users className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+                <span className="font-extrabold text-purple-950">กลุ่ม:</span>
                 <select
                   value={selectedGroup}
                   onChange={(e) => {
@@ -773,17 +771,17 @@ export function VipassanaLiveScannerModal({
                   }}
                   className="bg-transparent font-bold text-purple-950 text-xs focus:outline-none cursor-pointer"
                 >
-                  <option value="ALL">ทุกกลุ่ม (ส่วนกลาง)</option>
+                  <option value="ALL">ทุกกลุ่ม</option>
                   {availableGroups.map((g) => (
                     <option key={g} value={g}>
-                      {g === 12 ? 'กลุ่ม 12 (English)' : `กลุ่ม ${g}`}
+                      {g === 12 ? 'กลุ่ม 12 (EN)' : `กลุ่ม ${g}`}
                     </option>
                   ))}
                 </select>
               </div>
 
               {/* Day Selector */}
-              <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-slate-300 shadow-2xs">
+              <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-slate-300 shadow-2xs">
                 <span className="font-bold text-slate-700">วันที่:</span>
                 <select
                   value={selectedDayNumber}
@@ -797,14 +795,14 @@ export function VipassanaLiveScannerModal({
                   ))}
                 </select>
               </div>
-            </div>
 
-            {/* Right Controls: Progress + Options & Collapse/Expand */}
-            <div className="flex items-center gap-1.5">
               <span className="px-2 py-0.5 rounded-lg bg-purple-100 text-purple-900 font-mono font-bold text-[11px]">
                 {stats.checkedCount}/{stats.total} ({stats.percent}%)
               </span>
+            </div>
 
+            {/* Right Controls: Options & Collapse/Expand */}
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => {
@@ -820,9 +818,9 @@ export function VipassanaLiveScannerModal({
                     ? 'bg-purple-700 text-white border-purple-700 shadow-2xs'
                     : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-100'
                 }`}
-                title="แสดง/ซ่อนตัวเลือกเกณฑ์เวลาสายและผู้สแกน"
+                title="แสดง/ซ่อนช่องปืนสแกน USB, ชื่อผู้สแกน และเกณฑ์เวลาสาย"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <SlidersHorizontal className="w-3 h-3" />
                 <span>ตัวเลือก</span>
               </button>
 
@@ -830,7 +828,7 @@ export function VipassanaLiveScannerModal({
                 type="button"
                 onClick={() => setIsToolbarCollapsed((v) => !v)}
                 className="px-2 py-1 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-bold text-[11px] flex items-center gap-0.5 transition cursor-pointer shadow-2xs"
-                title={isToolbarCollapsed ? 'คลี่แถบรอบเวลาออก' : 'หุบแถบเครื่องมือเพื่อขยายพื้นที่สแกนและรายชื่อ'}
+                title={isToolbarCollapsed ? 'คลี่แถบรอบเวลาออก' : 'หุบแถบเครื่องมือเพื่อขยายพื้นที่กล้องสแกน'}
               >
                 {isToolbarCollapsed ? (
                   <>
@@ -847,32 +845,34 @@ export function VipassanaLiveScannerModal({
             </div>
           </div>
 
-          {/* Collapsible Row: Period Switcher */}
+          {/* Collapsible Row: 4-Period Switcher (Single 4-Column Row on Mobile) */}
           {!isToolbarCollapsed && (
-            <div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-200/70">
-              {/* Period Switcher */}
-              <div className="flex items-center gap-1 p-1 bg-slate-200/70 rounded-xl flex-wrap">
-                {(Object.keys(PERIOD_CONFIG) as PeriodKey[]).map((pkey) => {
-                  const conf = PERIOD_CONFIG[pkey];
-                  const isSelected = selectedPeriod === pkey;
-                  return (
-                    <button
-                      key={pkey}
-                      type="button"
-                      onClick={() => setSelectedPeriod(pkey)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                        isSelected
-                          ? 'bg-purple-700 text-white shadow-xs'
-                          : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
-                      }`}
-                    >
-                      <span>{conf.nameTh}</span>
-                      <span className="text-[10px] font-mono opacity-80 hidden sm:inline">({conf.timeRange})</span>
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="grid grid-cols-4 sm:flex sm:items-center gap-1 p-1 bg-slate-200/70 rounded-xl">
+              {(Object.keys(PERIOD_CONFIG) as PeriodKey[]).map((pkey) => {
+                const conf = PERIOD_CONFIG[pkey];
+                const isSelected = selectedPeriod === pkey;
+                return (
+                  <button
+                    key={pkey}
+                    type="button"
+                    onClick={() => setSelectedPeriod(pkey)}
+                    className={`px-1.5 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 truncate ${
+                      isSelected
+                        ? 'bg-purple-700 text-white shadow-xs'
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
+                    }`}
+                  >
+                    <span className="truncate">{conf.nameTh}</span>
+                    <span className="text-[10px] font-mono opacity-80 hidden md:inline">({conf.timeRange})</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
+          {/* Advanced Controls (Hidden by default on mobile to keep camera visible) */}
+          {!isToolbarCollapsed && showAdvancedControls && (
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-200 animate-in fade-in duration-150">
               {/* Scanner Officer Name (อาจารย์ผู้ดูแล / เจ้าหน้าที่ ที่สแกนตรวจเช็ค) */}
               <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-300 shadow-2xs">
                 <span className="font-semibold text-slate-600 text-[11px] whitespace-nowrap">ผู้สแกน:</span>
@@ -887,95 +887,70 @@ export function VipassanaLiveScannerModal({
                       localStorage.setItem('vipassana_scanner_officer_name', val);
                     } catch {}
                   }}
-                  className="w-28 sm:w-36 text-xs font-bold text-slate-800 outline-none"
+                  className="w-36 text-xs font-bold text-slate-800 outline-none"
                 />
               </div>
-            </div>
-          )}
 
-          {/* Advanced Controls (Hidden by default on mobile to keep screen clean) */}
-          {!isToolbarCollapsed && showAdvancedControls && (
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-200 animate-in fade-in duration-150">
               {/* Evaluation Mode Switcher (AUTO vs MANUAL) */}
               <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl">
                 <button
                   type="button"
                   onClick={() => setEvalMode('AUTO')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1 ${
                     evalMode === 'AUTO'
                       ? 'bg-purple-700 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
-                  title="ระบบจะคำนวณและตัดเป็น 'สาย' ให้อัตโนมัติเมื่อเกินเกณฑ์เวลาที่กำหนด"
                 >
-                  <Timer className="w-3.5 h-3.5" />
-                  <span>ตัดสายอัตโนมัติ (Auto)</span>
+                  <Timer className="w-3 h-3" />
+                  <span>ตัดสายอัตโนมัติ</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setEvalMode('MANUAL')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer flex items-center gap-1 ${
                     evalMode === 'MANUAL'
                       ? 'bg-purple-700 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
-                  title="Admin เลือกกำหนดสถานะที่ต้องการให้เป็นตามปุ่มที่เลือก"
                 >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>เลือกสถานะเอง (Manual)</span>
+                  <SlidersHorizontal className="w-3 h-3" />
+                  <span>เลือกสถานะเอง</span>
                 </button>
               </div>
 
-              {/* If AUTO: Late Threshold Dropdown & Policy summary */}
+              {/* If AUTO: Late Threshold Dropdown */}
               {evalMode === 'AUTO' ? (
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-950">
-                    <span className="font-bold text-[11px]">เกณฑ์เวลาสาย: เกิน</span>
+                    <span className="font-bold text-[11px]">เกิน</span>
                     <select
                       value={lateGraceMinutes}
                       onChange={(e) => setLateGraceMinutes(parseInt(e.target.value, 10))}
-                      className="px-1.5 py-0.5 bg-white rounded border border-amber-300 font-extrabold text-amber-900 text-xs focus:outline-none cursor-pointer"
+                      className="px-1 py-0.5 bg-white rounded border border-amber-300 font-extrabold text-amber-900 text-xs focus:outline-none cursor-pointer"
                     >
-                      <option value={5}>5 นาที (เข้มงวด)</option>
+                      <option value={5}>5 นาที</option>
                       <option value={10}>10 นาที</option>
-                      <option value={15}>15 นาที (มาตรฐาน)</option>
+                      <option value={15}>15 นาที</option>
                       <option value={20}>20 นาที</option>
-                      <option value={25}>25 นาที</option>
-                      <option value={30}>30 นาที (ผ่อนปรน)</option>
+                      <option value={30}>30 นาที</option>
                       <option value={45}>45 นาที</option>
-                      <option value={60}>60 นาที (1 ชั่วโมง)</option>
+                      <option value={60}>60 นาที</option>
                     </select>
                     <span className="text-[11px] font-bold">= สาย</span>
                   </div>
-
-                  {/* Calculated Cutoff badge */}
-                  {(() => {
-                    const [h, m] = (periodPolicies[selectedPeriod]?.startTime || '04:00').split(':').map(Number);
-                    const total = (h || 0) * 60 + (m || 0) + lateGraceMinutes;
-                    const cutH = Math.floor(total / 60) % 24;
-                    const cutM = total % 60;
-                    const cutStr = `${String(cutH).padStart(2, '0')}:${String(cutM).padStart(2, '0')}`;
-                    return (
-                      <span className="text-[11px] text-slate-600 font-medium">
-                        (เริ่ม {periodPolicies[selectedPeriod]?.startTime} น. ➔ หลัง <strong>{cutStr} น.</strong> = สาย)
-                      </span>
-                    );
-                  })()}
 
                   <button
                     type="button"
                     onClick={() => setShowConfigDrawer((v) => !v)}
                     className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer transition flex items-center gap-1"
-                    title="แก้ไขเวลาเริ่มต้นและสิ้นสุดของแต่ละรอบ"
                   >
                     <SlidersHorizontal className="w-3 h-3 text-slate-500" />
-                    <span>{showConfigDrawer ? 'ซ่อนตั้งเวลา' : '⚙️ ปรับเวลาเริ่มรอบ'}</span>
+                    <span>{showConfigDrawer ? 'ซ่อนตั้งเวลา' : '⚙️ เวลาเริ่มรอบ'}</span>
                   </button>
                 </div>
               ) : (
-                /* If MANUAL: Status buttons */
                 <div className="flex items-center gap-1">
-                  <span className="font-bold text-slate-700">สถานะที่บันทึก:</span>
                   <div className="inline-flex rounded-lg border border-slate-300 p-0.5 bg-white">
                     <button
                       type="button"
@@ -1069,70 +1044,34 @@ export function VipassanaLiveScannerModal({
         )}
 
         {/* BODY AREA */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="flex-1 overflow-y-auto p-2.5 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-5">
           
-          {/* LEFT COLUMN: SCANNER INPUT & CAMERA FEED (7 COLS) */}
-          <div className="lg:col-span-7 space-y-4">
+          {/* LEFT COLUMN: CAMERA FEED & SCANNER INPUT (7 COLS) */}
+          <div className="lg:col-span-7 space-y-3">
             
-            {/* Hardware Scanner & Fast Input Box */}
-            <div className="bg-purple-50/60 border-2 border-purple-200 rounded-2xl p-4 shadow-xs">
-              <form onSubmit={handleFormSubmit} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-extrabold text-purple-950 flex items-center gap-1.5">
-                    <Barcode className="w-4 h-4 text-purple-700" />
-                    <span>ช่องรับสัญญาณปืนสแกนบาร์โค้ด / พิมพ์รหัสนิสิต:</span>
-                  </label>
-                  <span className="text-[10px] text-purple-700 font-mono">
-                    (Auto-focused • พร้อมยิงสแกนทันที)
-                  </span>
+            {/* Camera Scanner Box (Placed FIRST so it is immediately visible on mobile without scrolling) */}
+            <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-900 text-white shadow-sm">
+              <div className="px-3 sm:px-4 py-2 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1.5 font-bold truncate">
+                  <Camera className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span className="truncate">กล้องสแกน QR ป้ายคล้องคอ</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={inputCode}
-                      onChange={(e) => setInputCode(e.target.value)}
-                      placeholder="ยิงบาร์โค้ด หรือพิมพ์รหัสนิสิต (เช่น 6501501071) แล้วกด Enter..."
-                      disabled={isSubmitting}
-                      className="w-full pl-9 pr-4 py-2.5 bg-white rounded-xl border border-purple-300 font-mono text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || !inputCode.trim()}
-                    className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer shadow-xs disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'กำลังบันทึก...' : 'บันทึก'}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Camera Scanner Box */}
-            <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-900 text-white">
-              <div className="px-4 py-2.5 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 font-bold">
-                  <Camera className="w-4 h-4 text-purple-400" />
-                  <span>โหมดกล้องสแกน (Webcam / มือถือ)</span>
-                </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {isCameraActive && (
                     <button
                       type="button"
                       onClick={() =>
                         setCameraFacing((f) => (f === 'environment' ? 'user' : 'environment'))
                       }
-                      className="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-[11px] font-semibold cursor-pointer transition"
+                      className="px-2 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-[11px] font-semibold cursor-pointer transition whitespace-nowrap"
                     >
-                      สลับกล้อง ({cameraFacing === 'environment' ? 'หลัง' : 'หน้า'})
+                      สลับ ({cameraFacing === 'environment' ? 'หลัง' : 'หน้า'})
                     </button>
                   )}
                   <button
                     type="button"
                     onClick={() => setIsCameraActive((v) => !v)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition flex items-center gap-1 ${
+                    className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition flex items-center gap-1 whitespace-nowrap ${
                       isCameraActive
                         ? 'bg-rose-600 hover:bg-rose-700 text-white'
                         : 'bg-emerald-600 hover:bg-emerald-700 text-white'
@@ -1146,7 +1085,7 @@ export function VipassanaLiveScannerModal({
                     ) : (
                       <>
                         <Camera className="w-3.5 h-3.5" />
-                        <span>เปิดกล้องสแกน QR</span>
+                        <span>เปิดกล้องสแกน</span>
                       </>
                     )}
                   </button>
@@ -1154,7 +1093,7 @@ export function VipassanaLiveScannerModal({
               </div>
 
               {/* Camera Preview Area */}
-              <div className="relative min-h-[220px] max-h-[320px] flex items-center justify-center bg-black/60 overflow-hidden">
+              <div className="relative min-h-[210px] sm:min-h-[240px] max-h-[320px] flex items-center justify-center bg-black/60 overflow-hidden">
                 {/* On-Screen Heads-Up Display (HUD) Visual Notification (Silent Meditation Friendly) */}
                 {lastFeedback && (
                   <div
@@ -1267,10 +1206,17 @@ export function VipassanaLiveScannerModal({
                     </div>
                   </>
                 ) : (
-                  <div className="p-8 text-center space-y-2 text-slate-400">
-                    <Camera className="w-10 h-10 mx-auto opacity-30" />
-                    <p className="text-xs">
-                      กล้องปิดอยู่ — ท่านสามารถใช้ **ปืนสแกนบาร์โค้ด USB** ยิงได้ทันที หรือกด "เปิดกล้องสแกน QR" ด้านบน
+                  <div className="p-5 sm:p-8 text-center space-y-2.5 text-slate-300">
+                    <button
+                      type="button"
+                      onClick={() => setIsCameraActive(true)}
+                      className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg shadow-emerald-950/50 transition cursor-pointer"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>แตะเพื่อเปิดกล้องสแกน QR ป้ายคล้องคอ</span>
+                    </button>
+                    <p className="text-[11px] text-slate-400">
+                      หรือใช้ปืนสแกนบาร์โค้ด USB / พิมพ์รหัสนิสิตด้านล่าง
                     </p>
                     {cameraError && (
                       <p className="text-xs text-rose-400 font-semibold">{cameraError}</p>
@@ -1278,6 +1224,31 @@ export function VipassanaLiveScannerModal({
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Hardware Scanner & Fast Input Box (Compact single-line under Camera) */}
+            <div className="bg-purple-50/60 border border-purple-200 rounded-2xl p-2.5 sm:p-3.5 shadow-2xs">
+              <form onSubmit={handleFormSubmit} className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Barcode className="w-4 h-4 text-purple-600 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputCode}
+                    onChange={(e) => setInputCode(e.target.value)}
+                    placeholder="ยิงปืนบาร์โค้ด หรือพิมพ์รหัส (เช่น T307, 6501...)..."
+                    disabled={isSubmitting}
+                    className="w-full pl-9 pr-3 py-2 bg-white rounded-xl border border-purple-300 font-mono text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !inputCode.trim()}
+                  className="px-3.5 sm:px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
+                >
+                  {isSubmitting ? 'บันทึก...' : 'เช็คชื่อ'}
+                </button>
+              </form>
             </div>
 
             {/* LIVE FEEDBACK CARD */}

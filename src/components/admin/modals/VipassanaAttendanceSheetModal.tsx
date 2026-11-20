@@ -859,8 +859,8 @@ export function VipassanaAttendanceSheetModal({
                 />
               )}
 
-              {/* Stat Summary Cards & Period Summary */}
-              {!isToolbarCollapsed && (
+              {/* Stat Summary Cards & Period Summary (Shown when options expanded so mobile table is immediately visible) */}
+              {!isToolbarCollapsed && showAdvancedControls && (
                 <VipassanaAttendanceStatsBar
                   p1Conf={p1Conf}
                   p2Conf={p2Conf}
