@@ -5,6 +5,14 @@ import AppShell from '@/components/AppShell';
 export const metadata: Metadata = {
   title: 'ระบบบริการนิสิตและวิชาการ - Google Sheets Edition',
   description: 'ระบบบริการข้อมูลนิสิต ตารางเรียน เช็คชื่อเข้าเรียน และคำร้อง เชื่อมต่อ Google Sheets',
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/icon.png',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({
