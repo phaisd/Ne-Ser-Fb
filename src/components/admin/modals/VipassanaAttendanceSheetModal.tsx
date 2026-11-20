@@ -853,7 +853,7 @@ export function VipassanaAttendanceSheetModal({
         )}
 
         {/* MODAL BODY (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5 print:p-0 print:overflow-visible print:h-auto print:block">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 print:p-0 print:overflow-visible print:h-auto print:block">
           {viewMode === 'INTERACTIVE' ? (
             /* VIEW 1: INTERACTIVE ATTENDANCE TABLE */
             <>
