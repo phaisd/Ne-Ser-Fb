@@ -129,8 +129,20 @@ export const VipassanaRapidQrScannerModal: React.FC<VipassanaRapidQrScannerModal
   // Process a Scanned String
   const processScanCode = useCallback(
     (rawCode: string) => {
-      const clean = String(rawCode || '').trim();
+      let clean = String(rawCode || '').trim();
       if (!clean) return;
+
+      // Support JSON or prefixed QR formats just like LiveScanner
+      if (clean.startsWith('{') && clean.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(clean);
+          clean = String(parsed.groupSpecificCode || parsed.studentCode || parsed.code || parsed.id || clean).trim();
+        } catch {}
+      }
+      if (clean.includes(':')) {
+        const parts = clean.split(':');
+        clean = parts[parts.length - 1].trim();
+      }
 
       const now = Date.now();
       // Debounce: ignore same code within 2.5 seconds

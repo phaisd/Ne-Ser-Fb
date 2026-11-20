@@ -165,40 +165,64 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
     }
   }, [availableGroups, selectedGroup, event.meditationConfig?.groupAssignments]);
 
-  // Initialize row data from registrations when session or registrations change
+  // Initialize row data from registrations when session or event changes,
+  // while preserving unsaved local edits if registrations prop refreshes with identical IDs.
   useEffect(() => {
     const sessionKey = `s${selectedSession}`;
-    const nextRows: Record<string, EditableInterviewRow> = {};
+    setRows((prev) => {
+      const nextRows: Record<string, EditableInterviewRow> = {};
 
-    registrations.forEach((r) => {
-      const savedInterview = r.vipassanaInterviews?.[sessionKey];
-      const gNum = r.groupNumber || (r.groupName ? parseInt(r.groupName.replace(/\D/g, ''), 10) : undefined);
+      registrations.forEach((r) => {
+        const savedInterview = r.vipassanaInterviews?.[sessionKey];
+        const gNum = r.groupNumber || (r.groupName ? parseInt(r.groupName.replace(/\D/g, ''), 10) : undefined);
+        const existingLocal = prev[r.id];
 
-      nextRows[r.id] = {
-        regId: r.id,
-        studentCode: r.studentCode,
-        groupSpecificCode: r.groupSpecificCode,
-        studentName: r.studentName,
-        age: r.age,
-        vasa: r.vasa,
-        groupNumber: gNum,
-        major: r.major,
-        yearLevel: r.yearLevel,
-        programType: r.programType,
-        checklist: savedInterview?.checklist ? { ...savedInterview.checklist } : {},
-        result: savedInterview?.result || 'PENDING',
-        remarks: savedInterview?.remarks || '',
-      };
+        // Use saved server interview if present; otherwise preserve existing local draft if same registration
+        const hasSavedServerData = Boolean(
+          savedInterview &&
+            (savedInterview.result !== 'PENDING' ||
+              (savedInterview.checklist && Object.keys(savedInterview.checklist).length > 0) ||
+              (savedInterview.remarks && savedInterview.remarks.trim()))
+        );
 
-      if (!meditationMaster && savedInterview?.meditationMasterName) {
-        setMeditationMaster(savedInterview.meditationMasterName);
-      }
-      if (savedInterview?.date) {
-        setSessionDate(savedInterview.date);
-      }
+        nextRows[r.id] = {
+          regId: r.id,
+          studentCode: r.studentCode,
+          groupSpecificCode: r.groupSpecificCode,
+          studentName: r.studentName,
+          age: r.age,
+          vasa: r.vasa,
+          groupNumber: gNum,
+          major: r.major,
+          yearLevel: r.yearLevel,
+          programType: r.programType,
+          checklist: hasSavedServerData
+            ? { ...(savedInterview?.checklist || {}) }
+            : existingLocal?.checklist && Object.keys(existingLocal.checklist).length > 0
+            ? { ...existingLocal.checklist }
+            : { ...(savedInterview?.checklist || {}) },
+          result: hasSavedServerData
+            ? savedInterview?.result || 'PENDING'
+            : existingLocal?.result && existingLocal.result !== 'PENDING'
+            ? existingLocal.result
+            : savedInterview?.result || 'PENDING',
+          remarks: hasSavedServerData
+            ? savedInterview?.remarks || ''
+            : existingLocal?.remarks
+            ? existingLocal.remarks
+            : savedInterview?.remarks || '',
+        };
+
+        if (!meditationMaster && savedInterview?.meditationMasterName) {
+          setMeditationMaster(savedInterview.meditationMasterName);
+        }
+        if (savedInterview?.date) {
+          setSessionDate(savedInterview.date);
+        }
+      });
+
+      return nextRows;
     });
-
-    setRows(nextRows);
   }, [registrations, selectedSession]);
 
   // Filtered rows by group and search query
@@ -294,6 +318,7 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
         ...prev,
         [regId]: {
           ...current,
+          result: current.result === 'PENDING' ? 'PASS' : current.result,
           checklist: {
             ...current.checklist,
             standing: true,

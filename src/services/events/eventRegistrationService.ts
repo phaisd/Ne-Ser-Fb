@@ -33,7 +33,7 @@ export async function getEventRegistrations(
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const rows = await gClient.getValues('EventRegistrations!A2:R');
+      const rows = await gClient.getValues('EventRegistrations!A2:U');
       if (rows && rows.length > 0) {
         list = rows.map((r) => {
           const id = r[0] || '';
@@ -41,10 +41,32 @@ export async function getEventRegistrations(
           let dailyAttendance = local.dailyAttendance || {};
           if (r[17]) {
             try {
-              dailyAttendance = typeof r[17] === 'string' ? JSON.parse(r[17]) : r[17];
+              const parsed = typeof r[17] === 'string' ? JSON.parse(r[17]) : r[17];
+              dailyAttendance = { ...parsed, ...(local.dailyAttendance || {}) };
             } catch {
               // fallback to local
             }
+          }
+          let vipassanaInterviews = local.vipassanaInterviews || {};
+          if (r[18]) {
+            try {
+              const parsed = typeof r[18] === 'string' ? JSON.parse(r[18]) : r[18];
+              vipassanaInterviews = { ...parsed, ...(local.vipassanaInterviews || {}) };
+            } catch {
+              // fallback to local
+            }
+          }
+          let attendedDays: number[] | undefined = local.attendedDays;
+          if (!attendedDays && r[19]) {
+            try {
+              attendedDays = typeof r[19] === 'string' ? JSON.parse(r[19]) : r[19];
+            } catch {}
+          }
+          let extraMeta: Record<string, any> = {};
+          if (r[20]) {
+            try {
+              extraMeta = typeof r[20] === 'string' ? JSON.parse(r[20]) : r[20];
+            } catch {}
           }
           const sCode = r[2] || local.studentCode || '';
           const sInfo = studentMap.get(sCode.trim().toLowerCase()) || {};
@@ -62,7 +84,7 @@ export async function getEventRegistrations(
             eventTitle: eventTitleMap.get(r[1] || local.eventId) || 'กิจกรรมนิสิต',
             studentCode: sCode,
             studentName: r[3] || local.studentName || sInfo.fullName || '',
-            status: (r[4] || local.status || 'REGISTERED') as any,
+            status: (local.status || r[4] || 'REGISTERED') as any,
             role: (r[5] || local.role || 'STUDENT') as any,
             major: r[6] || local.major || sInfo.major || 'พระพุทธศาสนา',
             yearLevel: r[7] ? Number(r[7]) : (local.yearLevel || sInfo.yearLevel || 1),
@@ -73,10 +95,19 @@ export async function getEventRegistrations(
             groupSpecificCode: r[12] || local.groupSpecificCode || undefined,
             degreeLevel: r[13] || local.degreeLevel || sInfo.degree || 'ปริญญาตรี',
             programType: r[14] || local.programType || sInfo.programType || 'THAI',
-            remarks: r[15] !== undefined ? r[15] : (local.remarks || ''),
-            attendedAt: r[16] || local.attendedAt || '',
+            remarks: local.remarks !== undefined && local.remarks !== '' ? local.remarks : (r[15] || ''),
+            attendedAt: local.attendedAt || r[16] || '',
+            age: local.age ?? extraMeta.age ?? sInfo.age,
+            vasa: local.vasa || extraMeta.vasa || sInfo.vasa || '',
             dailyAttendance,
-            updatedAt: local.updatedAt,
+            vipassanaInterviews,
+            attendedDays,
+            passedMeditation: local.passedMeditation ?? extraMeta.passedMeditation,
+            finalMeditationResult: local.finalMeditationResult ?? extraMeta.finalMeditationResult,
+            certificateIssued: local.certificateIssued ?? extraMeta.certificateIssued,
+            certificateDocNo: local.certificateDocNo ?? extraMeta.certificateDocNo,
+            certificateIssuedAt: local.certificateIssuedAt ?? extraMeta.certificateIssuedAt,
+            updatedAt: local.updatedAt || extraMeta.updatedAt,
           };
         });
       }
@@ -106,8 +137,17 @@ export async function getEventRegistrations(
         department: r.department || sInfo.department || '',
         groupName: r.groupName || (r.groupNumber ? `กลุ่มที่ ${r.groupNumber}` : 'ทั่วไป'),
         groupNumber: r.groupNumber !== undefined ? Number(r.groupNumber) : undefined,
+        groupSpecificCode: r.groupSpecificCode || undefined,
+        age: r.age ?? sInfo.age,
         vasa: r.vasa || sInfo.vasa || '',
         dailyAttendance: r.dailyAttendance || {},
+        vipassanaInterviews: r.vipassanaInterviews || {},
+        attendedDays: Array.isArray(r.attendedDays) ? r.attendedDays : undefined,
+        passedMeditation: r.passedMeditation,
+        finalMeditationResult: r.finalMeditationResult,
+        certificateIssued: r.certificateIssued,
+        certificateDocNo: r.certificateDocNo,
+        certificateIssuedAt: r.certificateIssuedAt,
         remarks: r.remarks || '',
         attendedAt: r.attendedAt || '',
         createdAt: r.createdAt ? String(r.createdAt) : new Date().toISOString(),

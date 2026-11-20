@@ -1,9 +1,81 @@
 import { EventRegistration, SatipatthanaChecklist } from '@/types';
 import { toBuddhistYear } from '@/lib/utils/formatters';
-import { readLocalJson, writeLocalJson } from '../storageHelper';
+import { readLocalJson, writeLocalJson, getSheetsClient } from '../storageHelper';
 import { getEvents } from './eventCoreService';
+import { getEventRegistrations } from './eventRegistrationService';
 
 // ----------------- VIPASSANA ATTENDANCE & GRADING -----------------
+
+async function loadAndHydrateRegistrations(): Promise<EventRegistration[]> {
+  let local = readLocalJson<EventRegistration[]>('event_registrations.json', []);
+  if (local.length === 0) {
+    try {
+      const fromService = await getEventRegistrations();
+      if (fromService.length > 0) {
+        local = fromService;
+        writeLocalJson('event_registrations.json', local);
+      }
+    } catch {}
+  }
+  return local;
+}
+
+async function syncUpdatedRegistrationsToSheets(updatedRegs: EventRegistration[]): Promise<void> {
+  if (!updatedRegs || updatedRegs.length === 0) return;
+  const gClient = getSheetsClient();
+  if (!gClient) return;
+
+  try {
+    const rows = await gClient.getValues('EventRegistrations!A2:A');
+    if (!rows || rows.length === 0) return;
+
+    const idToRowIndex = new Map<string, number>();
+    rows.forEach((r, idx) => {
+      const id = String(r[0] || '').trim();
+      if (id) {
+        idToRowIndex.set(id, idx + 2); // 1-based row number in Sheet (starts at A2)
+      }
+    });
+
+    for (const reg of updatedRegs) {
+      const rowNum = idToRowIndex.get(reg.id);
+      if (!rowNum) continue;
+
+      const extraMeta = {
+        age: reg.age,
+        vasa: reg.vasa,
+        passedMeditation: reg.passedMeditation,
+        finalMeditationResult: reg.finalMeditationResult,
+        certificateIssued: reg.certificateIssued,
+        certificateDocNo: reg.certificateDocNo,
+        certificateIssuedAt: reg.certificateIssuedAt,
+        updatedAt: reg.updatedAt,
+      };
+
+      await gClient.updateValues(`EventRegistrations!E${rowNum}:U${rowNum}`, [[
+        reg.status || 'REGISTERED',
+        reg.role || 'STUDENT',
+        reg.major || '',
+        reg.yearLevel || 1,
+        reg.department || '',
+        reg.groupName || '',
+        reg.createdAt || '',
+        reg.groupNumber !== undefined ? String(reg.groupNumber) : '',
+        reg.groupSpecificCode || '',
+        reg.degreeLevel || '',
+        reg.programType || 'THAI',
+        reg.remarks || '',
+        reg.attendedAt || '',
+        JSON.stringify(reg.dailyAttendance || {}),
+        JSON.stringify(reg.vipassanaInterviews || {}),
+        JSON.stringify(reg.attendedDays || []),
+        JSON.stringify(extraMeta),
+      ]]);
+    }
+  } catch (err) {
+    console.warn('Could not sync updated registrations to Google Sheets:', err);
+  }
+}
 
 export async function saveVipassanaAttendance(
   eventId: string,
@@ -17,10 +89,10 @@ export async function saveVipassanaAttendance(
     remark?: string;
   }>
 ): Promise<boolean> {
-  const local = readLocalJson<any[]>('event_registrations.json', []);
+  const local = await loadAndHydrateRegistrations();
   const recordMap = new Map(records.map((r) => [r.registrationId, r]));
 
-  let updatedCount = 0;
+  const updatedRegs: EventRegistration[] = [];
   local.forEach((reg) => {
     if (reg.eventId === eventId && recordMap.has(reg.id)) {
       const rec = recordMap.get(reg.id)!;
@@ -34,12 +106,13 @@ export async function saveVipassanaAttendance(
       };
       if (rec.remark !== undefined) reg.remarks = rec.remark;
       reg.updatedAt = new Date().toISOString();
-      updatedCount++;
+      updatedRegs.push(reg);
     }
   });
 
-  if (updatedCount > 0) {
+  if (updatedRegs.length > 0) {
     writeLocalJson('event_registrations.json', local);
+    await syncUpdatedRegistrationsToSheets(updatedRegs);
   }
   return true;
 }
@@ -79,7 +152,7 @@ export async function recordVipassanaScanCheckin(params: {
   }
 
   const cleanLower = cleanInput.toLowerCase();
-  const local = readLocalJson<EventRegistration[]>('event_registrations.json', []);
+  const local = await loadAndHydrateRegistrations();
   const reg = local.find(
     (r) =>
       r.eventId === eventId &&
@@ -135,6 +208,7 @@ export async function recordVipassanaScanCheckin(params: {
   }
 
   writeLocalJson('event_registrations.json', local);
+  await syncUpdatedRegistrationsToSheets([reg]);
 
   return {
     success: true,
@@ -164,10 +238,10 @@ export async function saveVipassanaInterview(
     return { success: false, updatedCount: 0, error: 'ข้อมูลไม่ถูกต้อง' };
   }
 
-  const local = readLocalJson<EventRegistration[]>('event_registrations.json', []);
+  const local = await loadAndHydrateRegistrations();
   const sessionKey = `s${sessionNumber}`;
   const nowIso = new Date().toISOString();
-  let updatedCount = 0;
+  const updatedRegs: EventRegistration[] = [];
 
   const entriesMap = new Map<string, (typeof entries)[0]>();
   entries.forEach((e) => {
@@ -178,6 +252,14 @@ export async function saveVipassanaInterview(
     if (reg.eventId !== eventId) return;
     const entry = entriesMap.get(reg.id);
     if (!entry) return;
+
+    const prevInterview = reg.vipassanaInterviews?.[sessionKey];
+    const hasChecklistKeys = entry.checklist && Object.keys(entry.checklist).length > 0;
+    const isModified =
+      Boolean(prevInterview) ||
+      entry.result !== 'PENDING' ||
+      Boolean(entry.remarks && entry.remarks.trim()) ||
+      hasChecklistKeys;
 
     if (!reg.vipassanaInterviews) reg.vipassanaInterviews = {};
     reg.vipassanaInterviews[sessionKey] = {
@@ -197,11 +279,14 @@ export async function saveVipassanaInterview(
     }
 
     reg.updatedAt = nowIso;
-    updatedCount += 1;
+    if (isModified) {
+      updatedRegs.push(reg);
+    }
   });
 
   writeLocalJson('event_registrations.json', local);
-  return { success: true, updatedCount };
+  await syncUpdatedRegistrationsToSheets(updatedRegs);
+  return { success: true, updatedCount: entries.length };
 }
 
 export interface OfflineScanItem {
@@ -335,6 +420,7 @@ export async function batchApproveAndIssueVipassanaCertificates(
 
   writeLocalJson('event_registrations.json', localRegs);
   writeLocalJson('certificate_requests.json', localCerts);
+  await syncUpdatedRegistrationsToSheets(targetRegs);
 
   return { success: true, issuedCount: certIds.length, certIds };
 }
@@ -346,7 +432,7 @@ export async function updateVipassanaEvaluationStatus(params: {
   decision: 'PASS' | 'NOT_PASS' | 'RESET';
 }): Promise<{ success: boolean; updatedCount: number }> {
   const { eventId, registrationId, registrationIds, decision } = params;
-  const localRegs = readLocalJson<EventRegistration[]>('event_registrations.json', []);
+  const localRegs = await loadAndHydrateRegistrations();
   const targetIds = new Set<string>(
     registrationIds && registrationIds.length > 0
       ? registrationIds
@@ -360,7 +446,7 @@ export async function updateVipassanaEvaluationStatus(params: {
   }
 
   const nowIso = new Date().toISOString();
-  let updatedCount = 0;
+  const updatedRegs: EventRegistration[] = [];
 
   localRegs.forEach((r) => {
     if (r.eventId !== eventId) return;
@@ -377,9 +463,10 @@ export async function updateVipassanaEvaluationStatus(params: {
       delete r.passedMeditation;
     }
     r.updatedAt = nowIso;
-    updatedCount += 1;
+    updatedRegs.push(r);
   });
 
   writeLocalJson('event_registrations.json', localRegs);
-  return { success: true, updatedCount };
+  await syncUpdatedRegistrationsToSheets(updatedRegs);
+  return { success: true, updatedCount: updatedRegs.length };
 }
