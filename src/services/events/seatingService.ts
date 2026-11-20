@@ -156,24 +156,87 @@ export async function assignSeatsAuto(
   let assignedCount = 0;
   let unassignedCount = 0;
 
-  sortedRegs.forEach((reg, index) => {
-    const targetInLocal = localList.find((r) => r.id === reg.id);
-    if (!targetInLocal) return;
+  const designations = seatingConfig.seatDesignations || {};
+  const hasDesignations = Object.keys(designations).length > 0;
 
-    if (index < seatSlots.length) {
-      const slot = seatSlots[index];
-      targetInLocal.seatNumber = slot.seatNumber;
-      targetInLocal.seatZone = slot.zoneName;
-      targetInLocal.updatedAt = new Date().toISOString();
-      assignedCount++;
-    } else {
-      // Out of seat capacity
-      targetInLocal.seatNumber = undefined;
-      targetInLocal.seatZone = undefined;
-      targetInLocal.updatedAt = new Date().toISOString();
-      unassignedCount++;
-    }
-  });
+  if (hasDesignations) {
+    // 1. Group available slots by designated status
+    const designatedSlotMap: Record<string, typeof seatSlots> = {};
+    const undesignatedSlots: typeof seatSlots = [];
+
+    seatSlots.forEach((slot) => {
+      const des = designations[slot.seatNumber.toUpperCase()];
+      if (des) {
+        if (!designatedSlotMap[des]) designatedSlotMap[des] = [];
+        designatedSlotMap[des].push(slot);
+      } else {
+        undesignatedSlots.push(slot);
+      }
+    });
+
+    // 2. Fill matching status participants into designated slots first
+    const remainingRegs: typeof sortedRegs = [];
+    const usedSlotNumbers = new Set<string>();
+
+    sortedRegs.forEach((reg) => {
+      const cat = detectParticipantStatus(reg.studentName, reg.role).category;
+      const targetInLocal = localList.find((r) => r.id === reg.id);
+      if (!targetInLocal) return;
+
+      const availSlotsForCat = designatedSlotMap[cat] || [];
+      const freeSlot = availSlotsForCat.find((s) => !usedSlotNumbers.has(s.seatNumber));
+
+      if (freeSlot) {
+        usedSlotNumbers.add(freeSlot.seatNumber);
+        targetInLocal.seatNumber = freeSlot.seatNumber;
+        targetInLocal.seatZone = freeSlot.zoneName;
+        targetInLocal.updatedAt = new Date().toISOString();
+        assignedCount++;
+      } else {
+        remainingRegs.push(reg);
+      }
+    });
+
+    // 3. Fill remaining participants into any remaining available slots
+    const allRemainingSlots = seatSlots.filter((s) => !usedSlotNumbers.has(s.seatNumber));
+    remainingRegs.forEach((reg, idx) => {
+      const targetInLocal = localList.find((r) => r.id === reg.id);
+      if (!targetInLocal) return;
+
+      if (idx < allRemainingSlots.length) {
+        const slot = allRemainingSlots[idx];
+        targetInLocal.seatNumber = slot.seatNumber;
+        targetInLocal.seatZone = slot.zoneName;
+        targetInLocal.updatedAt = new Date().toISOString();
+        assignedCount++;
+      } else {
+        targetInLocal.seatNumber = undefined;
+        targetInLocal.seatZone = undefined;
+        targetInLocal.updatedAt = new Date().toISOString();
+        unassignedCount++;
+      }
+    });
+  } else {
+    // Standard sequence filling
+    sortedRegs.forEach((reg, index) => {
+      const targetInLocal = localList.find((r) => r.id === reg.id);
+      if (!targetInLocal) return;
+
+      if (index < seatSlots.length) {
+        const slot = seatSlots[index];
+        targetInLocal.seatNumber = slot.seatNumber;
+        targetInLocal.seatZone = slot.zoneName;
+        targetInLocal.updatedAt = new Date().toISOString();
+        assignedCount++;
+      } else {
+        // Out of seat capacity
+        targetInLocal.seatNumber = undefined;
+        targetInLocal.seatZone = undefined;
+        targetInLocal.updatedAt = new Date().toISOString();
+        unassignedCount++;
+      }
+    });
+  }
 
   writeLocalJson('event_registrations.json', localList);
 
@@ -317,6 +380,7 @@ export async function getPublicSeatingData(
     isCheckedIn: boolean;
     groupNumber?: number;
     displayName: string;
+    statusCategory?: ParticipantStatusCategory;
   }>;
   matchedParticipant?: {
     id: string;
@@ -354,6 +418,7 @@ export async function getPublicSeatingData(
         isCheckedIn: Boolean(r.seatCheckinAt),
         groupNumber: r.groupNumber,
         displayName: r.studentName,
+        statusCategory: detectParticipantStatus(r.studentName, r.role).category,
       };
     });
 

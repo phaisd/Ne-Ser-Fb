@@ -118,3 +118,131 @@ export function detectParticipantStatus(
 
   return { category: 'UNKNOWN', label: 'ทั่วไป', priority: 7 };
 }
+
+export interface StatusThemeConfig {
+  key: ParticipantStatusCategory;
+  label: string;
+  shortLabel: string;
+  colorName: string;
+  dotColor: string;
+  // Filled seat styles
+  bgClass: string;
+  textClass: string;
+  borderClass: string;
+  hoverClass: string;
+  // Designated (unoccupied) seat styles
+  designatedBgClass: string;
+  designatedTextClass: string;
+  designatedBorderClass: string;
+  // Badge
+  badgeClass: string;
+}
+
+export const STATUS_THEMES: Record<ParticipantStatusCategory, StatusThemeConfig> = {
+  MONK: {
+    key: 'MONK',
+    label: 'พระภิกษุ (ไทย/สายหลัก)',
+    shortLabel: 'พระภิกษุ',
+    colorName: 'สีส้มทอง/มัสตาร์ด',
+    dotColor: '#d97706',
+    bgClass: 'bg-amber-500',
+    textClass: 'text-slate-950 font-black',
+    borderClass: 'border-amber-600',
+    hoverClass: 'hover:bg-amber-600',
+    designatedBgClass: 'bg-amber-50/90',
+    designatedTextClass: 'text-amber-800',
+    designatedBorderClass: 'border-2 border-amber-400 border-dashed',
+    badgeClass: 'bg-amber-500 text-slate-950',
+  },
+  BHIKKHUNI: {
+    key: 'BHIKKHUNI',
+    label: 'ภิกษุณี / พระนานาชาติ',
+    shortLabel: 'ภิกษุณี/Inter',
+    colorName: 'สีกรักน้ำตาลเข้ม',
+    dotColor: '#713f12',
+    bgClass: 'bg-yellow-900',
+    textClass: 'text-amber-100 font-extrabold',
+    borderClass: 'border-yellow-950',
+    hoverClass: 'hover:bg-yellow-950',
+    designatedBgClass: 'bg-amber-900/10',
+    designatedTextClass: 'text-amber-900',
+    designatedBorderClass: 'border-2 border-amber-800 border-dashed',
+    badgeClass: 'bg-yellow-900 text-amber-100',
+  },
+  SAMANERA: {
+    key: 'SAMANERA',
+    label: 'สามเณร',
+    shortLabel: 'สามเณร',
+    colorName: 'สีส้มอิฐ',
+    dotColor: '#ea580c',
+    bgClass: 'bg-orange-600',
+    textClass: 'text-white font-extrabold',
+    borderClass: 'border-orange-700',
+    hoverClass: 'hover:bg-orange-700',
+    designatedBgClass: 'bg-orange-50/90',
+    designatedTextClass: 'text-orange-800',
+    designatedBorderClass: 'border-2 border-orange-400 border-dashed',
+    badgeClass: 'bg-orange-600 text-white',
+  },
+  MAECHI: {
+    key: 'MAECHI',
+    label: 'แม่ชี',
+    shortLabel: 'แม่ชี',
+    colorName: 'สีครีม/ขาวมุก',
+    dotColor: '#fef3c7',
+    bgClass: 'bg-amber-100',
+    textClass: 'text-amber-950 font-black',
+    borderClass: 'border-amber-400',
+    hoverClass: 'hover:bg-amber-200',
+    designatedBgClass: 'bg-amber-50/80',
+    designatedTextClass: 'text-amber-900',
+    designatedBorderClass: 'border-2 border-amber-300 border-dashed',
+    badgeClass: 'bg-amber-100 text-amber-900 border border-amber-300',
+  },
+  LAY_MALE: {
+    key: 'LAY_MALE',
+    label: 'ฆราวาสชาย',
+    shortLabel: 'ฆราวาสชาย',
+    colorName: 'สีฟ้าคราม/สเลทบลู',
+    dotColor: '#2563eb',
+    bgClass: 'bg-blue-600',
+    textClass: 'text-white font-extrabold',
+    borderClass: 'border-blue-700',
+    hoverClass: 'hover:bg-blue-700',
+    designatedBgClass: 'bg-blue-50/90',
+    designatedTextClass: 'text-blue-800',
+    designatedBorderClass: 'border-2 border-blue-400 border-dashed',
+    badgeClass: 'bg-blue-600 text-white',
+  },
+  LAY_FEMALE: {
+    key: 'LAY_FEMALE',
+    label: 'ฆราวาสหญิง',
+    shortLabel: 'ฆราวาสหญิง',
+    colorName: 'สีเขียวเข้ม',
+    dotColor: '#047857',
+    bgClass: 'bg-emerald-700',
+    textClass: 'text-white font-extrabold',
+    borderClass: 'border-emerald-800',
+    hoverClass: 'hover:bg-emerald-800',
+    designatedBgClass: 'bg-emerald-50/90',
+    designatedTextClass: 'text-emerald-800',
+    designatedBorderClass: 'border-2 border-emerald-400 border-dashed',
+    badgeClass: 'bg-emerald-700 text-white',
+  },
+  UNKNOWN: {
+    key: 'UNKNOWN',
+    label: 'ทั่วไป / สำรอง',
+    shortLabel: 'ทั่วไป',
+    colorName: 'สีเทา',
+    dotColor: '#64748b',
+    bgClass: 'bg-slate-600',
+    textClass: 'text-white font-extrabold',
+    borderClass: 'border-slate-700',
+    hoverClass: 'hover:bg-slate-700',
+    designatedBgClass: 'bg-slate-50',
+    designatedTextClass: 'text-slate-700',
+    designatedBorderClass: 'border-2 border-slate-300 border-dashed',
+    badgeClass: 'bg-slate-600 text-white',
+  },
+};
+

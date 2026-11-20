@@ -22,6 +22,7 @@ import {
   Share2,
 } from 'lucide-react';
 import type { StudentEvent, EventSeatingConfig, SeatZone } from '@/types/event';
+import { STATUS_THEMES, type ParticipantStatusCategory } from '@/services/events/seatingUtils';
 
 const ZONE_COLORS: Record<string, { bg: string; border: string; text: string; lightBg: string }> = {
   amber: { bg: 'bg-amber-500', border: 'border-amber-400', text: 'text-amber-900', lightBg: 'bg-amber-50' },
@@ -47,7 +48,15 @@ function SeatingLookupContent() {
   // Loaded seating data
   const [eventData, setEventData] = useState<Partial<StudentEvent> | null>(null);
   const [seatingConfig, setSeatingConfig] = useState<EventSeatingConfig | null>(null);
-  const [occupiedSeats, setOccupiedSeats] = useState<Array<{ seatNumber: string; isCheckedIn: boolean; groupNumber?: number; displayName: string }>>([]);
+  const [occupiedSeats, setOccupiedSeats] = useState<
+    Array<{
+      seatNumber: string;
+      isCheckedIn: boolean;
+      groupNumber?: number;
+      displayName: string;
+      statusCategory?: ParticipantStatusCategory;
+    }>
+  >([]);
   const [matchedParticipant, setMatchedParticipant] = useState<any>(null);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
@@ -129,7 +138,10 @@ function SeatingLookupContent() {
   }, [seatingConfig]);
 
   const occupiedMap = useMemo(() => {
-    const map = new Map<string, { isCheckedIn: boolean; groupNumber?: number; displayName: string }>();
+    const map = new Map<
+      string,
+      { isCheckedIn: boolean; groupNumber?: number; displayName: string; statusCategory?: ParticipantStatusCategory }
+    >();
     occupiedSeats.forEach((s) => {
       map.set(s.seatNumber.trim().toUpperCase(), s);
     });
@@ -378,6 +390,37 @@ function SeatingLookupContent() {
                 </button>
               </div>
             </div>
+
+            {/* Public Status Legend */}
+            <div className="w-full flex items-center justify-center gap-1.5 flex-wrap pt-2 border-t border-slate-800 text-[10px]">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-950" />
+                พระภิกษุ
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-yellow-900 text-amber-100 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
+                ภิกษุณี/Inter
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-orange-600 text-white font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                สามเณร
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 text-amber-950 font-black">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                แม่ชี
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-600 text-white font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                ฆราวาสชาย
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-700 text-white font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                ฆราวาสหญิง
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-black ring-2 ring-amber-300 animate-pulse">
+                ★ ที่นั่งของคุณ
+              </span>
+            </div>
           </div>
 
           {/* Map Canvas */}
@@ -450,6 +493,9 @@ function SeatingLookupContent() {
                                   matchedParticipant.seatNumber.trim().toUpperCase() === seatCode.toUpperCase();
                                 const occupantInfo = occupiedMap.get(seatCode.toUpperCase());
 
+                                const designatedCategory = (seatingConfig?.seatDesignations || {})[seatCode.toUpperCase()] as ParticipantStatusCategory;
+                                const designatedTheme = designatedCategory ? STATUS_THEMES[designatedCategory] : null;
+
                                 if (isDisabled) {
                                   return (
                                     <div
@@ -475,13 +521,30 @@ function SeatingLookupContent() {
                                 }
 
                                 if (occupantInfo) {
+                                  const occCategory = occupantInfo.statusCategory || 'UNKNOWN';
+                                  const theme = STATUS_THEMES[occCategory] || STATUS_THEMES.UNKNOWN;
+
                                   return (
                                     <div
                                       key={cIdx}
-                                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 font-bold flex flex-col items-center justify-center opacity-70"
-                                      title={`ที่นั่ง ${seatCode} (มีผู้จอง)`}
+                                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${theme.bgClass} ${theme.textClass} border ${theme.borderClass} font-bold flex flex-col items-center justify-center shadow-xs`}
+                                      title={`ที่นั่ง ${seatCode}: ${theme.label}`}
                                     >
                                       <span className="text-[9px] leading-tight">{seatCode}</span>
+                                      <span className="text-[7px] opacity-95 truncate max-w-[28px]">{theme.shortLabel}</span>
+                                    </div>
+                                  );
+                                }
+
+                                if (designatedTheme) {
+                                  return (
+                                    <div
+                                      key={cIdx}
+                                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${designatedTheme.designatedBgClass} ${designatedTheme.designatedBorderClass} ${designatedTheme.designatedTextClass} font-bold flex flex-col items-center justify-center`}
+                                      title={`ที่นั่ง ${seatCode}: สงวนสำหรับ ${designatedTheme.label}`}
+                                    >
+                                      <span className="text-[9px] leading-tight">{seatCode}</span>
+                                      <span className="text-[7px] opacity-90 truncate max-w-[28px]">{designatedTheme.shortLabel}</span>
                                     </div>
                                   );
                                 }

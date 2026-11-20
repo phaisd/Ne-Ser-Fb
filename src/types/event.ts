@@ -57,6 +57,7 @@ export interface EventSeatingConfig {
   roomName?: string; // ห้อง เช่น หอประชุม ชั้น 3
   zones: SeatZone[];
   disabledSeats?: string[]; // ที่นั่งที่เว้นเป็นทางเดิน หรือเสา เช่น ["A-05", "A-10"]
+  seatDesignations?: Record<string, string>; // e.g. { "AA-01": "MONK", "AB-05": "MAECHI" } กำหนดสถานะตัวแทนของที่นั่ง
   updatedAt?: string;
 }
 

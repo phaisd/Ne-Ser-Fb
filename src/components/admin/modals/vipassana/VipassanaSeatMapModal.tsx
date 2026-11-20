@@ -39,7 +39,12 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { StudentEvent, EventRegistration, EventSeatingConfig, SeatZone } from '@/types/event';
-import { generateZoneSeatCodes, detectParticipantStatus } from '@/services/events/seatingUtils';
+import {
+  generateZoneSeatCodes,
+  detectParticipantStatus,
+  STATUS_THEMES,
+  type ParticipantStatusCategory,
+} from '@/services/events/seatingUtils';
 import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
 import { parseXlsxBuffer } from '@/lib/utils/xlsx-import';
 
@@ -215,13 +220,32 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     const checkedInCount = registrations.filter((r) => Boolean(r.seatNumber && r.seatCheckinAt)).length;
     const unassignedCount = Math.max(0, registrations.length - assignedCount);
 
+    const statusCounts: Record<ParticipantStatusCategory, number> = {
+      MONK: 0,
+      BHIKKHUNI: 0,
+      SAMANERA: 0,
+      MAECHI: 0,
+      LAY_MALE: 0,
+      LAY_FEMALE: 0,
+      UNKNOWN: 0,
+    };
+
+    registrations.forEach((r) => {
+      if (r.seatNumber) {
+        const cat = detectParticipantStatus(r.studentName, r.role).category;
+        statusCounts[cat] = (statusCounts[cat] || 0) + 1;
+      }
+    });
+
     return {
       totalCapacity: activeSeats,
       totalParticipants: registrations.length,
       assignedCount,
       checkedInCount,
       vacantCount: Math.max(0, activeSeats - assignedCount),
+      disabledCount: disabledSet.size,
       unassignedCount,
+      statusCounts,
     };
   }, [config, registrations]);
 
@@ -658,6 +682,113 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     await handleSaveConfig(newConfig);
   };
 
+  // Set seat representative status designation (e.g. MONK, MAECHI, etc.)
+  const handleDesignateSeatStatus = async (seatCode: string, status: ParticipantStatusCategory | null) => {
+    const designations = { ...(config.seatDesignations || {}) };
+    const upperCode = seatCode.trim().toUpperCase();
+    if (!status) {
+      delete designations[upperCode];
+    } else {
+      designations[upperCode] = status;
+    }
+    const newConfig = {
+      ...config,
+      seatDesignations: designations,
+    };
+    await handleSaveConfig(newConfig);
+  };
+
+  // Set representative status designation for an entire row
+  const handleDesignateRowStatus = async (
+    zone: SeatZone,
+    rowChar: string,
+    rIdx: number,
+    status: ParticipantStatusCategory | null
+  ) => {
+    const designations = { ...(config.seatDesignations || {}) };
+    const prefix = (zone.prefix || zone.name.substring(0, 1) || 'Z').trim().toUpperCase();
+
+    for (let c = 1; c <= zone.cols; c++) {
+      const colStr = c < 10 ? `0${c}` : `${c}`;
+      const seatCode =
+        zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${rIdx + 1}-${colStr}`;
+      const upperCode = seatCode.toUpperCase();
+      if (!status) {
+        delete designations[upperCode];
+      } else {
+        designations[upperCode] = status;
+      }
+    }
+
+    const newConfig = {
+      ...config,
+      seatDesignations: designations,
+    };
+    await handleSaveConfig(newConfig);
+  };
+
+  // Set representative status designation for an entire column
+  const handleDesignateColStatus = async (
+    zone: SeatZone,
+    cIdx: number,
+    status: ParticipantStatusCategory | null
+  ) => {
+    const designations = { ...(config.seatDesignations || {}) };
+    const prefix = (zone.prefix || zone.name.substring(0, 1) || 'Z').trim().toUpperCase();
+    const colStr = cIdx < 10 ? `0${cIdx}` : `${cIdx}`;
+
+    for (let r = 1; r <= zone.rows; r++) {
+      const rowChar = String.fromCharCode(64 + r);
+      const seatCode =
+        zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${r}-${colStr}`;
+      const upperCode = seatCode.toUpperCase();
+      if (!status) {
+        delete designations[upperCode];
+      } else {
+        designations[upperCode] = status;
+      }
+    }
+
+    const newConfig = {
+      ...config,
+      seatDesignations: designations,
+    };
+    await handleSaveConfig(newConfig);
+  };
+
+  // Toggle an entire column as Aisle / Walkway (ทางเดินและทางบิณฑบาตร)
+  const handleToggleColAisle = async (zone: SeatZone, cIdx: number) => {
+    const disabled = new Set(config.disabledSeats || []);
+    const prefix = (zone.prefix || zone.name.substring(0, 1) || 'Z').trim().toUpperCase();
+    const colStr = cIdx < 10 ? `0${cIdx}` : `${cIdx}`;
+
+    let allDisabled = true;
+    for (let r = 1; r <= zone.rows; r++) {
+      const rowChar = String.fromCharCode(64 + r);
+      const seatCode = (zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${r}-${colStr}`).toUpperCase();
+      if (!disabled.has(seatCode)) {
+        allDisabled = false;
+        break;
+      }
+    }
+
+    for (let r = 1; r <= zone.rows; r++) {
+      const rowChar = String.fromCharCode(64 + r);
+      const seatCode = (zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${r}-${colStr}`).toUpperCase();
+      if (allDisabled) {
+        disabled.delete(seatCode);
+      } else {
+        disabled.add(seatCode);
+      }
+    }
+
+    const newConfig = {
+      ...config,
+      disabledSeats: Array.from(disabled),
+    };
+    await handleSaveConfig(newConfig);
+  };
+
   // Assign or Swap seat manually
   const handleAssignSeatManually = async (seatCode: string, registrationId: string | null) => {
     setIsSaving(true);
@@ -998,20 +1129,55 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             )}
           </div>
 
-          {/* Legend */}
-          <div className="flex items-center gap-3 text-[11px] font-medium text-slate-500">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-xs bg-emerald-500 border border-emerald-600 inline-block" /> เช็คอินแล้ว
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-xs bg-blue-600 border border-blue-700 inline-block" /> มีผู้จอง
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-xs bg-white border border-slate-300 inline-block" /> ว่าง
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-xs bg-slate-300 border border-slate-400 inline-block" /> ทางเดิน/เสา
-            </span>
+          {/* Multi-Status Color Legend */}
+          <div className="w-full flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 text-[11px] overflow-x-auto pb-0.5">
+            <div className="flex items-center gap-1.5 shrink-0 text-slate-700 font-bold">
+              <span>สัญลักษณ์ตัวแทนที่นั่ง:</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-slate-950" />
+                <span>พระภิกษุ ({stats.statusCounts.MONK})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-900 text-amber-100 font-extrabold shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-amber-300" />
+                <span>ภิกษุณี/Inter ({stats.statusCounts.BHIKKHUNI})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-600 text-white font-extrabold shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-white" />
+                <span>สามเณร ({stats.statusCounts.SAMANERA})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 font-bold border border-amber-300 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>แม่ชี ({stats.statusCounts.MAECHI})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-600 text-white font-extrabold shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-white" />
+                <span>ฆราวาสชาย ({stats.statusCounts.LAY_MALE})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-700 text-white font-extrabold shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-white" />
+                <span>ฆราวาสหญิง ({stats.statusCounts.LAY_FEMALE})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white text-slate-600 border border-slate-300 font-medium">
+                <span className="w-2 h-2 rounded-xs bg-slate-200 border border-slate-400" />
+                <span>ว่าง ({stats.vacantCount})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-200 text-slate-600 font-medium">
+                <span>— ทางเดิน/เสา ({stats.disabledCount})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+                <span>✓ เช็คอินเข้าห้องแล้ว</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1063,9 +1229,15 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                         style={{ gridTemplateColumns: `repeat(${zone.cols}, minmax(36px, 1fr))` }}
                       >
                         {Array.from({ length: zone.cols }, (_, cIdx) => (
-                          <div key={cIdx} className="text-center text-[10px] font-bold text-slate-400">
+                          <button
+                            key={cIdx}
+                            type="button"
+                            onClick={() => handleToggleColAisle(zone, cIdx + 1)}
+                            className="text-center text-[10px] font-bold text-slate-400 hover:text-amber-800 hover:bg-amber-100 rounded cursor-pointer transition py-0.5"
+                            title={`คลิกคอลัมน์ ${cIdx + 1 < 10 ? `0${cIdx + 1}` : cIdx + 1} เพื่อสลับเปิด/ปิดเป็นทางเดินและทางบิณฑบาตร`}
+                          >
                             {cIdx + 1 < 10 ? `0${cIdx + 1}` : cIdx + 1}
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -1077,9 +1249,14 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                         return (
                           <div key={rIdx} className="flex items-center gap-1.5">
                             {/* Row Label */}
-                            <div className="w-7 text-center text-xs font-black text-slate-500 bg-slate-100 py-1 rounded">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedSeat(`${prefix}${rowChar}-01`)}
+                              className="w-7 text-center text-xs font-black text-slate-600 hover:text-amber-900 bg-slate-100 hover:bg-amber-100 py-1 rounded cursor-pointer transition"
+                              title={`แถว ${rowChar} - คลิกเพื่อจัดการกำหนดสถานะแถวนี้`}
+                            >
                               {rowChar}
-                            </div>
+                            </button>
 
                             {/* Row Seats */}
                             <div
@@ -1094,6 +1271,9 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                 const occupant = seatOccupantMap.get(seatCode.toUpperCase());
                                 const isCheckedIn = Boolean(occupant?.seatCheckinAt);
                                 const isSelected = selectedSeat?.toUpperCase() === seatCode.toUpperCase();
+
+                                const designatedKey = (config.seatDesignations || {})[seatCode.toUpperCase()] as ParticipantStatusCategory;
+                                const designatedTheme = designatedKey ? STATUS_THEMES[designatedKey] : null;
 
                                 // Search match
                                 const isSearchMatched =
@@ -1110,7 +1290,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                       key={cIdx}
                                       type="button"
                                       onClick={() => setSelectedSeat(seatCode)}
-                                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-slate-200/80 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[9px] hover:bg-slate-300 transition cursor-pointer"
+                                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-slate-200/90 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[9px] hover:bg-slate-300 transition cursor-pointer"
                                       title={`ที่นั่ง ${seatCode} (เว้นเป็นทางเดิน/เสา) - คลิกเพื่อจัดการ`}
                                     >
                                       —
@@ -1118,46 +1298,56 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                   );
                                 }
 
-                                if (isCheckedIn) {
-                                  return (
-                                    <button
-                                      key={cIdx}
-                                      type="button"
-                                      onClick={() => setSelectedSeat(seatCode)}
-                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold flex flex-col items-center justify-center shadow-xs transition cursor-pointer relative ${
-                                        isSelected ? 'ring-3 ring-amber-400 scale-105 z-10' : ''
-                                      } ${isSearchMatched ? 'ring-4 ring-yellow-300 animate-bounce' : ''}`}
-                                      title={`[เช็คอินเข้าที่นั่งแล้ว] ${seatCode}: ${occupant?.studentName} (${occupant?.studentCode})`}
-                                    >
-                                      <span className="text-[10px] leading-none">{seatCode}</span>
-                                      <span className="text-[8px] font-medium truncate max-w-[34px] opacity-90">
-                                        {occupant?.studentName.split(' ')[0]}
-                                      </span>
-                                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-200 rounded-full border-2 border-white" />
-                                    </button>
-                                  );
-                                }
-
                                 if (occupant) {
+                                  const occCategory = detectParticipantStatus(occupant.studentName, occupant.role).category;
+                                  const theme = STATUS_THEMES[occCategory] || STATUS_THEMES.UNKNOWN;
+
                                   return (
                                     <button
                                       key={cIdx}
                                       type="button"
                                       onClick={() => setSelectedSeat(seatCode)}
-                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-extrabold flex flex-col items-center justify-center shadow-xs transition cursor-pointer ${
+                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${theme.bgClass} ${theme.hoverClass} ${theme.textClass} flex flex-col items-center justify-center shadow-xs transition cursor-pointer relative border ${theme.borderClass} ${
                                         isSelected ? 'ring-3 ring-amber-400 scale-105 z-10' : ''
                                       } ${isSearchMatched ? 'ring-4 ring-yellow-300 animate-bounce' : ''}`}
-                                      title={`[จัดที่นั่งแล้ว - รอเข้าที่] ${seatCode}: ${occupant.studentName} (${occupant.studentCode})`}
+                                      title={`[${theme.label}${isCheckedIn ? ' • เช็คอินแล้ว' : ''}] ${seatCode}: ${occupant.studentName} (${occupant.studentCode})`}
                                     >
                                       <span className="text-[10px] leading-none">{seatCode}</span>
-                                      <span className="text-[8px] font-medium truncate max-w-[34px] opacity-90">
+                                      <span className="text-[8px] font-medium truncate max-w-[34px] opacity-95">
                                         {occupant.groupSpecificCode || (occupant.groupNumber ? `ก.${occupant.groupNumber}` : occupant.studentName.split(' ')[0])}
                                       </span>
+                                      {isCheckedIn && (
+                                        <span
+                                          className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 text-white rounded-full border-1.5 border-white flex items-center justify-center text-[8px] font-black shadow-xs"
+                                          title="เช็คอินเข้าที่นั่งแล้ว"
+                                        >
+                                          ✓
+                                        </span>
+                                      )}
                                     </button>
                                   );
                                 }
 
-                                // Vacant seat
+                                if (designatedTheme) {
+                                  return (
+                                    <button
+                                      key={cIdx}
+                                      type="button"
+                                      onClick={() => setSelectedSeat(seatCode)}
+                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${designatedTheme.designatedBgClass} ${designatedTheme.designatedBorderClass} ${designatedTheme.designatedTextClass} font-bold flex flex-col items-center justify-center transition cursor-pointer hover:scale-105 ${
+                                        isSelected ? 'ring-3 ring-amber-500 scale-105 z-10' : ''
+                                      } ${isSearchMatched ? 'ring-4 ring-yellow-300 animate-bounce' : ''}`}
+                                      title={`[สงวนสิทธิ์สำหรับ: ${designatedTheme.label}] ${seatCode} (ว่าง) - คลิกเพื่อจัดนิสิตลงที่นั่ง`}
+                                    >
+                                      <span className="text-[10px] leading-none">{seatCode}</span>
+                                      <span className="text-[8px] opacity-90 truncate max-w-[34px]">
+                                        {designatedTheme.shortLabel}
+                                      </span>
+                                    </button>
+                                  );
+                                }
+
+                                // Vacant seat without designation
                                 return (
                                   <button
                                     key={cIdx}
@@ -1322,6 +1512,99 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                       >
                         เว้นที่นั่งนี้เป็นทางเดิน/เสา (Disable)
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Designation Controls (กำหนดสถานะตัวแทน พระ ภิกษุณี แม่ชี สามเณร ฆราวาส) */}
+                {!disabledSet.has(selectedSeat.toUpperCase()) && (
+                  <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-amber-600">🏷️</span>
+                        <span>กำหนดสถานะตัวแทนที่นั่ง:</span>
+                      </span>
+                      {config.seatDesignations?.[selectedSeat.toUpperCase()] && (
+                        <button
+                          type="button"
+                          onClick={() => handleDesignateSeatStatus(selectedSeat, null)}
+                          className="text-[10.5px] text-rose-600 hover:underline font-bold cursor-pointer"
+                        >
+                          ล้างสถานะ
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {(['MONK', 'BHIKKHUNI', 'SAMANERA', 'MAECHI', 'LAY_MALE', 'LAY_FEMALE'] as ParticipantStatusCategory[]).map((cat) => {
+                        const th = STATUS_THEMES[cat];
+                        const isCurrent = config.seatDesignations?.[selectedSeat.toUpperCase()] === cat;
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => handleDesignateSeatStatus(selectedSeat, isCurrent ? null : cat)}
+                            className={`px-2 py-1.5 text-xs rounded-lg font-bold flex items-center gap-1.5 transition cursor-pointer border ${
+                              isCurrent
+                                ? `${th.badgeClass} ring-2 ring-slate-900 shadow-xs`
+                                : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: th.dotColor }} />
+                            <span className="truncate">{th.shortLabel}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Quick Row / Column Designation Tools */}
+                    <div className="pt-2 border-t border-slate-200/90 space-y-1.5">
+                      <div className="text-[10.5px] font-bold text-slate-500">
+                        ⚡ กำหนดให้ทั้งแถวหรือทั้งคอลัมน์ (1 คลิก):
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <select
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            const zone = config.zones.find((z) => selectedSeat.toUpperCase().startsWith((z.prefix || 'Z').toUpperCase())) || config.zones[0];
+                            const parts = selectedSeat.split('-');
+                            const rowChar = parts[0]?.replace(/^[A-Za-z]+/, '') || 'A';
+                            handleDesignateRowStatus(zone, rowChar, 0, e.target.value === 'CLEAR' ? null : (e.target.value as ParticipantStatusCategory));
+                            e.target.value = '';
+                          }}
+                          className="w-full text-[10.5px] p-1.5 bg-white border border-slate-300 rounded-lg font-bold text-slate-700 cursor-pointer"
+                        >
+                          <option value="">ทั้งแถวนี้ ▾</option>
+                          <option value="MONK">แถวนี้: พระภิกษุ</option>
+                          <option value="BHIKKHUNI">แถวนี้: ภิกษุณี/Inter</option>
+                          <option value="SAMANERA">แถวนี้: สามเณร</option>
+                          <option value="MAECHI">แถวนี้: แม่ชี</option>
+                          <option value="LAY_MALE">แถวนี้: ฆราวาสชาย</option>
+                          <option value="LAY_FEMALE">แถวนี้: ฆราวาสหญิง</option>
+                          <option value="CLEAR">ล้างสถานะทั้งแถว</option>
+                        </select>
+
+                        <select
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            const zone = config.zones.find((z) => selectedSeat.toUpperCase().startsWith((z.prefix || 'Z').toUpperCase())) || config.zones[0];
+                            const parts = selectedSeat.split('-');
+                            const colNum = parseInt(parts[1] || '1', 10);
+                            handleDesignateColStatus(zone, colNum, e.target.value === 'CLEAR' ? null : (e.target.value as ParticipantStatusCategory));
+                            e.target.value = '';
+                          }}
+                          className="w-full text-[10.5px] p-1.5 bg-white border border-slate-300 rounded-lg font-bold text-slate-700 cursor-pointer"
+                        >
+                          <option value="">ทั้งคอลัมน์ ▾</option>
+                          <option value="MONK">คอลัมน์นี้: พระภิกษุ</option>
+                          <option value="BHIKKHUNI">คอลัมน์นี้: ภิกษุณี/Inter</option>
+                          <option value="SAMANERA">คอลัมน์นี้: สามเณร</option>
+                          <option value="MAECHI">คอลัมน์นี้: แม่ชี</option>
+                          <option value="LAY_MALE">คอลัมน์นี้: ฆราวาสชาย</option>
+                          <option value="LAY_FEMALE">คอลัมน์นี้: ฆราวาสหญิง</option>
+                          <option value="CLEAR">ล้างสถานะทั้งคอลัมน์</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 )}
