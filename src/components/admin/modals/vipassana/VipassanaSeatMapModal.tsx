@@ -764,7 +764,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     status: ParticipantStatusCategory | null
   ) => {
     const designations = { ...(config.seatDesignations || {}) };
-    const prefix = (zone.prefix || zone.name.substring(0, 1) || 'Z').trim().toUpperCase();
+    const prefix = (zone.prefix ?? '').trim().toUpperCase();
 
     for (let c = 1; c <= zone.cols; c++) {
       const colStr = c < 10 ? `0${c}` : `${c}`;
@@ -792,7 +792,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     status: ParticipantStatusCategory | null
   ) => {
     const designations = { ...(config.seatDesignations || {}) };
-    const prefix = (zone.prefix || zone.name.substring(0, 1) || 'Z').trim().toUpperCase();
+    const prefix = (zone.prefix ?? '').trim().toUpperCase();
     const colStr = cIdx < 10 ? `0${cIdx}` : `${cIdx}`;
 
     for (let r = 1; r <= zone.rows; r++) {
@@ -817,7 +817,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   // Toggle an entire column as Aisle / Walkway (ทางเดินและทางบิณฑบาตร)
   const handleToggleColAisle = async (zone: SeatZone, cIdx: number) => {
     const disabled = new Set(config.disabledSeats || []);
-    const prefix = (zone.prefix || zone.name.substring(0, 1) || 'Z').trim().toUpperCase();
+    const prefix = (zone.prefix ?? '').trim().toUpperCase();
     const colStr = cIdx < 10 ? `0${cIdx}` : `${cIdx}`;
 
     let allDisabled = true;
@@ -1258,7 +1258,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             >
               {filteredZones.map((zone) => {
                 const zoneColor = ZONE_COLORS[zone.color] || ZONE_COLORS.amber;
-                const prefix = (zone.prefix || zone.name.substring(0, 1) || 'Z').trim().toUpperCase();
+                const prefix = (zone.prefix ?? '').trim().toUpperCase();
 
                 return (
                   <div
@@ -1772,13 +1772,15 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-slate-600">รหัสนำ (Prefix):</label>
+                          <label className="text-[10px] text-slate-600 font-bold">รหัสนำ (Prefix):</label>
                           <input
                             type="text"
-                            maxLength={3}
+                            maxLength={5}
+                            placeholder="เว้นว่างได้ (เช่น A-01)"
                             value={zone.prefix || ''}
                             onChange={(e) => handleUpdateZone(zone.id, { prefix: e.target.value.toUpperCase() })}
-                            className="w-full p-1.5 border border-slate-300 rounded bg-white text-xs uppercase"
+                            className="w-full p-1.5 border border-slate-300 rounded bg-white text-xs uppercase placeholder:text-slate-400 placeholder:normal-case"
+                            title="สามารถเว้นว่างได้เพื่อให้แสดงเป็น A-01, B-01 หรือใส่ 0 เพื่อให้เป็น 0A-01"
                           />
                         </div>
                       </div>
