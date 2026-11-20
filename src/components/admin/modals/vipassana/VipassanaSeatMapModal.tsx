@@ -25,9 +25,19 @@ import {
   Save,
   Check,
   AlertCircle,
+  FileSpreadsheet,
+  Upload,
+  Download,
+  FileText,
+  AlertTriangle,
+  ArrowUpDown,
+  Layers,
+  SlidersHorizontal,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, EventSeatingConfig, SeatZone } from '@/types/event';
-import { generateZoneSeatCodes } from '@/services/events/seatingService';
+import { generateZoneSeatCodes, detectParticipantStatus } from '@/services/events/seatingService';
+import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
+import { parseXlsxBuffer } from '@/lib/utils/xlsx-import';
 
 interface VipassanaSeatMapModalProps {
   isOpen: boolean;
@@ -89,12 +99,31 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
   const [isConfigDrawerOpen, setIsConfigDrawerOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [autoSortBy, setAutoSortBy] = useState<'GROUP' | 'STUDENT_CODE' | 'NAME'>('GROUP');
+  const [autoSortBy, setAutoSortBy] = useState<
+    'STATUS_GENDER' | 'STATUS_INTER' | 'MAX_CAPACITY' | 'GROUP' | 'STUDENT_CODE' | 'NAME'
+  >('STATUS_GENDER');
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Manual assign target student
   const [assignTargetStudentCode, setAssignTargetStudentCode] = useState<string>('');
+
+  // Excel / CSV Import & Export Modal State
+  const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
+  const [importExportTab, setImportExportTab] = useState<'EXPORT' | 'IMPORT'>('EXPORT');
+  const [importFileName, setImportFileName] = useState('');
+  const [importRawText, setImportRawText] = useState('');
+  const [importPreviewRows, setImportPreviewRows] = useState<
+    Array<{
+      studentCode: string;
+      studentName: string;
+      seatNumber: string;
+      seatZone: string;
+      status: 'VALID' | 'DUPLICATE_SEAT' | 'NOT_FOUND';
+      statusNote?: string;
+    }>
+  >([]);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Sync state if event prop changes
   useEffect(() => {
@@ -214,6 +243,345 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     } finally {
       setIsSaving(false);
       setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  // ==================== EXCEL & CSV EXPORT / IMPORT ====================
+
+  // Export Seating to Excel (.xlsx)
+  const handleExportSeatingXlsx = () => {
+    const rows = registrations.map((r, idx) => {
+      const st = detectParticipantStatus(r.studentName, r.role);
+      return [
+        idx + 1,
+        r.studentCode,
+        r.groupSpecificCode || '',
+        r.studentName,
+        st.label,
+        r.programType || 'THAI',
+        r.degreeLevel || 'ปริญญาตรี',
+        r.major || '',
+        r.groupNumber || '',
+        r.seatNumber || '',
+        r.seatZone || '',
+      ];
+    });
+
+    const sheet: XlsxSheet = {
+      name: 'ผังที่นั่ง',
+      title: `ผังที่นั่ง: ${event.title}`,
+      subtitle: `สถานที่: ${config.venueName || event.location || 'คณะพุทธศาสตร์'} • วันที่ส่งออก: ${new Date().toLocaleDateString('th-TH')}`,
+      headers: [
+        'ลำดับ',
+        'รหัสนิสิต',
+        'เลขเฉพาะกลุ่ม',
+        'ชื่อ-ฉายา/สกุล',
+        'สถานภาพ/เพศ',
+        'หลักสูตรภาษา',
+        'ระดับการศึกษา',
+        'สาขาวิชา',
+        'กลุ่มที่',
+        'หมายเลขที่นั่ง (Seat No.)',
+        'โซนที่นั่ง (Zone)',
+      ],
+      rows,
+      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 22, 20],
+    };
+
+    downloadXlsx(
+      `ผังที่นั่ง_${event.title.replace(/[\/\\:*?"<>|]/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      [sheet]
+    );
+  };
+
+  // Export Seating to CSV (.csv)
+  const handleExportSeatingCsv = () => {
+    const headers = [
+      'ลำดับ',
+      'รหัสนิสิต',
+      'เลขเฉพาะกลุ่ม',
+      'ชื่อ-ฉายา/สกุล',
+      'สถานภาพ/เพศ',
+      'หลักสูตรภาษา',
+      'ระดับการศึกษา',
+      'สาขาวิชา',
+      'กลุ่มที่',
+      'หมายเลขที่นั่ง',
+      'โซนที่นั่ง',
+    ];
+
+    const lines = [headers.join(',')];
+    registrations.forEach((r, idx) => {
+      const st = detectParticipantStatus(r.studentName, r.role);
+      const row = [
+        idx + 1,
+        `"${r.studentCode}"`,
+        `"${r.groupSpecificCode || ''}"`,
+        `"${r.studentName}"`,
+        `"${st.label}"`,
+        `"${r.programType || 'THAI'}"`,
+        `"${r.degreeLevel || 'ปริญญาตรี'}"`,
+        `"${r.major || ''}"`,
+        `"${r.groupNumber || ''}"`,
+        `"${r.seatNumber || ''}"`,
+        `"${r.seatZone || ''}"`,
+      ];
+      lines.push(row.join(','));
+    });
+
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ผังที่นั่ง_${event.title.replace(/[\/\\:*?"<>|]/g, '_')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Download Blank Excel Template
+  const handleDownloadBlankTemplate = () => {
+    const sampleRows = [
+      [1, '6701501001', 'T101', 'พระมหาสมชาย กิตฺติโสภโณ', 'พระภิกษุ', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 'A-01', 'โซน A'],
+      [2, '6701501002', 'T102', 'สามเณรธีรภัทร สุขใจ', 'สามเณร', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 'A-02', 'โซน A'],
+      [3, '6701501003', 'T103', 'แม่ชีวิมล บุญประเสริฐ', 'แม่ชี', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 2, 'B-01', 'โซน B'],
+      [4, '6701501004', 'T104', 'นายก้องภพ ใจดี', 'คฤหัสถ์ชาย', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 2, 'B-02', 'โซน B'],
+      [5, '6701501005', 'T105', 'นางสาวพรทิพย์ สดใส', 'คฤหัสถ์หญิง', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 3, 'C-01', 'โซน C'],
+      [6, '6701501006', 'I301', 'Ven. Dhammapalo', 'พระภิกษุ', 'ENGLISH', 'ปริญญาตรี', 'Buddhism', 12, 'A-03', 'โซน A'],
+    ];
+
+    const sheet: XlsxSheet = {
+      name: 'แม่แบบจัดผังที่นั่ง',
+      title: 'แม่แบบไฟล์ Excel กำหนดหมายเลขที่นั่ง (Seating Template)',
+      subtitle: 'คำแนะนำ: ระบุรหัสนิสิต และหมายเลขที่นั่งที่ต้องการจัดสรร (เช่น A-01, A-02)',
+      headers: [
+        'ลำดับ',
+        'รหัสนิสิต',
+        'เลขเฉพาะกลุ่ม',
+        'ชื่อ-ฉายา/สกุล',
+        'สถานภาพ/เพศ',
+        'หลักสูตรภาษา',
+        'ระดับการศึกษา',
+        'สาขาวิชา',
+        'กลุ่มที่',
+        'หมายเลขที่นั่ง (Seat No.)',
+        'โซนที่นั่ง (Zone)',
+      ],
+      rows: sampleRows,
+      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 22, 20],
+    };
+
+    downloadXlsx(
+      `แม่แบบผังที่นั่ง_Seating_Template.xlsx`,
+      [sheet]
+    );
+  };
+
+  // Parse Matrix to Preview Rows
+  const processImportMatrix = (matrix: string[][]) => {
+    if (matrix.length === 0) {
+      setImportPreviewRows([]);
+      return;
+    }
+
+    let headerIdx = 0;
+    let codeCol = -1;
+    let seatCol = -1;
+    let zoneCol = -1;
+    let nameCol = -1;
+
+    for (let i = 0; i < Math.min(5, matrix.length); i++) {
+      const row = matrix[i].map((c) => String(c || '').trim().toLowerCase());
+      const cIdx = row.findIndex(
+        (cell) =>
+          cell.includes('รหัสนิสิต') ||
+          cell.includes('studentcode') ||
+          cell === 'code' ||
+          cell === 'รหัส'
+      );
+      const sIdx = row.findIndex(
+        (cell) =>
+          cell.includes('หมายเลขที่นั่ง') ||
+          cell.includes('seatnumber') ||
+          cell.includes('ที่นั่ง') ||
+          cell === 'seat'
+      );
+      if (cIdx !== -1 && sIdx !== -1) {
+        headerIdx = i;
+        codeCol = cIdx;
+        seatCol = sIdx;
+        zoneCol = row.findIndex((cell) => cell.includes('โซน') || cell.includes('zone'));
+        nameCol = row.findIndex((cell) => cell.includes('ชื่อ') || cell.includes('name'));
+        break;
+      }
+    }
+
+    if (codeCol === -1 || seatCol === -1) {
+      codeCol = 1;
+      seatCol = matrix[0].length >= 10 ? 9 : matrix[0].length - 1;
+      headerIdx = 0;
+    }
+
+    const regMap = new Map<string, EventRegistration>();
+    registrations.forEach((r) => {
+      if (r.studentCode) regMap.set(r.studentCode.trim().toLowerCase(), r);
+      if (r.groupSpecificCode) regMap.set(r.groupSpecificCode.trim().toLowerCase(), r);
+    });
+
+    const parsed: typeof importPreviewRows = [];
+    const usedSeats = new Map<string, string>();
+
+    for (let i = headerIdx + 1; i < matrix.length; i++) {
+      const row = matrix[i];
+      if (!row || row.length === 0) continue;
+
+      const rawCode = String(row[codeCol] || '').trim();
+      const rawSeat = String(row[seatCol] || '').trim().toUpperCase();
+      const rawZone = zoneCol !== -1 && row[zoneCol] ? String(row[zoneCol]).trim() : '';
+
+      if (!rawCode && !rawSeat) continue;
+      if (rawCode.includes('รหัส') || rawCode.toLowerCase().includes('student')) continue;
+
+      const matchedReg = regMap.get(rawCode.toLowerCase());
+      let status: 'VALID' | 'DUPLICATE_SEAT' | 'NOT_FOUND' = 'VALID';
+      let statusNote = '';
+
+      if (!matchedReg) {
+        status = 'NOT_FOUND';
+        statusNote = 'ไม่พบรหัสในโครงการนี้';
+      } else if (rawSeat) {
+        if (usedSeats.has(rawSeat)) {
+          status = 'DUPLICATE_SEAT';
+          statusNote = `ที่นั่งซ้ำกับรหัส ${usedSeats.get(rawSeat)}`;
+        } else {
+          usedSeats.set(rawSeat, rawCode);
+        }
+      }
+
+      parsed.push({
+        studentCode: rawCode,
+        studentName: matchedReg?.studentName || (nameCol !== -1 ? row[nameCol] : '') || '-',
+        seatNumber: rawSeat,
+        seatZone: rawZone || matchedReg?.seatZone || '',
+        status,
+        statusNote,
+      });
+    }
+
+    setImportPreviewRows(parsed);
+  };
+
+  // Handle File Upload (.xlsx or .csv)
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportFileName(file.name);
+    try {
+      if (file.name.endsWith('.xlsx')) {
+        const buffer = await file.arrayBuffer();
+        const matrix = await parseXlsxBuffer(buffer);
+        processImportMatrix(matrix);
+      } else {
+        const text = await file.text();
+        setImportRawText(text);
+        const matrix = text
+          .split(/\r?\n/)
+          .filter((line) => line.trim())
+          .map((line) => {
+            if (line.includes('\t')) return line.split('\t');
+            const row: string[] = [];
+            let inQuotes = false;
+            let current = '';
+            for (let i = 0; i < line.length; i++) {
+              const char = line[i];
+              if (char === '"') {
+                inQuotes = !inQuotes;
+              } else if (char === ',' && !inQuotes) {
+                row.push(current.trim());
+                current = '';
+              } else {
+                current += char;
+              }
+            }
+            row.push(current.trim());
+            return row;
+          });
+        processImportMatrix(matrix);
+      }
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + err.message);
+    }
+  };
+
+  // Handle Paste Text
+  const handlePasteText = (text: string) => {
+    setImportRawText(text);
+    if (!text.trim()) {
+      setImportPreviewRows([]);
+      return;
+    }
+    const matrix = text
+      .split(/\r?\n/)
+      .filter((line) => line.trim())
+      .map((line) => {
+        if (line.includes('\t')) return line.split('\t');
+        const row: string[] = [];
+        let inQuotes = false;
+        let current = '';
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            row.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        row.push(current.trim());
+        return row;
+      });
+    processImportMatrix(matrix);
+  };
+
+  // Apply Imported Seating to System
+  const handleApplyImportedSeating = async () => {
+    const validRows = importPreviewRows.filter((r) => r.status !== 'NOT_FOUND');
+    if (validRows.length === 0) {
+      alert('ไม่พบรายการที่ถูกต้องสำหรับนำเข้า');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'batch_import_seating',
+          eventId: event.id,
+          rows: validRows.map((r) => ({
+            studentCode: r.studentCode,
+            seatNumber: r.seatNumber,
+            seatZone: r.seatZone,
+          })),
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'นำเข้าไม่สำเร็จ');
+
+      setMessage({ text: data.message || 'บันทึกผังที่นั่งจากไฟล์สำเร็จ!', type: 'success' });
+      setIsImportExportModalOpen(false);
+      setImportPreviewRows([]);
+      setImportFileName('');
+      setImportRawText('');
+      onRefresh();
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -469,10 +837,25 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               onClick={() => setIsAssignModalOpen(true)}
               disabled={isSaving}
               className="px-2.5 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer"
-              title="จัดที่นั่งอัตโนมัติ เรียงตามกลุ่ม หรือรหัสนิสิต"
+              title="จัดที่นั่งอัตโนมัติ เรียงตามสถานภาพ เพศ หรือกลุ่ม"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-200" />
               <span>จัดที่นั่งอัตโนมัติ</span>
+            </button>
+
+            {/* Excel / CSV Import & Export Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setImportExportTab('EXPORT');
+                setIsImportExportModalOpen(true);
+              }}
+              className="px-2.5 py-1 text-xs font-bold bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer"
+              title="นำเข้าหรือส่งออกข้อมูลผังที่นั่งด้วยไฟล์ Excel / CSV"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-200" />
+              <span className="hidden sm:inline">นำเข้า/ส่งออก Excel</span>
+              <span className="sm:hidden">Excel</span>
             </button>
 
             {/* Clear all seats */}
@@ -1035,7 +1418,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         {/* Auto Assign Modal Popup */}
         {isAssignModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-            <div className="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
+            <div className="bg-white rounded-2xl p-5 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <h4 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-amber-500" />
@@ -1050,70 +1433,138 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               </div>
 
               <p className="text-xs text-slate-600">
-                ระบบจะคำนวณและแจกจ่ายหมายเลขที่นั่งให้แก่ผู้เข้าร่วมโครงการทั้งหมด ({registrations.length} คน) ตามลำดับที่เลือก:
+                ระบบจะคำนวณและจัดที่นั่งให้แก่ผู้เข้าร่วมโครงการทั้งหมด ({registrations.length} คน) ตามเกณฑ์ที่เลือก เพื่อให้ใช้พื้นที่ห้องได้คุ้มค่าสูงสุด:
               </p>
 
               <div className="space-y-2">
+                {/* 1. จัดเรียงตามสถานภาพและเพศ (แนะนำสูงสุดเมื่อสถานที่จำกัด) */}
                 <label
-                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                  className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition ${
+                    autoSortBy === 'STATUS_GENDER' ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/30' : 'bg-slate-50 border-slate-200'
+                  }`}
+                  onClick={() => setAutoSortBy('STATUS_GENDER')}
+                >
+                  <div className="space-y-0.5 pr-2">
+                    <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                      <span className="px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[10px] font-black">แนะนำ</span>
+                      <span>จัดตามสถานภาพ & เพศ (อัดแน่นเต็มความจุ ไม่แยกกลุ่ม)</span>
+                    </div>
+                    <div className="text-[11px] text-slate-600 leading-snug">
+                      เรียง: พระภิกษุ ➔ สามเณร ➔ ภิกษุณี ➔ แม่ชี ➔ ฆราวาสชาย ➔ ฆราวาสหญิง
+                    </div>
+                    <div className="text-[10px] text-amber-800 font-medium">
+                      * จัดนั่งเรียงต่อเนื่องกันจนเต็มความจุห้อง ถูกต้องตามพระวินัย โดยไม่ต้องคำนึงถึงกลุ่ม
+                    </div>
+                  </div>
+                  <input
+                    type="radio"
+                    name="autoSortBy"
+                    checked={autoSortBy === 'STATUS_GENDER'}
+                    onChange={() => setAutoSortBy('STATUS_GENDER')}
+                    className="accent-amber-600 mt-1"
+                  />
+                </label>
+
+                {/* 2. จัดเรียงตามสถานภาพ + แยกหลักสูตรภาษา (ไทย / ต่างประเทศ Inter) */}
+                <label
+                  className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition ${
+                    autoSortBy === 'STATUS_INTER' ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/30' : 'bg-slate-50 border-slate-200'
+                  }`}
+                  onClick={() => setAutoSortBy('STATUS_INTER')}
+                >
+                  <div className="space-y-0.5 pr-2">
+                    <div className="font-bold text-xs text-slate-900">
+                      จัดตามสถานภาพ + แยกภาษา (ไทย ➔ นานาชาติ Inter)
+                    </div>
+                    <div className="text-[11px] text-slate-600">
+                      จัดพระภิกษุไทย/Inter และ ฆราวาสไทย/Inter เป็นสัดส่วนเรียงตามแถว
+                    </div>
+                  </div>
+                  <input
+                    type="radio"
+                    name="autoSortBy"
+                    checked={autoSortBy === 'STATUS_INTER'}
+                    onChange={() => setAutoSortBy('STATUS_INTER')}
+                    className="accent-amber-600 mt-1"
+                  />
+                </label>
+
+                {/* 3. จัดเต็มความจุตามรหัสนิสิต (Max Capacity) */}
+                <label
+                  className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition ${
+                    autoSortBy === 'MAX_CAPACITY' ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/30' : 'bg-slate-50 border-slate-200'
+                  }`}
+                  onClick={() => setAutoSortBy('MAX_CAPACITY')}
+                >
+                  <div className="space-y-0.5 pr-2">
+                    <div className="font-bold text-xs text-slate-900">เรียงตามรหัสนิสิต (Max Capacity)</div>
+                    <div className="text-[11px] text-slate-600">
+                      เรียงรหัสนิสิตน้อยไปหามาก อัดแน่นทุกที่นั่งต่อเนื่องกัน ไม่แยกกลุ่ม
+                    </div>
+                  </div>
+                  <input
+                    type="radio"
+                    name="autoSortBy"
+                    checked={autoSortBy === 'MAX_CAPACITY'}
+                    onChange={() => setAutoSortBy('MAX_CAPACITY')}
+                    className="accent-amber-600 mt-1"
+                  />
+                </label>
+
+                {/* 4. เรียงตามกลุ่มปฏิบัติธรรม */}
+                <label
+                  className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition ${
                     autoSortBy === 'GROUP' ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/30' : 'bg-slate-50 border-slate-200'
                   }`}
                   onClick={() => setAutoSortBy('GROUP')}
                 >
-                  <div>
-                    <div className="font-bold text-xs text-slate-900">เรียงตามกลุ่มปฏิบัติธรรม (แนะนำ)</div>
-                    <div className="text-[11px] text-slate-500">กลุ่มที่ 1, 2, 3.. นั่งเรียงติดกันตามแถว</div>
+                  <div className="space-y-0.5 pr-2">
+                    <div className="font-bold text-xs text-slate-900">เรียงตามกลุ่มปฏิบัติธรรม</div>
+                    <div className="text-[11px] text-slate-600">กลุ่มที่ 1, 2, 3.. นั่งเรียงติดกันตามแถว</div>
                   </div>
                   <input
                     type="radio"
                     name="autoSortBy"
                     checked={autoSortBy === 'GROUP'}
                     onChange={() => setAutoSortBy('GROUP')}
-                    className="accent-amber-600"
+                    className="accent-amber-600 mt-1"
                   />
                 </label>
 
+                {/* 5. เรียงตามตัวอักษรชื่อ-สกุล */}
                 <label
-                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
-                    autoSortBy === 'STUDENT_CODE' ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/30' : 'bg-slate-50 border-slate-200'
-                  }`}
-                  onClick={() => setAutoSortBy('STUDENT_CODE')}
-                >
-                  <div>
-                    <div className="font-bold text-xs text-slate-900">เรียงตามรหัสนิสิต (Student Code)</div>
-                    <div className="text-[11px] text-slate-500">เรียงจากรหัสน้อยไปหามาก</div>
-                  </div>
-                  <input
-                    type="radio"
-                    name="autoSortBy"
-                    checked={autoSortBy === 'STUDENT_CODE'}
-                    onChange={() => setAutoSortBy('STUDENT_CODE')}
-                    className="accent-amber-600"
-                  />
-                </label>
-
-                <label
-                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                  className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition ${
                     autoSortBy === 'NAME' ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/30' : 'bg-slate-50 border-slate-200'
                   }`}
                   onClick={() => setAutoSortBy('NAME')}
                 >
-                  <div>
+                  <div className="space-y-0.5 pr-2">
                     <div className="font-bold text-xs text-slate-900">เรียงตามตัวอักษรชื่อ-สกุล</div>
-                    <div className="text-[11px] text-slate-500">ก - ฮ</div>
+                    <div className="text-[11px] text-slate-600">ก - ฮ</div>
                   </div>
                   <input
                     type="radio"
                     name="autoSortBy"
                     checked={autoSortBy === 'NAME'}
                     onChange={() => setAutoSortBy('NAME')}
-                    className="accent-amber-600"
+                    className="accent-amber-600 mt-1"
                   />
                 </label>
               </div>
 
-              <div className="p-3 bg-amber-50 rounded-xl text-[11px] text-amber-900 border border-amber-200">
-                💡 หมายเหตุ: ที่นั่งที่ถูกกำหนดเป็น <b>ทางเดิน/เสา</b> จะถูกข้ามโดยอัตโนมัติ
+              {/* Shortcut to Excel import/export */}
+              <div className="p-3 bg-indigo-50/80 rounded-xl text-[11px] text-indigo-900 border border-indigo-200 flex items-center justify-between gap-2">
+                <span>ต้องการกำหนดที่นั่งด้วยตนเองผ่านไฟล์?</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAssignModalOpen(false);
+                    setIsImportExportModalOpen(true);
+                  }}
+                  className="font-bold underline text-indigo-700 hover:text-indigo-900 whitespace-nowrap cursor-pointer"
+                >
+                  นำเข้า/ส่งออก Excel &rarr;
+                </button>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
@@ -1133,6 +1584,262 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                   <Sparkles className="w-3.5 h-3.5 text-amber-200" />
                   <span>เริ่มจัดที่นั่งทันที</span>
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Excel / CSV Import & Export Modal Popup */}
+        {isImportExportModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-xs overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95">
+              {/* Header */}
+              <div className="px-5 py-3.5 bg-gradient-to-r from-indigo-800 to-slate-900 text-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <FileSpreadsheet className="w-5 h-5 text-indigo-300" />
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base">
+                      นำเข้า / ส่งออกผังที่นั่ง (Excel & CSV)
+                    </h4>
+                    <p className="text-[11px] text-indigo-200">
+                      {event.title} • จัดสรรที่นั่งอิสระด้วยไฟล์ Excel
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsImportExportModalOpen(false);
+                    setImportPreviewRows([]);
+                  }}
+                  className="p-1 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-b border-slate-200 bg-slate-50 px-5 pt-2 shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setImportExportTab('EXPORT')}
+                  className={`pb-2.5 px-4 text-xs font-bold transition border-b-2 flex items-center gap-2 cursor-pointer ${
+                    importExportTab === 'EXPORT'
+                      ? 'border-indigo-600 text-indigo-700 bg-white rounded-t-lg'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Download className="w-4 h-4 text-indigo-600" />
+                  <span>📤 ส่งออกไฟล์ (Export)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImportExportTab('IMPORT')}
+                  className={`pb-2.5 px-4 text-xs font-bold transition border-b-2 flex items-center gap-2 cursor-pointer ${
+                    importExportTab === 'IMPORT'
+                      ? 'border-indigo-600 text-indigo-700 bg-white rounded-t-lg'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Upload className="w-4 h-4 text-indigo-600" />
+                  <span>📥 นำเข้าไฟล์ (Import)</span>
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="p-5 flex-1 overflow-y-auto space-y-4 text-xs">
+                {importExportTab === 'EXPORT' ? (
+                  <div className="space-y-4">
+                    <div className="p-3.5 bg-indigo-50/70 rounded-xl border border-indigo-200 text-indigo-900 space-y-1">
+                      <div className="font-bold">คำแนะนำการส่งออก:</div>
+                      <p className="text-[11px] text-indigo-800 leading-relaxed">
+                        ไฟล์ที่ส่งออกจะรวบรวมรายชื่อผู้เข้าร่วมโครงการทั้งหมด ({registrations.length} ท่าน) พร้อมสถานภาพ (พระภิกษุ/สามเณร/แม่ชี/ฆราวาส), หลักสูตรภาษา (ไทย/Inter), กลุ่ม, และหมายเลขที่นั่งปัจจุบัน ท่านสามารถนำไปกำหนดเลขที่นั่งในโปรแกรม Excel ได้อย่างอิสระ แล้วนำกลับมาอัปโหลดในแท็บ &quot;นำเข้า&quot;
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={handleExportSeatingXlsx}
+                        className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/50 hover:bg-emerald-100/60 transition text-left space-y-2 cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-sm text-emerald-950 flex items-center gap-2">
+                            <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                            <span>ดาวน์โหลดไฟล์ Excel (.xlsx)</span>
+                          </span>
+                          <Download className="w-4 h-4 text-emerald-600 group-hover:translate-y-0.5 transition" />
+                        </div>
+                        <p className="text-[11px] text-emerald-800">
+                          ไฟล์สมบูรณ์ มีการจัดรูปแบบหัวตารางให้อ่านง่าย รองรับ Microsoft Excel และ Google Sheets
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleExportSeatingCsv}
+                        className="p-4 rounded-xl border-2 border-blue-500 bg-blue-50/50 hover:bg-blue-100/60 transition text-left space-y-2 cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-sm text-blue-950 flex items-center gap-2">
+                            <FileText className="w-5 h-5 text-blue-600" />
+                            <span>ดาวน์โหลดไฟล์ CSV (.csv)</span>
+                          </span>
+                          <Download className="w-4 h-4 text-blue-600 group-hover:translate-y-0.5 transition" />
+                        </div>
+                        <p className="text-[11px] text-blue-800">
+                          ไฟล์ CSV มาตรฐานพร้อม UTF-8 BOM สำหรับเปิดในโปรแกรมสเปรดชีตอื่นๆ
+                        </p>
+                      </button>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200">
+                      <button
+                        type="button"
+                        onClick={handleDownloadBlankTemplate}
+                        className="w-full py-2.5 px-3 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold flex items-center justify-center gap-2 transition cursor-pointer"
+                      >
+                        <Download className="w-4 h-4 text-slate-500" />
+                        <span>ดาวน์โหลดแม่แบบผังที่นั่งเปล่า (Blank Template)</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* File Upload Box */}
+                    <div className="p-4 border-2 border-dashed border-indigo-300 rounded-2xl bg-indigo-50/40 text-center space-y-2 relative hover:bg-indigo-50/70 transition">
+                      <input
+                        type="file"
+                        accept=".xlsx,.csv,.tsv,.txt"
+                        onChange={handleFileUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                      <Upload className="w-8 h-8 text-indigo-600 mx-auto" />
+                      <div className="font-extrabold text-xs text-indigo-950">
+                        คลิกเพื่อเลือกไฟล์ หรือลากไฟล์ Excel (.xlsx) / CSV มาวางที่นี่
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        ระบบจะตรวจจับคอลัมน์รหัสนิสิตและหมายเลขที่นั่งให้อัตโนมัติ
+                      </div>
+                      {importFileName && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg border border-indigo-200 text-indigo-800 text-[11px] font-bold shadow-xs">
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>ไฟล์ที่เลือก: {importFileName}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Paste alternative */}
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                        หรือคัดลอก (Copy) ข้อมูลจาก Excel แล้วนำมาวางในช่องนี้:
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={importRawText}
+                        onChange={(e) => handlePasteText(e.target.value)}
+                        placeholder="วางข้อมูล เช่น: 6701501001 [Tab] A-01 หรือวางทั้งตารางจาก Excel..."
+                        className="w-full p-2.5 border border-slate-300 rounded-xl font-mono text-[11px] focus:outline-hidden focus:ring-2 focus:ring-indigo-500 bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Preview Table */}
+                    {importPreviewRows.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t border-slate-200">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
+                            <span>ตัวอย่างข้อมูลที่ตรวจพบ ({importPreviewRows.length} รายการ)</span>
+                          </span>
+                          <div className="flex items-center gap-2 text-[11px]">
+                            <span className="text-emerald-700 font-bold">
+                              ✓ ถูกต้อง: {importPreviewRows.filter((r) => r.status === 'VALID').length}
+                            </span>
+                            {importPreviewRows.some((r) => r.status === 'DUPLICATE_SEAT') && (
+                              <span className="text-amber-700 font-bold">
+                                ⚠️ ที่นั่งซ้ำ: {importPreviewRows.filter((r) => r.status === 'DUPLICATE_SEAT').length}
+                              </span>
+                            )}
+                            {importPreviewRows.some((r) => r.status === 'NOT_FOUND') && (
+                              <span className="text-rose-700 font-bold">
+                                ❌ ไม่พบรหัส: {importPreviewRows.filter((r) => r.status === 'NOT_FOUND').length}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-slate-100 text-slate-600 sticky top-0 font-bold border-b">
+                              <tr>
+                                <th className="p-2 w-28">รหัสนิสิต</th>
+                                <th className="p-2">ชื่อผู้เข้าร่วม</th>
+                                <th className="p-2 w-24">เลขที่นั่ง</th>
+                                <th className="p-2 w-24">โซน</th>
+                                <th className="p-2 w-32 text-center">สถานะ</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {importPreviewRows.slice(0, 100).map((row, idx) => (
+                                <tr key={idx} className="hover:bg-slate-50">
+                                  <td className="p-2 font-mono font-bold text-slate-800">{row.studentCode}</td>
+                                  <td className="p-2 text-slate-700 truncate max-w-[140px]">{row.studentName}</td>
+                                  <td className="p-2 font-mono font-extrabold text-indigo-700">
+                                    {row.seatNumber || '-'}
+                                  </td>
+                                  <td className="p-2 text-slate-500">{row.seatZone || '-'}</td>
+                                  <td className="p-2 text-center">
+                                    {row.status === 'VALID' ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                        ✓ พร้อมบันทึก
+                                      </span>
+                                    ) : row.status === 'DUPLICATE_SEAT' ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800" title={row.statusNote}>
+                                        ⚠️ ที่นั่งซ้ำ
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800" title={row.statusNote}>
+                                        ❌ ไม่พบรหัส
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsImportExportModalOpen(false);
+                    setImportPreviewRows([]);
+                  }}
+                  className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                >
+                  ปิด
+                </button>
+
+                {importExportTab === 'IMPORT' && (
+                  <button
+                    type="button"
+                    onClick={handleApplyImportedSeating}
+                    disabled={isImporting || importPreviewRows.filter((r) => r.status !== 'NOT_FOUND').length === 0}
+                    className="px-5 py-2 text-xs font-bold bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl transition flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>
+                      {isImporting
+                        ? 'กำลังบันทึกข้อมูล...'
+                        : `ยืนยันบันทึกผังที่นั่ง (${importPreviewRows.filter((r) => r.status !== 'NOT_FOUND').length} คน)`}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -327,6 +327,30 @@ export async function POST(request: Request) {
       });
     }
 
+    // Batch Import Custom Seating from Excel / CSV
+    if (action === 'batch_import_seating') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, rows } = body;
+      if (!eventId || !Array.isArray(rows) || rows.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'ข้อมูลไม่ครบถ้วน (ต้องการ eventId และรายการที่นั่ง rows)' },
+          { status: 400 }
+        );
+      }
+
+      const { batchImportSeatingFromRows } = await import('@/services');
+      const result = await batchImportSeatingFromRows(eventId, rows);
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `นำเข้าข้อมูลผังที่นั่งสำเร็จ ${result.matchedCount} รายการ${
+          result.unmatchedCount > 0 ? ` (ไม่พบรหัสตรงกัน ${result.unmatchedCount} รายการ)` : ''
+        }`,
+      });
+    }
+
     // Clear All Event Seats
     if (action === 'clear_event_seats') {
       const adminAuth = requireAdminOrOfficer(request);

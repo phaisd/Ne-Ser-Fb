@@ -51,13 +51,107 @@ export function generateZoneSeatCodes(zone: SeatZone, disabledSeats: string[] = 
   return seats;
 }
 
+export type ParticipantStatusCategory =
+  | 'MONK'
+  | 'SAMANERA'
+  | 'BHIKKHUNI'
+  | 'MAECHI'
+  | 'LAY_MALE'
+  | 'LAY_FEMALE'
+  | 'UNKNOWN';
+
+/**
+ * Categorize participant status and clerical title to optimize seating layout according to monastic discipline
+ */
+export function detectParticipantStatus(
+  name: string = '',
+  role: string = ''
+): { category: ParticipantStatusCategory; label: string; priority: number } {
+  const cleanName = (name || '').trim().toLowerCase();
+  const cleanRole = (role || '').trim().toLowerCase();
+
+  // 1. พระภิกษุ (Monk)
+  if (
+    cleanRole === 'monk' ||
+    cleanName.startsWith('พระ') ||
+    cleanName.startsWith('พระมหา') ||
+    cleanName.startsWith('พระครู') ||
+    cleanName.startsWith('พระอธิการ') ||
+    cleanName.startsWith('เจ้าคุณ') ||
+    cleanName.startsWith('ven.') ||
+    cleanName.startsWith('ven ') ||
+    cleanName.startsWith('phra') ||
+    cleanName.includes('ภิกขุ') ||
+    cleanName.includes('ภิกษุ')
+  ) {
+    return { category: 'MONK', label: 'พระภิกษุ', priority: 1 };
+  }
+
+  // 2. สามเณร (Novice / Samanera)
+  if (
+    cleanName.startsWith('สามเณร') ||
+    cleanName.startsWith('เณร') ||
+    cleanName.startsWith('samanera') ||
+    cleanName.startsWith('novice')
+  ) {
+    return { category: 'SAMANERA', label: 'สามเณร', priority: 2 };
+  }
+
+  // 3. ภิกษุณี / สามเณรี (Bhikkhuni)
+  if (
+    cleanName.startsWith('ภิกษุณี') ||
+    cleanName.startsWith('สามเณรี') ||
+    cleanName.startsWith('bhikkhuni')
+  ) {
+    return { category: 'BHIKKHUNI', label: 'ภิกษุณี', priority: 3 };
+  }
+
+  // 4. แม่ชี (Nun / Maechi)
+  if (
+    cleanName.startsWith('แม่ชี') ||
+    cleanName.startsWith('ชี') ||
+    cleanName.startsWith('maechi') ||
+    cleanName.startsWith('nun')
+  ) {
+    return { category: 'MAECHI', label: 'แม่ชี', priority: 4 };
+  }
+
+  // 5. คฤหัสถ์ชาย (Lay Male)
+  if (
+    cleanName.startsWith('นาย') ||
+    cleanName.startsWith('mr.') ||
+    cleanName.startsWith('mr ') ||
+    cleanName.startsWith('เด็กชาย') ||
+    cleanName.startsWith('ด.ช.')
+  ) {
+    return { category: 'LAY_MALE', label: 'คฤหัสถ์ชาย', priority: 5 };
+  }
+
+  // 6. คฤหัสถ์หญิง (Lay Female)
+  if (
+    cleanName.startsWith('นาง') ||
+    cleanName.startsWith('นางสาว') ||
+    cleanName.startsWith('น.ส.') ||
+    cleanName.startsWith('ms.') ||
+    cleanName.startsWith('ms ') ||
+    cleanName.startsWith('mrs.') ||
+    cleanName.startsWith('mrs ') ||
+    cleanName.startsWith('เด็กหญิง') ||
+    cleanName.startsWith('ด.ญ.')
+  ) {
+    return { category: 'LAY_FEMALE', label: 'คฤหัสถ์หญิง', priority: 6 };
+  }
+
+  return { category: 'UNKNOWN', label: 'ทั่วไป', priority: 7 };
+}
+
 /**
  * Auto-assign seats for participants in an event
  */
 export async function assignSeatsAuto(
   eventId: string,
   options: {
-    sortBy?: 'GROUP' | 'STUDENT_CODE' | 'NAME';
+    sortBy?: 'GROUP' | 'STUDENT_CODE' | 'NAME' | 'STATUS_GENDER' | 'STATUS_INTER' | 'MAX_CAPACITY';
     clearExisting?: boolean;
   } = {}
 ): Promise<{ assignedCount: number; unassignedCount: number; totalParticipants: number }> {
@@ -116,20 +210,52 @@ export async function assignSeatsAuto(
   }
 
   // Sort registrations according to option
-  const sortBy = options.sortBy || 'GROUP';
+  const sortBy = options.sortBy || 'STATUS_GENDER';
   const sortedRegs = [...eventRegs].sort((a, b) => {
+    // 1. เรียงตามสถานภาพ พระภิกษุ -> สามเณร -> ภิกษุณี -> แม่ชี -> ฆราวาสชาย -> ฆราวาสหญิง (เพื่อความถูกต้องตามพระวินัยและอัดแน่นพื้นที่ได้สูงสุด)
+    if (sortBy === 'STATUS_GENDER') {
+      const stA = detectParticipantStatus(a.studentName, a.role);
+      const stB = detectParticipantStatus(b.studentName, b.role);
+      if (stA.priority !== stB.priority) {
+        return stA.priority - stB.priority;
+      }
+      return (a.studentCode || '').localeCompare(b.studentCode || '');
+    }
+
+    // 2. เรียงตามสถานภาพ + แยกหลักสูตรภาษา (ไทย vs International)
+    if (sortBy === 'STATUS_INTER') {
+      const isInterA = a.programType === 'ENGLISH' || a.programType === 'INTER' || a.groupNumber === 12;
+      const isInterB = b.programType === 'ENGLISH' || b.programType === 'INTER' || b.groupNumber === 12;
+      const stA = detectParticipantStatus(a.studentName, a.role);
+      const stB = detectParticipantStatus(b.studentName, b.role);
+
+      if (stA.priority !== stB.priority) {
+        return stA.priority - stB.priority;
+      }
+      if (isInterA !== isInterB) {
+        return isInterA ? 1 : -1;
+      }
+      return (a.studentCode || '').localeCompare(b.studentCode || '');
+    }
+
+    // 3. เรียงตามกลุ่ม
     if (sortBy === 'GROUP') {
       const gA = a.groupNumber ?? 999;
       const gB = b.groupNumber ?? 999;
       if (gA !== gB) return gA - gB;
       return (a.studentCode || '').localeCompare(b.studentCode || '');
     }
-    if (sortBy === 'STUDENT_CODE') {
+
+    // 4. เรียงตามรหัสนิสิต (Max Capacity)
+    if (sortBy === 'STUDENT_CODE' || sortBy === 'MAX_CAPACITY') {
       return (a.studentCode || '').localeCompare(b.studentCode || '');
     }
+
+    // 5. เรียงตามตัวอักษรชื่อ-สกุล
     if (sortBy === 'NAME') {
       return (a.studentName || '').localeCompare(b.studentName || '', 'th');
     }
+
     return 0;
   });
 
@@ -375,5 +501,64 @@ export async function getPublicSeatingData(
     seatingConfig,
     occupiedSeats,
     matchedParticipant,
+  };
+}
+
+/**
+ * Batch import custom seating assignments from parsed Excel / CSV rows
+ */
+export async function batchImportSeatingFromRows(
+  eventId: string,
+  rows: Array<{
+    studentCode: string;
+    seatNumber?: string;
+    seatZone?: string;
+  }>
+): Promise<{
+  totalProcessed: number;
+  matchedCount: number;
+  unmatchedCount: number;
+  unmatchedCodes: string[];
+}> {
+  const targetId = String(eventId || '').trim();
+  if (!targetId) throw new Error('กรุณาระบุ eventId');
+
+  const localList = readLocalJson<any[]>('event_registrations.json', []);
+  const eventRegs = localList.filter((r) => r.eventId === targetId);
+
+  const regMap = new Map<string, any>();
+  eventRegs.forEach((r) => {
+    if (r.studentCode) regMap.set(r.studentCode.trim().toLowerCase(), r);
+    if (r.groupSpecificCode) regMap.set(r.groupSpecificCode.trim().toLowerCase(), r);
+    if (r.id) regMap.set(r.id.trim().toLowerCase(), r);
+  });
+
+  let matchedCount = 0;
+  let unmatchedCount = 0;
+  const unmatchedCodes: string[] = [];
+
+  rows.forEach((row) => {
+    const cleanCode = (row.studentCode || '').trim().toLowerCase();
+    if (!cleanCode) return;
+
+    const target = regMap.get(cleanCode);
+    if (target) {
+      target.seatNumber = row.seatNumber ? row.seatNumber.trim().toUpperCase() : undefined;
+      target.seatZone = row.seatZone ? row.seatZone.trim() : target.seatZone;
+      target.updatedAt = new Date().toISOString();
+      matchedCount++;
+    } else {
+      unmatchedCount++;
+      unmatchedCodes.push(row.studentCode);
+    }
+  });
+
+  writeLocalJson('event_registrations.json', localList);
+
+  return {
+    totalProcessed: rows.length,
+    matchedCount,
+    unmatchedCount,
+    unmatchedCodes: unmatchedCodes.slice(0, 50),
   };
 }
