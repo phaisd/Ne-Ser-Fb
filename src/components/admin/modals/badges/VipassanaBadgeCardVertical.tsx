@@ -20,6 +20,8 @@ interface VipassanaBadgeCardVerticalProps {
   qrDimension: number;
   qrCodeUrl?: string;
   showScanPass: boolean;
+  showStudentName?: boolean;
+  footerLocationText?: string;
 }
 
 export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProps> = ({
@@ -38,6 +40,8 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
   qrDimension,
   qrCodeUrl,
   showScanPass,
+  showStudentName = true,
+  footerLocationText,
 }) => {
   const gNum = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
   const cardFontClass = isEnglish ? 'badge-font-en' : 'badge-font-th';
@@ -88,7 +92,7 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
         </div>
       </div>
 
-      {/* 2. Subheader: Group Pill + Degree Level & Major */}
+      {/* 2. Subheader: Group Pill + Degree Level & Major (Removed yearLevel "(ปี ..)") */}
       <div className="flex items-center gap-1.5 pt-1 pb-0.5 shrink-0 relative z-10 flex-wrap">
         <span className={`rounded-full ${fontScale.groupPill} font-black border shrink-0 ${themeConfig.groupPill}`}>
           กลุ่ม {gNum || '-'}
@@ -96,7 +100,6 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
         <div className="min-w-0 text-left leading-tight flex-1">
           <div className={`${fontScale.degree} font-bold ${themeConfig.degreeText} break-words`}>
             {reg.degreeLevel || (isEnglish ? "Bachelor's Degree" : "ปริญญาตรี")}
-            {reg.yearLevel ? ` (${isEnglish ? 'Yr' : 'ปี'} ${reg.yearLevel})` : ''}
           </div>
           <div className={`${fontScale.major} font-semibold ${themeConfig.majorText} break-words line-clamp-2`} title={reg.major}>
             {reg.major
@@ -110,14 +113,23 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
         </div>
       </div>
 
-      {/* 3. Participant: Group Code + Student Name */}
-      <div className="flex items-baseline gap-1.5 px-0.5 py-0.5 shrink-0 min-w-0 relative z-10 flex-wrap">
+      {/* 3. Participant: Group Code + Optional Student Name */}
+      <div
+        className={`flex items-baseline gap-1.5 px-0.5 py-0.5 shrink-0 min-w-0 relative z-10 flex-wrap ${
+          !showStudentName ? 'justify-center' : ''
+        }`}
+      >
         <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0`}>
           {reg.groupSpecificCode || reg.studentCode}
         </span>
-        <span className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug break-words line-clamp-2 flex-1 min-w-[120px]`} title={reg.studentName}>
-          {reg.studentName}
-        </span>
+        {showStudentName && (
+          <span
+            className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug break-words line-clamp-2 flex-1 min-w-[120px]`}
+            title={reg.studentName}
+          >
+            {reg.studentName}
+          </span>
+        )}
       </div>
 
       {/* 4. Center: High-Contrast Large QR Code */}
@@ -150,12 +162,12 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
         )}
       </div>
 
-      {/* 5. Bottom: Footer with Participant Pass Label & Serial # */}
-      <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8px] sm:text-[8.5px] flex items-center justify-between shrink-0 relative z-10`}>
-        <span className={`font-bold ${themeConfig.footerLabel}`}>
-          {isEnglish ? 'Participant Pass' : 'บัตรประจำตัวผู้เข้าปฏิบัติ'}
+      {/* 5. Bottom: Footer with Practice Location & Light-Gray Watermark Serial # */}
+      <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8px] sm:text-[8.5px] flex items-center justify-between gap-1.5 shrink-0 relative z-10`}>
+        <span className={`font-bold ${themeConfig.footerLabel} truncate flex-1`} title={footerLocationText}>
+          {footerLocationText || (isEnglish ? 'Practice Venue' : 'สถานที่ปฏิบัติ')}
         </span>
-        <span className={`font-mono font-bold ${themeConfig.footerIndex}`}>
+        <span className="font-mono font-normal text-slate-300/75 select-none shrink-0">
           #{String(overallIdx + 1).padStart(3, '0')}
         </span>
       </div>

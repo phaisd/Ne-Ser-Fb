@@ -51,6 +51,10 @@ interface VipassanaBadgeToolbarProps {
   setFontSize: (s: BadgeFontSize) => void;
   showScanPass: boolean;
   setShowScanPass: (v: boolean) => void;
+  showStudentName: boolean;
+  setShowStudentName: (v: boolean) => void;
+  footerLocationText: string;
+  setFooterLocationText: (val: string) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
 }
@@ -83,6 +87,10 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
   setFontSize,
   showScanPass,
   setShowScanPass,
+  showStudentName,
+  setShowStudentName,
+  footerLocationText,
+  setFooterLocationText,
   searchQuery,
   setSearchQuery,
 }) => {
@@ -275,8 +283,29 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
           </select>
         </div>
 
+        {/* Toggle Student Name On/Off */}
+        <button
+          type="button"
+          onClick={() => setShowStudentName(!showStudentName)}
+          className={`flex items-center gap-1.5 text-xs font-bold cursor-pointer px-2.5 py-1.5 rounded-lg border shadow-2xs transition ${
+            showStudentName
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+              : 'bg-slate-100 border-slate-300 text-slate-600'
+          }`}
+          title="เปิดหรือปิดการแสดงชื่อนิสิตบนป้ายคล้องคอ"
+        >
+          <span>ชื่อนิสิต:</span>
+          <span
+            className={`px-1.5 py-0.2 rounded text-[10px] font-extrabold ${
+              showStudentName ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'
+            }`}
+          >
+            {showStudentName ? 'เปิดแสดง' : 'ปิดซ่อน'}
+          </span>
+        </button>
+
         {/* Toggle SCAN PASS */}
-        <label className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer bg-white px-2 py-1 rounded-lg border border-slate-300 shadow-2xs" title="แสดงหรือซ่อนข้อความ SCAN PASS ใต้ QR code เพื่อเพิ่มพื้นที่ให้ QR Code ขยายใหญ่เต็มที่">
+        <label className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer bg-white px-2 py-1.5 rounded-lg border border-slate-300 shadow-2xs" title="แสดงหรือซ่อนข้อความ SCAN PASS ใต้ QR code เพื่อเพิ่มพื้นที่ให้ QR Code ขยายใหญ่เต็มที่">
           <input
             type="checkbox"
             checked={showScanPass}
@@ -285,6 +314,18 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
           />
           <span>แสดงคำว่า SCAN PASS</span>
         </label>
+
+        {/* Footer Practice Location Text Input */}
+        <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
+          <span className="font-bold text-slate-700 whitespace-nowrap">สถานที่ปฏิบัติ (ท้ายป้าย):</span>
+          <input
+            type="text"
+            value={footerLocationText}
+            onChange={(e) => setFooterLocationText(e.target.value)}
+            placeholder="ระบุสถานที่ปฏิบัติ..."
+            className="w-40 sm:w-52 text-xs font-semibold text-amber-900 focus:outline-none"
+          />
+        </div>
 
         {/* Search */}
         <div className="relative min-w-[170px]">

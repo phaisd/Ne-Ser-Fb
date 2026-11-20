@@ -63,7 +63,15 @@ export function VipassanaBadgesModal({
   const [fontSize, setFontSize] = useState<BadgeFontSize>('MEDIUM');
   const [qrScale, setQrScale] = useState<QrScaleMode>('2X');
   const [showScanPass, setShowScanPass] = useState(false);
+  const [showStudentName, setShowStudentName] = useState(true);
+  const [footerLocationText, setFooterLocationText] = useState<string>(
+    event.location || 'สถานที่ปฏิบัติวิปัสสนากัมมัฏฐาน'
+  );
   const [qrCodeUrls, setQrCodeUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setFooterLocationText(event.location || 'สถานที่ปฏิบัติวิปัสสนากัมมัฏฐาน');
+  }, [event.location, event.id]);
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingPng, setIsExportingPng] = useState(false);
@@ -208,7 +216,7 @@ export function VipassanaBadgesModal({
           qrBorder: 'border-amber-300/80',
           footerBorder: 'border-amber-200',
           footerLabel: 'text-amber-700',
-          footerIndex: 'text-stone-600',
+          footerIndex: 'text-slate-300/75',
         };
       case 'NAVY':
         return {
@@ -224,7 +232,7 @@ export function VipassanaBadgesModal({
           qrBorder: 'border-blue-200/80',
           footerBorder: 'border-blue-200/80',
           footerLabel: 'text-blue-700',
-          footerIndex: 'text-slate-600',
+          footerIndex: 'text-slate-300/75',
         };
       case 'CRIMSON':
         return {
@@ -240,7 +248,7 @@ export function VipassanaBadgesModal({
           qrBorder: 'border-rose-200/80',
           footerBorder: 'border-rose-200/80',
           footerLabel: 'text-rose-700',
-          footerIndex: 'text-slate-600',
+          footerIndex: 'text-slate-300/75',
         };
       case 'CLASSIC_BLACK':
         return {
@@ -256,7 +264,7 @@ export function VipassanaBadgesModal({
           qrBorder: 'border-slate-300',
           footerBorder: 'border-slate-300',
           footerLabel: 'text-slate-800',
-          footerIndex: 'text-slate-600',
+          footerIndex: 'text-slate-300/75',
         };
       case 'PURPLE':
       default:
@@ -273,7 +281,7 @@ export function VipassanaBadgesModal({
           qrBorder: 'border-slate-200/90',
           footerBorder: 'border-slate-200/80',
           footerLabel: 'text-purple-700',
-          footerIndex: 'text-slate-500',
+          footerIndex: 'text-slate-300/75',
         };
     }
   }, [colorTheme]);
@@ -614,6 +622,10 @@ export function VipassanaBadgesModal({
           setFontSize={setFontSize}
           showScanPass={showScanPass}
           setShowScanPass={setShowScanPass}
+          showStudentName={showStudentName}
+          setShowStudentName={setShowStudentName}
+          footerLocationText={footerLocationText}
+          setFooterLocationText={setFooterLocationText}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
         />
@@ -806,6 +818,8 @@ export function VipassanaBadgesModal({
                             qrDimension={qrDimension}
                             qrCodeUrl={qrCodeUrls[reg.id]}
                             showScanPass={showScanPass}
+                            showStudentName={showStudentName}
+                            footerLocationText={footerLocationText}
                           />
                         );
                       }
@@ -827,6 +841,8 @@ export function VipassanaBadgesModal({
                           qrDimension={qrDimension}
                           qrCodeUrl={qrCodeUrls[reg.id]}
                           showScanPass={showScanPass}
+                          showStudentName={showStudentName}
+                          footerLocationText={footerLocationText}
                         />
                       );
                     })}

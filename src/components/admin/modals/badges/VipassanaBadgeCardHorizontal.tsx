@@ -19,6 +19,8 @@ interface VipassanaBadgeCardHorizontalProps {
   qrDimension: number;
   qrCodeUrl?: string;
   showScanPass: boolean;
+  showStudentName?: boolean;
+  footerLocationText?: string;
 }
 
 export const VipassanaBadgeCardHorizontal: React.FC<VipassanaBadgeCardHorizontalProps> = ({
@@ -36,6 +38,8 @@ export const VipassanaBadgeCardHorizontal: React.FC<VipassanaBadgeCardHorizontal
   qrDimension,
   qrCodeUrl,
   showScanPass,
+  showStudentName = true,
+  footerLocationText,
 }) => {
   const gNum = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
   const cardFontClass = isEnglish ? 'badge-font-en' : 'badge-font-th';
@@ -93,16 +97,18 @@ export const VipassanaBadgeCardHorizontal: React.FC<VipassanaBadgeCardHorizontal
             )}
           </div>
 
-          <div className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug line-clamp-2 break-words pt-0.5`}>
-            {reg.studentName}
-          </div>
+          {showStudentName && (
+            <div className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug line-clamp-2 break-words pt-0.5`}>
+              {reg.studentName}
+            </div>
+          )}
 
           <div className={`font-mono font-bold ${fontScale.code} ${themeConfig.participantCode}`}>
             {reg.studentCode}
           </div>
 
           <div className="text-[8.5px] text-slate-500 flex flex-wrap gap-x-1.5 leading-tight">
-            {reg.yearLevel && <span>ปี {reg.yearLevel}</span>}
+            <span>{reg.degreeLevel || (isEnglish ? "Bachelor's Degree" : 'ปริญญาตรี')}</span>
             {reg.vasa && <span>({reg.vasa} พรรษา)</span>}
             {reg.major && <span className="truncate max-w-[110px]">{reg.major}</span>}
           </div>
@@ -140,11 +146,11 @@ export const VipassanaBadgeCardHorizontal: React.FC<VipassanaBadgeCardHorizontal
       </div>
 
       {/* Bottom Footer */}
-      <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8.5px] flex items-center justify-between shrink-0 relative z-10`}>
-        <span className={themeConfig.footerLabel}>
-          {isEnglish ? 'Participant Pass' : 'บัตรประจำตัวผู้เข้าปฏิบัติ'}
+      <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8.5px] flex items-center justify-between gap-1.5 shrink-0 relative z-10`}>
+        <span className={`${themeConfig.footerLabel} truncate flex-1`} title={footerLocationText}>
+          {footerLocationText || (isEnglish ? 'Practice Venue' : 'สถานที่ปฏิบัติ')}
         </span>
-        <span className={`font-mono font-bold ${themeConfig.footerIndex}`}>
+        <span className="font-mono font-normal text-slate-300/75 select-none shrink-0">
           #{String(overallIdx + 1).padStart(3, '0')}
         </span>
       </div>
