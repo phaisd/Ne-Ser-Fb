@@ -20,6 +20,8 @@ import {
   Table as TableIcon,
   Camera,
   SlidersHorizontal,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, SatipatthanaChecklist } from '@/types/event';
 import {
@@ -100,6 +102,8 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
   // Collapsible Toolbar & Extra Controls (Hidden by default on mobile to maximize practitioner list area)
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState<boolean>(false);
   const [showAdvancedControls, setShowAdvancedControls] = useState<boolean>(false);
+  // Lock Screen / Kiosk Mode (Enabled by default to prevent accidental exit when placing phone down)
+  const [isScreenLocked, setIsScreenLocked] = useState<boolean>(true);
 
   const [rows, setRows] = useState<Record<string, EditableInterviewRow>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -402,20 +406,42 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
             <button
               type="button"
               onClick={handlePrint}
-              className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs flex items-center gap-1 transition border border-white/20 cursor-pointer shadow-xs"
+              className="hidden sm:flex px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs items-center gap-1 transition border border-white/20 cursor-pointer shadow-xs"
               title="พิมพ์เอกสาร A4 แนวนอน"
             >
               <Printer className="w-4 h-4 text-amber-300" />
-              <span className="hidden sm:inline">พิมพ์ A4 แนวนอน</span>
-              <span className="sm:hidden">พิมพ์</span>
+              <span>พิมพ์ A4 แนวนอน</span>
             </button>
+
+            {/* Screen Lock / Prevent Accidental Exit Toggle */}
             <button
               type="button"
-              onClick={onClose}
-              className="p-1.5 sm:p-2 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+              onClick={() => setIsScreenLocked((v) => !v)}
+              className={`px-2.5 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold border ${
+                isScreenLocked
+                  ? 'bg-amber-300 text-amber-950 border-amber-200 shadow-xs'
+                  : 'bg-white/15 text-amber-100 border-white/20 hover:bg-white/25'
+              }`}
+              title={
+                isScreenLocked
+                  ? 'กำลังล็อกหน้าจอป้องกันมือไปโดนปุ่มออก (คลิกเพื่อปลดล็อกเมื่อต้องการปิดหน้าต่าง)'
+                  : 'คลิกเพื่อล็อกหน้าจอป้องกันการเผลอกดออก'
+              }
             >
-              <X className="w-5 h-5" />
+              {isScreenLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+              <span>{isScreenLocked ? 'ล็อกจอ' : 'ปลดล็อก'}</span>
             </button>
+
+            {!isScreenLocked && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 sm:p-2 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                title="ปิดหน้าต่างสอบอารมณ์"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -1033,14 +1059,21 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
           )}
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end ml-auto">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSaving}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200/70 transition cursor-pointer flex-1 sm:flex-initial"
-            >
-              ปิดหน้าต่าง
-            </button>
+            {!isScreenLocked ? (
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSaving}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200/70 transition cursor-pointer flex-1 sm:flex-initial"
+              >
+                ปิดหน้าต่าง
+              </button>
+            ) : (
+              <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 mr-auto sm:mr-2">
+                <Lock className="w-3 h-3 text-amber-600" />
+                <span>ล็อกหน้าจอป้องกันกดออก (ปลดล็อกที่มุมขวาบน)</span>
+              </span>
+            )}
             <button
               type="button"
               onClick={handleSave}

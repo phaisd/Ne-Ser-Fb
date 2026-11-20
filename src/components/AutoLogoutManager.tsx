@@ -69,8 +69,15 @@ export default function AutoLogoutManager() {
     setIsLoggedIn(false);
     setShowWarning(false);
 
-    // Redirect to login with reason
-    const redirectParam = pathname && pathname !== '/login' ? `&redirect=${encodeURIComponent(pathname)}` : '';
+    // Redirect to login with reason (preserving full query string such as ?tab=EVENTS&eventId=...&action=...)
+    const currentFullPath =
+      typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}`
+        : pathname;
+    const redirectParam =
+      currentFullPath && !currentFullPath.startsWith('/login')
+        ? `&redirect=${encodeURIComponent(currentFullPath)}`
+        : '';
     window.location.href = `/login?reason=inactivity${redirectParam}`;
   }, [pathname]);
 
@@ -158,6 +165,19 @@ export default function AutoLogoutManager() {
       if (timeoutMinutes === 0) {
         if (showWarning) setShowWarning(false);
         return;
+      }
+
+      // Skip auto-logout when actively working inside mobile QR Event Scanner / Interview station
+      if (typeof window !== 'undefined') {
+        const hasEventStation =
+          window.location.pathname.startsWith('/admin') &&
+          (window.location.search.includes('eventId=') ||
+            sessionStorage.getItem('mcu_active_vipassana_station') !== null);
+        if (hasEventStation) {
+          if (showWarning) setShowWarning(false);
+          lastActivityRef.current = Date.now();
+          return;
+        }
       }
 
       const active = checkLoginState();

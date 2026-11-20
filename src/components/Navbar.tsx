@@ -55,6 +55,12 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [autoLogoutMins, setAutoLogoutMins] = useState<number>(15);
   const [suspiciousAlertsCount, setSuspiciousAlertsCount] = useState<number>(0);
+  const [activeVipassanaStation, setActiveVipassanaStation] = useState<{
+    eventId: string;
+    eventTitle: string;
+    action: string;
+    url: string;
+  } | null>(null);
 
   useEffect(() => {
     try {
@@ -302,6 +308,19 @@ export default function Navbar() {
       }
     } catch (e) {}
     setIsMobileMenuOpen(false);
+    try {
+      const savedStation =
+        sessionStorage.getItem('mcu_active_vipassana_station') ||
+        localStorage.getItem('mcu_active_vipassana_station');
+      if (savedStation) {
+        const parsed = JSON.parse(savedStation);
+        if (parsed && parsed.url) {
+          setActiveVipassanaStation(parsed);
+        }
+      } else {
+        setActiveVipassanaStation(null);
+      }
+    } catch {}
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -654,7 +673,7 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Portal Switch Button */}
+                {/* Portal Switch Button */}
             {isAdminRoute ? (
               <Link
                 href="/"
@@ -663,13 +682,20 @@ export default function Navbar() {
                 <GraduationCap className="w-4 h-4 text-orange-400" />
                 <span>หน้าบ้าน</span>
               </Link>
-            ) : isAdmin ? (
+            ) : canAccessAdminConsole(currentUser) ? (
               <Link
-                href="/admin"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-md transition"
+                href={activeVipassanaStation?.url || '/admin?tab=EVENTS'}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-md transition"
+                title="กลับไปยังหน้าตรวจเช็คชื่อ / สอบอารมณ์โครงการวิปัสสนา"
               >
-                <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                <span>หลังบ้าน</span>
+                <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>
+                  {currentUser?.role === 'VIPASSANA_MASTER'
+                    ? 'หน้าสอบอารมณ์'
+                    : activeVipassanaStation
+                    ? 'กลับหน้าสแกน/สอบอารมณ์'
+                    : 'หลังบ้าน'}
+                </span>
               </Link>
             ) : isStaffOrInstructor ? (
               <Link
@@ -749,6 +775,36 @@ export default function Navbar() {
           </nav>
         </div>
       </div>
+      {/* Persistent Floating Return Banner if user accidentally navigated to Public Pages while having an Active Vipassana Station */}
+      {!pathname.startsWith('/admin') &&
+        currentUser &&
+        canAccessAdminConsole(currentUser) &&
+        (activeVipassanaStation || currentUser.role === 'VIPASSANA_MASTER') && (
+          <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-indigo-700 text-white px-3 sm:px-6 py-2.5 shadow-lg border-b border-amber-400/50 print:hidden">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <Award className="w-4 h-4 text-amber-200 shrink-0 animate-bounce" />
+                <span className="font-bold truncate">
+                  {activeVipassanaStation?.eventTitle
+                    ? `ค้างงานโครงการ: ${activeVipassanaStation.eventTitle}`
+                    : 'ท่านกำลังอยู่ในระบบปฏิบัติธรรมวิปัสสนา'}
+                </span>
+              </div>
+              <Link
+                href={activeVipassanaStation?.url || '/admin?tab=EVENTS'}
+                className="px-3 py-1.5 rounded-xl bg-white text-slate-950 hover:bg-amber-50 font-black text-xs flex items-center gap-1.5 shrink-0 shadow-md transition"
+              >
+                <span>
+                  {activeVipassanaStation?.action === 'INTERVIEW' ||
+                  currentUser.role === 'VIPASSANA_MASTER'
+                    ? '🧘 กลับไปหน้าสอบอารมณ์ทันที'
+                    : '📷 กลับไปหน้าสแกนตรวจเช็คชื่อทันที'}
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 text-orange-600" />
+              </Link>
+            </div>
+          </div>
+        )}
     </header>
 
       {/* Mobile & Tablet Drawer Menu */}
@@ -814,16 +870,22 @@ export default function Navbar() {
                   <span>หน้านิสิต (หน้าบ้าน)</span>
                 </Link>
 
-                {isAdmin ? (
+                {canAccessAdminConsole(currentUser) ? (
                   <Link
-                    href="/admin"
+                    href={activeVipassanaStation?.url || '/admin?tab=EVENTS'}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
                       isAdminRoute && pathname.startsWith('/admin') ? 'bg-purple-600 text-white border-purple-700' : 'bg-slate-800 text-slate-200 border-slate-700'
                     }`}
                   >
                     <Lock className="w-4 h-4" />
-                    <span>ระบบ Admin</span>
+                    <span>
+                      {currentUser?.role === 'VIPASSANA_MASTER'
+                        ? 'หน้าสอบอารมณ์'
+                        : activeVipassanaStation
+                        ? 'หน้าสแกน/สอบอารมณ์'
+                        : 'ระบบ Admin'}
+                    </span>
                   </Link>
                 ) : isStaffOrInstructor ? (
                   <Link

@@ -623,22 +623,34 @@ export default function AdminConsolePage() {
               </span>
             )}
 
-            <button
-              type="button"
-              onClick={() => setIsNewYearWorkflowModalOpen(true)}
-              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold transition shadow-sm cursor-pointer shrink-0"
-              title="ดูคำแนะนำขั้นตอนการทำงานเมื่อเปิดปีการศึกษาใหม่"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-              <span className="hidden sm:inline">ขั้นตอนเปิดปีการศึกษาใหม่</span>
-              <span className="sm:hidden">เปิดปีใหม่</span>
-            </button>
+            {!isVipassanaMaster && !isInstructorOnly && (
+              <button
+                type="button"
+                onClick={() => setIsNewYearWorkflowModalOpen(true)}
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold transition shadow-sm cursor-pointer shrink-0"
+                title="ดูคำแนะนำขั้นตอนการทำงานเมื่อเปิดปีการศึกษาใหม่"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                <span className="hidden sm:inline">ขั้นตอนเปิดปีการศึกษาใหม่</span>
+                <span className="sm:hidden">เปิดปีใหม่</span>
+              </button>
+            )}
 
             {/* Day / Night Mode Toggle (โหมดกลางวัน / โหมดกลางคืน) */}
             <ThemeModeToggle variant="pill" className="shrink-0" />
 
             <Link
               href="/"
+              onClick={(e) => {
+                if (activeTab === 'EVENTS' || isVipassanaMaster || isInstructorOnly) {
+                  const ok = window.confirm(
+                    '⚠️ ท่านต้องการออกจากหน้าระบบตรวจเช็คชื่อ / สอบอารมณ์ เพื่อกลับไปหน้าหลัก (หน้าบ้าน) หรือไม่?\n(กด "ยกเลิก" เพื่ออยู่หน้าปฏิบัติงานเดิม)'
+                  );
+                  if (!ok) {
+                    e.preventDefault();
+                  }
+                }
+              }}
               className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-sm shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5 shrink-0" />

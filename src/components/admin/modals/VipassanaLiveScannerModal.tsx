@@ -23,6 +23,8 @@ import {
   SlidersHorizontal,
   Timer,
   Check,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, MeditationPeriodConfig } from '@/types/event';
 import { playBeep, triggerHaptic } from '@/lib/utils/audio-feedback';
@@ -88,6 +90,8 @@ export function VipassanaLiveScannerModal({
   const [showConfigDrawer, setShowConfigDrawer] = useState<boolean>(false);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState<boolean>(false);
   const [showAdvancedControls, setShowAdvancedControls] = useState<boolean>(false);
+  // Lock Screen / Kiosk Mode (Enabled by default to prevent accidental exit when placing phone down)
+  const [isScreenLocked, setIsScreenLocked] = useState<boolean>(true);
   const [periodPolicies, setPeriodPolicies] = useState<Record<PeriodKey, { startTime: string; endTime: string }>>(() => {
     const defaultPol: Record<PeriodKey, { startTime: string; endTime: string }> = {
       p1: { startTime: '04:30', endTime: '06:00' },
@@ -729,6 +733,25 @@ export function VipassanaLiveScannerModal({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            {/* Screen Lock / Prevent Accidental Exit Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsScreenLocked((v) => !v)}
+              className={`px-2.5 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1 text-xs font-bold border ${
+                isScreenLocked
+                  ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-xs'
+                  : 'bg-purple-800/80 text-purple-200 border-purple-700 hover:bg-purple-700'
+              }`}
+              title={
+                isScreenLocked
+                  ? 'กำลังล็อกหน้าจอป้องกันมือไปโดนปุ่มออก (คลิกเพื่อปลดล็อกเมื่อต้องการออกจากหน้านี้)'
+                  : 'คลิกเพื่อล็อกหน้าจอป้องกันการเผลอกดออก'
+              }
+            >
+              {isScreenLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+              <span>{isScreenLocked ? 'ล็อกจออยู่' : 'ปลดล็อกแล้ว'}</span>
+            </button>
+
             {/* Sound Mute Toggle */}
             <button
               type="button"
@@ -744,13 +767,16 @@ export function VipassanaLiveScannerModal({
               <span className="hidden sm:inline">{soundEnabled ? 'เสียงเปิด' : 'โหมดเงียบ'}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-xl text-purple-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {!isScreenLocked && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 rounded-xl text-purple-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                title="ปิดหน้าต่างสแกน"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
 

@@ -150,25 +150,105 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     deepLinkHandledRef.current = true;
     setSelectedEventId(targetEvent.id);
 
+    let resolvedAction: 'INTERVIEW' | 'SCAN' | 'ATTENDANCE' = 'SCAN';
     if (qAction === 'INTERVIEW') {
+      resolvedAction = 'INTERVIEW';
       setVipassanaInterviewEvent(targetEvent);
     } else if (qAction === 'SCAN') {
+      resolvedAction = 'SCAN';
       setVipassanaScannerEvent(targetEvent);
     } else if (qAction === 'ATTENDANCE') {
+      resolvedAction = 'ATTENDANCE';
       setVipassanaModalEvent(targetEvent);
     } else if (qAction === 'AUTO') {
       if (isVipassanaMaster) {
+        resolvedAction = 'INTERVIEW';
         setVipassanaInterviewEvent(targetEvent);
       } else {
+        resolvedAction = 'SCAN';
         setVipassanaScannerEvent(targetEvent);
       }
     }
+
+    // Persist active mobile station so user can return from anywhere if they accidentally navigate away
+    try {
+      const stationData = JSON.stringify({
+        eventId: targetEvent.id,
+        eventTitle: targetEvent.title,
+        action: resolvedAction,
+        url: `/admin?tab=EVENTS&eventId=${encodeURIComponent(targetEvent.id)}&action=${resolvedAction}`,
+        savedAt: Date.now(),
+      });
+      sessionStorage.setItem('mcu_active_vipassana_station', stationData);
+      localStorage.setItem('mcu_active_vipassana_station', stationData);
+    } catch {}
   }, [
     eventsList,
     isVipassanaMaster,
     setSelectedEventId,
     setVipassanaInterviewEvent,
     setVipassanaScannerEvent,
+    setVipassanaModalEvent,
+  ]);
+
+  // Also persist station whenever Scanner / Interview / Attendance modal is opened on this device
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const activeEvt = vipassanaScannerEvent || vipassanaInterviewEvent || vipassanaModalEvent;
+    if (!activeEvt) return;
+    const activeAction = vipassanaInterviewEvent
+      ? 'INTERVIEW'
+      : vipassanaScannerEvent
+      ? 'SCAN'
+      : 'ATTENDANCE';
+    try {
+      const stationData = JSON.stringify({
+        eventId: activeEvt.id,
+        eventTitle: activeEvt.title,
+        action: activeAction,
+        url: `/admin?tab=EVENTS&eventId=${encodeURIComponent(activeEvt.id)}&action=${activeAction}`,
+        savedAt: Date.now(),
+      });
+      sessionStorage.setItem('mcu_active_vipassana_station', stationData);
+      localStorage.setItem('mcu_active_vipassana_station', stationData);
+    } catch {}
+  }, [vipassanaScannerEvent, vipassanaInterviewEvent, vipassanaModalEvent]);
+
+  // Intercept accidental mobile hardware Back button / Swipe Back when a Vipassana modal is open
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isAnyModalOpen = Boolean(
+      vipassanaScannerEvent || vipassanaInterviewEvent || vipassanaModalEvent
+    );
+    if (!isAnyModalOpen) return;
+
+    // Push a guard state onto history so pressing Back triggers popstate instead of leaving /admin
+    window.history.pushState({ vipassanaGuard: true }, '', window.location.href);
+
+    const handlePopState = () => {
+      const confirmLeave = window.confirm(
+        '⚠️ ท่านกำลังอยู่ในโหมดสแกนตรวจเช็คชื่อ / สอบอารมณ์\nต้องการออกจากหน้าปฏิบัติงานนี้หรือไม่? (กด "ยกเลิก" เพื่ออยู่หน้าเดิมต่อไป)'
+      );
+      if (!confirmLeave) {
+        // Stay on the current modal
+        window.history.pushState({ vipassanaGuard: true }, '', window.location.href);
+      } else {
+        setVipassanaScannerEvent(null);
+        setVipassanaInterviewEvent(null);
+        setVipassanaModalEvent(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [
+    vipassanaScannerEvent,
+    vipassanaInterviewEvent,
+    vipassanaModalEvent,
+    setVipassanaScannerEvent,
+    setVipassanaInterviewEvent,
     setVipassanaModalEvent,
   ]);
 
