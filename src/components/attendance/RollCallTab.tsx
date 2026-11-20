@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 import {
   Calendar,
@@ -17,6 +17,9 @@ import {
   UserCheck,
   UserPlus,
   Lock,
+  ChevronDown,
+  ChevronUp,
+  Search,
 } from 'lucide-react';
 import { Student, TimetableItem, AuthUser } from '@/types';
 import type { MajorSectionGroup, SemesterSessionItem } from '@/lib/attendance/workspaceHelpers';
@@ -144,6 +147,49 @@ export function RollCallTab({
   formatDayLabel,
 }: RollCallTabProps) {
   const { t, isEn: isLangEn } = useLanguage();
+
+  // Collapsible states for non-roster panels (collapsed by default on mobile < 768px so student roster cards appear immediately)
+  const [showRoadmapBanner, setShowRoadmapBanner] = useState(false);
+  const [showCourseCards, setShowCourseCards] = useState(false);
+  const [showSessionDetails, setShowSessionDetails] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      setShowRoadmapBanner(true);
+      setShowCourseCards(true);
+      setShowSessionDetails(true);
+    }
+  }, []);
+
+  const isAnyPanelExpanded = showRoadmapBanner || showCourseCards || showSessionDetails;
+
+  const toggleAllPanels = () => {
+    const nextState = !isAnyPanelExpanded;
+    setShowRoadmapBanner(nextState);
+    setShowCourseCards(nextState);
+    setShowSessionDetails(nextState);
+  };
+
+  // Filtered sections by studentSearch query
+  const filteredGroupedSections = useMemo(() => {
+    const q = studentSearch.trim().toLowerCase();
+    if (!q) return groupedTargetSections;
+    return groupedTargetSections
+      .map((sec) => ({
+        ...sec,
+        items: sec.items.filter((s) => {
+          const fullName = (s.fullName || `${s.title || ''} ${s.firstName} ${s.lastName}`).toLowerCase();
+          return (
+            s.studentCode.toLowerCase().includes(q) ||
+            fullName.includes(q) ||
+            (s.major || '').toLowerCase().includes(q)
+          );
+        }),
+      }))
+      .filter((sec) => sec.items.length > 0);
+  }, [groupedTargetSections, studentSearch]);
+
   if (!currentUser) {
     return (
       <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-4 print:hidden">
@@ -162,16 +208,26 @@ export function RollCallTab({
   }
 
   return (
-    <div className="space-y-6 print:hidden">
+    <div className="space-y-3 sm:space-y-5 print:hidden">
       {/* ─────────────────────────────────────────────────────────────
-          FAST ACTION BAR: 16-WEEK PROGRESS & 1-CLICK NEXT SESSION
+          COLLAPSIBLE 16-WEEK ROADMAP PROGRESS BANNER
          ───────────────────────────────────────────────────────────── */}
-      {currentCourse && (
+      {currentCourse && showRoadmapBanner && (
         <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-emerald-700/40 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-emerald-200 text-xs font-semibold">
-              <Calendar className="w-4 h-4 text-emerald-300" />
-              <span>แผนผังการเรียนการสอนภาคเรียนที่ 1/2569 (เป้าหมาย {semesterTotalSessions} คาบ)</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-emerald-200 text-xs font-semibold">
+                <Calendar className="w-4 h-4 text-emerald-300 shrink-0" />
+                <span>แผนผังการเรียนการสอนภาคเรียนที่ 1/2569 (เป้าหมาย {semesterTotalSessions} คาบ)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRoadmapBanner(false)}
+                className="px-2 py-0.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-emerald-100 flex items-center gap-1 cursor-pointer shrink-0"
+              >
+                <span>ยุบเก็บ</span>
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
             </div>
             <div className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
               <span className="font-mono text-emerald-300">{currentCourse.courseCode}</span>
@@ -230,15 +286,112 @@ export function RollCallTab({
         </div>
       )}
 
-      {/* Filter Panel: Lecturer & Course Selector */}
+      {/* Filter Panel: Compact Course & Date Selector + Collapsible Drawers */}
       <div
         id="roll-call-section"
-        className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4"
+        className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3"
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 1. อาจารย์ผู้สอน */}
-          <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
+        {/* Top Quick Toggle Bar for Collapsing/Expanding Menus & Course Cards */}
+        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-2.5 border-b border-slate-100">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {/* Toggle 1: Course Cards Grid */}
+            {availableCourses.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowCourseCards((prev) => !prev)}
+                className={`px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border flex items-center gap-1 transition cursor-pointer ${
+                  showCourseCards
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                <span>การ์ดวิชา ({availableCourses.length})</span>
+                {showCourseCards ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
+
+            {/* Toggle 2: Session Details & Filters */}
+            {currentCourse && (
+              <button
+                type="button"
+                onClick={() => setShowSessionDetails((prev) => !prev)}
+                className={`px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border flex items-center gap-1 transition cursor-pointer ${
+                  showSessionDetails
+                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-2xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
+                <span>ข้อมูลคาบที่ {sessionCustom.sessionNumber} & ตัวกรอง</span>
+                {showSessionDetails ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
+
+            {/* Toggle 3: 16-Week Roadmap Banner */}
+            {currentCourse && (
+              <button
+                type="button"
+                onClick={() => setShowRoadmapBanner((prev) => !prev)}
+                className={`px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border flex items-center gap-1 transition cursor-pointer ${
+                  showRoadmapBanner
+                    ? 'bg-teal-700 text-white border-teal-800 shadow-2xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 shrink-0" />
+                <span>แผนผัง ({completedSessionsCount}/{semesterTotalSessions})</span>
+                {showRoadmapBanner ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 ml-auto">
+            {/* Quick 1-Click Next Session button when Roadmap Banner is collapsed */}
+            {!showRoadmapBanner && nextUpcomingSession && (
+              <button
+                type="button"
+                onClick={() => handleFastOpenSession(nextUpcomingSession)}
+                className="px-2.5 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-300 text-[11px] font-extrabold flex items-center gap-1 transition cursor-pointer"
+                title={`เปิดเช็คชื่อคาบถัดไป: คาบที่ ${nextUpcomingSession.sessionNumber} (${nextUpcomingSession.dateFormattedTh})`}
+              >
+                <span>🚀 คาบที่ {nextUpcomingSession.sessionNumber}</span>
+              </button>
+            )}
+
+            {/* Master Expand/Collapse All button */}
+            <button
+              type="button"
+              onClick={toggleAllPanels}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+            >
+              <span>{isAnyPanelExpanded ? 'ยุบเมนูทั้งหมด' : 'คลี่เมนูทั้งหมด'}</span>
+              {isAnyPanelExpanded ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Core Selectors: Course Dropdown & Date (Always visible in compact form; Lecturer shown when expanded or for Admin) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-4">
+          {/* 1. อาจารย์ผู้สอน (ซ่อนบนมือถือเมื่อยุบเมนู เพื่อประหยัดพื้นที่สำหรับอาจารย์ที่ล็อกวิชาอยู่แล้ว) */}
+          <div className={`${!showSessionDetails && isTeacher ? 'hidden md:block' : 'block'}`}>
+            <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-emerald-600" />
               อาจารย์ผู้รับผิดชอบบรรยาย:
             </label>
@@ -347,20 +500,30 @@ export function RollCallTab({
           </div>
         </div>
 
-        {/* COURSE CARDS GRID */}
-        {availableCourses.length > 0 && (
-          <div className="pt-2 border-t border-slate-100 space-y-2.5">
-            <div className="flex items-center justify-between">
+        {/* COURSE CARDS GRID (Collapsible) */}
+        {availableCourses.length > 0 && showCourseCards && (
+          <div className="pt-2 border-t border-slate-100 space-y-2.5 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-emerald-600" />
+                <BookOpen className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>
                   การ์ดรายวิชาที่รับผิดชอบสอน ({availableCourses.length} วิชา) —
-                  คลิกการ์ดเพื่อสลับวิชาได้ทันที:
+                  แตะการ์ดเพื่อสลับวิชาได้ทันที:
                 </span>
               </span>
-              <span className="text-[11px] text-slate-400">
-                แยกสีตามหลักสูตรภาษาไทย (เขียว) และหลักสูตรนานาชาติ Inter/EN (คราม)
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-[11px] text-slate-400">
+                  แยกสีตามหลักสูตรภาษาไทย (เขียว) และหลักสูตรนานาชาติ Inter/EN (คราม)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowCourseCards(false)}
+                  className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <span>ยุบการ์ดวิชา</span>
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -375,7 +538,12 @@ export function RollCallTab({
                   <button
                     key={`card-${sKey}-${idx}`}
                     type="button"
-                    onClick={() => handleCourseChange(sKey)}
+                    onClick={() => {
+                      handleCourseChange(sKey);
+                      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                        setShowCourseCards(false);
+                      }
+                    }}
                     className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
                       isSelected
                         ? isEn
@@ -455,8 +623,48 @@ export function RollCallTab({
           </div>
         )}
 
-        {/* ENHANCED SESSION BANNER */}
+        {/* COMPACT SESSION SUMMARY BAR (Shown when showSessionDetails is false) */}
+        {currentCourse && !showSessionDetails && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5 text-slate-700">
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-900 text-white">
+                คาบที่ {sessionCustom.sessionNumber}
+              </span>
+              <span className="font-bold text-slate-900">{currentCourse.courseCode}</span>
+              <span className="text-slate-400">•</span>
+              <span className="text-[11px] text-slate-600">
+                ⏰ {sessionCustom.startTime}-{sessionCustom.endTime}
+              </span>
+              <span className="text-slate-400">•</span>
+              <span className="text-[11px] text-slate-600 font-semibold">
+                🚪 {sessionCustom.room}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowSessionModal(true)}
+                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+              >
+                <SlidersHorizontal className="w-3 h-3 shrink-0" />
+                <span>⚙️ ตั้งค่าคาบ</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSessionDetails(true)}
+                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold flex items-center gap-0.5 transition cursor-pointer"
+              >
+                <span>ตัวกรอง</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ENHANCED SESSION BANNER (Collapsible) */}
         {currentCourse &&
+          showSessionDetails &&
           (() => {
             const isEn =
               /inter|eng|english|นานาชาติ/i.test(currentCourse.timetableTitle || '') ||
@@ -491,7 +699,7 @@ export function RollCallTab({
             };
 
             return (
-              <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-emerald-50/20 p-3.5 sm:p-4 shadow-sm space-y-3 overflow-hidden">
+              <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-emerald-50/20 p-3.5 sm:p-4 shadow-sm space-y-3 overflow-hidden animate-in fade-in duration-150">
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-slate-200/70">
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <span
@@ -625,28 +833,28 @@ export function RollCallTab({
                 </div>
 
                 {/* Session Parameters Display */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                  <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs">
+                  <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
                     <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[10px] text-slate-400 font-semibold">{t.attActualDate}</div>
-                      <div className="font-bold text-slate-800">{sessionCustom.date || date}</div>
+                      <div className="font-bold text-slate-800 truncate">{sessionCustom.date || date}</div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
                     <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[10px] text-slate-400 font-semibold">{t.attClassTime}</div>
-                      <div className="font-bold text-slate-800">
+                      <div className="font-bold text-slate-800 truncate">
                         {sessionCustom.startTime} - {sessionCustom.endTime} {isLangEn ? '' : 'น.'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
                     <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[10px] text-slate-400 font-semibold">
                         {t.attClassroom}
                       </div>
@@ -654,9 +862,9 @@ export function RollCallTab({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-white/90 p-2.5 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
                     <User className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div className="truncate">
+                    <div className="truncate min-w-0">
                       <div className="text-[10px] text-slate-400 font-semibold">
                         {t.attLeadInstructor}
                       </div>
@@ -708,109 +916,135 @@ export function RollCallTab({
                     )}
                   </div>
                 )}
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowSessionDetails(false)}
+                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>ยุบข้อมูลคาบ</span>
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             );
           })()}
-
-        {/* Live Stats Bar */}
-        {currentCourse && (
-          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-              <span className="text-slate-500 mr-1">นิสิตทั้งหมด: {total} คน</span>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
-                มา: {present}
-              </span>
-              <span className="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800">
-                สาย: {late}
-              </span>
-              <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-800">
-                ขาด: {absent}
-              </span>
-              <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
-                ลา: {leave}
-              </span>
-              <span className="px-2.5 py-1 rounded-full bg-slate-800 text-white font-mono">
-                เข้าเรียน {percent}%
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setAllStatus('PRESENT')}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition cursor-pointer"
-              >
-                ✓ มาทุกคน
-              </button>
-              <button
-                type="button"
-                onClick={() => setAllStatus('ABSENT')}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition cursor-pointer"
-              >
-                ✕ ขาดทุกคน
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Student Roster Table */}
+      {/* Student Roster Card (การ์ดบันทึกรายชื่อนิสิต — อยู่ชิดด้านบนบนมือถือทันทีเมื่อยุบเมนู) */}
       {currentCourse && (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-3">
-            <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span>บัญชีรายชื่อนิสิต ({targetStudents.length} รูป/คน)</span>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                    activeProgramMode === 'ENGLISH'
-                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+          <div className="p-3.5 sm:p-4 bg-slate-50 border-b border-slate-200 space-y-3">
+            {/* Row 1: Title & Save Button */}
+            <div className="flex items-center justify-between flex-wrap gap-2.5">
+              <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span>บัญชีรายชื่อนิสิต ({targetStudents.length} รูป/คน)</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+                      activeProgramMode === 'ENGLISH'
+                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                        : activeProgramMode === 'THAI'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-slate-100 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    {activeProgramMode === 'ENGLISH'
+                      ? '🌐 Inter'
                       : activeProgramMode === 'THAI'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : 'bg-slate-100 text-slate-700 border-slate-200'
-                  }`}
+                      ? '🇹🇭 ภาคไทย'
+                      : '👥 รวม 2 ภาค'}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-500 font-normal truncate max-w-[240px] sm:max-w-none">
+                  ({currentCourse.courseCode} — {currentCourse.courseName})
+                </span>
+              </h3>
+
+              <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsAddStudentModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition shadow-2xs cursor-pointer flex-1 sm:flex-initial"
+                  title="เพิ่มรหัสนิสิต ชื่อนิสิต และสาขาวิชา สำหรับนิสิตเทียบโอน/เดินเรียน เข้าในบัญชีรายชื่อวิชานี้"
                 >
-                  {activeProgramMode === 'ENGLISH'
-                    ? '🌐 นิสิตภาคภาษาอังกฤษ (Inter)'
-                    : activeProgramMode === 'THAI'
-                    ? '🇹🇭 นิสิตภาคภาษาไทย'
-                    : '👥 แสดงรวมทั้ง 2 ภาค'}
+                  <UserPlus className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                  <span>+ เพิ่มนิสิต</span>
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || targetStudents.length === 0}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm cursor-pointer flex-1 sm:flex-initial"
+                >
+                  <Save className="w-4 h-4 shrink-0" />
+                  <span>{saving ? 'กำลังบันทึก...' : 'บันทึกเช็คชื่อ'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Row 2: Live Attendance Stats + Quick Bulk Actions + Student Search */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-2.5 border-t border-slate-200/80">
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] sm:text-xs font-semibold">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  มา: <strong>{present}</strong>
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
+                  สาย: <strong>{late}</strong>
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                  ขาด: <strong>{absent}</strong>
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                  ลา: <strong>{leave}</strong>
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-slate-800 text-white font-mono">
+                  {percent}%
                 </span>
               </div>
-              <span className="text-xs text-slate-400 font-normal">
-                ({currentCourse.courseCode} — {currentCourse.courseName})
-              </span>
-            </h3>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setIsAddStudentModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition shadow-2xs cursor-pointer"
-                title="เพิ่มรหัสนิสิต ชื่อนิสิต และสาขาวิชา สำหรับนิสิตเทียบโอน/เดินเรียน เข้าในบัญชีรายชื่อวิชานี้"
-              >
-                <UserPlus className="w-4 h-4 text-amber-700" />
-                <span>+ เพิ่มนิสิต (เทียบโอน/เดินเรียน)</span>
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving || targetStudents.length === 0}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition shadow-sm cursor-pointer"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? 'กำลังบันทึกลง Google Sheets...' : 'บันทึกการเช็คชื่อ'}
-              </button>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                {/* Quick Search Input */}
+                <div className="relative flex-1 sm:flex-initial min-w-[160px]">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหารหัส / ชื่อนิสิต..."
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    className="w-full sm:w-48 pl-8 pr-2.5 py-1.5 rounded-xl border border-slate-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAllStatus('PRESENT')}
+                  className="px-2.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-100/80 text-emerald-800 hover:bg-emerald-200/80 border border-emerald-300/70 transition cursor-pointer shrink-0"
+                >
+                  ✓ มาทุกคน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllStatus('ABSENT')}
+                  className="px-2.5 py-1.5 text-xs font-bold rounded-xl bg-red-100/80 text-red-800 hover:bg-red-200/80 border border-red-300/70 transition cursor-pointer shrink-0"
+                >
+                  ✕ ขาดทุกคน
+                </button>
+              </div>
             </div>
           </div>
 
-          {targetStudents.length === 0 ? (
+          {filteredGroupedSections.length === 0 ? (
             <div className="p-12 text-center text-slate-400 text-sm">
-              ไม่พบนิสิตในกลุ่มเรียนที่เลือก
+              {studentSearch.trim()
+                ? `ไม่พบนิสิตที่ตรงกับคำค้นหา "${studentSearch}"`
+                : 'ไม่พบนิสิตในกลุ่มเรียนที่เลือก'}
             </div>
           ) : (
             <>
               {/* 1. Mobile Card View */}
               <div className="block sm:hidden divide-y divide-slate-200">
-                {groupedTargetSections.map((sec) => (
+                {filteredGroupedSections.map((sec) => (
                   <div key={`m-sec-${sec.groupKey}`} className="space-y-3 p-3 bg-slate-50/60">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1 pt-1">
                       <span
@@ -935,7 +1169,7 @@ export function RollCallTab({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {groupedTargetSections.map((sec) => (
+                    {filteredGroupedSections.map((sec) => (
                       <React.Fragment key={sec.groupKey}>
                         <tr className="bg-slate-100/90 border-y border-slate-200">
                           <td colSpan={5} className="px-6 py-2.5 text-xs font-extrabold text-slate-800">

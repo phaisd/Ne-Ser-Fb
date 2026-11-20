@@ -38,7 +38,10 @@ import {
   Edit3,
   CheckCircle2,
   XCircle,
-  HelpCircle
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  LayoutGrid
 } from 'lucide-react';
 
 import { Student, TimetableItem, AttendanceHistoryItem, CourseEnrollment } from '@/types';
@@ -79,6 +82,10 @@ export default function AttendancePage() {
   // Auth & Current Instructor State
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  // Mobile Collapsible UI States (collapsed by default on mobile so Student Roll-Call cards are immediately visible)
+  const [isModeMenuExpanded, setIsModeMenuExpanded] = useState(false);
+  const [isAuthCardExpanded, setIsAuthCardExpanded] = useState(false);
 
   // Instructor & Course Selection
   const [selectedInstructor, setSelectedInstructor] = useState<string>('ALL');
@@ -695,68 +702,147 @@ export default function AttendancePage() {
       </div>
 
       {/* Page Header (Hidden on Print) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 flex items-center gap-3">
-            <CheckSquare className="w-8 h-8 text-emerald-600" />
-            {t.attTitle}
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {t.attDesc}
-          </p>
-        </div>
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 sm:gap-4 print:hidden">
+        <div className="flex items-start sm:items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-3xl font-extrabold text-slate-900 flex items-center gap-2 sm:gap-3">
+              <CheckSquare className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-600 shrink-0" />
+              <span className="truncate">{t.attTitle}</span>
+            </h1>
+            <p className="hidden sm:block text-sm text-slate-500 mt-1">
+              {t.attDesc}
+            </p>
+          </div>
 
-        {/* Mode switcher tabs (2 แถว / 2 Rows Layout: แสดงครบทุกแท็บ ไม่ต้องเลื่อนสกอร์บาร์) */}
-        <div className="w-full xl:w-auto flex flex-col gap-1.5 p-1.5 bg-slate-200/80 rounded-2xl text-xs sm:text-sm font-semibold shadow-2xs">
-          {/* แถวที่ 1 (3 แท็บ): เช็คชื่อ, แผนผัง, สรุปสิทธิ์สอบ */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+          {/* Mobile Compact Toggle Buttons for Mode Menu & Profile */}
+          <div className="flex sm:hidden items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={() => setActiveMode('ROLL_CALL')}
-              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+              onClick={() => setIsModeMenuExpanded((prev) => !prev)}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border flex items-center gap-1 transition cursor-pointer shadow-2xs ${
+                isModeMenuExpanded
+                  ? 'bg-emerald-600 text-white border-emerald-700'
+                  : 'bg-white text-slate-800 border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+              <span>{isModeMenuExpanded ? 'ยุบเมนู' : 'เมนูโหมด (6)'}</span>
+              {isModeMenuExpanded ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Active Mode Pill Bar (shown when Mode Menu is collapsed on mobile) */}
+        {!isModeMenuExpanded && (
+          <div className="flex sm:hidden items-center justify-between gap-2 px-3 py-2 rounded-xl bg-emerald-50/90 border border-emerald-200 text-xs">
+            <div className="flex items-center gap-1.5 font-bold text-emerald-950 truncate">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="truncate">
+                โหมดปัจจุบัน:{' '}
+                {activeMode === 'ROLL_CALL' && 'อาจารย์เช็คชื่อ (Roll-Call)'}
+                {activeMode === 'ROADMAP' && 'แผนผัง 16 คาบ (Roadmap)'}
+                {activeMode === 'ELIGIBILITY' && 'สรุปสิทธิ์สอบ 80%'}
+                {activeMode === 'GRADE_SHEET' && 'ใบกรอกคะแนนวัดผล'}
+                {activeMode === 'QR_CODE' && 'เปิดจอ QR ห้องเรียน'}
+                {activeMode === 'HISTORY' && `ประวัติการเช็คชื่อ (${visibleHistoryRecords.length})`}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsModeMenuExpanded(true)}
+              className="text-[11px] font-extrabold text-emerald-700 hover:text-emerald-900 underline shrink-0 cursor-pointer"
+            >
+              สลับโหมด ⌄
+            </button>
+          </div>
+        )}
+
+        {/* Mode switcher tabs (2x3 Grid on Mobile when expanded; 2x3 Always Visible on Desktop sm+) */}
+        <div
+          className={`${
+            isModeMenuExpanded ? 'flex' : 'hidden sm:flex'
+          } w-full xl:w-auto flex-col gap-1.5 p-1.5 bg-slate-200/80 rounded-2xl text-xs sm:text-sm font-semibold shadow-2xs`}
+        >
+          {/* แถวที่ 1 (3 แท็บ): เช็คชื่อ, แผนผัง, สรุปสิทธิ์สอบ */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMode('ROLL_CALL');
+                setIsModeMenuExpanded(false);
+              }}
+              className={`w-full px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[38px] sm:min-h-[40px] flex items-center justify-center gap-1.5 ${
                 activeMode === 'ROLL_CALL'
                   ? 'bg-white text-emerald-700 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
               }`}
             >
               <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{isEn ? 'Instructor Roll-Call' : 'อาจารย์เช็คชื่อ (Roll-Call)'}</span>
+              <span className="truncate">{isEn ? 'Roll-Call' : 'อาจารย์เช็คชื่อ'}</span>
             </button>
             <button
               type="button"
-              onClick={() => setActiveMode('ROADMAP')}
-              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+              onClick={() => {
+                setActiveMode('ROADMAP');
+                setIsModeMenuExpanded(false);
+              }}
+              className={`w-full px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[38px] sm:min-h-[40px] flex items-center justify-center gap-1.5 ${
                 activeMode === 'ROADMAP'
                   ? 'bg-emerald-600 text-white shadow-sm font-bold'
                   : 'text-slate-700 hover:text-emerald-700 font-bold bg-white/70'
               }`}
             >
               <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span>{isEn ? '16-Week Roadmap' : 'แผนผัง 16 คาบ (Roadmap)'}</span>
+              <span className="truncate">{isEn ? '16-Week Roadmap' : 'แผนผัง 16 คาบ'}</span>
               {nextUpcomingSession && (
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping ml-0.5 shrink-0" />
               )}
             </button>
             <button
               type="button"
-              onClick={() => setActiveMode('ELIGIBILITY')}
-              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+              onClick={() => {
+                setActiveMode('ELIGIBILITY');
+                setIsModeMenuExpanded(false);
+              }}
+              className={`w-full px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[38px] sm:min-h-[40px] flex items-center justify-center gap-1.5 ${
                 activeMode === 'ELIGIBILITY'
                   ? 'bg-emerald-600 text-white shadow-sm font-bold'
                   : 'text-slate-700 hover:text-emerald-700 font-bold bg-emerald-50/50 hover:bg-white/50'
               }`}
             >
               <Award className="w-4 h-4 shrink-0" />
-              <span>{isEn ? '80% Exam Eligibility' : 'สรุปสิทธิ์สอบ (Exam Eligibility)'}</span>
+              <span className="truncate">{isEn ? '80% Eligibility' : 'สรุปสิทธิ์สอบ 80%'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMode('GRADE_SHEET');
+                setIsModeMenuExpanded(false);
+              }}
+              className={`w-full px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[38px] sm:min-h-[40px] flex items-center justify-center gap-1.5 sm:hidden ${
+                activeMode === 'GRADE_SHEET'
+                  ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                  : 'text-indigo-800 hover:text-indigo-950 font-bold bg-indigo-50/80 border border-indigo-200/70 hover:bg-indigo-100/60'
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <span className="truncate">{isEn ? 'Grade Sheet' : 'ใบกรอกคะแนน'}</span>
             </button>
           </div>
 
-          {/* แถวที่ 2 (3 แท็บ): ใบกรอกคะแนน, QR ห้องเรียน, ประวัติ */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+          {/* แถวที่ 2: ใบกรอกคะแนน (Desktop), QR ห้องเรียน, ประวัติ */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
             <button
               type="button"
-              onClick={() => setActiveMode('GRADE_SHEET')}
-              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+              onClick={() => {
+                setActiveMode('GRADE_SHEET');
+                setIsModeMenuExpanded(false);
+              }}
+              className={`hidden sm:flex w-full px-3.5 py-2.5 rounded-xl transition cursor-pointer min-h-[40px] items-center justify-center gap-1.5 ${
                 activeMode === 'GRADE_SHEET'
                   ? 'bg-indigo-600 text-white shadow-sm font-bold'
                   : 'text-indigo-800 hover:text-indigo-950 font-bold bg-indigo-50/80 border border-indigo-200/70 hover:bg-indigo-100/60'
@@ -767,34 +853,42 @@ export default function AttendancePage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveMode('QR_CODE')}
-              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+              onClick={() => {
+                setActiveMode('QR_CODE');
+                setIsModeMenuExpanded(false);
+              }}
+              className={`w-full px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[38px] sm:min-h-[40px] flex items-center justify-center gap-1.5 ${
                 activeMode === 'QR_CODE'
                   ? 'bg-white text-emerald-700 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
               }`}
             >
               <QrCode className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{isEn ? 'Classroom QR Screen' : 'เปิดจอ QR ห้องเรียน'}</span>
+              <span className="truncate">{isEn ? 'Classroom QR' : 'เปิดจอ QR ห้องเรียน'}</span>
             </button>
             <button
               type="button"
-              onClick={() => setActiveMode('HISTORY')}
-              className={`w-full px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[40px] flex items-center justify-center gap-1.5 ${
+              onClick={() => {
+                setActiveMode('HISTORY');
+                setIsModeMenuExpanded(false);
+              }}
+              className={`w-full px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl transition cursor-pointer min-h-[38px] sm:min-h-[40px] flex items-center justify-center gap-1.5 ${
                 activeMode === 'HISTORY'
                   ? 'bg-white text-emerald-700 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
               }`}
             >
               <History className="w-4 h-4 text-slate-500 shrink-0" />
-              <span>{isEn ? 'Attendance History' : 'ประวัติการเช็คชื่อ'} ({visibleHistoryRecords.length})</span>
+              <span className="truncate">
+                {isEn ? 'History' : 'ประวัติเช็คชื่อ'} ({visibleHistoryRecords.length})
+              </span>
             </button>
           </div>
         </div>
       </div>
 
       {savedSuccess && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center justify-between shadow-sm animate-in fade-in duration-200 print:hidden">
+        <div className="p-3.5 sm:p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm flex items-center justify-between shadow-sm animate-in fade-in duration-200 print:hidden">
           <div className="flex items-center gap-2">
             <Check className="w-5 h-5 text-emerald-600 shrink-0" />
             <span className="font-semibold">{savedSuccess}</span>
@@ -806,68 +900,113 @@ export default function AttendancePage() {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          AUTH STATUS BAR / LOGIN PROMPT (Hidden on Print)
+          AUTH STATUS BAR / LOGIN PROMPT (Collapsible on Mobile & Desktop)
          ───────────────────────────────────────────────────────────── */}
       <div className="print:hidden">
         {currentUser ? (
           <div
-            className={`rounded-2xl p-4 sm:p-5 shadow-sm border flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+            className={`rounded-2xl px-3.5 py-2.5 sm:p-4 shadow-sm border transition-all ${
               isAdmin
                 ? 'bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white border-purple-800'
                 : 'bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white border-emerald-800'
             }`}
           >
-            <div className="flex items-center gap-3.5">
-              <div
-                className={`w-12 h-12 rounded-xl backdrop-blur border flex items-center justify-center font-bold text-lg shrink-0 shadow-inner ${
-                  isAdmin ? 'bg-purple-500/20 border-purple-400/30 text-purple-200' : 'bg-emerald-500/20 border-emerald-400/30 text-emerald-300'
-                }`}
-              >
-                {isAdmin ? '👑' : currentUser.name ? currentUser.name.charAt(0) : 'อ'}
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`text-xs font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
-                      isAdmin
-                        ? 'bg-purple-500/30 text-purple-200 border-purple-400/30'
-                        : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/30'
-                    }`}
-                  >
-                    {isAdmin ? '👑 สิทธิ์ผู้ดูแลระบบ (Admin Mode)' : '🔒 สิทธิ์อาจารย์ผู้สอนประจำวิชา'}
-                  </span>
-                  <span className="text-xs text-white/70 font-mono">
-                    {currentUser.email}
-                  </span>
+            {/* Slim Always-Visible Bar with Collapse/Expand Toggle */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl backdrop-blur border flex items-center justify-center font-bold text-sm sm:text-base shrink-0 shadow-inner ${
+                    isAdmin
+                      ? 'bg-purple-500/20 border-purple-400/30 text-purple-200'
+                      : 'bg-emerald-500/20 border-emerald-400/30 text-emerald-300'
+                  }`}
+                >
+                  {isAdmin ? '👑' : currentUser.name ? currentUser.name.charAt(0) : 'อ'}
                 </div>
-                <h2 className="text-lg font-bold text-white mt-0.5">
-                  ยินดีต้อนรับ: {currentUser.name}
-                </h2>
-                <p className="text-xs text-white/80">
-                  {isAdmin
-                    ? 'ผู้ดูแลระบบสามารถตรวจสอบและดูรายวิชาของอาจารย์ทุกท่านในคณะได้'
-                    : `ระบบจำกัดการเข้าถึงเฉพาะรายวิชาที่ท่านรับผิดชอบบรรยายเท่านั้น (พบ ${availableCourses.length} รายวิชาในภาคเรียนนี้)`}
-                </p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                        isAdmin
+                          ? 'bg-purple-500/30 text-purple-200 border-purple-400/30'
+                          : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/30'
+                      }`}
+                    >
+                      {isAdmin ? '👑 Admin Mode' : '🔒 อาจารย์ผู้สอน'}
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-white truncate">
+                      {currentUser.name}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Desktop direct action buttons */}
+                <div className="hidden md:flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-100 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 rounded-xl transition cursor-pointer shadow-sm"
+                  >
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>แก้ไขโปรไฟล์ & รหัสผ่าน</span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-200 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl transition cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>ออกจากระบบ</span>
+                  </button>
+                </div>
+
+                {/* Toggle button for mobile / extra details */}
+                <button
+                  type="button"
+                  onClick={() => setIsAuthCardExpanded((prev) => !prev)}
+                  className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-[11px] font-bold text-white flex items-center gap-1 transition cursor-pointer"
+                >
+                  <span>{isAuthCardExpanded ? 'ยุบ' : 'บัญชี'}</span>
+                  {isAuthCardExpanded ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsProfileModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-emerald-100 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 rounded-xl transition cursor-pointer shadow-sm"
-              >
-                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>แก้ไขโปรไฟล์ & รหัสผ่าน</span>
-              </button>
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-200 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl transition cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>ออกจากระบบ</span>
-              </button>
-            </div>
+            {/* Expanded Profile Details & Mobile Action Buttons */}
+            {isAuthCardExpanded && (
+              <div className="mt-3 pt-3 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-150">
+                <div className="space-y-0.5 text-xs text-white/80">
+                  <div className="font-mono text-[11px] text-white/70">{currentUser.email}</div>
+                  <p>
+                    {isAdmin
+                      ? 'ผู้ดูแลระบบสามารถตรวจสอบและดูรายวิชาของอาจารย์ทุกท่านในคณะได้'
+                      : `ระบบจำกัดการเข้าถึงเฉพาะรายวิชาที่ท่านรับผิดชอบบรรยายเท่านั้น (พบ ${availableCourses.length} รายวิชาในภาคเรียนนี้)`}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 md:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-100 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 rounded-xl transition cursor-pointer shadow-sm"
+                  >
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>แก้ไขโปรไฟล์ & รหัสผ่าน</span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-200 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 rounded-xl transition cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>ออกจากระบบ</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
