@@ -214,15 +214,43 @@ describe('groupImport helpers', () => {
 
     expect(formatGroupSpecificCode('g', 5, 1)).toBe('G05-01');
     expect(built[0]).toMatchObject({
-      studentCode: 'G05-01',
+      studentCode: '6701100001',
+      groupSpecificCode: 'G05-01',
       groupNumber: 5,
       groupName: 'กลุ่มที่ 5',
       programType: 'THAI',
-      remarks: 'รหัสนิสิตเดิม: 6701100001',
+      remarks: 'เลขเฉพาะกลุ่ม: G05-01',
     });
     expect(built[1]).toMatchObject({
-      studentCode: 'G05-02',
+      studentCode: '6701100002',
+      groupSpecificCode: 'G05-02',
       programType: 'ENGLISH',
+    });
+  });
+
+  it('correctly handles multi-line titles and swaps columns if student code and group code are inverted', () => {
+    const raw = [
+      'แบบฟอร์มนำเข้ารายชื่อนิสิตแบบจัดกลุ่ม (เลขเฉพาะกลุ่ม)',
+      'ใส่รหัสประจำกลุ่มในคอลัมน์ "เลขเฉพาะกลุ่ม" (เช่น T101, T201, G01-01)',
+      'กลุ่ม\tเลขเฉพาะกลุ่ม\tรหัสนิสิต\tชื่อ-นามสกุล\tหลักสูตร\tหลักสูตรภาษา\tสาขาวิชา\tชั้นปี',
+      '1\tB1T01\t6801401003\tพระวิชัย วิชโย\tปริญญาตรี\tTHAI\tบาลีสันสกฤต\t4',
+      '2\tB2T15\t6701501050\tสามเณรพัชรพล เจริญเกียรติ\tปริญญาตรี\tTHAI\tบาลีสันสกฤต\t3',
+    ].join('\n');
+
+    const res = parseGroupedParticipantsText(raw);
+    expect(res.warnings).toEqual([]);
+    expect(res.items).toHaveLength(2);
+    expect(res.items[0]).toMatchObject({
+      groupNumber: 1,
+      groupSpecificCode: 'B1T01',
+      studentCode: '6801401003',
+      studentName: 'พระวิชัย วิชโย',
+    });
+    expect(res.items[1]).toMatchObject({
+      groupNumber: 2,
+      groupSpecificCode: 'B2T15',
+      studentCode: '6701501050',
+      studentName: 'สามเณรพัชรพล เจริญเกียรติ',
     });
   });
 });

@@ -334,13 +334,31 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
 
   // Export Seating to Excel (.xlsx)
   const handleExportSeatingXlsx = () => {
+    const isStudentId = (v?: string) => !!v && /^\d{8,12}$/.test(v.replace(/[\s\u00A0]+/g, ''));
+    const isShortGroupCode = (v?: string) =>
+      !!v && /^[A-Za-z0-9_-]{2,10}$/.test(v.trim()) && !isStudentId(v);
+
     const rows = registrations.map((r, idx) => {
       const st = detectParticipantStatus(r.studentName, r.role);
       const isCheckedIn = !!r.seatCheckinAt;
+
+      let expStudentCode = r.studentCode || '';
+      let expGroupCode = r.groupSpecificCode || '';
+
+      // Auto-correct if studentCode was historically stored as group code (e.g. T122, B1T01)
+      if (isShortGroupCode(expStudentCode) && !expGroupCode) {
+        expGroupCode = expStudentCode;
+        expStudentCode = '';
+      } else if (isShortGroupCode(expStudentCode) && isStudentId(expGroupCode)) {
+        const tmp = expStudentCode;
+        expStudentCode = expGroupCode;
+        expGroupCode = tmp;
+      }
+
       return [
         idx + 1,
-        r.studentCode,
-        r.groupSpecificCode || '',
+        expStudentCode,
+        expGroupCode,
         r.studentName,
         st.label,
         r.programType || 'THAI',
@@ -387,6 +405,10 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
 
   // Export Seating to CSV (.csv)
   const handleExportSeatingCsv = () => {
+    const isStudentId = (v?: string) => !!v && /^\d{8,12}$/.test(v.replace(/[\s\u00A0]+/g, ''));
+    const isShortGroupCode = (v?: string) =>
+      !!v && /^[A-Za-z0-9_-]{2,10}$/.test(v.trim()) && !isStudentId(v);
+
     const headers = [
       'ลำดับ',
       'รหัสนิสิต',
@@ -408,10 +430,23 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     registrations.forEach((r, idx) => {
       const st = detectParticipantStatus(r.studentName, r.role);
       const isCheckedIn = !!r.seatCheckinAt;
+
+      let expStudentCode = r.studentCode || '';
+      let expGroupCode = r.groupSpecificCode || '';
+
+      if (isShortGroupCode(expStudentCode) && !expGroupCode) {
+        expGroupCode = expStudentCode;
+        expStudentCode = '';
+      } else if (isShortGroupCode(expStudentCode) && isStudentId(expGroupCode)) {
+        const tmp = expStudentCode;
+        expStudentCode = expGroupCode;
+        expGroupCode = tmp;
+      }
+
       const row = [
         idx + 1,
-        `"${r.studentCode}"`,
-        `"${r.groupSpecificCode || ''}"`,
+        `"${expStudentCode}"`,
+        `"${expGroupCode}"`,
         `"${r.studentName}"`,
         `"${st.label}"`,
         `"${r.programType || 'THAI'}"`,
@@ -486,19 +521,29 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
 
     let headerIdx = 0;
     let codeCol = -1;
+    let groupCodeCol = -1;
     let seatCol = -1;
     let zoneCol = -1;
     let nameCol = -1;
     let checkinCol = -1;
 
-    for (let i = 0; i < Math.min(5, matrix.length); i++) {
+    for (let i = 0; i < Math.min(6, matrix.length); i++) {
       const row = matrix[i].map((c) => String(c || '').trim().toLowerCase());
       const cIdx = row.findIndex(
         (cell) =>
-          cell.includes('รหัสนิสิต') ||
-          cell.includes('studentcode') ||
+          cell === 'รหัสนิสิต' ||
+          cell === 'studentcode' ||
           cell === 'code' ||
-          cell === 'รหัส'
+          cell === 'รหัส' ||
+          (cell.includes('รหัส') && !cell.includes('กลุ่ม'))
+      );
+      const gIdx = row.findIndex(
+        (cell) =>
+          cell.includes('เลขเฉพาะกลุ่ม') ||
+          cell.includes('รหัสเฉพาะกลุ่ม') ||
+          cell.includes('รหัสกลุ่ม') ||
+          cell.includes('groupspecificcode') ||
+          cell.includes('groupcode')
       );
       const sIdx = row.findIndex(
         (cell) =>
@@ -507,9 +552,10 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           cell.includes('ที่นั่ง') ||
           cell === 'seat'
       );
-      if (cIdx !== -1 && sIdx !== -1) {
+      if ((cIdx !== -1 || gIdx !== -1) && sIdx !== -1) {
         headerIdx = i;
-        codeCol = cIdx;
+        codeCol = cIdx !== -1 ? cIdx : gIdx;
+        groupCodeCol = gIdx;
         seatCol = sIdx;
         zoneCol = row.findIndex((cell) => cell.includes('โซน') || cell.includes('zone'));
         nameCol = row.findIndex((cell) => cell.includes('ชื่อ') || cell.includes('name'));
@@ -526,14 +572,24 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
 
     if (codeCol === -1 || seatCol === -1) {
       codeCol = 1;
-      seatCol = matrix[0].length >= 10 ? 9 : matrix[0].length - 1;
+      groupCodeCol = matrix[0] && matrix[0].length >= 3 ? 2 : -1;
+      seatCol = matrix[0] && matrix[0].length >= 10 ? 9 : (matrix[0] ? matrix[0].length - 1 : -1);
       headerIdx = 0;
     }
+
+    const normalizeName = (name: string) =>
+      name
+        .replace(/^(พระมหา|พระครู|พระ|สามเณร|แม่ชี|นาย|นางสาว|นาง|ดร\.)\s*/, '')
+        .replace(/\s+/g, '')
+        .toLowerCase();
 
     const regMap = new Map<string, EventRegistration>();
     registrations.forEach((r) => {
       if (r.studentCode) regMap.set(r.studentCode.trim().toLowerCase(), r);
       if (r.groupSpecificCode) regMap.set(r.groupSpecificCode.trim().toLowerCase(), r);
+      if (r.studentName) {
+        regMap.set(`name:${normalizeName(r.studentName)}`, r);
+      }
     });
 
     const parsed: typeof importPreviewRows = [];
@@ -543,11 +599,13 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       const row = matrix[i];
       if (!row || row.length === 0) continue;
 
-      const rawCode = String(row[codeCol] || '').trim();
+      const rawCode = codeCol !== -1 ? String(row[codeCol] || '').trim() : '';
+      const rawGroupCode = groupCodeCol !== -1 ? String(row[groupCodeCol] || '').trim() : '';
+      const rawName = nameCol !== -1 ? String(row[nameCol] || '').trim() : '';
       const rawSeat = String(row[seatCol] || '').trim().toUpperCase();
       const rawZone = zoneCol !== -1 && row[zoneCol] ? String(row[zoneCol]).trim() : '';
 
-      if (!rawCode && !rawSeat) continue;
+      if (!rawCode && !rawGroupCode && !rawSeat) continue;
       if (rawCode.includes('รหัส') || rawCode.toLowerCase().includes('student')) continue;
 
       let seatCheckedIn: boolean | undefined = undefined;
@@ -578,7 +636,14 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         }
       }
 
-      const matchedReg = regMap.get(rawCode.toLowerCase());
+      let matchedReg = rawCode ? regMap.get(rawCode.toLowerCase()) : undefined;
+      if (!matchedReg && rawGroupCode) {
+        matchedReg = regMap.get(rawGroupCode.toLowerCase());
+      }
+      if (!matchedReg && rawName) {
+        matchedReg = regMap.get(`name:${normalizeName(rawName)}`);
+      }
+
       let status: 'VALID' | 'DUPLICATE_SEAT' | 'NOT_FOUND' = 'VALID';
       let statusNote = '';
 
@@ -590,12 +655,12 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           status = 'DUPLICATE_SEAT';
           statusNote = `ที่นั่งซ้ำกับรหัส ${usedSeats.get(rawSeat)}`;
         } else {
-          usedSeats.set(rawSeat, rawCode);
+          usedSeats.set(rawSeat, rawCode || rawGroupCode);
         }
       }
 
       parsed.push({
-        studentCode: rawCode,
+        studentCode: matchedReg?.studentCode || rawCode || rawGroupCode,
         studentName: matchedReg?.studentName || (nameCol !== -1 ? row[nameCol] : '') || '-',
         seatNumber: rawSeat,
         seatZone: rawZone || matchedReg?.seatZone || '',

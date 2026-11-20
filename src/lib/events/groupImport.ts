@@ -194,19 +194,42 @@ export function parseGroupedParticipantsText(
     return { items: [], warnings: [], detectedGroups: [] };
   }
 
-  const delimiter: '\t' | ',' = lines[0].includes('\t') ? '\t' : ',';
-  const firstRow = splitDelimitedLine(lines[0], delimiter);
-  const mappedHeaders = firstRow.map((h) => HEADER_ALIASES[normalizeHeaderKey(h)]);
-  const hasHeader = mappedHeaders.some(
-    (m) =>
-      m === 'studentCode' ||
-      m === 'groupSpecificCode' ||
-      m === 'studentName' ||
-      m === 'groupNumber' ||
-      m === 'groupName'
-  );
+  // Robust delimiter detection: sample first 10 non-empty lines
+  let tabCount = 0;
+  let commaCount = 0;
+  for (let i = 0; i < Math.min(10, lines.length); i++) {
+    tabCount += (lines[i].match(/\t/g) || []).length;
+    commaCount += (lines[i].match(/,/g) || []).length;
+  }
+  const delimiter: '\t' | ',' = tabCount > 0 && tabCount >= commaCount ? '\t' : ',';
 
-  const startIndex = hasHeader ? 1 : 0;
+  // Search first 8 lines to find the true header row matching aliases
+  let headerRowIndex = -1;
+  let mappedHeaders: (keyof GroupedParticipantInput | 'ignore' | undefined)[] = [];
+
+  for (let i = 0; i < Math.min(8, lines.length); i++) {
+    const rowCells = splitDelimitedLine(lines[i], delimiter);
+    const currentMapped = rowCells.map((h) => HEADER_ALIASES[normalizeHeaderKey(h)]);
+    const matchCount = currentMapped.filter(
+      (m) =>
+        m === 'studentCode' ||
+        m === 'groupSpecificCode' ||
+        m === 'studentName' ||
+        m === 'groupNumber' ||
+        m === 'groupName' ||
+        m === 'degreeLevel' ||
+        m === 'major'
+    ).length;
+
+    if (matchCount >= 2 || (matchCount >= 1 && currentMapped.includes('studentName'))) {
+      headerRowIndex = i;
+      mappedHeaders = currentMapped;
+      break;
+    }
+  }
+
+  const hasHeader = headerRowIndex !== -1;
+  const startIndex = hasHeader ? headerRowIndex + 1 : 0;
   const warnings: string[] = [];
   const items: GroupedParticipantInput[] = [];
   const groupSeqCounter = new Map<string, number>();
@@ -214,6 +237,18 @@ export function parseGroupedParticipantsText(
   for (let i = startIndex; i < lines.length; i += 1) {
     const cells = splitDelimitedLine(lines[i], delimiter);
     if (cells.every((c) => !c)) continue;
+
+    // If no header was found, skip apparent title or instruction rows
+    if (!hasHeader) {
+      const lineStr = lines[i];
+      if (
+        lineStr.includes('แบบฟอร์ม') ||
+        lineStr.includes('คำแนะนำ') ||
+        (lineStr.includes('เลขเฉพาะกลุ่ม') && cells.filter(Boolean).length <= 2)
+      ) {
+        continue;
+      }
+    }
 
     let studentCode = '';
     let groupSpecificCode = '';
@@ -233,59 +268,60 @@ export function parseGroupedParticipantsText(
       cells.forEach((value, idx) => {
         const field = mappedHeaders[idx];
         if (!field || field === 'ignore' || !value) return;
+        const cleanVal = value.trim();
         switch (field) {
           case 'groupSpecificCode':
-            groupSpecificCode = value.trim();
+            groupSpecificCode = cleanVal;
             break;
           case 'studentCode':
-            studentCode = value.trim();
+            studentCode = cleanVal;
             break;
           case 'studentName':
-            studentName = value.trim();
+            studentName = cleanVal;
             break;
           case 'groupNumber': {
-            const num = parseGroupNumberValue(value);
+            const num = parseGroupNumberValue(cleanVal);
             if (num) groupNumber = num;
             if (!groupName && num) groupName = `กลุ่มที่ ${num}`;
             break;
           }
           case 'groupName':
-            groupName = value.trim();
+            groupName = cleanVal;
             if (!groupNumber) {
-              const inferred = parseGroupNumberValue(value);
+              const inferred = parseGroupNumberValue(cleanVal);
               if (inferred) groupNumber = inferred;
             }
             break;
           case 'programType':
             programType =
-              value.trim().toUpperCase().includes('ENG') ||
-              value.includes('อินเตอร์') ||
-              value.includes('อังกฤษ')
+              cleanVal.toUpperCase().includes('ENG') ||
+              cleanVal.includes('อินเตอร์') ||
+              cleanVal.includes('อังกฤษ')
                 ? 'ENGLISH'
                 : 'THAI';
             break;
           case 'degreeLevel':
-            degreeLevel = value.trim();
+            degreeLevel = cleanVal;
             break;
           case 'major':
-            major = value.trim();
+            major = cleanVal;
             break;
           case 'yearLevel': {
-            const yr = Number.parseInt(value.replace(/[^\d]/g, ''), 10);
+            const yr = Number.parseInt(cleanVal.replace(/[^\d]/g, ''), 10);
             if (Number.isFinite(yr) && yr > 0) yearLevel = yr;
             break;
           }
           case 'department':
-            department = value.trim();
+            department = cleanVal;
             break;
           case 'role':
-            role = value.trim();
+            role = cleanVal;
             break;
           case 'vasa':
-            vasa = value.trim();
+            vasa = cleanVal;
             break;
           case 'remarks':
-            remarks = value.trim();
+            remarks = cleanVal;
             break;
         }
       });
@@ -375,6 +411,30 @@ export function parseGroupedParticipantsText(
       continue;
     }
 
+    // Clean and normalize whitespace/non-breaking space
+    studentCode = studentCode.replace(/[\s\u00A0]+/g, '');
+    groupSpecificCode = groupSpecificCode.replace(/[\s\u00A0]+/g, '');
+
+    // Smart detection: Thai student ID is typically 8-12 digits (e.g. 6801401003, 6701501050)
+    // Group-specific code is typically short alphanumeric (e.g. B1T01, T101, T122, G01-01)
+    const isStudentId = (v: string) => /^\d{8,12}$/.test(v);
+    const isGroupCode = (v: string) =>
+      /^[A-Za-z0-9_-]{2,10}$/.test(v) && !isStudentId(v);
+
+    if (isGroupCode(studentCode) && isStudentId(groupSpecificCode)) {
+      // Swapped columns in input, auto-correct them
+      const temp = studentCode;
+      studentCode = groupSpecificCode;
+      groupSpecificCode = temp;
+    } else if (isGroupCode(studentCode) && !groupSpecificCode) {
+      // Only group code was provided in studentCode column (e.g. T122)
+      groupSpecificCode = studentCode;
+    } else if (isStudentId(groupSpecificCode) && !studentCode) {
+      // Only student ID was provided in groupSpecificCode column
+      studentCode = groupSpecificCode;
+      groupSpecificCode = '';
+    }
+
     const groupKey = groupNumber ? `G:${groupNumber}` : groupName ? `N:${groupName}` : 'G:0';
     const nextSeq = (groupSeqCounter.get(groupKey) || 0) + 1;
     groupSeqCounter.set(groupKey, nextSeq);
@@ -389,7 +449,7 @@ export function parseGroupedParticipantsText(
       groupSpecificCode = generated;
     }
 
-    if (!groupSpecificCode && /^[A-Za-z]+[0-9]+/.test(studentCode)) {
+    if (!groupSpecificCode && isGroupCode(studentCode)) {
       groupSpecificCode = studentCode;
     }
 
@@ -503,9 +563,9 @@ export function buildGroupedStudentsFromDirectory(
   const resolvedGroupName = options.groupName?.trim() || `กลุ่มที่ ${options.groupNumber}`;
 
   return students.map((student, idx) => {
-    const code = options.useGroupSpecificCode
+    const groupCode = options.useGroupSpecificCode
       ? formatGroupSpecificCode(options.codePrefix || 'G', options.groupNumber, startSeq + idx)
-      : student.studentCode;
+      : undefined;
 
     const resolvedName =
       student.fullName?.trim() ||
@@ -513,8 +573,8 @@ export function buildGroupedStudentsFromDirectory(
       student.studentCode;
 
     return {
-      studentCode: code,
-      groupSpecificCode: options.useGroupSpecificCode ? code : undefined,
+      studentCode: student.studentCode,
+      groupSpecificCode: groupCode,
       studentName: resolvedName,
       groupNumber: options.groupNumber,
       groupName: resolvedGroupName,
@@ -524,7 +584,7 @@ export function buildGroupedStudentsFromDirectory(
       yearLevel: student.yearLevel,
       department: student.department,
       role: 'STUDENT',
-      remarks: options.useGroupSpecificCode ? `รหัสนิสิตเดิม: ${student.studentCode}` : undefined,
+      remarks: options.useGroupSpecificCode ? `เลขเฉพาะกลุ่ม: ${groupCode}` : undefined,
       status: 'REGISTERED',
     };
   });

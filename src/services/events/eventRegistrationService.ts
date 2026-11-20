@@ -250,10 +250,19 @@ export async function batchImportEventRegistrations(
   const eventTitle = targetEvent?.title || 'โครงการปฏิบัติวิปัสสนากัมมัฏฐาน';
 
   let studentMap = new Map<string, any>();
+  let studentNameMap = new Map<string, any>();
+  const normalizeStudentName = (name: string) =>
+    name
+      .replace(/^(พระมหา|พระครู|พระ|สามเณร|แม่ชี|นาย|นางสาว|นาง|ดร\.)\s*/, '')
+      .replace(/\s+/g, '')
+      .toLowerCase();
+
   try {
     const students = await getStudents();
     students.forEach((s) => {
       if (s.studentCode) studentMap.set(s.studentCode.trim().toLowerCase(), s);
+      const nameKey = normalizeStudentName(s.fullName || `${s.firstName || ''} ${s.lastName || ''}`);
+      if (nameKey) studentNameMap.set(nameKey, s);
     });
   } catch (e) {
     console.warn('Could not load students for enrichment in batchImport:', e);
@@ -282,24 +291,59 @@ export async function batchImportEventRegistrations(
   for (let idx = 0; idx < items.length; idx++) {
     const row = items[idx];
     const sCode = String(row.studentCode || '').trim();
-    if (!sCode) {
+    if (!sCode && !row.groupSpecificCode) {
       skippedCount++;
       continue;
     }
 
-    const codeLower = sCode.toLowerCase();
-    if (seenInBatch.has(codeLower)) {
+    const isStudentId = (v: string) => /^\d{8,12}$/.test(v.replace(/[\s\u00A0]+/g, ''));
+    const isGroupCode = (v: string) =>
+      /^[A-Za-z0-9_-]{2,10}$/.test(v.trim()) && !isStudentId(v);
+
+    let finalStudentCode = sCode;
+    let finalGroupCode = row.groupSpecificCode ? String(row.groupSpecificCode).trim() : undefined;
+
+    // Smart detection & auto-correction if swapped
+    if (isGroupCode(finalStudentCode) && finalGroupCode && isStudentId(finalGroupCode)) {
+      const tmp = finalStudentCode;
+      finalStudentCode = finalGroupCode;
+      finalGroupCode = tmp;
+    } else if (isGroupCode(finalStudentCode) && !finalGroupCode) {
+      finalGroupCode = finalStudentCode;
+      // Look up real student ID by student name if present in student directory
+      const nameKey = normalizeStudentName(row.studentName || '');
+      const matchedStudent = nameKey ? studentNameMap.get(nameKey) : undefined;
+      if (matchedStudent?.studentCode) {
+        finalStudentCode = matchedStudent.studentCode;
+      }
+    } else if (!finalStudentCode && finalGroupCode) {
+      if (isStudentId(finalGroupCode)) {
+        finalStudentCode = finalGroupCode;
+        finalGroupCode = undefined;
+      } else {
+        finalStudentCode = finalGroupCode;
+      }
+    }
+
+    const dedupeKey = `${finalStudentCode || ''}_${finalGroupCode || ''}_${row.studentName || ''}`.toLowerCase();
+    if (seenInBatch.has(dedupeKey)) {
       skippedCount++;
       continue;
     }
-    seenInBatch.add(codeLower);
+    seenInBatch.add(dedupeKey);
 
-    if (mode === 'APPEND' && existingCodesInEvent.has(codeLower)) {
-      skippedCount++;
-      continue;
+    if (mode === 'APPEND') {
+      const codeCheck = (finalStudentCode || '').toLowerCase();
+      if (codeCheck && existingCodesInEvent.has(codeCheck)) {
+        skippedCount++;
+        continue;
+      }
     }
 
-    const sInfo = studentMap.get(codeLower) || {};
+    const sInfo =
+      studentMap.get((finalStudentCode || '').toLowerCase()) ||
+      studentNameMap.get(normalizeStudentName(row.studentName || '')) ||
+      {};
     const gNum = row.groupNumber !== undefined ? Number(row.groupNumber) : undefined;
     const gName = row.groupName || (gNum ? `กลุ่มที่ ${gNum}` : 'ทั่วไป');
 
@@ -307,11 +351,11 @@ export async function batchImportEventRegistrations(
       id: `reg-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`,
       eventId: targetEventId,
       eventTitle,
-      studentCode: sCode,
-      studentName: row.studentName || sInfo.fullName || sCode,
+      studentCode: finalStudentCode || sCode,
+      studentName: row.studentName || sInfo.fullName || finalStudentCode || sCode,
       groupNumber: gNum,
       groupName: gName,
-      groupSpecificCode: row.groupSpecificCode || undefined,
+      groupSpecificCode: finalGroupCode || undefined,
       status: 'REGISTERED',
       role: 'STUDENT',
       degreeLevel: row.degreeLevel || sInfo.degree || 'ปริญญาตรี',
@@ -326,7 +370,9 @@ export async function batchImportEventRegistrations(
     };
 
     createdItems.push(newReg);
-    existingCodesInEvent.add(codeLower);
+    if (finalStudentCode) {
+      existingCodesInEvent.add(finalStudentCode.toLowerCase());
+    }
   }
 
   local.push(...createdItems);
