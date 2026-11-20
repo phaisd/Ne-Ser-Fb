@@ -35,7 +35,28 @@ export interface StudentEvent {
   meditationDaysRequired?: number; // จำนวนวันที่ต้องเข้าร่วมขั้นต่ำ เช่น 8 หรือ 10 วัน
 
   meditationConfig?: MeditationConfig;
+  seatingConfig?: EventSeatingConfig;
   createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SeatZone {
+  id: string; // e.g. "zone-a", "zone-b"
+  name: string; // e.g. "โซน A (พระภิกษุ-สามเณร)", "โซน B (นิสิตชาย)"
+  color: string; // e.g. "amber" | "blue" | "emerald" | "purple" | "rose" | "indigo" | "teal"
+  rows: number; // e.g. 10 แถว
+  cols: number; // e.g. 15 ที่นั่งต่อแถว
+  prefix?: string; // e.g. "A", "B", "C"
+  description?: string;
+}
+
+export interface EventSeatingConfig {
+  enabled: boolean;
+  layoutType?: 'GRID';
+  venueName?: string; // สถานที่จัด เช่น อาคาร มวก. 48 พรรษา
+  roomName?: string; // ห้อง เช่น หอประชุม ชั้น 3
+  zones: SeatZone[];
+  disabledSeats?: string[]; // ที่นั่งที่เว้นเป็นทางเดิน หรือเสา เช่น ["A-05", "A-10"]
   updatedAt?: string;
 }
 
@@ -131,6 +152,10 @@ export interface EventRegistration {
   remarks?: string;
   attendedAt?: string;
   attendedDays?: number[]; // บันทึกวันที่เข้าร่วมสำหรับโครงการต่อเนื่อง เช่น [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  seatZone?: string; // id หรือชื่อโซน เช่น "zone-a" หรือ "โซน A"
+  seatNumber?: string; // หมายเลขที่นั่ง เช่น "A-01", "B-12"
+  seatCheckinAt?: string; // เวลาที่เช็คอินเข้าที่นั่ง เช่น ISO timestamp
+  seatCheckinBy?: string; // เจ้าหน้าที่ผู้เช็คอินเข้าที่นั่ง
   passedMeditation?: boolean; // ผลการประเมินโครงการวิปัสสนา (ผ่าน/ไม่ผ่าน)
   certificateIssued?: boolean; // ออกวุฒิบัตรดิจิทัลแล้วหรือไม่
   certificateDocNo?: string; // เลขที่วุฒิบัตร เช่น มจร 8002/ว.วป-2569-001

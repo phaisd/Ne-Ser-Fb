@@ -8,3 +8,4 @@
 export * from './events/eventCoreService';
 export * from './events/eventRegistrationService';
 export * from './events/vipassanaService';
+export * from './events/seatingService';

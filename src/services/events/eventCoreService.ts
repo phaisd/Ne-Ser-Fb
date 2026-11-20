@@ -42,6 +42,7 @@ export async function getEvents(): Promise<StudentEvent[]> {
             coordinatorName: r[13] || local.coordinatorName || '',
             showCoordinator: r[14] !== undefined ? (r[14] === 'TRUE' || r[14] === true) : (local.showCoordinator !== false),
             meditationConfig,
+            seatingConfig: local.seatingConfig,
           };
         });
       }
@@ -75,6 +76,7 @@ export async function getEvents(): Promise<StudentEvent[]> {
     coordinatorEmail: e.coordinatorEmail || '',
     showCoordinator: e.showCoordinator !== false,
     meditationConfig: e.meditationConfig || {},
+    seatingConfig: e.seatingConfig,
     createdAt: e.createdAt,
     updatedAt: e.updatedAt,
   }));

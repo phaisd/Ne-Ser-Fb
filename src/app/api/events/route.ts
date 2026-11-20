@@ -25,6 +25,17 @@ export async function GET(request: Request) {
     const eventId = searchParams.get('eventId') || undefined;
     const studentCode = searchParams.get('studentCode') || undefined;
 
+    // Public Seating Data Lookup (No auth required)
+    if (action === 'public_seating') {
+      if (!eventId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุ eventId' }, { status: 400 });
+      }
+      const query = searchParams.get('query') || undefined;
+      const { getPublicSeatingData } = await import('@/services');
+      const data = await getPublicSeatingData(eventId, query);
+      return NextResponse.json({ success: true, ...data });
+    }
+
     if (action === 'registrations') {
       const auth = requireAuthenticatedUser(request);
       if (auth.response) return auth.response;
@@ -260,6 +271,105 @@ export async function POST(request: Request) {
             : decision === 'NOT_PASS'
             ? `ปรับผลการประเมินเป็น "ไม่ผ่าน" สำเร็จ (${result.updatedCount} รายการ)`
             : `คืนค่าผลการประเมินเป็นคำนวณตามเกณฑ์สำเร็จ (${result.updatedCount} รายการ)`,
+      });
+    }
+
+    // Save Event Seating Config
+    if (action === 'save_seating_config') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, config } = body;
+      if (!eventId || !config) {
+        return NextResponse.json({ success: false, error: 'ข้อมูลไม่ครบถ้วน (ต้องการ eventId, config)' }, { status: 400 });
+      }
+
+      const { saveEventSeatingConfig } = await import('@/services');
+      const updated = await saveEventSeatingConfig(eventId, config);
+      return NextResponse.json({ success: true, data: updated, message: 'บันทึกการตั้งค่าแผนผังที่นั่งเรียบร้อยแล้ว' });
+    }
+
+    // Auto Assign Seats
+    if (action === 'assign_seats_auto') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, options } = body;
+      if (!eventId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุ eventId' }, { status: 400 });
+      }
+
+      const { assignSeatsAuto } = await import('@/services');
+      const result = await assignSeatsAuto(eventId, options);
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `จัดที่นั่งอัตโนมัติสำเร็จ ${result.assignedCount} ที่นั่ง (เกินความจุ ${result.unassignedCount} คน)`,
+      });
+    }
+
+    // Update / Swap Participant Seat
+    if (action === 'update_participant_seat') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { registrationId, seatNumber, seatZone } = body;
+      if (!registrationId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุ registrationId' }, { status: 400 });
+      }
+
+      const { updateParticipantSeat } = await import('@/services');
+      const updated = await updateParticipantSeat(registrationId, seatNumber, seatZone);
+      return NextResponse.json({
+        success: true,
+        data: updated,
+        message: seatNumber ? `กำหนดที่นั่ง ${seatNumber} สำเร็จ` : 'ยกเลิกการกำหนดที่นั่งสำเร็จ',
+      });
+    }
+
+    // Clear All Event Seats
+    if (action === 'clear_event_seats') {
+      const adminAuth = requireAdminOrOfficer(request);
+      if (adminAuth.response) return adminAuth.response;
+
+      const { eventId } = body;
+      if (!eventId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุ eventId' }, { status: 400 });
+      }
+
+      const { clearEventSeats } = await import('@/services');
+      const count = await clearEventSeats(eventId);
+      return NextResponse.json({ success: true, count, message: `ล้างที่นั่งทั้งหมด ${count} รายการเรียบร้อยแล้ว` });
+    }
+
+    // Seat Scan Rapid Check-in
+    if (action === 'seat_scan_checkin') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, studentCodeOrId } = body;
+      if (!eventId || !studentCodeOrId) {
+        return NextResponse.json({ success: false, error: 'ข้อมูลไม่ครบถ้วน (ต้องการ eventId, studentCodeOrId)' }, { status: 400 });
+      }
+
+      const { recordSeatCheckin } = await import('@/services');
+      const result = await recordSeatCheckin({
+        eventId,
+        studentCodeOrId,
+        recordedBy: staffAuth.user?.name || staffAuth.user?.email || 'STAFF_SEAT_SCANNER',
+      });
+
+      if (!result.success) {
+        return NextResponse.json({ success: false, error: result.error }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        isAlreadyCheckedIn: result.isAlreadyCheckedIn,
+        registration: result.registration,
+        message: result.isAlreadyCheckedIn
+          ? `นิสิต ${result.registration?.studentName} เช็คชื่อเข้าที่นั่งไปแล้ว (${result.registration?.seatNumber || 'ไม่มีเลขที่นั่ง'})`
+          : `เช็คชื่อเข้าที่นั่งสำเร็จ: ${result.registration?.studentName} (ที่นั่ง ${result.registration?.seatNumber || '-'})`,
       });
     }
 

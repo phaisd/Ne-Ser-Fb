@@ -28,6 +28,8 @@ import {
   VipassanaInterviewSheetModal,
   VipassanaCombinedEvaluationModal,
   VipassanaEventQrModal,
+  VipassanaSeatMapModal,
+  VipassanaSeatScannerModal,
 } from '../modals';
 import { EventCardGrid, EventParticipantsTable } from './events';
 
@@ -132,6 +134,10 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     settings,
   });
 
+  // Vipassana Seating Map & Seat Scanner State
+  const [vipassanaSeatingEvent, setVipassanaSeatingEvent] = React.useState<StudentEvent | null>(null);
+  const [vipassanaSeatScannerEvent, setVipassanaSeatScannerEvent] = React.useState<StudentEvent | null>(null);
+
   // Auto-open specific Event & Scanner/Interview Modal from Mobile QR Deep Link
   const deepLinkHandledRef = useRef(false);
   useEffect(() => {
@@ -150,7 +156,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     deepLinkHandledRef.current = true;
     setSelectedEventId(targetEvent.id);
 
-    let resolvedAction: 'INTERVIEW' | 'SCAN' | 'ATTENDANCE' = 'SCAN';
+    let resolvedAction: 'INTERVIEW' | 'SCAN' | 'ATTENDANCE' | 'SEATING' | 'SEAT_SCAN' = 'SCAN';
     if (qAction === 'INTERVIEW') {
       resolvedAction = 'INTERVIEW';
       setVipassanaInterviewEvent(targetEvent);
@@ -160,6 +166,12 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     } else if (qAction === 'ATTENDANCE') {
       resolvedAction = 'ATTENDANCE';
       setVipassanaModalEvent(targetEvent);
+    } else if (qAction === 'SEATING') {
+      resolvedAction = 'SEATING';
+      setVipassanaSeatingEvent(targetEvent);
+    } else if (qAction === 'SEAT_SCAN') {
+      resolvedAction = 'SEAT_SCAN';
+      setVipassanaSeatScannerEvent(targetEvent);
     } else if (qAction === 'AUTO') {
       if (isVipassanaMaster) {
         resolvedAction = 'INTERVIEW';
@@ -416,6 +428,8 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           onOpenVipassanaInterview={setVipassanaInterviewEvent}
           onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
           onOpenVipassanaQr={setVipassanaQrEvent}
+          onOpenVipassanaSeating={setVipassanaSeatingEvent}
+          onOpenVipassanaSeatScanner={setVipassanaSeatScannerEvent}
           currentUser={activeUser}
         />
       </div>
@@ -452,6 +466,8 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           onOpenVipassanaInterview={setVipassanaInterviewEvent}
           onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
           onOpenVipassanaQr={setVipassanaQrEvent}
+          onOpenVipassanaSeating={setVipassanaSeatingEvent}
+          onOpenVipassanaSeatScanner={setVipassanaSeatScannerEvent}
           currentUser={activeUser}
         />
       </div>
@@ -582,6 +598,29 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           isOpen={!!vipassanaQrEvent}
           onClose={() => setVipassanaQrEvent(null)}
           event={vipassanaQrEvent}
+        />
+      )}
+
+      {/* Vipassana Seating Map & Seat Management Modal */}
+      {vipassanaSeatingEvent && (
+        <VipassanaSeatMapModal
+          isOpen={!!vipassanaSeatingEvent}
+          onClose={() => setVipassanaSeatingEvent(null)}
+          event={vipassanaSeatingEvent}
+          registrations={registrationsList.filter((r) => r.eventId === vipassanaSeatingEvent.id)}
+          onRefresh={onRefresh}
+          onOpenSeatScanner={(e) => setVipassanaSeatScannerEvent(e)}
+        />
+      )}
+
+      {/* Vipassana Seat Scanner Modal (Staff Rapid Checkin) */}
+      {vipassanaSeatScannerEvent && (
+        <VipassanaSeatScannerModal
+          isOpen={!!vipassanaSeatScannerEvent}
+          onClose={() => setVipassanaSeatScannerEvent(null)}
+          event={vipassanaSeatScannerEvent}
+          registrations={registrationsList.filter((r) => r.eventId === vipassanaSeatScannerEvent.id)}
+          onCheckinSuccess={onRefresh}
         />
       )}
 

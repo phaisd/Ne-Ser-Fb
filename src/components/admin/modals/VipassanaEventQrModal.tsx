@@ -32,6 +32,7 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
   const [smartQrDataUrl, setSmartQrDataUrl] = useState<string>('');
   const [scanQrDataUrl, setScanQrDataUrl] = useState<string>('');
   const [interviewQrDataUrl, setInterviewQrDataUrl] = useState<string>('');
+  const [seatingQrDataUrl, setSeatingQrDataUrl] = useState<string>('');
   const [copiedMode, setCopiedMode] = useState<string | null>(null);
 
   const origin =
@@ -45,6 +46,9 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
     : '';
   const interviewUrl = event
     ? `${origin}/admin?tab=EVENTS&eventId=${encodeURIComponent(event.id)}&action=INTERVIEW`
+    : '';
+  const seatingUrl = event
+    ? `${origin}/events/seating?eventId=${encodeURIComponent(event.id)}`
     : '';
 
   useEffect(() => {
@@ -67,19 +71,25 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
         margin: 1,
         color: { dark: '#78350f', light: '#ffffff' },
       }),
+      QRCode.toDataURL(seatingUrl, {
+        width: 420,
+        margin: 1,
+        color: { dark: '#0f172a', light: '#ffffff' },
+      }),
     ])
-      .then(([smart, scan, interview]) => {
+      .then(([smart, scan, interview, seating]) => {
         if (!active) return;
         setSmartQrDataUrl(smart);
         setScanQrDataUrl(scan);
         setInterviewQrDataUrl(interview);
+        setSeatingQrDataUrl(seating);
       })
       .catch((err) => console.error('QR generation failed:', err));
 
     return () => {
       active = false;
     };
-  }, [isOpen, event, smartUrl, scanUrl, interviewUrl]);
+  }, [isOpen, event, smartUrl, scanUrl, interviewUrl, seatingUrl]);
 
   if (!isOpen || !event) return null;
 
@@ -115,6 +125,9 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
       ``,
       `🧘 3) สำหรับพระวิปัสสนาจารย์ (เปิดหน้าสอบอารมณ์สติปัฏฐาน 4 & สแกนป้ายชื่อด่วน):`,
       `${interviewUrl}`,
+      ``,
+      `🪑 4) สำหรับผู้เข้าร่วม (สแกนค้นหาที่นั่ง & ดูผังห้องจริงด้วยตนเอง ไม่ต้องล็อกอิน):`,
+      `${seatingUrl}`,
       ``,
       `💡 วิธีใช้งานบนมือถือ: กดลิงก์หรือสแกน QR Code -> เข้าสู่ระบบ -> เลือกกลุ่มที่ท่านดูแล -> กดเปิดกล้องสแกนป้ายคล้องคอนิสิตได้ทันที`,
     ].join('\n');
@@ -209,8 +222,8 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
             </div>
           </div>
 
-          {/* 3 QR Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* 4 QR Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1: Smart Auto-Role QR (Recommended Single QR for the project) */}
             <div className="rounded-2xl border-2 border-indigo-400 bg-gradient-to-b from-indigo-50/70 via-white to-indigo-50/30 p-4 flex flex-col justify-between space-y-3 shadow-sm">
               <div className="space-y-1.5 text-center">
@@ -366,6 +379,60 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
                     <>
                       <Copy className="w-3.5 h-3.5" />
                       <span>คัดลอกลิงก์สอบอารมณ์</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Card 4: Public Self-Service Seat Finder */}
+            <div className="rounded-2xl border-2 border-slate-400 bg-gradient-to-b from-slate-50/70 via-white to-slate-50/30 p-4 flex flex-col justify-between space-y-3 shadow-sm">
+              <div className="space-y-1.5 text-center">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-slate-900 text-amber-300">
+                  <MapPin className="w-3 h-3 text-amber-400" />
+                  <span>สำหรับผู้เข้าร่วม • ไม่ต้องล็อกอิน</span>
+                </span>
+                <h4 className="font-extrabold text-slate-950 text-sm">
+                  จุดค้นหาผังที่นั่งตนเอง
+                </h4>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  ติดป้ายหน้าหอประชุม ให้ผู้เข้าร่วมสแกนเพื่อหาที่นั่งและดูผังห้องจริง
+                </p>
+              </div>
+
+              {/* QR Image Box */}
+              <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-inner flex flex-col items-center justify-center">
+                {seatingQrDataUrl ? (
+                  <img
+                    src={seatingQrDataUrl}
+                    alt="Seating Lookup QR"
+                    className="w-36 h-36 object-contain rounded-lg"
+                  />
+                ) : (
+                  <div className="w-36 h-36 flex items-center justify-center text-xs text-slate-400 animate-pulse">
+                    กำลังสร้าง QR...
+                  </div>
+                )}
+                <span className="text-[10px] text-slate-500 font-medium mt-1">
+                  สแกนเพื่อค้นหาที่นั่งตนเอง
+                </span>
+              </div>
+
+              <div className="space-y-1.5 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => handleCopyText(seatingUrl, 'SEATING')}
+                  className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+                >
+                  {copiedMode === 'SEATING' ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                      <span>คัดลอกลิงก์ผังที่นั่งแล้ว!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>คัดลอกลิงก์ผังที่นั่ง</span>
                     </>
                   )}
                 </button>

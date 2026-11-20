@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   Award, 
   Calendar, 
@@ -244,6 +245,13 @@ export default function EventsPage() {
           >
             ตรวจสอบกิจกรรมรายบุคคล
           </button>
+          <Link
+            href="/events/seating"
+            className="flex-1 sm:flex-initial whitespace-nowrap shrink-0 min-h-[40px] px-3.5 py-2 rounded-xl transition cursor-pointer text-center text-slate-600 hover:text-amber-700 font-bold flex items-center justify-center gap-1.5"
+          >
+            <MapPin className="w-4 h-4 text-amber-600" />
+            <span>ค้นหาผังที่นั่ง</span>
+          </Link>
           {canManageCheckin && (
             <button
               onClick={() => setActiveTab('CHECKIN')}
@@ -319,13 +327,23 @@ export default function EventsPage() {
                   </div>
 
                   <div className="pt-2 flex items-center justify-between border-t border-slate-100">
-                    <button
-                      onClick={() => setSelectedEventForReg(evt)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition shadow-sm"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      ลงทะเบียนเข้าร่วม
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => setSelectedEventForReg(evt)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition shadow-sm"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        ลงทะเบียนเข้าร่วม
+                      </button>
+                      <Link
+                        href={`/events/seating?eventId=${encodeURIComponent(evt.id)}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition border border-slate-200"
+                        title="ค้นหาจุดที่นั่งบนแผนผังสำหรับโครงการนี้"
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-amber-600" />
+                        <span>ผังที่นั่ง</span>
+                      </Link>
+                    </div>
                     <button
                       onClick={() => {
                         setCheckinEventId(evt.id);

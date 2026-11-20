@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Clock,
   QrCode,
+  MapPin,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
 import { getAuthUser } from '@/lib/auth-client';
@@ -46,6 +47,8 @@ interface EventParticipantsTableProps {
   onOpenVipassanaInterview: (event: StudentEvent) => void;
   onOpenVipassanaEvaluation?: (event: StudentEvent) => void;
   onOpenVipassanaQr?: (event: StudentEvent) => void;
+  onOpenVipassanaSeating?: (event: StudentEvent) => void;
+  onOpenVipassanaSeatScanner?: (event: StudentEvent) => void;
   currentUser?: any;
 }
 
@@ -79,6 +82,8 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
   onOpenVipassanaInterview,
   onOpenVipassanaEvaluation,
   onOpenVipassanaQr,
+  onOpenVipassanaSeating,
+  onOpenVipassanaSeatScanner,
   currentUser,
 }) => {
   const activeUser = currentUser || (typeof window !== 'undefined' ? getAuthUser() : null);
@@ -157,6 +162,19 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
                     >
                       <Sparkles className="w-3.5 h-3.5 text-purple-700" />
                       <span>🪪 พิมพ์ป้ายคล้องคอ</span>
+                    </button>
+                  )}
+
+                  {/* แผนผังที่นั่ง & เช็คอิน (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
+                  {canAccessAttendance && onOpenVipassanaSeating && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenVipassanaSeating(currentEvt)}
+                      className="px-3 py-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      title="เปิดผังที่นั่ง จัดที่นั่งอัตโนมัติ และสแกนเช็คชื่อเข้าที่นั่ง"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-amber-300" />
+                      <span>🪑 ผังที่นั่ง & เช็คอิน</span>
                     </button>
                   )}
 
@@ -419,7 +437,17 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
                       <div>{r.major || 'พระพุทธศาสนา'}</div>
                       <div className="text-[11px] text-slate-400">ชั้นปีที่ {r.yearLevel || 1}</div>
                     </td>
-                    <td className="px-4 py-3.5 text-slate-600 font-medium">{r.groupName || 'ทั่วไป'}</td>
+                    <td className="px-4 py-3.5 text-slate-600 font-medium">
+                      <div>{r.groupName || 'ทั่วไป'}</div>
+                      {r.seatNumber ? (
+                        <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200" title={`ที่นั่ง: ${r.seatNumber} (${r.seatZone || 'โซนมาตรฐาน'})${r.seatCheckinAt ? ' - เช็คอินเข้าที่นั่งแล้ว' : ''}`}>
+                          <span>🪑 {r.seatNumber}</span>
+                          {r.seatCheckinAt && <span className="text-emerald-600 font-black">✓</span>}
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-400 font-normal">ยังไม่มีที่นั่ง</div>
+                      )}
+                    </td>
                     <td className="px-4 py-3.5 text-slate-500 whitespace-nowrap text-[11px]">
                       {r.attendedAt ? new Date(r.attendedAt).toLocaleDateString('th-TH') : '-'}
                     </td>

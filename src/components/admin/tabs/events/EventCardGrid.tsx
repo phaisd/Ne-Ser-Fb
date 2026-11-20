@@ -33,6 +33,8 @@ interface EventCardGridProps {
   onOpenVipassanaInterview: (event: StudentEvent) => void;
   onOpenVipassanaEvaluation: (event: StudentEvent) => void;
   onOpenVipassanaQr?: (event: StudentEvent) => void;
+  onOpenVipassanaSeating?: (event: StudentEvent) => void;
+  onOpenVipassanaSeatScanner?: (event: StudentEvent) => void;
   currentUser?: any;
 }
 
@@ -49,6 +51,8 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
   onOpenVipassanaInterview,
   onOpenVipassanaEvaluation,
   onOpenVipassanaQr,
+  onOpenVipassanaSeating,
+  onOpenVipassanaSeatScanner,
   currentUser,
 }) => {
   const activeUser = currentUser || (typeof window !== 'undefined' ? getAuthUser() : null);
@@ -293,6 +297,22 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                       >
                         <Sparkles className="w-3 h-3 text-purple-600" />
                         <span>พิมพ์ป้ายคล้องคอ</span>
+                      </button>
+                    )}
+
+                    {/* ปุ่มแผนผังที่นั่ง & เช็คอินที่นั่ง (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
+                    {canAccessScanner && onOpenVipassanaSeating && (
+                      <button
+                        type="button"
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          onOpenVipassanaSeating(e);
+                        }}
+                        className="px-2.5 py-1 text-xs rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                        title="เปิดผังที่นั่ง จัดที่นั่งอัตโนมัติ และตรวจเช็คจุดที่นั่ง"
+                      >
+                        <MapPin className="w-3 h-3 text-amber-300" />
+                        <span>ผังที่นั่ง & เช็คอิน</span>
                       </button>
                     )}
 

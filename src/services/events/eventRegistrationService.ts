@@ -107,6 +107,10 @@ export async function getEventRegistrations(
             certificateIssued: local.certificateIssued ?? extraMeta.certificateIssued,
             certificateDocNo: local.certificateDocNo ?? extraMeta.certificateDocNo,
             certificateIssuedAt: local.certificateIssuedAt ?? extraMeta.certificateIssuedAt,
+            seatZone: local.seatZone || extraMeta.seatZone,
+            seatNumber: local.seatNumber || extraMeta.seatNumber,
+            seatCheckinAt: local.seatCheckinAt || extraMeta.seatCheckinAt,
+            seatCheckinBy: local.seatCheckinBy || extraMeta.seatCheckinBy,
             updatedAt: local.updatedAt || extraMeta.updatedAt,
           };
         });
@@ -148,6 +152,10 @@ export async function getEventRegistrations(
         certificateIssued: r.certificateIssued,
         certificateDocNo: r.certificateDocNo,
         certificateIssuedAt: r.certificateIssuedAt,
+        seatZone: r.seatZone,
+        seatNumber: r.seatNumber,
+        seatCheckinAt: r.seatCheckinAt,
+        seatCheckinBy: r.seatCheckinBy,
         remarks: r.remarks || '',
         attendedAt: r.attendedAt || '',
         createdAt: r.createdAt ? String(r.createdAt) : new Date().toISOString(),
