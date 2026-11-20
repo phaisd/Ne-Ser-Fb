@@ -648,7 +648,6 @@ export function VipassanaBadgesModal({
                 body {
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
-                  visibility: hidden !important;
                 }
                 #vipassana-badges-root,
                 #vipassana-badges-root * {

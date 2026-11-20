@@ -253,9 +253,9 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 print:space-y-0">
       {/* Header Card */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div>
           <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
             <Award className="w-5 h-5 text-amber-600" />
@@ -298,7 +298,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
       {/* Public Visibility Toggle Banner (เฉพาะ Admin ทุกระดับ) */}
       {isAdmin && (
         <div
-          className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition ${
+          className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition print:hidden ${
             settings?.showEventsMenu === true
               ? 'bg-emerald-50/70 border-emerald-200'
               : 'bg-slate-50 border-slate-200'
@@ -359,7 +359,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
       )}
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
             <Sparkles className="w-5 h-5" />
@@ -402,55 +402,59 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
       </div>
 
       {/* Events Showcase & Management Cards */}
-      <EventCardGrid
-        eventsList={eventsList}
-        registrationsList={registrationsList}
-        selectedEventId={selectedEventId}
-        onSelectEventId={setSelectedEventId}
-        onOpenEditEvent={handleOpenEditEvent}
-        onOpenDeleteEvent={handleOpenDeleteEvent}
-        onOpenVipassanaScanner={setVipassanaScannerEvent}
-        onOpenVipassanaBadges={setVipassanaBadgesEvent}
-        onOpenVipassanaModal={setVipassanaModalEvent}
-        onOpenVipassanaInterview={setVipassanaInterviewEvent}
-        onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
-        onOpenVipassanaQr={setVipassanaQrEvent}
-        currentUser={activeUser}
-      />
+      <div className="print:hidden">
+        <EventCardGrid
+          eventsList={eventsList}
+          registrationsList={registrationsList}
+          selectedEventId={selectedEventId}
+          onSelectEventId={setSelectedEventId}
+          onOpenEditEvent={handleOpenEditEvent}
+          onOpenDeleteEvent={handleOpenDeleteEvent}
+          onOpenVipassanaScanner={setVipassanaScannerEvent}
+          onOpenVipassanaBadges={setVipassanaBadgesEvent}
+          onOpenVipassanaModal={setVipassanaModalEvent}
+          onOpenVipassanaInterview={setVipassanaInterviewEvent}
+          onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
+          onOpenVipassanaQr={setVipassanaQrEvent}
+          currentUser={activeUser}
+        />
+      </div>
 
       {/* Registrations List with Filter Toolbar */}
-      <EventParticipantsTable
-        eventsList={eventsList}
-        selectedEventId={selectedEventId}
-        setSelectedEventId={setSelectedEventId}
-        search={search}
-        setSearch={setSearch}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        degreeFilter={degreeFilter}
-        setDegreeFilter={setDegreeFilter}
-        programFilter={programFilter}
-        setProgramFilter={setProgramFilter}
-        yearLevelFilter={yearLevelFilter}
-        setYearLevelFilter={setYearLevelFilter}
-        majorFilter={majorFilter}
-        setMajorFilter={setMajorFilter}
-        availableMajors={availableMajors}
-        filteredRegistrations={filteredRegistrations}
-        updatingId={updatingId}
-        onToggle={handleToggle}
-        isSyncing={isSyncing}
-        onSyncSheets={handleSyncSheets}
-        onExportCsv={handleExportCsv}
-        onExportXlsx={handleExportXlsx}
-        onOpenGroupImport={setGroupImportEventId}
-        onOpenVipassanaModal={setVipassanaModalEvent}
-        onOpenVipassanaBadges={setVipassanaBadgesEvent}
-        onOpenVipassanaInterview={setVipassanaInterviewEvent}
-        onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
-        onOpenVipassanaQr={setVipassanaQrEvent}
-        currentUser={activeUser}
-      />
+      <div className="print:hidden">
+        <EventParticipantsTable
+          eventsList={eventsList}
+          selectedEventId={selectedEventId}
+          setSelectedEventId={setSelectedEventId}
+          search={search}
+          setSearch={setSearch}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          degreeFilter={degreeFilter}
+          setDegreeFilter={setDegreeFilter}
+          programFilter={programFilter}
+          setProgramFilter={setProgramFilter}
+          yearLevelFilter={yearLevelFilter}
+          setYearLevelFilter={setYearLevelFilter}
+          majorFilter={majorFilter}
+          setMajorFilter={setMajorFilter}
+          availableMajors={availableMajors}
+          filteredRegistrations={filteredRegistrations}
+          updatingId={updatingId}
+          onToggle={handleToggle}
+          isSyncing={isSyncing}
+          onSyncSheets={handleSyncSheets}
+          onExportCsv={handleExportCsv}
+          onExportXlsx={handleExportXlsx}
+          onOpenGroupImport={setGroupImportEventId}
+          onOpenVipassanaModal={setVipassanaModalEvent}
+          onOpenVipassanaBadges={setVipassanaBadgesEvent}
+          onOpenVipassanaInterview={setVipassanaInterviewEvent}
+          onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
+          onOpenVipassanaQr={setVipassanaQrEvent}
+          currentUser={activeUser}
+        />
+      </div>
 
       {/* Modal: Add / Edit Event */}
       <EventFormModal

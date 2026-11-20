@@ -581,9 +581,9 @@ export default function AdminConsolePage() {
       {/* ─────────────────────────────────────────────────────────────
           MAIN CONTENT AREA WITH TOP HEADER
          ───────────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden print:hidden min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible print:block print:h-auto min-w-0">
         {/* Top Navbar */}
-        <header className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 shrink-0 shadow-sm">
+        <header className="bg-white border-b border-slate-200 px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 shrink-0 shadow-sm print:hidden">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -662,7 +662,7 @@ export default function AdminConsolePage() {
 
         {/* Action Alert Banner */}
         {actionSuccess && (
-          <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm flex items-center justify-between shadow-sm animate-in fade-in">
+          <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 p-3.5 sm:p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm flex items-center justify-between shadow-sm animate-in fade-in print:hidden">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
               <span>{actionSuccess}</span>
@@ -677,7 +677,13 @@ export default function AdminConsolePage() {
         )}
 
         {/* Main Scrollable Canvas */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-4 sm:space-y-6">
+        <main
+          className={`flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-4 sm:space-y-6 ${
+            activeTab !== 'EVENTS'
+              ? 'print:hidden'
+              : 'print:overflow-visible print:p-0 print:space-y-0 print:block print:h-auto'
+          }`}
+        >
           {/* TAB A: DASHBOARD OVERVIEW */}
           {activeTab === 'DASHBOARD' && (
             <AdminDashboardTab

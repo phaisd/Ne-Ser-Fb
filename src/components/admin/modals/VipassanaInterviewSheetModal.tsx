@@ -393,8 +393,8 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-1 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-[98vw] 2xl:max-w-7xl h-[98vh] sm:max-h-[96vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-1 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in print:p-0 print:bg-white print:static print:block print:overflow-visible">
+      <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-[98vw] 2xl:max-w-7xl h-[98vh] sm:max-h-[96vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden print:shadow-none print:border-none print:max-h-none print:h-auto print:w-full print:p-0 print:static print:block print:overflow-visible">
         {/* Header - Screen only */}
         <div className="print:hidden px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-amber-700 via-amber-800 to-amber-950 text-white flex items-center justify-between shadow-md shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -716,7 +716,20 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
         </div>
 
         {/* Scrollable Main Assessment Area */}
-        <div className="flex-1 overflow-auto p-3 sm:p-6 print:p-0 print:overflow-visible bg-slate-50/30">
+        <div className="flex-1 overflow-auto p-3 sm:p-6 print:p-0 print:overflow-visible print:h-auto print:block bg-slate-50/30">
+          <style>{`
+            @media print {
+              @page {
+                size: A4 landscape;
+                margin: 8mm 6mm;
+              }
+              body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                background: #ffffff !important;
+              }
+            }
+          `}</style>
           {/* Printable Document Header (Visible ONLY when printed) */}
           {isEnglishProgram ? (
             <div className="hidden print:block mb-3 text-center">

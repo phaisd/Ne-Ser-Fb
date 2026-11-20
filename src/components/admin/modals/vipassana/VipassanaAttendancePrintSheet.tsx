@@ -66,17 +66,16 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          body * {
-            visibility: hidden !important;
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           #official-a4-sheet,
           #official-a4-sheet * {
             visibility: visible !important;
           }
           #official-a4-sheet {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: static !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;

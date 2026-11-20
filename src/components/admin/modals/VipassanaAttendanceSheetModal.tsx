@@ -513,7 +513,17 @@ export function VipassanaAttendanceSheetModal({
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:block print:overflow-visible"
     >
       {/* Container Card */}
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 print:shadow-none print:border-none print:max-h-none print:w-full print:p-0 print:static print:block print:overflow-visible print:h-auto">
+      <div
+        className={`bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
+          isBadgesModalOpen ||
+          isLiveScannerOpen ||
+          isInterviewModalOpen ||
+          isCombinedEvalModalOpen ||
+          isGroupAssignmentModalOpen
+            ? 'print:hidden'
+            : 'print:shadow-none print:border-none print:max-h-none print:w-full print:p-0 print:static print:block print:overflow-visible print:h-auto'
+        }`}
+      >
         
         {/* MODAL HEADER (Hidden in Print) */}
         <VipassanaAttendanceSheetHeader
