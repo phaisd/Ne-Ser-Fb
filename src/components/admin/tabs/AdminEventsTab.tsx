@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Award,
@@ -27,6 +27,7 @@ import {
   VipassanaLiveScannerModal,
   VipassanaInterviewSheetModal,
   VipassanaCombinedEvaluationModal,
+  VipassanaEventQrModal,
 } from '../modals';
 import { EventCardGrid, EventParticipantsTable } from './events';
 
@@ -118,6 +119,8 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     setVipassanaInterviewEvent,
     vipassanaEvaluationEvent,
     setVipassanaEvaluationEvent,
+    vipassanaQrEvent,
+    setVipassanaQrEvent,
     // Group Import Modal State
     groupImportEventId,
     setGroupImportEventId,
@@ -128,6 +131,46 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     onRefresh,
     settings,
   });
+
+  // Auto-open specific Event & Scanner/Interview Modal from Mobile QR Deep Link
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current || typeof window === 'undefined' || eventsList.length === 0) {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const qEventId = params.get('eventId');
+    const qAction = (params.get('action') || '').toUpperCase();
+
+    if (!qEventId) return;
+
+    const targetEvent = eventsList.find((e) => e.id === qEventId);
+    if (!targetEvent) return;
+
+    deepLinkHandledRef.current = true;
+    setSelectedEventId(targetEvent.id);
+
+    if (qAction === 'INTERVIEW') {
+      setVipassanaInterviewEvent(targetEvent);
+    } else if (qAction === 'SCAN') {
+      setVipassanaScannerEvent(targetEvent);
+    } else if (qAction === 'ATTENDANCE') {
+      setVipassanaModalEvent(targetEvent);
+    } else if (qAction === 'AUTO') {
+      if (isVipassanaMaster) {
+        setVipassanaInterviewEvent(targetEvent);
+      } else {
+        setVipassanaScannerEvent(targetEvent);
+      }
+    }
+  }, [
+    eventsList,
+    isVipassanaMaster,
+    setSelectedEventId,
+    setVipassanaInterviewEvent,
+    setVipassanaScannerEvent,
+    setVipassanaModalEvent,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -291,6 +334,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         onOpenVipassanaModal={setVipassanaModalEvent}
         onOpenVipassanaInterview={setVipassanaInterviewEvent}
         onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
+        onOpenVipassanaQr={setVipassanaQrEvent}
         currentUser={activeUser}
       />
 
@@ -324,6 +368,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         onOpenVipassanaBadges={setVipassanaBadgesEvent}
         onOpenVipassanaInterview={setVipassanaInterviewEvent}
         onOpenVipassanaEvaluation={setVipassanaEvaluationEvent}
+        onOpenVipassanaQr={setVipassanaQrEvent}
         currentUser={activeUser}
       />
 
@@ -444,6 +489,15 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           event={vipassanaEvaluationEvent}
           registrations={registrationsList.filter((r) => r.eventId === vipassanaEvaluationEvent.id)}
           onRefresh={onRefresh}
+        />
+      )}
+
+      {/* Vipassana Event QR & Mobile Direct Access Modal */}
+      {vipassanaQrEvent && (
+        <VipassanaEventQrModal
+          isOpen={!!vipassanaQrEvent}
+          onClose={() => setVipassanaQrEvent(null)}
+          event={vipassanaQrEvent}
         />
       )}
 

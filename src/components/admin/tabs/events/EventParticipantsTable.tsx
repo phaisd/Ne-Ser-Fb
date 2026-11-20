@@ -11,6 +11,7 @@ import {
   Download,
   CheckCircle2,
   Clock,
+  QrCode,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
 import { getAuthUser } from '@/lib/auth-client';
@@ -44,6 +45,7 @@ interface EventParticipantsTableProps {
   onOpenVipassanaBadges: (event: StudentEvent) => void;
   onOpenVipassanaInterview: (event: StudentEvent) => void;
   onOpenVipassanaEvaluation?: (event: StudentEvent) => void;
+  onOpenVipassanaQr?: (event: StudentEvent) => void;
   currentUser?: any;
 }
 
@@ -76,6 +78,7 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
   onOpenVipassanaBadges,
   onOpenVipassanaInterview,
   onOpenVipassanaEvaluation,
+  onOpenVipassanaQr,
   currentUser,
 }) => {
   const activeUser = currentUser || (typeof window !== 'undefined' ? getAuthUser() : null);
@@ -131,6 +134,19 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
 
               return (
                 <>
+                  {/* QR เข้าระบบมือถือ (สำหรับสร้าง QR และคัดลอกลิงก์ประจำโครงการ) */}
+                  {onOpenVipassanaQr && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenVipassanaQr(currentEvt)}
+                      className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      title="สร้าง QR Code และลิงก์ด่วนประจำโครงการนี้ สำหรับส่งให้พระวิปัสสนาจารย์และอาจารย์ผู้ดูแลเปิดสแกนบนมือถือ"
+                    >
+                      <QrCode className="w-3.5 h-3.5 text-amber-300" />
+                      <span>📱 QR เข้าระบบมือถือ</span>
+                    </button>
+                  )}
+
                   {/* พิมพ์ป้ายคล้องคอ (เฉพาะ Admin ทุกระดับ) */}
                   {isAdmin && (
                     <button

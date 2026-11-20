@@ -15,6 +15,7 @@ import {
   Award,
   Edit3,
   Trash2,
+  QrCode,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
 import { getAuthUser } from '@/lib/auth-client';
@@ -31,6 +32,7 @@ interface EventCardGridProps {
   onOpenVipassanaModal: (event: StudentEvent) => void;
   onOpenVipassanaInterview: (event: StudentEvent) => void;
   onOpenVipassanaEvaluation: (event: StudentEvent) => void;
+  onOpenVipassanaQr?: (event: StudentEvent) => void;
   currentUser?: any;
 }
 
@@ -46,6 +48,7 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
   onOpenVipassanaModal,
   onOpenVipassanaInterview,
   onOpenVipassanaEvaluation,
+  onOpenVipassanaQr,
   currentUser,
 }) => {
   const activeUser = currentUser || (typeof window !== 'undefined' ? getAuthUser() : null);
@@ -238,6 +241,22 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
 
               {/* Card Action Buttons */}
               <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100 flex-wrap">
+                {/* ปุ่ม QR เข้าระบบโครงการบนมือถือ (แยกแต่ละโครงการ) */}
+                {onOpenVipassanaQr && (
+                  <button
+                    type="button"
+                    onClick={(evt) => {
+                      evt.stopPropagation();
+                      onOpenVipassanaQr(e);
+                    }}
+                    className="px-2.5 py-1 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                    title="สร้าง QR Code และคัดลอกลิงก์ประจำโครงการนี้ สำหรับส่งให้พระวิปัสสนาจารย์และอาจารย์ผู้ดูแลเปิดสแกนบนมือถือ"
+                  >
+                    <QrCode className="w-3 h-3 text-amber-300" />
+                    <span>QR เข้าระบบมือถือ</span>
+                  </button>
+                )}
+
                 {(e.eventType === 'MEDITATION' ||
                   e.durationFormat === 'LONG_TERM_MEDITATION' ||
                   e.meditationConfig?.isMeditationEvent ||

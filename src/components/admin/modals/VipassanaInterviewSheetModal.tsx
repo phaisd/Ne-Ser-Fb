@@ -14,10 +14,12 @@ import {
   Sparkles,
   Award,
   ChevronDown,
+  ChevronUp,
   Info,
   LayoutGrid,
   Table as TableIcon,
   Camera,
+  SlidersHorizontal,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, SatipatthanaChecklist } from '@/types/event';
 import {
@@ -26,6 +28,7 @@ import {
   VipassanaGroupAssignmentModal,
   VipassanaRapidQrScannerModal,
 } from './vipassana';
+import { getAuthUser } from '@/lib/auth-client';
 
 interface VipassanaInterviewSheetModalProps {
   isOpen: boolean;
@@ -94,6 +97,9 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
 
   // Responsive View Mode: CARD (Mobile-first touch) vs TABLE (Wide desktop grid)
   const [layoutMode, setLayoutMode] = useState<'CARD' | 'TABLE'>('CARD');
+  // Collapsible Toolbar & Extra Controls (Hidden by default on mobile to maximize practitioner list area)
+  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState<boolean>(false);
+  const [showAdvancedControls, setShowAdvancedControls] = useState<boolean>(false);
 
   const [rows, setRows] = useState<Record<string, EditableInterviewRow>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -126,12 +132,34 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
     return Array.from(setG).sort((a, b) => a - b);
   }, [registrations]);
 
-  // Set default group to first group if available
+  // Set default group to logged-in master's assigned group (or first group if available)
   useEffect(() => {
     if (availableGroups.length > 0 && selectedGroup === 'ALL') {
-      setSelectedGroup(availableGroups[0]);
+      const currentUser = typeof window !== 'undefined' ? getAuthUser() : null;
+      const cleanUserName = String(currentUser?.name || '')
+        .replace(/\s*\(.*?\)\s*$/, '')
+        .trim();
+      const assignments = event.meditationConfig?.groupAssignments || {};
+      let matchedGroup: number | null = null;
+
+      if (cleanUserName) {
+        for (const g of availableGroups) {
+          const gConf = assignments[String(g)];
+          const masters = gConf?.vipassanaMasters || [];
+          const advisors = gConf?.advisors || [];
+          if (
+            masters.some((m) => m.includes(cleanUserName) || cleanUserName.includes(m)) ||
+            advisors.some((a) => a.includes(cleanUserName) || cleanUserName.includes(a))
+          ) {
+            matchedGroup = g;
+            break;
+          }
+        }
+      }
+
+      setSelectedGroup(matchedGroup || availableGroups[0]);
     }
-  }, [availableGroups, selectedGroup]);
+  }, [availableGroups, selectedGroup, event.meditationConfig?.groupAssignments]);
 
   // Initialize row data from registrations when session or registrations change
   useEffect(() => {
@@ -392,170 +420,229 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
         </div>
 
         {/* Controls Toolbar - Screen only */}
-        <div className="print:hidden px-3 sm:px-6 py-2.5 sm:py-3 bg-amber-50/70 border-b border-amber-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2.5 text-xs shrink-0 overflow-x-auto">
-          {/* Row 1: Session tabs & Group & Search */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Session selector */}
-            <div className="flex items-center bg-white p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border border-amber-300/80 shadow-xs">
-              {[1, 2, 3].map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => setSelectedSession(num)}
-                  className={`px-2.5 sm:px-3 py-1 rounded-lg sm:rounded-xl font-black text-[11px] sm:text-xs transition cursor-pointer ${
-                    selectedSession === num
-                      ? 'bg-amber-600 text-white shadow-xs'
-                      : 'text-amber-900 hover:bg-amber-50'
-                  }`}
-                >
-                  ครั้งที่ {num}
-                </button>
-              ))}
-            </div>
-
-            {/* Group selector */}
-            <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-amber-300/80 shadow-xs text-xs">
-              <Users className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-              <span className="font-bold text-amber-900">กลุ่ม:</span>
-              <select
-                value={selectedGroup}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setSelectedGroup(v === 'ALL' ? 'ALL' : parseInt(v, 10));
-                }}
-                className="bg-transparent font-bold text-amber-900 outline-none cursor-pointer"
-              >
-                <option value="ALL">ทุกกลุ่ม ({availableGroups.length})</option>
-                {availableGroups.map((g) => (
-                  <option key={g} value={g}>
-                    {g === 12 ? 'กลุ่ม 12 (English)' : `กลุ่ม ${g}`}
-                  </option>
+        <div className="print:hidden px-3 sm:px-6 py-2 sm:py-2.5 bg-amber-50/70 border-b border-amber-200/60 flex flex-col gap-2 text-xs shrink-0">
+          {/* Primary Always-Visible Row: Session, Group, Collapse/Expand & Advanced Options Toggle */}
+          <div className="flex items-center justify-between gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* Session selector */}
+              <div className="flex items-center bg-white p-0.5 rounded-xl border border-amber-300/80 shadow-xs">
+                {[1, 2, 3].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => setSelectedSession(num)}
+                    className={`px-2 sm:px-3 py-1 rounded-lg font-black text-[11px] sm:text-xs transition cursor-pointer ${
+                      selectedSession === num
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'text-amber-900 hover:bg-amber-50'
+                    }`}
+                  >
+                    ครั้งที่ {num}
+                  </button>
                 ))}
-              </select>
-            </div>
-
-            {/* Language / Program Mode */}
-            <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-amber-300/80 shadow-xs text-xs">
-              <span className="font-bold text-amber-900">แบบฟอร์ม:</span>
-              <select
-                value={programMode}
-                onChange={(e) => setProgramMode(e.target.value as any)}
-                className="bg-transparent font-bold text-amber-900 outline-none cursor-pointer"
-              >
-                <option value="AUTO">อัตโนมัติ ({isEnglishProgram ? 'Inter' : 'ไทย'})</option>
-                <option value="THAI">🇹🇭 ภาษาไทย (บรรพชิต)</option>
-                <option value="ENGLISH">🌐 English (Inter)</option>
-              </select>
-            </div>
-
-            {/* Search input */}
-            <div className="relative flex-1 sm:flex-initial min-w-[130px]">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="ค้นหารหัส / ชื่อ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1 rounded-xl border border-slate-300 bg-white text-xs w-full sm:w-44 outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Master Name, Date & Mode Selector */}
-          <div className="flex items-center gap-2 flex-wrap justify-between md:justify-end">
-            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-300 text-xs shadow-2xs">
-              <span className="font-semibold text-slate-600 text-[10.5px]">พระวิปัสสนาจารย์:</span>
-              <input
-                type="text"
-                placeholder="ระบุชื่ออาจารย์..."
-                value={meditationMaster}
-                onChange={(e) => setMeditationMaster(e.target.value)}
-                className="text-xs font-bold text-amber-950 outline-none w-28 sm:w-36"
-              />
-            </div>
-
-            {/* Quick 1-Click Master selection pills if group has multiple masters */}
-            {currentGroupMasters.length > 0 && (
-              <div className="flex items-center gap-1 flex-wrap">
-                <span className="text-[10.5px] text-slate-500 font-medium hidden lg:inline">พระประจำกลุ่ม:</span>
-                {currentGroupMasters.map((mName, mIdx) => {
-                  const isSelected = meditationMaster.trim() === mName.trim();
-                  return (
-                    <button
-                      key={mIdx}
-                      type="button"
-                      onClick={() => setMeditationMaster(mName)}
-                      className={`px-2 py-0.5 rounded-lg text-[10.5px] font-semibold transition cursor-pointer flex items-center gap-1 ${
-                        isSelected
-                          ? 'bg-amber-600 text-white shadow-2xs font-bold'
-                          : 'bg-white border border-amber-200 text-amber-900 hover:bg-amber-100'
-                      }`}
-                      title={`คลิกเลือก "${mName}" เป็นผู้สอบอารมณ์`}
-                    >
-                      <span>🧘</span>
-                      <span className="truncate max-w-[130px]">{mName}</span>
-                    </button>
-                  );
-                })}
               </div>
-            )}
 
-            {/* Manage Group Masters Button */}
-            <button
-              type="button"
-              onClick={() => setIsGroupAssignmentModalOpen(true)}
-              className="px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-[11px] flex items-center gap-1 transition cursor-pointer"
-              title="เปิดหน้าต่างมอบหมายอาจารย์และพระวิปัสสนาจารย์ประจำกลุ่ม"
-            >
-              <Users className="w-3.5 h-3.5 text-indigo-600" />
-              <span>👥 จัดการพระประจำกลุ่ม</span>
-            </button>
+              {/* Group selector */}
+              <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-amber-300/80 shadow-xs text-xs">
+                <Users className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                <span className="font-bold text-amber-900">กลุ่ม:</span>
+                <select
+                  value={selectedGroup}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setSelectedGroup(v === 'ALL' ? 'ALL' : parseInt(v, 10));
+                  }}
+                  className="bg-transparent font-bold text-amber-900 outline-none cursor-pointer"
+                >
+                  <option value="ALL">ทุกกลุ่ม ({availableGroups.length})</option>
+                  {availableGroups.map((g) => (
+                    <option key={g} value={g}>
+                      {g === 12 ? 'กลุ่ม 12 (English)' : `กลุ่ม ${g}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-            {/* Bulk pass button */}
-            <button
-              type="button"
-              onClick={handleBulkPass}
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-[11px] flex items-center gap-1 transition cursor-pointer"
-              title="ตั้งผลการปฏิบัติผ่านทุกคนในกลุ่มที่แสดงอยู่"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-              <span>ผ่านกลุ่มนี้ทั้งหมด</span>
-            </button>
+            {/* Right Controls: Toggle Advanced Options & Collapse/Expand Header */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isToolbarCollapsed) {
+                    setIsToolbarCollapsed(false);
+                    setShowAdvancedControls(true);
+                  } else {
+                    setShowAdvancedControls((v) => !v);
+                  }
+                }}
+                className={`px-2 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                  showAdvancedControls && !isToolbarCollapsed
+                    ? 'bg-amber-700 text-white border-amber-700 shadow-2xs'
+                    : 'bg-white border-amber-300 text-amber-900 hover:bg-amber-100/70'
+                }`}
+                title="แสดง/ซ่อนตัวเลือกเพิ่มเติม (แบบฟอร์ม, จัดการพระประจำกลุ่ม, โหมดมุมมอง)"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>ตัวเลือก</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsToolbarCollapsed((v) => !v)}
+                className="px-2 py-1 rounded-xl bg-white hover:bg-amber-100/80 border border-amber-300 text-amber-950 font-bold text-[11px] flex items-center gap-0.5 transition cursor-pointer shadow-2xs"
+                title={isToolbarCollapsed ? 'คลี่แถบค้นหาและชื่อพระวิปัสสนาจารย์ออก' : 'หุบแถบเครื่องมือเพื่อขยายพื้นที่ดูรายชื่อผู้ปฏิบัติ'}
+              >
+                {isToolbarCollapsed ? (
+                  <>
+                    <span>คลี่ออก</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-amber-700" />
+                  </>
+                ) : (
+                  <>
+                    <span>หุบเข้า</span>
+                    <ChevronUp className="w-3.5 h-3.5 text-amber-700" />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
+
+          {/* Collapsible Section: Search, Master Selection & Bulk Pass */}
+          {!isToolbarCollapsed && (
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 pt-1 border-t border-amber-200/50">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Search input */}
+                <div className="relative flex-1 sm:flex-initial min-w-[140px]">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหารหัส / ชื่อ..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 pr-3 py-1 rounded-xl border border-slate-300 bg-white text-xs w-full sm:w-44 outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                {/* Master Name */}
+                <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-300 text-xs shadow-2xs flex-1 sm:flex-initial">
+                  <span className="font-semibold text-slate-600 text-[10.5px] shrink-0">พระวิปัสสนาจารย์:</span>
+                  <input
+                    type="text"
+                    placeholder="ระบุชื่ออาจารย์..."
+                    value={meditationMaster}
+                    onChange={(e) => setMeditationMaster(e.target.value)}
+                    className="text-xs font-bold text-amber-950 outline-none w-full sm:w-36"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap justify-between md:justify-end">
+                {/* Quick 1-Click Master selection pills if group has multiple masters */}
+                {currentGroupMasters.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[10.5px] text-slate-500 font-medium hidden lg:inline">พระประจำกลุ่ม:</span>
+                    {currentGroupMasters.map((mName, mIdx) => {
+                      const isSelected = meditationMaster.trim() === mName.trim();
+                      return (
+                        <button
+                          key={mIdx}
+                          type="button"
+                          onClick={() => setMeditationMaster(mName)}
+                          className={`px-2 py-0.5 rounded-lg text-[10.5px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+                            isSelected
+                              ? 'bg-amber-600 text-white shadow-2xs font-bold'
+                              : 'bg-white border border-amber-200 text-amber-900 hover:bg-amber-100'
+                          }`}
+                          title={`คลิกเลือก "${mName}" เป็นผู้สอบอารมณ์`}
+                        >
+                          <span>🧘</span>
+                          <span className="truncate max-w-[130px]">{mName}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Bulk pass button */}
+                <button
+                  type="button"
+                  onClick={handleBulkPass}
+                  className="px-2.5 py-1 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-[11px] flex items-center gap-1 transition cursor-pointer shrink-0"
+                  title="ตั้งผลการปฏิบัติผ่านทุกคนในกลุ่มที่แสดงอยู่"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>ผ่านกลุ่มนี้ทั้งหมด</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Hidden by Default (Red-circled items): Form Type, Manage Group Masters, Layout Switcher */}
+          {!isToolbarCollapsed && showAdvancedControls && (
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-amber-200/70 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Language / Program Mode */}
+                <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-amber-300/80 shadow-xs text-xs">
+                  <span className="font-bold text-amber-900">แบบฟอร์ม:</span>
+                  <select
+                    value={programMode}
+                    onChange={(e) => setProgramMode(e.target.value as any)}
+                    className="bg-transparent font-bold text-amber-900 outline-none cursor-pointer"
+                  >
+                    <option value="AUTO">อัตโนมัติ ({isEnglishProgram ? 'Inter' : 'ไทย'})</option>
+                    <option value="THAI">🇹🇭 ภาษาไทย (บรรพชิต)</option>
+                    <option value="ENGLISH">🌐 English (Inter)</option>
+                  </select>
+                </div>
+
+                {/* Manage Group Masters Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsGroupAssignmentModalOpen(true)}
+                  className="px-2.5 py-1 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-[11px] flex items-center gap-1 transition cursor-pointer"
+                  title="เปิดหน้าต่างมอบหมายอาจารย์และพระวิปัสสนาจารย์ประจำกลุ่ม"
+                >
+                  <Users className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>👥 จัดการพระประจำกลุ่ม</span>
+                </button>
+              </div>
+
+              {/* Mobile-Friendly Mode Switcher */}
+              <div className="flex items-center gap-1 bg-slate-200/90 p-0.5 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setLayoutMode('CARD')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                    layoutMode === 'CARD'
+                      ? 'bg-white text-amber-950 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="โหมดการ์ดประเมินรายรูป: เหมาะสำหรับสมาร์ทโฟน/แท็บเล็ต แตะง่ายไม่เลื่อนจอไปมา"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5 text-amber-600" />
+                  <span>📱 การ์ดรายรูป (มือถือ)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLayoutMode('TABLE')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                    layoutMode === 'TABLE'
+                      ? 'bg-white text-amber-950 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="โหมดตารางรวม 24 ช่อง: เหมาะสำหรับจอคอมพิวเตอร์และเทียบกับใบกระดาษ A4"
+                >
+                  <TableIcon className="w-3.5 h-3.5 text-slate-600" />
+                  <span>📋 ตาราง 24 ช่อง (Desktop)</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* View Layout Toggle Bar & Stats Bar - Screen only */}
-        <div className="print:hidden px-3 sm:px-6 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600 shrink-0">
-          {/* Mobile-Friendly Mode Switcher */}
-          <div className="flex items-center gap-1 bg-slate-200/90 p-0.5 rounded-xl">
-            <button
-              type="button"
-              onClick={() => setLayoutMode('CARD')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
-                layoutMode === 'CARD'
-                  ? 'bg-white text-amber-950 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="โหมดการ์ดประเมินรายรูป: เหมาะสำหรับสมาร์ทโฟน/แท็บเล็ต แตะง่ายไม่เลื่อนจอไปมา"
-            >
-              <LayoutGrid className="w-3.5 h-3.5 text-amber-600" />
-              <span>📱 การ์ดรายรูป (มือถือ)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setLayoutMode('TABLE')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
-                layoutMode === 'TABLE'
-                  ? 'bg-white text-amber-950 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-              title="โหมดตารางรวม 24 ช่อง: เหมาะสำหรับจอคอมพิวเตอร์และเทียบกับใบกระดาษ A4"
-            >
-              <TableIcon className="w-3.5 h-3.5 text-slate-600" />
-              <span>📋 ตาราง 24 ช่อง (Desktop)</span>
-            </button>
-          </div>
-
+        {/* Compact Stats Bar - Screen only */}
+        <div className="print:hidden px-3 sm:px-6 py-1.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2 text-[11px] text-slate-600 shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 font-semibold text-[10.5px] sm:text-xs">
             <span>
               รวม: <strong className="font-bold text-slate-900">{stats.total}</strong> รูป/คน
@@ -570,6 +657,11 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
               รอประเมิน: <strong>{stats.pending}</strong>
             </span>
           </div>
+          {isToolbarCollapsed && meditationMaster && (
+            <span className="text-[10.5px] font-bold text-amber-900 truncate max-w-[160px] sm:max-w-xs">
+              🧘 {meditationMaster}
+            </span>
+          )}
         </div>
 
         {/* Scrollable Main Assessment Area */}
@@ -927,18 +1019,20 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
         </div>
 
         {/* Sticky Footer - Screen only */}
-        <div className="print:hidden px-4 sm:px-6 py-3 sm:py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2 text-xs w-full sm:w-auto">
-            {errorMsg && <span className="font-bold text-red-600">• {errorMsg}</span>}
-            {saveSuccess && (
-              <span className="font-bold text-emerald-600 flex items-center gap-1">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                บันทึกผลสอบอารมณ์เรียบร้อยแล้ว!
-              </span>
-            )}
-          </div>
+        <div className="print:hidden px-3 sm:px-6 py-2.5 sm:py-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 shrink-0">
+          {(errorMsg || saveSuccess) && (
+            <div className="flex items-center gap-2 text-xs w-full sm:w-auto">
+              {errorMsg && <span className="font-bold text-red-600">• {errorMsg}</span>}
+              {saveSuccess && (
+                <span className="font-bold text-emerald-600 flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  บันทึกผลสอบอารมณ์เรียบร้อยแล้ว!
+                </span>
+              )}
+            </div>
+          )}
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end ml-auto">
             <button
               type="button"
               onClick={onClose}
@@ -951,10 +1045,10 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="px-6 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white shadow-md flex items-center justify-center gap-2 transition cursor-pointer flex-1 sm:flex-initial"
+              className="px-4 sm:px-5 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white shadow-md flex items-center justify-center gap-1.5 transition cursor-pointer flex-1 sm:flex-initial whitespace-nowrap"
             >
-              <Save className="w-4 h-4" />
-              <span>{isSaving ? 'กำลังบันทึก...' : `บันทึกผลสอบอารมณ์ (ครั้งที่ ${selectedSession})`}</span>
+              <Save className="w-4 h-4 shrink-0" />
+              <span>{isSaving ? 'กำลังบันทึก...' : `สอบ (ครั้งที่ ${selectedSession})`}</span>
             </button>
           </div>
         </div>

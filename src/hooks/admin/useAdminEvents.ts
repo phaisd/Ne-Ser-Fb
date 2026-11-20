@@ -98,6 +98,7 @@ export function useAdminEvents({
   const [vipassanaScannerEvent, setVipassanaScannerEvent] = useState<StudentEvent | null>(null);
   const [vipassanaInterviewEvent, setVipassanaInterviewEvent] = useState<StudentEvent | null>(null);
   const [vipassanaEvaluationEvent, setVipassanaEvaluationEvent] = useState<StudentEvent | null>(null);
+  const [vipassanaQrEvent, setVipassanaQrEvent] = useState<StudentEvent | null>(null);
 
   // Modal State for Grouped Student Import / Pull
   const [groupImportEventId, setGroupImportEventId] = useState<string | null>(null);
@@ -525,6 +526,8 @@ export function useAdminEvents({
     setVipassanaInterviewEvent,
     vipassanaEvaluationEvent,
     setVipassanaEvaluationEvent,
+    vipassanaQrEvent,
+    setVipassanaQrEvent,
     // Group Import Modal State
     groupImportEventId,
     setGroupImportEventId,

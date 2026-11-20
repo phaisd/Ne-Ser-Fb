@@ -537,11 +537,15 @@ export default function AdminConsolePage() {
               </Link>
             ) : (
               <Link
-                href="/login"
+                href={`/login?redirect=${encodeURIComponent(
+                  typeof window !== 'undefined'
+                    ? `${window.location.pathname}${window.location.search}`
+                    : '/admin'
+                )}`}
                 className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm"
               >
                 <Lock className="w-4 h-4" />
-                <span>เข้าสู่ระบบ</span>
+                <span>เข้าสู่ระบบเพื่อเข้าหน้าโครงการนี้</span>
               </Link>
             )}
             <Link

@@ -16,6 +16,9 @@ import {
   Globe,
   Sparkles,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
   BookOpen,
   Camera,
   Timer,
@@ -62,6 +65,8 @@ export function VipassanaAttendanceSheetModal({
 }: VipassanaAttendanceSheetModalProps) {
   // 1. View mode: INTERACTIVE vs PRINT_PREVIEW
   const [viewMode, setViewMode] = useState<'INTERACTIVE' | 'PRINT_PREVIEW'>('INTERACTIVE');
+  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState<boolean>(false);
+  const [showAdvancedControls, setShowAdvancedControls] = useState<boolean>(false);
 
   // 2. Filter states
   const [selectedGroup, setSelectedGroup] = useState<number | 'ALL'>(3);
@@ -528,207 +533,256 @@ export function VipassanaAttendanceSheetModal({
         />
 
         {/* CONTROLS TOOLBAR (Hidden in Print) */}
-        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 print:hidden">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Group Selector */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-700 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-purple-600" />
-                กลุ่ม:
-              </span>
-              <select
-                value={selectedGroup}
-                onChange={(e) => {
-                  const val = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
-                  setSelectedGroup(val);
-                }}
-                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-bold text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-              >
-                {availableGroups.map((g) => (
-                  <option key={g} value={g}>
-                    {g === 12 ? `กลุ่มที่ 12 (English Program)` : `กลุ่มที่ ${g}`}
-                  </option>
-                ))}
-                <option value="ALL">ทุกกลุ่ม (All)</option>
-              </select>
-            </div>
-
-            {/* Language / Program Mode */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-700 flex items-center gap-1">
-                <Globe className="w-3.5 h-3.5 text-blue-600" />
-                แบบฟอร์ม:
-              </span>
-              <select
-                value={programMode}
-                onChange={(e) => setProgramMode(e.target.value as any)}
-                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-semibold text-slate-800 focus:outline-none"
-              >
-                <option value="AUTO">อัตโนมัติตามกลุ่ม</option>
-                <option value="THAI">🇹🇭 ภาษาไทย (บรรพชิต/คฤหัสถ์)</option>
-                <option value="ENGLISH">🌐 English Program</option>
-              </select>
-            </div>
-
-            {/* Day Selector */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-700 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-amber-600" />
-                วันที่ปฏิบัติ:
-              </span>
-              <select
-                value={selectedDayNumber}
-                onChange={(e) => setSelectedDayNumber(parseInt(e.target.value, 10))}
-                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-bold text-amber-950 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>
-                    วันที่ {d} ({10 + d} ธันวาคม / Dec {10 + d})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Search Box in interactive mode */}
-            {viewMode === 'INTERACTIVE' && (
-              <div className="relative min-w-[160px]">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="ค้นหารหัส หรือชื่อนิสิต..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-2.5 py-1.5 bg-white rounded-lg border border-slate-300 text-xs focus:outline-none"
-                />
+        <div className="px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex flex-col gap-2 text-xs shrink-0 print:hidden">
+          {/* Primary Row: Group, Day, Toggle Options & Collapse/Expand */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Group Selector */}
+              <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-slate-300 shadow-2xs">
+                <Users className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                <span className="font-bold text-slate-700">กลุ่ม:</span>
+                <select
+                  value={selectedGroup}
+                  onChange={(e) => {
+                    const val = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
+                    setSelectedGroup(val);
+                  }}
+                  className="bg-transparent font-bold text-purple-950 outline-none cursor-pointer"
+                >
+                  {availableGroups.map((g) => (
+                    <option key={g} value={g}>
+                      {g === 12 ? `กลุ่ม 12 (English)` : `กลุ่ม ${g}`}
+                    </option>
+                  ))}
+                  <option value="ALL">ทุกกลุ่ม (All)</option>
+                </select>
               </div>
-            )}
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            {/* Live Scanner & Badges Shortcuts */}
-            <button
-              type="button"
-              onClick={() => setIsLiveScannerOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-              title="เปิดจุดสแกนเช็คชื่ออัตโนมัติ (กล้องมือถือ/ปืนสแกนบาร์โค้ด)"
-            >
-              <Camera className="w-3.5 h-3.5" />
-              <span>จุดสแกนสด</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsBadgesModalOpen(true)}
-              className="px-3 py-1.5 rounded-xl border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-              title="พิมพ์ป้ายชื่อคล้องคอพร้อม QR Code สำหรับนิสิต"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-              <span>พิมพ์ป้ายคล้องคอ</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsEditingPeriods((v) => !v)}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                isEditingPeriods
-                  ? 'bg-purple-700 text-white border-purple-700'
-                  : 'border-purple-300 bg-white hover:bg-purple-50 text-purple-900'
-              }`}
-              title="แก้ไขช่วงเวลา 4 รอบ (เช่น 04.00-04.30) และบันทึกลงโครงการ"
-            >
-              <Clock className="w-3.5 h-3.5 text-purple-600" />
-              <span>⚙️ แก้ไขช่วงเวลา 4 รอบ</span>
-            </button>
+              {/* Day Selector */}
+              <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-slate-300 shadow-2xs">
+                <Calendar className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span className="font-bold text-slate-700">วันที่:</span>
+                <select
+                  value={selectedDayNumber}
+                  onChange={(e) => setSelectedDayNumber(parseInt(e.target.value, 10))}
+                  className="bg-transparent font-bold text-amber-950 outline-none cursor-pointer"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>
+                      วันที่ {d} ({10 + d} ธ.ค.)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-            {viewMode === 'INTERACTIVE' ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handleExportPdf}
-                  disabled={isExportingPdf}
-                  className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                  title="บันทึกแบบฟอร์มเอกสารเช็คชื่อเป็นไฟล์ PDF"
-                >
-                  {isExportingPdf ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <FileDown className="w-3.5 h-3.5" />
-                  )}
-                  <span>{isExportingPdf ? 'กำลังสร้าง PDF...' : 'บันทึก PDF (Save PDF)'}</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={isSaving}
-                  onClick={handleSaveAttendance}
-                  className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{isSaving ? 'กำลังบันทึก...' : 'บันทึกเวลาปฏิบัติ'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('PRINT_PREVIEW')}
-                  className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Printer className="w-3.5 h-3.5 text-slate-500" />
-                  <span>ดูแบบฟอร์มพิมพ์ A4</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <label className="flex items-center gap-1.5 text-xs text-slate-600 font-medium cursor-pointer mr-1">
-                  <input
-                    type="checkbox"
-                    checked={printBlankRows}
-                    onChange={(e) => setPrintBlankRows(e.target.checked)}
-                    className="rounded text-purple-600 focus:ring-purple-500"
-                  />
-                  <span>พิมพ์แบบฟอร์มเปล่า</span>
-                </label>
+            {/* Right Controls: Options & Collapse/Expand */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isToolbarCollapsed) {
+                    setIsToolbarCollapsed(false);
+                    setShowAdvancedControls(true);
+                  } else {
+                    setShowAdvancedControls((v) => !v);
+                  }
+                }}
+                className={`px-2 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                  showAdvancedControls && !isToolbarCollapsed
+                    ? 'bg-purple-700 text-white border-purple-700 shadow-2xs'
+                    : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-100'
+                }`}
+                title="แสดง/ซ่อนตัวเลือกเพิ่มเติม (แบบฟอร์ม, จัดการกลุ่ม, พิมพ์ A4/PDF)"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>ตัวเลือก</span>
+              </button>
 
-                {!printBlankRows && (
-                  <label className="flex items-center gap-1.5 text-xs text-purple-950 font-bold bg-purple-50 px-2 py-1 rounded-lg border border-purple-200 cursor-pointer mr-1" title="ซ่อนเครื่องหมาย ✓ ใน 4 ช่องเวลา เพื่อให้เป็นช่องว่างสำหรับเดินตรวจและเซ็นสด">
-                    <input
-                      type="checkbox"
-                      checked={hideCheckmarks}
-                      onChange={(e) => setHideCheckmarks(e.target.checked)}
-                      className="rounded text-purple-600 focus:ring-purple-500"
-                    />
-                    <span>ซ่อนเครื่องหมาย ✓ (เว้น 4 ช่องว่างสำหรับเซ็นสด)</span>
-                  </label>
+              <button
+                type="button"
+                onClick={() => setIsToolbarCollapsed((v) => !v)}
+                className="px-2 py-1 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-bold text-[11px] flex items-center gap-0.5 transition cursor-pointer shadow-2xs"
+                title={isToolbarCollapsed ? 'คลี่แถบค้นหาและปุ่มเครื่องมือออก' : 'หุบแถบเครื่องมือเพื่อขยายพื้นที่ดูรายชื่อผู้ปฏิบัติ'}
+              >
+                {isToolbarCollapsed ? (
+                  <>
+                    <span>คลี่ออก</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-purple-700" />
+                  </>
+                ) : (
+                  <>
+                    <span>หุบเข้า</span>
+                    <ChevronUp className="w-3.5 h-3.5 text-purple-700" />
+                  </>
                 )}
-
-                {/* Save PDF Button */}
-                <button
-                  type="button"
-                  onClick={handleExportPdf}
-                  disabled={isExportingPdf}
-                  className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                  title="บันทึกแบบฟอร์มนี้เป็นเอกสาร PDF ทันที"
-                >
-                  {isExportingPdf ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <FileDown className="w-3.5 h-3.5" />
-                  )}
-                  <span>{isExportingPdf ? 'กำลังสร้าง PDF...' : 'บันทึก PDF (Save PDF)'}</span>
-                </button>
-
-                {/* Print Button */}
-                <button
-                  type="button"
-                  onClick={handlePrintA4}
-                  className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>สั่งพิมพ์เอกสาร A4 (Print Now)</span>
-                </button>
-              </>
-            )}
+              </button>
+            </div>
           </div>
+
+          {/* Collapsible Section: Search & Quick Actions */}
+          {!isToolbarCollapsed && (
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-200/70">
+              {/* Search Box in interactive mode */}
+              {viewMode === 'INTERACTIVE' && (
+                <div className="relative flex-1 sm:flex-initial min-w-[160px]">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหารหัส หรือชื่อนิสิต..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full sm:w-52 pl-8 pr-2.5 py-1 bg-white rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsLiveScannerOpen(true)}
+                  className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1 cursor-pointer shadow-xs"
+                  title="เปิดจุดสแกนเช็คชื่ออัตโนมัติ (กล้องมือถือ/ปืนสแกนบาร์โค้ด)"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>จุดสแกนสด</span>
+                </button>
+
+                {viewMode === 'INTERACTIVE' && (
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={handleSaveAttendance}
+                    className="px-3 py-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition flex items-center gap-1 cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{isSaving ? 'กำลังบันทึก...' : `บันทึก (วันที่ ${selectedDayNumber})`}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Hidden by Default (Advanced Controls): Form Type, Manage Group, Periods, PDF/A4 */}
+          {!isToolbarCollapsed && showAdvancedControls && (
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Language / Program Mode */}
+                <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-slate-300 text-xs">
+                  <Globe className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="font-bold text-slate-700">แบบฟอร์ม:</span>
+                  <select
+                    value={programMode}
+                    onChange={(e) => setProgramMode(e.target.value as any)}
+                    className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
+                  >
+                    <option value="AUTO">อัตโนมัติตามกลุ่ม</option>
+                    <option value="THAI">🇹🇭 ภาษาไทย (บรรพชิต/คฤหัสถ์)</option>
+                    <option value="ENGLISH">🌐 English Program</option>
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsGroupAssignmentModalOpen(true)}
+                  className="px-2.5 py-1 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-[11px] flex items-center gap-1 transition cursor-pointer"
+                >
+                  <Users className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>👥 จัดการผู้ดูแลประจำกลุ่ม</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEditingPeriods((v) => !v)}
+                  className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs ${
+                    isEditingPeriods
+                      ? 'bg-purple-700 text-white border-purple-700'
+                      : 'border-purple-300 bg-white hover:bg-purple-50 text-purple-900'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 text-purple-600" />
+                  <span>⚙️ แก้ไขช่วงเวลา 4 รอบ</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsBadgesModalOpen(true)}
+                  className="px-2.5 py-1 rounded-xl border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-[11px] transition flex items-center gap-1 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                  <span>พิมพ์ป้ายคล้องคอ</span>
+                </button>
+
+                {viewMode === 'INTERACTIVE' ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleExportPdf}
+                      disabled={isExportingPdf}
+                      className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      {isExportingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                      <span>{isExportingPdf ? 'กำลังสร้าง PDF...' : 'บันทึก PDF'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('PRINT_PREVIEW')}
+                      className="px-2.5 py-1 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[11px] transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-slate-500" />
+                      <span>แบบฟอร์มพิมพ์ A4</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <label className="flex items-center gap-1 text-[11px] text-slate-600 font-medium cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={printBlankRows}
+                        onChange={(e) => setPrintBlankRows(e.target.checked)}
+                        className="rounded text-purple-600 focus:ring-purple-500"
+                      />
+                      <span>พิมพ์เปล่า</span>
+                    </label>
+                    {!printBlankRows && (
+                      <label className="flex items-center gap-1 text-[11px] text-purple-950 font-bold bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hideCheckmarks}
+                          onChange={(e) => setHideCheckmarks(e.target.checked)}
+                          className="rounded text-purple-600 focus:ring-purple-500"
+                        />
+                        <span>ซ่อน ✓</span>
+                      </label>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleExportPdf}
+                      disabled={isExportingPdf}
+                      className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      {isExportingPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                      <span>บันทึก PDF</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePrintA4}
+                      className="px-3 py-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>สั่งพิมพ์ A4</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ACTIVE GROUP ASSIGNMENT INFO BANNER */}
-        {selectedGroup !== 'ALL' && (
+        {/* ACTIVE GROUP ASSIGNMENT INFO BANNER (Visible when expanded) */}
+        {!isToolbarCollapsed && showAdvancedControls && selectedGroup !== 'ALL' && (
           <div className="px-4 py-2 bg-indigo-50/70 border-b border-indigo-100 flex flex-wrap items-center justify-between gap-2 text-xs print:hidden">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="font-bold text-indigo-950 flex items-center gap-1.5">
@@ -806,48 +860,52 @@ export function VipassanaAttendanceSheetModal({
               )}
 
               {/* Stat Summary Cards & Period Summary */}
-              <VipassanaAttendanceStatsBar
-                p1Conf={p1Conf}
-                p2Conf={p2Conf}
-                p3Conf={p3Conf}
-                p4Conf={p4Conf}
-                stats={stats}
-                isEditingPeriods={isEditingPeriods}
-                setIsEditingPeriods={setIsEditingPeriods}
-                onMarkAllPeriodPresent={handleMarkAllPeriodPresent}
-              />
+              {!isToolbarCollapsed && (
+                <VipassanaAttendanceStatsBar
+                  p1Conf={p1Conf}
+                  p2Conf={p2Conf}
+                  p3Conf={p3Conf}
+                  p4Conf={p4Conf}
+                  stats={stats}
+                  isEditingPeriods={isEditingPeriods}
+                  setIsEditingPeriods={setIsEditingPeriods}
+                  onMarkAllPeriodPresent={handleMarkAllPeriodPresent}
+                />
+              )}
 
               {/* Dynamic Late Evaluation Toolbar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 bg-purple-50/70 border border-purple-200/90 px-3.5 py-2.5 rounded-2xl text-xs">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Timer className="w-4 h-4 text-purple-700 shrink-0" />
-                  <span className="font-extrabold text-purple-950">
-                    ปรับสถานะสายอัตโนมัติจากเวลาที่บันทึกไว้:
-                  </span>
-                  <span className="text-slate-600">หากเวลาเข้าเกิน</span>
-                  <select
-                    value={lateGraceMinutes}
-                    onChange={(e) => setLateGraceMinutes(parseInt(e.target.value, 10))}
-                    className="px-2 py-1 bg-white rounded-lg border border-purple-300 font-extrabold text-purple-950 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+              {!isToolbarCollapsed && showAdvancedControls && (
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-purple-50/70 border border-purple-200/90 px-3.5 py-2.5 rounded-2xl text-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Timer className="w-4 h-4 text-purple-700 shrink-0" />
+                    <span className="font-extrabold text-purple-950">
+                      ปรับสถานะสายอัตโนมัติจากเวลาที่บันทึกไว้:
+                    </span>
+                    <span className="text-slate-600">หากเวลาเข้าเกิน</span>
+                    <select
+                      value={lateGraceMinutes}
+                      onChange={(e) => setLateGraceMinutes(parseInt(e.target.value, 10))}
+                      className="px-2 py-1 bg-white rounded-lg border border-purple-300 font-extrabold text-purple-950 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    >
+                      <option value={10}>10 นาที</option>
+                      <option value={15}>15 นาที (มาตรฐาน)</option>
+                      <option value={20}>20 นาที</option>
+                      <option value={30}>30 นาที (ผ่อนปรน)</option>
+                      <option value={45}>45 นาที</option>
+                    </select>
+                    <span className="text-slate-600 font-medium">จากเวลาเริ่มรอบ ➔ ปรับเป็น "สาย"</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAutoEvaluateLate}
+                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer shadow-xs flex items-center gap-1.5"
+                    title="คำนวณและปรับสถานะ มา/สาย ให้ทุกคนในกลุ่มตามเวลาที่บันทึกไว้ทันที"
                   >
-                    <option value={10}>10 นาที</option>
-                    <option value={15}>15 นาที (มาตรฐาน)</option>
-                    <option value={20}>20 นาที</option>
-                    <option value={30}>30 นาที (ผ่อนปรน)</option>
-                    <option value={45}>45 นาที</option>
-                  </select>
-                  <span className="text-slate-600 font-medium">จากเวลาเริ่มรอบ ➔ ปรับเป็น "สาย"</span>
+                    <Timer className="w-3.5 h-3.5" />
+                    <span>คำนวณปรับสถานะสาย</span>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAutoEvaluateLate}
-                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer shadow-xs flex items-center gap-1.5"
-                  title="คำนวณและปรับสถานะ มา/สาย ให้ทุกคนในกลุ่มตามเวลาที่บันทึกไว้ทันที"
-                >
-                  <Timer className="w-3.5 h-3.5" />
-                  <span>คำนวณปรับสถานะสาย</span>
-                </button>
-              </div>
+              )}
 
               {/* Attendance Table */}
               <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">

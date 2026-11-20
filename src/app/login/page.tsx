@@ -202,7 +202,17 @@ function LoginForm() {
   const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
 
   const navigateAfterAuth = (user: AuthUser) => {
-    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.role === 'OFFICER') {
+    const requestedRedirect = searchParams.get('redirect');
+    if (requestedRedirect && requestedRedirect.startsWith('/')) {
+      router.push(requestedRedirect);
+      return;
+    }
+    if (
+      user.role === 'SUPER_ADMIN' ||
+      user.role === 'ADMIN' ||
+      user.role === 'OFFICER' ||
+      user.role === 'VIPASSANA_MASTER'
+    ) {
       router.push('/admin');
     } else if (user.role === 'STUDENT') {
       router.push('/certificates');

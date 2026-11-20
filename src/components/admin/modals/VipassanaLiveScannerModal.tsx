@@ -16,6 +16,8 @@ import {
   Search,
   RefreshCw,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   ShieldCheck,
   UserCheck,
   SlidersHorizontal,
@@ -24,6 +26,7 @@ import {
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, MeditationPeriodConfig } from '@/types/event';
 import { playBeep, triggerHaptic } from '@/lib/utils/audio-feedback';
+import { getAuthUser } from '@/lib/auth-client';
 import jsQR from 'jsqr';
 
 interface BarcodeDetectorInstance {
@@ -83,6 +86,8 @@ export function VipassanaLiveScannerModal({
   const [evalMode, setEvalMode] = useState<'AUTO' | 'MANUAL'>('AUTO');
   const [lateGraceMinutes, setLateGraceMinutes] = useState<number>(15);
   const [showConfigDrawer, setShowConfigDrawer] = useState<boolean>(false);
+  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState<boolean>(false);
+  const [showAdvancedControls, setShowAdvancedControls] = useState<boolean>(false);
   const [periodPolicies, setPeriodPolicies] = useState<Record<PeriodKey, { startTime: string; endTime: string }>>(() => {
     const defaultPol: Record<PeriodKey, { startTime: string; endTime: string }> = {
       p1: { startTime: '04:30', endTime: '06:00' },
@@ -202,11 +207,40 @@ export function VipassanaLiveScannerModal({
   const [scannerOfficerName, setScannerOfficerName] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       try {
-        return localStorage.getItem('vipassana_scanner_officer_name') || '';
+        const saved = localStorage.getItem('vipassana_scanner_officer_name');
+        if (saved) return saved;
+        const currentUser = getAuthUser();
+        if (currentUser?.name) {
+          return String(currentUser.name).replace(/\s*\(.*?\)\s*$/, '').trim();
+        }
       } catch {}
     }
     return '';
   });
+
+  // Auto-select group if current user is assigned to a group in event.meditationConfig
+  useEffect(() => {
+    if (!isOpen || availableGroups.length === 0) return;
+    const currentUser = typeof window !== 'undefined' ? getAuthUser() : null;
+    const cleanUserName = String(currentUser?.name || scannerOfficerName || '')
+      .replace(/\s*\(.*?\)\s*$/, '')
+      .trim();
+    if (!cleanUserName) return;
+
+    const assignments = event.meditationConfig?.groupAssignments || {};
+    for (const g of availableGroups) {
+      const gConf = assignments[String(g)];
+      const advisors = gConf?.advisors || [];
+      const masters = gConf?.vipassanaMasters || [];
+      if (
+        advisors.some((a) => a.includes(cleanUserName) || cleanUserName.includes(a)) ||
+        masters.some((m) => m.includes(cleanUserName) || cleanUserName.includes(m))
+      ) {
+        setSelectedGroup(g);
+        break;
+      }
+    }
+  }, [isOpen, availableGroups, event.meditationConfig?.groupAssignments]);
 
   // Load offline queue on mount
   useEffect(() => {
@@ -721,222 +755,266 @@ export function VipassanaLiveScannerModal({
         </div>
 
         {/* SETTINGS / PERIOD SELECTOR TOOLBAR */}
-        <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            {/* Day Selector */}
+        <div className="px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex flex-col gap-2 text-xs shrink-0">
+          {/* Primary Always-Visible Row: Group, Day, Options & Collapse/Expand */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              {/* Group Selector for พระพี่เลี้ยง / Group Advisors */}
+              <div className="flex items-center gap-1 bg-purple-50/90 px-2.5 py-1 rounded-xl border border-purple-200 shadow-2xs">
+                <span className="font-extrabold text-purple-950 flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-purple-700" />
+                  กลุ่ม:
+                </span>
+                <select
+                  value={selectedGroup}
+                  onChange={(e) => {
+                    const val = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
+                    setSelectedGroup(val);
+                  }}
+                  className="bg-transparent font-bold text-purple-950 text-xs focus:outline-none cursor-pointer"
+                >
+                  <option value="ALL">ทุกกลุ่ม (ส่วนกลาง)</option>
+                  {availableGroups.map((g) => (
+                    <option key={g} value={g}>
+                      {g === 12 ? 'กลุ่ม 12 (English)' : `กลุ่ม ${g}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Day Selector */}
+              <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xl border border-slate-300 shadow-2xs">
+                <span className="font-bold text-slate-700">วันที่:</span>
+                <select
+                  value={selectedDayNumber}
+                  onChange={(e) => setSelectedDayNumber(parseInt(e.target.value, 10))}
+                  className="bg-transparent font-bold text-amber-950 focus:outline-none cursor-pointer"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>
+                      วันที่ {d} ({10 + d} ธ.ค.)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Right Controls: Progress + Options & Collapse/Expand */}
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-700">วันที่ปฏิบัติ:</span>
-              <select
-                value={selectedDayNumber}
-                onChange={(e) => setSelectedDayNumber(parseInt(e.target.value, 10))}
-                className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-bold text-amber-950 focus:outline-none"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>
-                    วันที่ {d} ({10 + d} ธ.ค.)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Group Selector for พระพี่เลี้ยง / Group Advisors */}
-            <div className="flex items-center gap-1.5 bg-purple-50/90 px-2.5 py-1 rounded-xl border border-purple-200 shadow-2xs">
-              <span className="font-extrabold text-purple-950 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-purple-700" />
-                กลุ่ม:
+              <span className="px-2 py-0.5 rounded-lg bg-purple-100 text-purple-900 font-mono font-bold text-[11px]">
+                {stats.checkedCount}/{stats.total} ({stats.percent}%)
               </span>
-              <select
-                value={selectedGroup}
-                onChange={(e) => {
-                  const val = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
-                  setSelectedGroup(val);
-                }}
-                className="px-2 py-0.5 bg-white rounded-lg border border-purple-300 font-bold text-purple-950 text-xs focus:outline-none cursor-pointer"
-              >
-                <option value="ALL">ทุกกลุ่ม (ส่วนกลาง)</option>
-                {availableGroups.map((g) => (
-                  <option key={g} value={g}>
-                    {g === 12 ? 'กลุ่มที่ 12 (English)' : `กลุ่มที่ ${g}`}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            {/* Scanner Officer Name (อาจารย์ผู้ดูแล / เจ้าหน้าที่ ที่สแกนตรวจเช็ค) */}
-            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-300 shadow-2xs">
-              <span className="font-semibold text-slate-600 text-[11px] whitespace-nowrap">ผู้สแกน:</span>
-              <input
-                type="text"
-                placeholder="ระบุชื่ออาจารย์/จนท..."
-                value={scannerOfficerName}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setScannerOfficerName(val);
-                  try {
-                    localStorage.setItem('vipassana_scanner_officer_name', val);
-                  } catch {}
-                }}
-                className="w-24 sm:w-36 text-xs font-bold text-slate-800 outline-none"
-              />
-            </div>
-
-            {/* Period Switcher */}
-            <div className="flex items-center gap-1 p-1 bg-slate-200/70 rounded-xl">
-              {(Object.keys(PERIOD_CONFIG) as PeriodKey[]).map((pkey) => {
-                const conf = PERIOD_CONFIG[pkey];
-                const isSelected = selectedPeriod === pkey;
-                return (
-                  <button
-                    key={pkey}
-                    type="button"
-                    onClick={() => setSelectedPeriod(pkey)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                      isSelected
-                        ? 'bg-purple-700 text-white shadow-xs'
-                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
-                    }`}
-                  >
-                    <span>{conf.nameTh}</span>
-                    <span className="text-[10px] font-mono opacity-80">({conf.timeRange})</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Evaluation Mode Switcher (AUTO vs MANUAL) */}
-            <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl">
               <button
                 type="button"
-                onClick={() => setEvalMode('AUTO')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                  evalMode === 'AUTO'
-                    ? 'bg-purple-700 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                onClick={() => {
+                  if (isToolbarCollapsed) {
+                    setIsToolbarCollapsed(false);
+                    setShowAdvancedControls(true);
+                  } else {
+                    setShowAdvancedControls((v) => !v);
+                  }
+                }}
+                className={`px-2 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                  showAdvancedControls && !isToolbarCollapsed
+                    ? 'bg-purple-700 text-white border-purple-700 shadow-2xs'
+                    : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-100'
                 }`}
-                title="ระบบจะคำนวณและตัดเป็น 'สาย' ให้อัตโนมัติเมื่อเกินเกณฑ์เวลาที่กำหนด"
-              >
-                <Timer className="w-3.5 h-3.5" />
-                <span>ตัดสายอัตโนมัติ (Auto)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setEvalMode('MANUAL')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                  evalMode === 'MANUAL'
-                    ? 'bg-purple-700 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-                title="Admin เลือกกำหนดสถานะที่ต้องการให้เป็นตามปุ่มที่เลือก"
+                title="แสดง/ซ่อนตัวเลือกเกณฑ์เวลาสายและผู้สแกน"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>เลือกสถานะเอง (Manual)</span>
+                <span>ตัวเลือก</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsToolbarCollapsed((v) => !v)}
+                className="px-2 py-1 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-bold text-[11px] flex items-center gap-0.5 transition cursor-pointer shadow-2xs"
+                title={isToolbarCollapsed ? 'คลี่แถบรอบเวลาออก' : 'หุบแถบเครื่องมือเพื่อขยายพื้นที่สแกนและรายชื่อ'}
+              >
+                {isToolbarCollapsed ? (
+                  <>
+                    <span>คลี่ออก</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-purple-700" />
+                  </>
+                ) : (
+                  <>
+                    <span>หุบเข้า</span>
+                    <ChevronUp className="w-3.5 h-3.5 text-purple-700" />
+                  </>
+                )}
               </button>
             </div>
+          </div>
 
-            {/* If AUTO: Late Threshold Dropdown & Policy summary */}
-            {evalMode === 'AUTO' ? (
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-950">
-                  <span className="font-bold text-[11px]">เกณฑ์เวลาสาย: เกิน</span>
-                  <select
-                    value={lateGraceMinutes}
-                    onChange={(e) => setLateGraceMinutes(parseInt(e.target.value, 10))}
-                    className="px-1.5 py-0.5 bg-white rounded border border-amber-300 font-extrabold text-amber-900 text-xs focus:outline-none cursor-pointer"
-                  >
-                    <option value={5}>5 นาที (เข้มงวด)</option>
-                    <option value={10}>10 นาที</option>
-                    <option value={15}>15 นาที (มาตรฐาน)</option>
-                    <option value={20}>20 นาที</option>
-                    <option value={25}>25 นาที</option>
-                    <option value={30}>30 นาที (ผ่อนปรน)</option>
-                    <option value={45}>45 นาที</option>
-                    <option value={60}>60 นาที (1 ชั่วโมง)</option>
-                  </select>
-                  <span className="text-[11px] font-bold">= สาย</span>
-                </div>
-
-                {/* Calculated Cutoff badge */}
-                {(() => {
-                  const [h, m] = (periodPolicies[selectedPeriod]?.startTime || '04:00').split(':').map(Number);
-                  const total = (h || 0) * 60 + (m || 0) + lateGraceMinutes;
-                  const cutH = Math.floor(total / 60) % 24;
-                  const cutM = total % 60;
-                  const cutStr = `${String(cutH).padStart(2, '0')}:${String(cutM).padStart(2, '0')}`;
+          {/* Collapsible Row: Period Switcher */}
+          {!isToolbarCollapsed && (
+            <div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-200/70">
+              {/* Period Switcher */}
+              <div className="flex items-center gap-1 p-1 bg-slate-200/70 rounded-xl flex-wrap">
+                {(Object.keys(PERIOD_CONFIG) as PeriodKey[]).map((pkey) => {
+                  const conf = PERIOD_CONFIG[pkey];
+                  const isSelected = selectedPeriod === pkey;
                   return (
-                    <span className="text-[11px] text-slate-600 font-medium">
-                      (เริ่ม {periodPolicies[selectedPeriod]?.startTime} น. ➔ สแกนหลัง <strong>{cutStr} น.</strong> ปรับเป็นสาย)
-                    </span>
+                    <button
+                      key={pkey}
+                      type="button"
+                      onClick={() => setSelectedPeriod(pkey)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-purple-700 text-white shadow-xs'
+                          : 'text-slate-700 hover:text-slate-900 hover:bg-white/50'
+                      }`}
+                    >
+                      <span>{conf.nameTh}</span>
+                      <span className="text-[10px] font-mono opacity-80 hidden sm:inline">({conf.timeRange})</span>
+                    </button>
                   );
-                })()}
+                })}
+              </div>
 
+              {/* Scanner Officer Name (อาจารย์ผู้ดูแล / เจ้าหน้าที่ ที่สแกนตรวจเช็ค) */}
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-300 shadow-2xs">
+                <span className="font-semibold text-slate-600 text-[11px] whitespace-nowrap">ผู้สแกน:</span>
+                <input
+                  type="text"
+                  placeholder="ระบุชื่ออาจารย์/จนท..."
+                  value={scannerOfficerName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setScannerOfficerName(val);
+                    try {
+                      localStorage.setItem('vipassana_scanner_officer_name', val);
+                    } catch {}
+                  }}
+                  className="w-28 sm:w-36 text-xs font-bold text-slate-800 outline-none"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Advanced Controls (Hidden by default on mobile to keep screen clean) */}
+          {!isToolbarCollapsed && showAdvancedControls && (
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-200 animate-in fade-in duration-150">
+              {/* Evaluation Mode Switcher (AUTO vs MANUAL) */}
+              <div className="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl">
                 <button
                   type="button"
-                  onClick={() => setShowConfigDrawer((v) => !v)}
-                  className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer transition flex items-center gap-1"
-                  title="แก้ไขเวลาเริ่มต้นและสิ้นสุดของแต่ละรอบ"
+                  onClick={() => setEvalMode('AUTO')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                    evalMode === 'AUTO'
+                      ? 'bg-purple-700 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="ระบบจะคำนวณและตัดเป็น 'สาย' ให้อัตโนมัติเมื่อเกินเกณฑ์เวลาที่กำหนด"
                 >
-                  <SlidersHorizontal className="w-3 h-3 text-slate-500" />
-                  <span>{showConfigDrawer ? 'ซ่อนตั้งเวลา' : '⚙️ ปรับเวลาเริ่มรอบ'}</span>
+                  <Timer className="w-3.5 h-3.5" />
+                  <span>ตัดสายอัตโนมัติ (Auto)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEvalMode('MANUAL')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                    evalMode === 'MANUAL'
+                      ? 'bg-purple-700 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Admin เลือกกำหนดสถานะที่ต้องการให้เป็นตามปุ่มที่เลือก"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>เลือกสถานะเอง (Manual)</span>
                 </button>
               </div>
-            ) : (
-              /* If MANUAL: Status buttons */
-              <div className="flex items-center gap-1">
-                <span className="font-bold text-slate-700">สถานะที่บันทึก:</span>
-                <div className="inline-flex rounded-lg border border-slate-300 p-0.5 bg-white">
+
+              {/* If AUTO: Late Threshold Dropdown & Policy summary */}
+              {evalMode === 'AUTO' ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-950">
+                    <span className="font-bold text-[11px]">เกณฑ์เวลาสาย: เกิน</span>
+                    <select
+                      value={lateGraceMinutes}
+                      onChange={(e) => setLateGraceMinutes(parseInt(e.target.value, 10))}
+                      className="px-1.5 py-0.5 bg-white rounded border border-amber-300 font-extrabold text-amber-900 text-xs focus:outline-none cursor-pointer"
+                    >
+                      <option value={5}>5 นาที (เข้มงวด)</option>
+                      <option value={10}>10 นาที</option>
+                      <option value={15}>15 นาที (มาตรฐาน)</option>
+                      <option value={20}>20 นาที</option>
+                      <option value={25}>25 นาที</option>
+                      <option value={30}>30 นาที (ผ่อนปรน)</option>
+                      <option value={45}>45 นาที</option>
+                      <option value={60}>60 นาที (1 ชั่วโมง)</option>
+                    </select>
+                    <span className="text-[11px] font-bold">= สาย</span>
+                  </div>
+
+                  {/* Calculated Cutoff badge */}
+                  {(() => {
+                    const [h, m] = (periodPolicies[selectedPeriod]?.startTime || '04:00').split(':').map(Number);
+                    const total = (h || 0) * 60 + (m || 0) + lateGraceMinutes;
+                    const cutH = Math.floor(total / 60) % 24;
+                    const cutM = total % 60;
+                    const cutStr = `${String(cutH).padStart(2, '0')}:${String(cutM).padStart(2, '0')}`;
+                    return (
+                      <span className="text-[11px] text-slate-600 font-medium">
+                        (เริ่ม {periodPolicies[selectedPeriod]?.startTime} น. ➔ หลัง <strong>{cutStr} น.</strong> = สาย)
+                      </span>
+                    );
+                  })()}
+
                   <button
                     type="button"
-                    onClick={() => setStatusMode('PRESENT')}
-                    className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
-                      statusMode === 'PRESENT'
-                        ? 'bg-emerald-600 text-white'
-                        : 'text-slate-600 hover:text-emerald-700'
-                    }`}
+                    onClick={() => setShowConfigDrawer((v) => !v)}
+                    className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold cursor-pointer transition flex items-center gap-1"
+                    title="แก้ไขเวลาเริ่มต้นและสิ้นสุดของแต่ละรอบ"
                   >
-                    ปกติ (มา)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatusMode('LATE')}
-                    className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
-                      statusMode === 'LATE'
-                        ? 'bg-amber-500 text-white'
-                        : 'text-slate-600 hover:text-amber-700'
-                    }`}
-                  >
-                    สาย
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStatusMode('SICK')}
-                    className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
-                      statusMode === 'SICK'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-600 hover:text-blue-700'
-                    }`}
-                  >
-                    ป่วย
+                    <SlidersHorizontal className="w-3 h-3 text-slate-500" />
+                    <span>{showConfigDrawer ? 'ซ่อนตั้งเวลา' : '⚙️ ปรับเวลาเริ่มรอบ'}</span>
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Progress / Stats */}
-          <div className="flex items-center gap-2">
-            <div className="text-right">
-              <div className="text-[10px] text-slate-500">สแกนรอบนี้แล้ว</div>
-              <div className="font-mono font-black text-purple-900 text-sm">
-                {stats.checkedCount} / {stats.total} รูป ({stats.percent}%)
-              </div>
+              ) : (
+                /* If MANUAL: Status buttons */
+                <div className="flex items-center gap-1">
+                  <span className="font-bold text-slate-700">สถานะที่บันทึก:</span>
+                  <div className="inline-flex rounded-lg border border-slate-300 p-0.5 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setStatusMode('PRESENT')}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
+                        statusMode === 'PRESENT'
+                          ? 'bg-emerald-600 text-white'
+                          : 'text-slate-600 hover:text-emerald-700'
+                      }`}
+                    >
+                      ปกติ (มา)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusMode('LATE')}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
+                        statusMode === 'LATE'
+                          ? 'bg-amber-500 text-white'
+                          : 'text-slate-600 hover:text-amber-700'
+                      }`}
+                    >
+                      สาย
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStatusMode('SICK')}
+                      className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer transition ${
+                        statusMode === 'SICK'
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-600 hover:text-blue-700'
+                      }`}
+                    >
+                      ป่วย
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-purple-600 transition-all duration-300"
-                style={{ width: `${stats.percent}%` }}
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Policy Time Editor Drawer */}
