@@ -148,28 +148,12 @@ export function RollCallTab({
 }: RollCallTabProps) {
   const { t, isEn: isLangEn } = useLanguage();
 
-  // Collapsible states for non-roster panels (collapsed by default on mobile < 768px so student roster cards appear immediately)
+  // Collapsible state controlled by the single red chevron button at the bottom-right corner
+  // When false (default), ONLY the core blue-frame items (Instructor, Course, Date, and 1-line Session Summary) are shown!
+  const [isExtraToolsOpen, setIsExtraToolsOpen] = useState(false);
   const [showRoadmapBanner, setShowRoadmapBanner] = useState(false);
   const [showCourseCards, setShowCourseCards] = useState(false);
-  const [showSessionDetails, setShowSessionDetails] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-      setShowRoadmapBanner(true);
-      setShowCourseCards(true);
-      setShowSessionDetails(true);
-    }
-  }, []);
-
-  const isAnyPanelExpanded = showRoadmapBanner || showCourseCards || showSessionDetails;
-
-  const toggleAllPanels = () => {
-    const nextState = !isAnyPanelExpanded;
-    setShowRoadmapBanner(nextState);
-    setShowCourseCards(nextState);
-    setShowSessionDetails(nextState);
-  };
 
   // Filtered sections by studentSearch query
   const filteredGroupedSections = useMemo(() => {
@@ -286,111 +270,15 @@ export function RollCallTab({
         </div>
       )}
 
-      {/* Filter Panel: Compact Course & Date Selector + Collapsible Drawers */}
+      {/* Filter Panel: Core Blue-Frame Items + Bottom-Right Red Chevron Toggle */}
       <div
         id="roll-call-section"
         className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3"
       >
-        {/* Top Quick Toggle Bar for Collapsing/Expanding Menus & Course Cards */}
-        <div className="flex flex-wrap items-center justify-between gap-1.5 pb-2.5 border-b border-slate-100">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {/* Toggle 1: Course Cards Grid */}
-            {availableCourses.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowCourseCards((prev) => !prev)}
-                className={`px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border flex items-center gap-1 transition cursor-pointer ${
-                  showCourseCards
-                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                <span>การ์ดวิชา ({availableCourses.length})</span>
-                {showCourseCards ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
-            )}
-
-            {/* Toggle 2: Session Details & Filters */}
-            {currentCourse && (
-              <button
-                type="button"
-                onClick={() => setShowSessionDetails((prev) => !prev)}
-                className={`px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border flex items-center gap-1 transition cursor-pointer ${
-                  showSessionDetails
-                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-2xs'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
-                <span>ข้อมูลคาบที่ {sessionCustom.sessionNumber} & ตัวกรอง</span>
-                {showSessionDetails ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
-            )}
-
-            {/* Toggle 3: 16-Week Roadmap Banner */}
-            {currentCourse && (
-              <button
-                type="button"
-                onClick={() => setShowRoadmapBanner((prev) => !prev)}
-                className={`px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border flex items-center gap-1 transition cursor-pointer ${
-                  showRoadmapBanner
-                    ? 'bg-teal-700 text-white border-teal-800 shadow-2xs'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5 shrink-0" />
-                <span>แผนผัง ({completedSessionsCount}/{semesterTotalSessions})</span>
-                {showRoadmapBanner ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5 ml-auto">
-            {/* Quick 1-Click Next Session button when Roadmap Banner is collapsed */}
-            {!showRoadmapBanner && nextUpcomingSession && (
-              <button
-                type="button"
-                onClick={() => handleFastOpenSession(nextUpcomingSession)}
-                className="px-2.5 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-300 text-[11px] font-extrabold flex items-center gap-1 transition cursor-pointer"
-                title={`เปิดเช็คชื่อคาบถัดไป: คาบที่ ${nextUpcomingSession.sessionNumber} (${nextUpcomingSession.dateFormattedTh})`}
-              >
-                <span>🚀 คาบที่ {nextUpcomingSession.sessionNumber}</span>
-              </button>
-            )}
-
-            {/* Master Expand/Collapse All button */}
-            <button
-              type="button"
-              onClick={toggleAllPanels}
-              className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
-            >
-              <span>{isAnyPanelExpanded ? 'ยุบเมนูทั้งหมด' : 'คลี่เมนูทั้งหมด'}</span>
-              {isAnyPanelExpanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Core Selectors: Course Dropdown & Date (Always visible in compact form; Lecturer shown when expanded or for Admin) */}
+        {/* Core Selectors (Blue Frame): 1. อาจารย์ผู้สอน, 2. รายวิชาที่สอน, 3. วันที่สอน/เช็คชื่อ */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-4">
-          {/* 1. อาจารย์ผู้สอน (ซ่อนบนมือถือเมื่อยุบเมนู เพื่อประหยัดพื้นที่สำหรับอาจารย์ที่ล็อกวิชาอยู่แล้ว) */}
-          <div className={`${!showSessionDetails && isTeacher ? 'hidden md:block' : 'block'}`}>
+          {/* 1. อาจารย์ผู้สอน */}
+          <div>
             <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-emerald-600" />
               อาจารย์ผู้รับผิดชอบบรรยาย:
@@ -500,134 +388,11 @@ export function RollCallTab({
           </div>
         </div>
 
-        {/* COURSE CARDS GRID (Collapsible) */}
-        {availableCourses.length > 0 && showCourseCards && (
-          <div className="pt-2 border-t border-slate-100 space-y-2.5 animate-in fade-in duration-150">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>
-                  การ์ดรายวิชาที่รับผิดชอบสอน ({availableCourses.length} วิชา) —
-                  แตะการ์ดเพื่อสลับวิชาได้ทันที:
-                </span>
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="hidden sm:inline text-[11px] text-slate-400">
-                  แยกสีตามหลักสูตรภาษาไทย (เขียว) และหลักสูตรนานาชาติ Inter/EN (คราม)
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowCourseCards(false)}
-                  className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  <span>ยุบการ์ดวิชา</span>
-                  <ChevronUp className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-              {availableCourses.map((c, idx) => {
-                const sKey = (c as any).sectionKey || c.courseCode;
-                const currentKey = (currentCourse as any)?.sectionKey || selectedCourseCode;
-                const isSelected = sKey === currentKey;
-                const isEn = checkIsEnglishCourse(c);
-                const sharedMajors: string[] = (c as any).sharedMajors || [];
-
-                return (
-                  <button
-                    key={`card-${sKey}-${idx}`}
-                    type="button"
-                    onClick={() => {
-                      handleCourseChange(sKey);
-                      if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                        setShowCourseCards(false);
-                      }
-                    }}
-                    className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                      isSelected
-                        ? isEn
-                          ? 'bg-gradient-to-br from-indigo-600 to-blue-700 text-white border-indigo-700 shadow-md ring-2 ring-indigo-400/40'
-                          : 'bg-gradient-to-br from-emerald-600 to-teal-700 text-white border-emerald-700 shadow-md ring-2 ring-emerald-400/40'
-                        : 'bg-slate-50/70 hover:bg-white text-slate-800 border-slate-200/90 hover:border-emerald-400 hover:shadow-xs'
-                    }`}
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-1.5">
-                        <span
-                          className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-lg ${
-                            isSelected
-                              ? 'bg-white/20 text-white'
-                              : isEn
-                              ? 'bg-indigo-100 text-indigo-900'
-                              : 'bg-emerald-100 text-emerald-900'
-                          }`}
-                        >
-                          {c.courseCode}
-                        </span>
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            isSelected
-                              ? 'bg-white/20 text-white'
-                              : isEn
-                              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          }`}
-                        >
-                          {isEn ? '🌐 Inter/EN' : '🇹🇭 ภาคไทย'} • ปี {c.yearLevel || 1}
-                        </span>
-                      </div>
-
-                      <div
-                        className={`font-bold text-xs leading-snug line-clamp-2 ${
-                          isSelected ? 'text-white' : 'text-slate-900'
-                        }`}
-                      >
-                        {c.courseName}
-                      </div>
-
-                      {sharedMajors.length > 1 && (
-                        <div
-                          className={`text-[10px] font-semibold truncate ${
-                            isSelected ? 'text-white/85' : 'text-slate-500'
-                          }`}
-                          title={`เรียนรวม ${sharedMajors.length} สาขาวิชา: ${sharedMajors.join(' • ')}`}
-                        >
-                          👥 เรียนรวม {sharedMajors.length} สาขา ({sharedMajors.join(', ')})
-                        </div>
-                      )}
-                    </div>
-
-                    <div
-                      className={`flex items-center justify-between text-[11px] pt-1.5 border-t ${
-                        isSelected
-                          ? 'border-white/20 text-white/90'
-                          : 'border-slate-200/80 text-slate-500'
-                      }`}
-                    >
-                      <span className="truncate">
-                        📅 {formatDayLabel(c.dayOfWeek, isEn)}{' '}
-                        {c.startTime ? `${c.startTime}-${c.endTime}` : ''}
-                      </span>
-                      <span
-                        className="font-bold shrink-0 ml-1 truncate max-w-[140px]"
-                        title={c.room || '-'}
-                      >
-                        🚪 {c.room || '-'}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* COMPACT SESSION SUMMARY BAR (Shown when showSessionDetails is false) */}
-        {currentCourse && !showSessionDetails && (
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
-            <div className="flex flex-wrap items-center gap-1.5 text-slate-700">
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-900 text-white">
+        {/* 4. Bottom Row of Blue Frame: Compact Session Summary + Bottom-Right Red Chevron Toggle */}
+        {currentCourse && (
+          <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5 text-slate-700 min-w-0">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-900 text-white shrink-0">
                 คาบที่ {sessionCustom.sessionNumber}
               </span>
               <span className="font-bold text-slate-900">{currentCourse.courseCode}</span>
@@ -636,97 +401,251 @@ export function RollCallTab({
                 ⏰ {sessionCustom.startTime}-{sessionCustom.endTime}
               </span>
               <span className="text-slate-400">•</span>
-              <span className="text-[11px] text-slate-600 font-semibold">
+              <span className="text-[11px] text-slate-700 font-semibold">
                 🚪 {sessionCustom.room}
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            {/* Red Chevron Toggle Button at Bottom-Right Corner (shown here when collapsed) */}
+            {!isExtraToolsOpen && (
               <button
                 type="button"
-                onClick={() => setShowSessionModal(true)}
-                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                onClick={() => setIsExtraToolsOpen(true)}
+                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition cursor-pointer shrink-0 shadow-2xs"
+                title="คลี่เครื่องมือเสริม (ตั้งค่าคาบ, ตัวกรองหลักสูตร, การ์ดวิชา, แผนผัง 16 คาบ)"
+                aria-label="คลี่เครื่องมือเสริม"
               >
-                <SlidersHorizontal className="w-3 h-3 shrink-0" />
-                <span>⚙️ ตั้งค่าคาบ</span>
+                <ChevronDown className="w-5 h-5 stroke-[2.75]" />
               </button>
-              <button
-                type="button"
-                onClick={() => setShowSessionDetails(true)}
-                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold flex items-center gap-0.5 transition cursor-pointer"
-              >
-                <span>ตัวกรอง</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            )}
           </div>
         )}
 
-        {/* ENHANCED SESSION BANNER (Collapsible) */}
-        {currentCourse &&
-          showSessionDetails &&
-          (() => {
-            const isEn =
-              /inter|eng|english|นานาชาติ/i.test(currentCourse.timetableTitle || '') ||
-              /^[A-Za-z0-9\s:,-]+$/.test(currentCourse.courseName);
-            const allCo = [
-              ...sessionCustom.coInstructors,
-              ...(sessionCustom.customCoInstructorText
-                ? sessionCustom.customCoInstructorText.split(',').map((s) => s.trim())
-                : []),
-            ].filter(Boolean);
+        {/* ─────────────────────────────────────────────────────────────
+            EXPANDED EXTRA TOOLS DRAWER (Only shown when Red Chevron is clicked)
+           ───────────────────────────────────────────────────────────── */}
+        {currentCourse && isExtraToolsOpen && (
+          <div className="pt-3 border-t border-slate-200/80 space-y-3 animate-in fade-in duration-150">
+            {/* Quick Action Buttons inside Extra Tools Drawer */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowSessionModal(true)}
+                className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
+                <span>⚙️ ตั้งค่าคาบ</span>
+              </button>
 
-            const sessionTypeConfig = {
-              NORMAL: {
+              {nextUpcomingSession && (
+                <button
+                  type="button"
+                  onClick={() => handleFastOpenSession(nextUpcomingSession)}
+                  className="px-2.5 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-300 text-[11px] sm:text-xs font-extrabold flex items-center gap-1 transition cursor-pointer"
+                  title={`เปิดเช็คชื่อคาบถัดไป: คาบที่ ${nextUpcomingSession.sessionNumber} (${nextUpcomingSession.dateFormattedTh})`}
+                >
+                  <span>🚀 เปิดคาบที่ {nextUpcomingSession.sessionNumber}</span>
+                </button>
+              )}
+
+              {availableCourses.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowCourseCards((prev) => !prev)}
+                  className={`px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border flex items-center gap-1 transition cursor-pointer ${
+                    showCourseCards
+                      ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                  <span>การ์ดวิชา ({availableCourses.length})</span>
+                  {showCourseCards ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowRoadmapBanner((prev) => !prev)}
+                className={`px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold border flex items-center gap-1 transition cursor-pointer ${
+                  showRoadmapBanner
+                    ? 'bg-teal-700 text-white border-teal-800 shadow-2xs'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 shrink-0" />
+                <span>แผนผัง ({completedSessionsCount}/{semesterTotalSessions})</span>
+                {showRoadmapBanner ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+
+            {/* COURSE CARDS GRID (Sub-collapsible inside drawer) */}
+            {availableCourses.length > 0 && showCourseCards && (
+              <div className="pt-2 border-t border-slate-100 space-y-2.5 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      การ์ดรายวิชาที่รับผิดชอบสอน ({availableCourses.length} วิชา) —
+                      แตะการ์ดเพื่อสลับวิชาได้ทันที:
+                    </span>
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  {availableCourses.map((c, idx) => {
+                    const sKey = (c as any).sectionKey || c.courseCode;
+                    const currentKey = (currentCourse as any)?.sectionKey || selectedCourseCode;
+                    const isSelected = sKey === currentKey;
+                    const isEn = checkIsEnglishCourse(c);
+                    const sharedMajors: string[] = (c as any).sharedMajors || [];
+
+                    return (
+                      <button
+                        key={`card-${sKey}-${idx}`}
+                        type="button"
+                        onClick={() => {
+                          handleCourseChange(sKey);
+                          if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                            setShowCourseCards(false);
+                          }
+                        }}
+                        className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                          isSelected
+                            ? isEn
+                              ? 'bg-gradient-to-br from-indigo-600 to-blue-700 text-white border-indigo-700 shadow-md ring-2 ring-indigo-400/40'
+                              : 'bg-gradient-to-br from-emerald-600 to-teal-700 text-white border-emerald-700 shadow-md ring-2 ring-emerald-400/40'
+                            : 'bg-slate-50/70 hover:bg-white text-slate-800 border-slate-200/90 hover:border-emerald-400 hover:shadow-xs'
+                        }`}
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span
+                              className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-lg ${
+                                isSelected
+                                  ? 'bg-white/20 text-white'
+                                  : isEn
+                                  ? 'bg-indigo-100 text-indigo-900'
+                                  : 'bg-emerald-100 text-emerald-900'
+                              }`}
+                            >
+                              {c.courseCode}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                isSelected
+                                  ? 'bg-white/20 text-white'
+                                  : isEn
+                                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              }`}
+                            >
+                              {isEn ? '🌐 Inter/EN' : '🇹🇭 ภาคไทย'} • ปี {c.yearLevel || 1}
+                            </span>
+                          </div>
+
+                          <div
+                            className={`font-bold text-xs leading-snug line-clamp-2 ${
+                              isSelected ? 'text-white' : 'text-slate-900'
+                            }`}
+                          >
+                            {c.courseName}
+                          </div>
+
+                          {sharedMajors.length > 1 && (
+                            <div
+                              className={`text-[10px] font-semibold truncate ${
+                                isSelected ? 'text-white/85' : 'text-slate-500'
+                              }`}
+                              title={`เรียนรวม ${sharedMajors.length} สาขาวิชา: ${sharedMajors.join(' • ')}`}
+                            >
+                              👥 เรียนรวม {sharedMajors.length} สาขา ({sharedMajors.join(', ')})
+                            </div>
+                          )}
+                        </div>
+
+                        <div
+                          className={`flex items-center justify-between text-[11px] pt-1.5 border-t ${
+                            isSelected
+                              ? 'border-white/20 text-white/90'
+                              : 'border-slate-200/80 text-slate-500'
+                          }`}
+                        >
+                          <span className="truncate">
+                            📅 {formatDayLabel(c.dayOfWeek, isEn)}{' '}
+                            {c.startTime ? `${c.startTime}-${c.endTime}` : ''}
+                          </span>
+                          <span
+                            className="font-bold shrink-0 ml-1 truncate max-w-[140px]"
+                            title={c.room || '-'}
+                          >
+                            🚪 {c.room || '-'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ENHANCED SESSION DETAILS & PROGRAM FILTER */}
+            {(() => {
+              const isEn =
+                /inter|eng|english|นานาชาติ/i.test(currentCourse.timetableTitle || '') ||
+                /^[A-Za-z0-9\s:,-]+$/.test(currentCourse.courseName);
+              const allCo = [
+                ...sessionCustom.coInstructors,
+                ...(sessionCustom.customCoInstructorText
+                  ? sessionCustom.customCoInstructorText.split(',').map((s) => s.trim())
+                  : []),
+              ].filter(Boolean);
+
+              const sessionTypeConfig = {
+                NORMAL: {
+                  label: 'คาบเรียนปกติ',
+                  color: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                },
+                MAKEUP: {
+                  label: 'คาบสอนชดเชย',
+                  color: 'bg-amber-100 text-amber-800 border-amber-300',
+                },
+                SPECIAL: {
+                  label: 'บรรยายพิเศษ',
+                  color: 'bg-purple-100 text-purple-800 border-purple-300',
+                },
+                EXAM: {
+                  label: 'สอบย่อย/เก็บคะแนน',
+                  color: 'bg-rose-100 text-rose-800 border-rose-300',
+                },
+              }[sessionCustom.sessionType] || {
                 label: 'คาบเรียนปกติ',
                 color: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-              },
-              MAKEUP: {
-                label: 'คาบสอนชดเชย',
-                color: 'bg-amber-100 text-amber-800 border-amber-300',
-              },
-              SPECIAL: {
-                label: 'บรรยายพิเศษ',
-                color: 'bg-purple-100 text-purple-800 border-purple-300',
-              },
-              EXAM: {
-                label: 'สอบย่อย/เก็บคะแนน',
-                color: 'bg-rose-100 text-rose-800 border-rose-300',
-              },
-            }[sessionCustom.sessionType] || {
-              label: 'คาบเรียนปกติ',
-              color: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-            };
+              };
 
-            return (
-              <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-emerald-50/20 p-3.5 sm:p-4 shadow-sm space-y-3 overflow-hidden animate-in fade-in duration-150">
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-slate-200/70">
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <span
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                        isEn
-                          ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                          : 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      }`}
-                    >
-                      {isEn ? '🌐 หลักสูตรนานาชาติ (Inter/EN)' : '🇹🇭 หลักสูตรภาษาไทย (Thai)'}
-                    </span>
-                    <span className="font-mono font-bold text-slate-900 text-sm">
-                      {currentCourse.courseCode}
-                    </span>
-                    <span className="font-bold text-slate-800 text-sm">
-                      {currentCourse.courseName}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold">
-                      ปี {currentCourse.yearLevel}
-                    </span>
-
+              return (
+                <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-emerald-50/20 p-3.5 sm:p-4 shadow-sm space-y-3 overflow-hidden">
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-slate-200/70">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-slate-900 text-white shadow-xs">
-                        คาบที่ {sessionCustom.sessionNumber}
+                      <span
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border ${
+                          isEn
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                            : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        }`}
+                      >
+                        {isEn ? '🌐 หลักสูตรนานาชาติ (Inter/EN)' : '🇹🇭 หลักสูตรภาษาไทย (Thai)'}
                       </span>
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${sessionTypeConfig.color}`}
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${sessionTypeConfig.color}`}
                       >
                         {sessionTypeConfig.label}
                       </span>
@@ -737,30 +656,18 @@ export function RollCallTab({
                         </span>
                       )}
                     </div>
-                  </div>
 
-                  <div className="w-full xl:w-auto flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 xl:ml-auto">
-                    <button
-                      type="button"
-                      onClick={() => setShowSessionModal(true)}
-                      className="w-full sm:w-auto px-3.5 py-2 sm:py-1.5 bg-white hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer shrink-0"
-                      title="ปรับแต่ง วันที่ / เวลา / ห้องเรียน / เลือกอาจารย์ผู้สอนร่วม-ผู้ช่วยสอน"
-                    >
-                      <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
-                      <span>⚙️ {t.attCustomizeSessionBtn}</span>
-                    </button>
-
+                    {/* Program & Year Filters */}
                     <div className="w-full sm:w-auto flex flex-col xs:flex-row items-stretch xs:items-center gap-2">
                       <div className="grid grid-cols-3 sm:flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs w-full sm:w-auto">
                         <button
                           type="button"
                           onClick={() => setStudentProgramFilter('ENGLISH')}
-                          className={`px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 ${
+                          className={`px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 min-w-0 ${
                             activeProgramMode === 'ENGLISH'
                               ? 'bg-indigo-600 text-white font-bold shadow-xs'
                               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
-                          title="แสดงเฉพาะนิสิตหลักสูตรนานาชาติ (Inter / ภาคภาษาอังกฤษ)"
                         >
                           <span className="truncate">🌐 {t.attFilterInter}</span>
                           <span
@@ -777,12 +684,11 @@ export function RollCallTab({
                         <button
                           type="button"
                           onClick={() => setStudentProgramFilter('THAI')}
-                          className={`px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 ${
+                          className={`px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 min-w-0 ${
                             activeProgramMode === 'THAI'
                               ? 'bg-emerald-600 text-white font-bold shadow-xs'
                               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
-                          title="แสดงเฉพาะนิสิตหลักสูตรภาษาไทย"
                         >
                           <span className="truncate">🇹🇭 {t.attFilterThai}</span>
                           <span
@@ -799,12 +705,11 @@ export function RollCallTab({
                         <button
                           type="button"
                           onClick={() => setStudentProgramFilter('ALL')}
-                          className={`px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 ${
+                          className={`px-2 sm:px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 min-w-0 ${
                             activeProgramMode === 'ALL'
                               ? 'bg-slate-800 text-white font-bold shadow-xs'
                               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
-                          title="แสดงรวมนิสิตทั้ง 2 ภาค (กรณีเรียนร่วมกัน)"
                         >
                           <span className="truncate">👥 {t.attFilterAllStudents}</span>
                           <span
@@ -826,110 +731,113 @@ export function RollCallTab({
                           onChange={(e) => setShowOnlyTargetYear(e.target.checked)}
                           className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                         />
-                        <span className="whitespace-nowrap">{isLangEn ? `Year ${currentCourse.yearLevel} only` : `เฉพาะปี ${currentCourse.yearLevel}`}</span>
+                        <span className="whitespace-nowrap">
+                          {isLangEn ? `Year ${currentCourse.yearLevel} only` : `เฉพาะปี ${currentCourse.yearLevel}`}
+                        </span>
                       </label>
                     </div>
                   </div>
+
+                  {/* Session Parameters Display */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs">
+                    <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
+                      <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-[10px] text-slate-400 font-semibold">{t.attActualDate}</div>
+                        <div className="font-bold text-slate-800 truncate">{sessionCustom.date || date}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
+                      <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-[10px] text-slate-400 font-semibold">{t.attClassTime}</div>
+                        <div className="font-bold text-slate-800 truncate">
+                          {sessionCustom.startTime} - {sessionCustom.endTime} {isLangEn ? '' : 'น.'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
+                      <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-[10px] text-slate-400 font-semibold">{t.attClassroom}</div>
+                        <div className="font-bold text-slate-800 truncate">{sessionCustom.room}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
+                      <User className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div className="truncate min-w-0">
+                        <div className="text-[10px] text-slate-400 font-semibold">{t.attLeadInstructor}</div>
+                        <div className="font-bold text-slate-800 truncate">
+                          {sessionCustom.leadInstructor ||
+                            currentCourse.instructor ||
+                            (isLangEn ? 'Course Instructor' : 'อาจารย์ประจำวิชา')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Co-instructors */}
+                  {allCo.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 text-xs">
+                      <span className="font-bold text-indigo-900 flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5 text-indigo-600" />
+                        อาจารย์ผู้สอนร่วม / ผู้ช่วยสอน (TAs) ในคาบนี้ ({allCo.length} ท่าน):
+                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {allCo.map((inst, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 text-[11px] font-semibold"
+                          >
+                            <span>👨‍🏫 {inst}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Session Topic / Note */}
+                  {(sessionCustom.sessionTopic || sessionCustom.note) && (
+                    <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200/60 text-xs text-slate-600">
+                      {sessionCustom.sessionTopic && (
+                        <div>
+                          <span className="font-bold text-slate-700">📖 หัวข้อการสอน:</span>{' '}
+                          <span className="text-slate-900 font-medium">{sessionCustom.sessionTopic}</span>
+                        </div>
+                      )}
+                      {sessionCustom.note && (
+                        <div>
+                          <span className="font-bold text-slate-700">📝 บันทึกคาบ:</span>{' '}
+                          <span className="text-slate-600">{sessionCustom.note}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+              );
+            })()}
 
-                {/* Session Parameters Display */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs">
-                  <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
-                    <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-slate-400 font-semibold">{t.attActualDate}</div>
-                      <div className="font-bold text-slate-800 truncate">{sessionCustom.date || date}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
-                    <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-slate-400 font-semibold">{t.attClassTime}</div>
-                      <div className="font-bold text-slate-800 truncate">
-                        {sessionCustom.startTime} - {sessionCustom.endTime} {isLangEn ? '' : 'น.'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
-                    <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] text-slate-400 font-semibold">
-                        {t.attClassroom}
-                      </div>
-                      <div className="font-bold text-slate-800 truncate">{sessionCustom.room}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
-                    <User className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <div className="truncate min-w-0">
-                      <div className="text-[10px] text-slate-400 font-semibold">
-                        {t.attLeadInstructor}
-                      </div>
-                      <div className="font-bold text-slate-800 truncate">
-                        {sessionCustom.leadInstructor ||
-                          currentCourse.instructor ||
-                          (isLangEn ? 'Course Instructor' : 'อาจารย์ประจำวิชา')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Co-instructors */}
-                {allCo.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 text-xs">
-                    <span className="font-bold text-indigo-900 flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-indigo-600" />
-                      อาจารย์ผู้สอนร่วม / ผู้ช่วยสอน (TAs) ในคาบนี้ ({allCo.length} ท่าน):
-                    </span>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {allCo.map((inst, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 text-[11px] font-semibold"
-                        >
-                          <span>👨‍🏫 {inst}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Session Topic / Note */}
-                {(sessionCustom.sessionTopic || sessionCustom.note) && (
-                  <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200/60 text-xs text-slate-600">
-                    {sessionCustom.sessionTopic && (
-                      <div>
-                        <span className="font-bold text-slate-700">📖 หัวข้อการสอน:</span>{' '}
-                        <span className="text-slate-900 font-medium">
-                          {sessionCustom.sessionTopic}
-                        </span>
-                      </div>
-                    )}
-                    {sessionCustom.note && (
-                      <div>
-                        <span className="font-bold text-slate-700">📝 บันทึกคาบ:</span>{' '}
-                        <span className="text-slate-600">{sessionCustom.note}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex justify-end pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowSessionDetails(false)}
-                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>ยุบข้อมูลคาบ</span>
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
+            {/* Red Chevron Toggle Button at Bottom-Right Corner (shown here when expanded to collapse back to Blue Frame) */}
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsExtraToolsOpen(false);
+                  setShowCourseCards(false);
+                  setShowRoadmapBanner(false);
+                }}
+                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition cursor-pointer shadow-2xs"
+                title="ยุบเก็บเครื่องมือเสริม (เหลือเฉพาะกรอบเลือกวิชา)"
+                aria-label="ยุบเก็บเครื่องมือเสริม"
+              >
+                <ChevronUp className="w-5 h-5 stroke-[2.75]" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Student Roster Card (การ์ดบันทึกรายชื่อนิสิต — อยู่ชิดด้านบนบนมือถือทันทีเมื่อยุบเมนู) */}
