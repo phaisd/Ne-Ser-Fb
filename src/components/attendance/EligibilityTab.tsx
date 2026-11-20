@@ -13,6 +13,8 @@ import {
   Info,
   Sparkles,
   Search,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Course, TimetableItem, AuthUser, StudentEligibility } from '@/types';
 import { groupAndSortByMajor } from './majorGrouping';
@@ -106,6 +108,8 @@ export function EligibilityTab({
   const [printFontSizePx, setPrintFontSizePx] = useState<number>(11);
   const [printPageMarginMm, setPrintPageMarginMm] = useState<number>(6);
   const [showPrintLayoutConfig, setShowPrintLayoutConfig] = useState<boolean>(false);
+  const [isExtraToolsOpen, setIsExtraToolsOpen] = useState<boolean>(false);
+  const [showCourseCards, setShowCourseCards] = useState<boolean>(false);
   // เปิด/ปิด คอลัมน์ "เหตุผล / เงื่อนไข" (ปิดเพื่อให้ตารางกระชับ ไม่ห่างเกินไป)
   const [showReasonColumn, setShowReasonColumn] = useState<boolean>(true);
   const tableColCount = showReasonColumn ? 11 : 10;
@@ -207,63 +211,124 @@ export function EligibilityTab({
 
   return (
     <div id="printable-eligibility-report" className="space-y-6 print:space-y-1.5">
-      {/* Top Selector & Course Cards Bar */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 print:hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <label className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-emerald-600" />
-              <span>คลิกเลือกการ์ดรายวิชาที่รับผิดชอบสอน ({availableCourses.length} วิชา):</span>
+      {/* Top Selector & Collapsible Tools Bar */}
+      <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3 print:hidden">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+          {/* Course Dropdown Selector (Always visible, 1 line) */}
+          <div className="flex-1 min-w-0">
+            <label className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5 mb-1.5">
+              <BookOpen className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>เลือกรายวิชาที่ต้องการสรุปสิทธิ์สอบ ({availableCourses.length} วิชา):</span>
             </label>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              แสดงสรุปสิทธิ์สอบจัดกลุ่มตามสาขาวิชา (พระพุทธศาสนา • วิปัสสนาภาวนา • ศาสนาและปรัชญา • บาลีสันสกฤต)
-            </p>
+            <select
+              value={(currentCourse as any)?.sectionKey || selectedCourseCode}
+              onChange={(e) => handleCourseChange(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+            >
+              {availableCourses.map((c, i) => {
+                const sKey = (c as any).sectionKey || c.courseCode;
+                return (
+                  <option key={`opt-elig-${sKey}-${i}`} value={sKey}>
+                    {c.courseCode} — {c.courseName} (ปี {c.yearLevel || 1})
+                  </option>
+                );
+              })}
+            </select>
           </div>
 
-          {/* Actions & Settings Toggles */}
-          <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
-            <button
-              type="button"
-              onClick={() => setShowEligibilitySettings(!showEligibilitySettings)}
-              className="px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
-              title="ปรับเปลี่ยนเกณฑ์การคำนวณ (จำนวนคาบ, เกณฑ์ %)"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
-              <span>เกณฑ์คำนวณ ({minAttendancePercent}%)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowPrintLayoutConfig(!showPrintLayoutConfig)}
-              className={`px-3 py-2 text-xs font-bold rounded-xl border transition flex items-center gap-1.5 cursor-pointer ${
-                showPrintLayoutConfig
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-              }`}
-              title="ปรับช่องไฟ ความสูงแถว และขอบกระดาษเวลาพิมพ์รายงาน"
-            >
-              <span>📏 ปรับช่องไฟพิมพ์ ({printCellPaddingPx}px)</span>
-            </button>
-
+          {/* Primary Actions (Export & Print) */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={handleExportEligibilityCsv}
-              className="px-3.5 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="flex-1 sm:flex-initial justify-center px-3.5 py-2.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <span>ส่งออก Excel/CSV</span>
             </button>
 
             <button
               type="button"
               onClick={() => window.print()}
-              className="px-3.5 py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="flex-1 sm:flex-initial justify-center px-3.5 py-2.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>พิมพ์รายงาน (Print/PDF)</span>
+              <Printer className="w-3.5 h-3.5 shrink-0" />
+              <span>พิมพ์รายงาน A4</span>
             </button>
           </div>
         </div>
+
+        {/* Summary Line + Bottom-Right Red Chevron Toggle */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5 text-slate-600 min-w-0">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-900">
+              เกณฑ์ {minAttendancePercent}%
+            </span>
+            <span className="font-bold text-slate-900">{currentCourse.courseCode}</span>
+            <span className="text-slate-400">•</span>
+            <span>บันทึกแล้ว {recordedSessionsCount}/{semesterTotalSessions} คาบ</span>
+          </div>
+
+          {!isExtraToolsOpen && (
+            <button
+              type="button"
+              onClick={() => setIsExtraToolsOpen(true)}
+              className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition cursor-pointer shrink-0 shadow-2xs"
+              title="คลี่เครื่องมือเสริม (การ์ดรายวิชา, ตั้งค่าเกณฑ์คำนวณ, ปรับช่องไฟพิมพ์)"
+              aria-label="คลี่เครื่องมือเสริม"
+            >
+              <ChevronDown className="w-5 h-5 stroke-[2.75]" />
+            </button>
+          )}
+        </div>
+
+        {/* Expanded Extra Tools Drawer */}
+        {isExtraToolsOpen && (
+          <div className="pt-3 border-t border-slate-200/80 space-y-3 animate-in fade-in duration-150">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEligibilitySettings(!showEligibilitySettings)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition flex items-center gap-1.5 cursor-pointer ${
+                  showEligibilitySettings
+                    ? 'bg-emerald-600 text-white border-emerald-700'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>เกณฑ์คำนวณ ({minAttendancePercent}%)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowPrintLayoutConfig(!showPrintLayoutConfig)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition flex items-center gap-1.5 cursor-pointer ${
+                  showPrintLayoutConfig
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                }`}
+              >
+                <span>📏 ปรับช่องไฟพิมพ์ ({printCellPaddingPx}px)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowCourseCards((prev) => !prev)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition flex items-center gap-1.5 cursor-pointer ${
+                  showCourseCards
+                    ? 'bg-indigo-600 text-white border-indigo-700'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>การ์ดวิชา ({availableCourses.length})</span>
+                {showCourseCards ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
 
         {/* Print Spacing & Margin Customizer Panel */}
         {showPrintLayoutConfig && (
@@ -419,150 +484,188 @@ export function EligibilityTab({
           </div>
         )}
 
-        {/* Course Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-          {availableCourses.map((c, i) => {
-            const sKey = (c as any).sectionKey || c.courseCode;
-            const isSelected = sKey === selectedCourseCode || (!(c as any).sectionKey && c.courseCode === selectedCourseCode);
-            const ttTitle = 'timetableTitle' in c ? String((c as TimetableItem).timetableTitle || '') : '';
-            const isEn =
-              (c as any).programType === 'ENGLISH' ||
-              (c as any).programType === 'INTERNATIONAL' ||
-              /inter|eng|english|นานาชาติ/i.test(ttTitle) ||
-              /^[A-Za-z0-9\s:,\-\(\)\/\.]+$/.test((c.courseName || '').trim());
+            {/* Course Cards Grid (Sub-collapsible) */}
+            {showCourseCards && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 animate-in fade-in duration-150">
+                {availableCourses.map((c, i) => {
+                  const sKey = (c as any).sectionKey || c.courseCode;
+                  const isSelected =
+                    sKey === selectedCourseCode ||
+                    (!(c as any).sectionKey && c.courseCode === selectedCourseCode);
+                  const ttTitle =
+                    'timetableTitle' in c ? String((c as TimetableItem).timetableTitle || '') : '';
+                  const isEn =
+                    (c as any).programType === 'ENGLISH' ||
+                    (c as any).programType === 'INTERNATIONAL' ||
+                    /inter|eng|english|นานาชาติ/i.test(ttTitle) ||
+                    /^[A-Za-z0-9\s:,\-\(\)\/\.]+$/.test((c.courseName || '').trim());
 
-            return (
-              <button
-                key={`elig-card-${sKey}-${i}`}
-                type="button"
-                onClick={() => handleCourseChange(sKey)}
-                className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
-                  isSelected
-                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-500/30'
-                    : 'bg-slate-50/70 hover:bg-white text-slate-800 border-slate-200 hover:border-emerald-400'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span
-                      className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-md ${
+                  return (
+                    <button
+                      key={`elig-card-${sKey}-${i}`}
+                      type="button"
+                      onClick={() => {
+                        handleCourseChange(sKey);
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                          setShowCourseCards(false);
+                        }
+                      }}
+                      className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
                         isSelected
-                          ? 'bg-white/20 text-white'
-                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200/70'
+                          ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-500/30'
+                          : 'bg-slate-50/70 hover:bg-white text-slate-800 border-slate-200 hover:border-emerald-400'
                       }`}
                     >
-                      {c.courseCode}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isSelected
-                          ? 'bg-white/20 text-white'
-                          : isEn
-                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      }`}
-                    >
-                      {isEn ? '🌐 Inter/EN' : '🇹🇭 ภาคไทย'} • ปี {c.yearLevel || 1}
-                    </span>
-                  </div>
-                  <div
-                    className={`font-bold text-xs mt-1.5 line-clamp-1 ${
-                      isSelected ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    {c.courseName}
-                  </div>
-                </div>
-                <div
-                  className={`flex items-center justify-between text-[10px] pt-1 border-t ${
-                    isSelected ? 'border-white/20 text-emerald-100' : 'border-slate-200/70 text-slate-500'
-                  }`}
-                >
-                  <span className="truncate">
-                    {c.dayOfWeek || ''} {c.startTime ? `${c.startTime}-${c.endTime}` : ''}
+                      <div>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span
+                            className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-md ${
+                              isSelected
+                                ? 'bg-white/20 text-white'
+                                : 'bg-emerald-50 text-emerald-800 border border-emerald-200/70'
+                            }`}
+                          >
+                            {c.courseCode}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isSelected
+                                ? 'bg-white/20 text-white'
+                                : isEn
+                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            }`}
+                          >
+                            {isEn ? '🌐 Inter/EN' : '🇹🇭 ภาคไทย'} • ปี {c.yearLevel || 1}
+                          </span>
+                        </div>
+                        <div
+                          className={`font-bold text-xs mt-1.5 line-clamp-1 ${
+                            isSelected ? 'text-white' : 'text-slate-900'
+                          }`}
+                        >
+                          {c.courseName}
+                        </div>
+                      </div>
+                      <div
+                        className={`flex items-center justify-between text-[10px] pt-1 border-t ${
+                          isSelected
+                            ? 'border-white/20 text-emerald-100'
+                            : 'border-slate-200/70 text-slate-500'
+                        }`}
+                      >
+                        <span className="truncate">
+                          {c.dayOfWeek || ''} {c.startTime ? `${c.startTime}-${c.endTime}` : ''}
+                        </span>
+                        <span className="font-semibold shrink-0 ml-1">ห้อง {c.room || '-'}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Collapsible Settings Panel */}
+            {showEligibilitySettings && (
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
+                    ตั้งค่าเกณฑ์เวลาเรียนและการประเมินสิทธิ์สอบ (University Exam Rules)
                   </span>
-                  <span className="font-semibold shrink-0 ml-1">ห้อง {c.room || '-'}</span>
+                  <span className="text-[11px] text-slate-500">
+                    ตามระเบียบมหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
+                  </span>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      จำนวนคาบเรียนทั้งเทอม:
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="1"
+                        max="30"
+                        value={semesterTotalSessions}
+                        onChange={(e) =>
+                          setSemesterTotalSessions(Math.max(1, parseInt(e.target.value) || 16))
+                        }
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-bold"
+                      />
+                      <span className="text-slate-400 font-medium">คาบ</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      เกณฑ์เวลาเรียนขั้นต่ำ:
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="50"
+                        max="100"
+                        value={minAttendancePercent}
+                        onChange={(e) =>
+                          setMinAttendancePercent(
+                            Math.max(50, Math.min(100, parseInt(e.target.value) || 80))
+                          )
+                        }
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-bold text-emerald-700"
+                      />
+                      <span className="text-slate-400 font-medium">%</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">
+                      สัดส่วนการมาสาย:
+                    </label>
+                    <select
+                      value={lateToAbsentRatio}
+                      onChange={(e) => setLateToAbsentRatio(parseInt(e.target.value))}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-semibold"
+                    >
+                      <option value="3">สาย 3 ครั้ง = ขาด 1 ครั้ง</option>
+                      <option value="2">สาย 2 ครั้ง = ขาด 1 ครั้ง</option>
+                      <option value="4">สาย 4 ครั้ง = ขาด 1 ครั้ง</option>
+                      <option value="999">ไม่นับสายเป็นขาด</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-end">
+                    <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700 pb-2">
+                      <input
+                        type="checkbox"
+                        checked={includeLeaveAsExcused}
+                        onChange={(e) => setIncludeLeaveAsExcused(e.target.checked)}
+                        className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                      />
+                      <span>ลามีใบรับรอง = อนุโลม</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Bottom-Right Red Chevron Toggle to collapse extra tools */}
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsExtraToolsOpen(false);
+                  setShowCourseCards(false);
+                  setShowEligibilitySettings(false);
+                  setShowPrintLayoutConfig(false);
+                }}
+                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition cursor-pointer shadow-2xs"
+                title="ยุบเก็บเครื่องมือเสริม"
+                aria-label="ยุบเก็บเครื่องมือเสริม"
+              >
+                <ChevronUp className="w-5 h-5 stroke-[2.75]" />
               </button>
-            );
-          })}
-        </div>
-
-        {/* Collapsible Settings Panel */}
-        {showEligibilitySettings && (
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 animate-in fade-in duration-150">
-            <div className="flex items-center justify-between border-b pb-2">
-              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
-                ตั้งค่าเกณฑ์เวลาเรียนและการประเมินสิทธิ์สอบ (University Exam Rules)
-              </span>
-              <span className="text-[11px] text-slate-500">
-                ตามระเบียบมหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  จำนวนคาบเรียนทั้งเทอม:
-                </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min="1"
-                    max="30"
-                    value={semesterTotalSessions}
-                    onChange={(e) => setSemesterTotalSessions(Math.max(1, parseInt(e.target.value) || 16))}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-bold"
-                  />
-                  <span className="text-slate-400 font-medium">คาบ</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  เกณฑ์เวลาเรียนขั้นต่ำ:
-                </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min="50"
-                    max="100"
-                    value={minAttendancePercent}
-                    onChange={(e) => setMinAttendancePercent(Math.max(50, Math.min(100, parseInt(e.target.value) || 80)))}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-bold text-emerald-700"
-                  />
-                  <span className="text-slate-400 font-medium">%</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  สัดส่วนการมาสาย:
-                </label>
-                <select
-                  value={lateToAbsentRatio}
-                  onChange={(e) => setLateToAbsentRatio(parseInt(e.target.value))}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-semibold"
-                >
-                  <option value="3">สาย 3 ครั้ง = ขาด 1 ครั้ง</option>
-                  <option value="2">สาย 2 ครั้ง = ขาด 1 ครั้ง</option>
-                  <option value="4">สาย 4 ครั้ง = ขาด 1 ครั้ง</option>
-                  <option value="999">ไม่นับสายเป็นขาด</option>
-                </select>
-              </div>
-
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700 pb-2">
-                  <input
-                    type="checkbox"
-                    checked={includeLeaveAsExcused}
-                    onChange={(e) => setIncludeLeaveAsExcused(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
-                  />
-                  <span>ลามีใบรับรอง = อนุโลม</span>
-                </label>
-              </div>
             </div>
           </div>
         )}

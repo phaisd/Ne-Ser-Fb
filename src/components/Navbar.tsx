@@ -363,15 +363,15 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`sticky top-0 z-50 backdrop-blur border-b shadow-sm transition-colors duration-200 print:hidden theme-nav-accent ${
+      <header className={`sticky top-0 z-50 backdrop-blur border-b shadow-sm transition-colors duration-200 print:hidden theme-nav-accent max-w-full overflow-x-clip ${
       isAdminRoute ? 'bg-slate-900/95 border-slate-800 text-white' : 'bg-white/95 border-slate-200'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo Brand */}
-          <Link href={isAdminRoute ? (isAdmin ? '/admin' : '/attendance') : '/'} className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-2 h-14 sm:h-16">
+          {/* Logo Brand (flex-1 min-w-0 on mobile so it never pushes right buttons off-screen) */}
+          <Link href={isAdminRoute ? (isAdmin ? '/admin' : '/attendance') : '/'} className="flex items-center gap-2 sm:gap-3 group min-w-0 flex-1 sm:flex-initial">
             {settings?.logoUrl ? (
-              <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-center p-1 overflow-hidden shrink-0 group-hover:scale-105 transition">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-center p-1 overflow-hidden shrink-0 group-hover:scale-105 transition">
                 <img
                   src={settings.logoUrl}
                   alt={settings.facultyNameTh || 'MCU Logo'}
@@ -382,26 +382,31 @@ export default function Navbar() {
                 />
               </div>
             ) : (
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md text-xl shrink-0 group-hover:scale-105 transition ${
+              <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-white shadow-md text-lg sm:text-xl shrink-0 group-hover:scale-105 transition ${
                 isAdminRoute 
                   ? 'bg-gradient-to-tr from-emerald-600 to-teal-500 shadow-emerald-500/20' 
                   : 'bg-gradient-to-tr from-orange-600 to-amber-500 shadow-orange-500/20'
               }`}>
-                {settings?.logoEmoji || (isAdminRoute ? <ShieldCheck className="w-6 h-6" /> : <GraduationCap className="w-6 h-6" />)}
+                {settings?.logoEmoji || (isAdminRoute ? <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" /> : <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />)}
               </div>
             )}
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className={`font-bold text-sm sm:text-base leading-tight whitespace-nowrap ${isAdminRoute ? 'text-white' : 'text-slate-900'}`}>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <span className={`font-bold text-xs sm:text-base leading-tight truncate ${isAdminRoute ? 'text-white' : 'text-slate-900'}`}>
                   {isAdminRoute ? 'Admin Console' : (settings?.facultyNameTh || 'คณะพุทธศาสตร์')}
                 </span>
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap ${
+                <span className={`text-[9.5px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap ${
                   isAdminRoute ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-orange-100 text-orange-700'
                 }`}>
-                  {isAdminRoute ? 'หลังบ้าน (อาจารย์/เจ้าหน้าที่)' : 'ระบบบริการการศึกษา'}
+                  <span className="hidden sm:inline">
+                    {isAdminRoute ? 'หลังบ้าน (อาจารย์/เจ้าหน้าที่)' : 'ระบบบริการการศึกษา'}
+                  </span>
+                  <span className="sm:hidden">
+                    {isAdminRoute ? 'อาจารย์/เจ้าหน้าที่' : 'บริการนิสิต'}
+                  </span>
                 </span>
               </div>
-              <span className={`text-[11px] sm:text-xs block whitespace-nowrap truncate max-w-[220px] sm:max-w-none ${isAdminRoute ? 'text-slate-400' : 'text-orange-600 font-medium'}`}>
+              <span className={`text-[10.5px] sm:text-xs block truncate ${isAdminRoute ? 'text-slate-400' : 'text-orange-600 font-medium'}`}>
                 {isAdminRoute 
                   ? `${settings?.facultyNameTh || 'คณะพุทธศาสตร์'} • ${settings?.universityNameTh || 'มจร'}` 
                   : (settings?.universityNameTh || 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย')}
@@ -409,13 +414,14 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* User Auth & Portal Switcher & Language Toggle */}
-          <div className="flex items-center gap-2">
-            {/* Day / Night Mode Toggle (โหมดกลางวัน / โหมดกลางคืน) */}
-            <ThemeModeToggle variant="pill" />
+          {/* User Auth & Portal Switcher & Language Toggle (shrink-0, compact on mobile) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Day / Night Mode Toggle: Compact icon on mobile, full pill on sm+ */}
+            <ThemeModeToggle variant="icon" className="sm:hidden" />
+            <ThemeModeToggle variant="pill" className="hidden sm:inline-flex" />
 
-            {/* Language Switcher Pill + Dropdown */}
-            <div className="relative">
+            {/* Language Switcher Pill + Dropdown (Hidden on very small screens < 400px since it's in the Mobile Drawer, compact on sm+) */}
+            <div className="relative hidden xs:block sm:block">
               <div
                 className={`flex items-center rounded-xl text-xs font-bold transition border overflow-hidden ${
                   isAdminRoute
@@ -426,10 +432,10 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={toggleLanguage}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
+                  className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition"
                   title="คลิกเพื่อสลับภาษา ไทย / English (Translate Page)"
                 >
-                  <Globe className="w-3.5 h-3.5 text-orange-500" />
+                  <Globe className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                   <span>
                     {selectedLanguageCode === 'th'
                       ? '🇹🇭 TH'
@@ -527,7 +533,7 @@ export default function Navbar() {
                     type="button"
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     title="คลิกเพื่อเปิดเมนูบัญชีผู้ใช้"
-                    className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer hover:shadow-md ${
+                    className={`group flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer hover:shadow-md ${
                       isAdminRoute
                         ? 'bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 hover:border-emerald-500/50'
                         : 'bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-200 hover:border-orange-300'
@@ -666,14 +672,15 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition shrink-0"
               >
-                <KeyRound className="w-3.5 h-3.5" />
-                <span>เข้าสู่ระบบอาจารย์</span>
+                <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">เข้าสู่ระบบอาจารย์</span>
+                <span className="sm:hidden">เข้าสู่ระบบ</span>
               </Link>
             )}
 
-                {/* Portal Switch Button */}
+            {/* Portal Switch Button (Desktop md+) */}
             {isAdminRoute ? (
               <Link
                 href="/"
@@ -685,7 +692,7 @@ export default function Navbar() {
             ) : canAccessAdminConsole(currentUser) ? (
               <Link
                 href={activeVipassanaStation?.url || '/admin?tab=EVENTS'}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-md transition"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-md transition"
                 title="กลับไปยังหน้าตรวจเช็คชื่อ / สอบอารมณ์โครงการวิปัสสนา"
               >
                 <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
@@ -711,7 +718,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`lg:hidden p-2 rounded-xl transition cursor-pointer border ${
+              className={`lg:hidden p-2 rounded-xl transition cursor-pointer border shrink-0 ${
                 isAdminRoute
                   ? 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700 hover:text-white'
                   : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
@@ -729,16 +736,16 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Tier 2: Dedicated Navigation Menu Bar (Desktop & Tablet) */}
+      {/* Tier 2: Dedicated Navigation Menu Bar (Touch-scrollable on Mobile, Wrapping on Desktop) */}
       <div
-        className={`hidden lg:block border-t transition-colors duration-200 ${
+        className={`block border-t transition-colors duration-200 ${
           isAdminRoute
-            ? 'bg-slate-950/70 border-slate-800/80 text-slate-200'
-            : 'bg-slate-50/90 border-slate-200/60 text-slate-700'
+            ? 'bg-slate-950/80 border-slate-800/80 text-slate-200'
+            : 'bg-slate-50/95 border-slate-200/60 text-slate-700'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex flex-wrap items-center gap-1 sm:gap-1.5 py-1.5">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
+          <nav className="flex lg:flex-wrap items-center gap-1 sm:gap-1.5 py-1.5 overflow-x-auto no-scrollbar scroll-smooth">
             {(isAdminRoute ? adminNavItems : publicNavItems).map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -749,7 +756,7 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                     isAdminRoute
                       ? isActive
                         ? 'bg-emerald-600 text-white shadow-xs'
@@ -772,6 +779,33 @@ export default function Navbar() {
                 </Link>
               );
             })}
+
+            {/* Mobile Quick Portal Switch Pill at the end of the scrollable bar */}
+            {isAdminRoute ? (
+              <Link
+                href="/"
+                className="md:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-800 text-amber-300 border border-slate-700 whitespace-nowrap shrink-0"
+              >
+                <GraduationCap className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                <span>ไปหน้าบ้าน</span>
+              </Link>
+            ) : isStaffOrInstructor && !canAccessAdminConsole(currentUser) ? (
+              <Link
+                href="/attendance"
+                className="md:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-900 text-white whitespace-nowrap shrink-0"
+              >
+                <CheckSquare className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>เช็คชื่อนิสิต</span>
+              </Link>
+            ) : canAccessAdminConsole(currentUser) ? (
+              <Link
+                href="/admin"
+                className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-900 text-white whitespace-nowrap shrink-0"
+              >
+                <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>ระบบหลังบ้าน</span>
+              </Link>
+            ) : null}
           </nav>
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Course, TimetableItem } from '@/types';
 import {
   Printer,
@@ -13,6 +13,8 @@ import {
   Globe,
   Edit3,
   BookOpen,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface GradeSheetControlsProps {
@@ -111,21 +113,20 @@ export function GradeSheetControls({
   setSubmitDateTextEn,
 }: GradeSheetControlsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isExtraToolsOpen, setIsExtraToolsOpen] = useState(false);
+  const [showCourseCards, setShowCourseCards] = useState(false);
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-5 sm:p-6 space-y-5 print:hidden">
+    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-3.5 sm:p-6 space-y-3.5 print:hidden">
       {/* Top Header & Action Buttons */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
               📝 ระบบใบกรอกคะแนนผลการสอบ (Official MCU Grade Sheet)
             </span>
-            <span className="text-xs text-slate-500">
-              จัดกลุ่มตามสาขาวิชาอัตโนมัติ (พระพุทธศาสนา • วิปัสสนาภาวนา • ศาสนาและปรัชญา • บาลีสันสกฤต)
-            </span>
           </div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
+          <h2 className="text-base sm:text-xl font-extrabold text-slate-900 leading-snug">
             {currentCourse?.courseCode} — {currentCourse?.courseName}
           </h2>
         </div>
@@ -136,50 +137,45 @@ export function GradeSheetControls({
             <button
               type="button"
               onClick={() => setFormLanguage('THAI')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition cursor-pointer ${
                 formLanguage === 'THAI'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              🇹🇭 ใบกรอกคะแนน (ไทย)
+              🇹🇭 ไทย
             </button>
             <button
               type="button"
               onClick={() => setFormLanguage('ENGLISH')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1 ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1 ${
                 formLanguage === 'ENGLISH'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Globe className="w-3.5 h-3.5" />
-              <span>Result of Exam (EN)</span>
+              <span>EN</span>
             </button>
           </div>
 
-          {/* Print Mode Selector: With Scores vs Blank Form for Pen */}
           <button
             type="button"
-            onClick={() => setPrintBlankForm(!printBlankForm)}
-            className={`px-3 py-2 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-              printBlankForm
-                ? 'bg-amber-50 border-amber-300 text-amber-900'
-                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-            }`}
-            title="สลับระหว่างพิมพ์คะแนนที่กรอกแล้ว หรือพิมพ์ตารางช่องว่างสำหรับกรอกด้วยปากกา"
+            onClick={handleSaveGradeSheet}
+            disabled={saving}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
           >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>{printBlankForm ? 'โหมดพิมพ์: ช่องว่างกรอกปากกา' : 'โหมดพิมพ์: แสดงคะแนนที่กรอก'}</span>
+            <Save className="w-3.5 h-3.5" />
+            <span>{saving ? 'กำลังบันทึก...' : 'บันทึกคะแนน'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => window.print()}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>พิมพ์ใบกรอกคะแนน A4</span>
+            <span>พิมพ์ A4</span>
           </button>
         </div>
       </div>
@@ -197,147 +193,236 @@ export function GradeSheetControls({
         </div>
       )}
 
-      {/* Course Cards Grid & Quick Actions */}
-      <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <BookOpen className="w-4 h-4 text-indigo-600" />
-            <span>คลิกเลือกรายวิชาที่รับผิดชอบสอน ({availableCourses.length} วิชา):</span>
+      {/* Course Selector Dropdown + Summary Row + Bottom-Right Red Chevron Toggle */}
+      <div className="space-y-3 bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80">
+        <div>
+          <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5 mb-1.5">
+            <BookOpen className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span>เลือกรายวิชาที่รับผิดชอบสอน ({availableCourses.length} วิชา):</span>
           </label>
+          <select
+            value={(currentCourse as any)?.sectionKey || selectedCourseCode}
+            onChange={(e) => handleCourseChange(e.target.value)}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
+          >
+            {availableCourses.map((c, idx) => {
+              const sKey = (c as any).sectionKey || c.courseCode;
+              return (
+                <option key={`opt-grade-${sKey}-${idx}`} value={sKey}>
+                  {c.courseCode} — {c.courseName} (ปี {c.yearLevel || 1})
+                </option>
+              );
+            })}
+          </select>
+        </div>
 
+        {/* Summary Bar + Bottom-Right Red Chevron Toggle */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handleSyncFromAttendance}
-              className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              className="px-2.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-[11px] sm:text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
               title="คำนวณคะแนนจิตพิสัยจากเวลาเรียนจริง และดึงหมายเหตุหมดสิทธิ์สอบอัตโนมัติ"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>ดึงคะแนนจิตพิสัย & สิทธิ์สอบอัตโนมัติ</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowConfigPanel((prev) => !prev)}
-              className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>ตั้งค่าหัวกระดาษ/สัดส่วนคะแนน</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleExportCsv}
-              className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-emerald-700 border border-emerald-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-sky-700 border border-sky-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>Import CSV</span>
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleImportCsv(file);
-                  e.target.value = '';
-                }
-              }}
-            />
-
-            <button
-              type="button"
-              onClick={handleSaveGradeSheet}
-              disabled={saving}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{saving ? 'กำลังบันทึก...' : 'บันทึกคะแนน'}</span>
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span>ดึงคะแนนจิตพิสัย & สิทธิ์สอบ</span>
             </button>
           </div>
+
+          {!isExtraToolsOpen && (
+            <button
+              type="button"
+              onClick={() => setIsExtraToolsOpen(true)}
+              className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition cursor-pointer shrink-0 shadow-2xs"
+              title="คลี่เครื่องมือเสริม (ตั้งค่าหัวกระดาษ/สัดส่วนคะแนน, การ์ดวิชา, Export/Import CSV)"
+              aria-label="คลี่เครื่องมือเสริม"
+            >
+              <ChevronDown className="w-5 h-5 stroke-[2.75]" />
+            </button>
+          )}
         </div>
 
-        {/* Course Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-          {availableCourses.map((c, idx) => {
-            const sKey = (c as any).sectionKey || c.courseCode;
-            const isSelected =
-              sKey === selectedCourseCode || (!(c as any).sectionKey && c.courseCode === selectedCourseCode);
-            const ttTitle = 'timetableTitle' in c ? String((c as TimetableItem).timetableTitle || '') : '';
-            const isEn =
-              (c as any).programType === 'ENGLISH' ||
-              (c as any).programType === 'INTERNATIONAL' ||
-              /inter|eng|english|นานาชาติ/i.test(ttTitle) ||
-              /^[A-Za-z0-9\s:,\-\(\)\/\.]+$/.test((c.courseName || '').trim());
-
-            return (
+        {/* Expanded Extra Tools Drawer */}
+        {isExtraToolsOpen && (
+          <div className="pt-3 border-t border-slate-200/80 space-y-3 animate-in fade-in duration-150">
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                key={`${sKey}-${idx}`}
                 type="button"
-                onClick={() => handleCourseChange(sKey)}
-                className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
-                  isSelected
-                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-500/30'
-                    : 'bg-white hover:bg-indigo-50/50 text-slate-800 border-slate-200 hover:border-indigo-300'
+                onClick={() => setShowConfigPanel((prev) => !prev)}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                  showConfigPanel
+                    ? 'bg-indigo-600 text-white border-indigo-700'
+                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span
-                      className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-md ${
-                        isSelected
-                          ? 'bg-white/20 text-white'
-                          : 'bg-indigo-50 text-indigo-800 border border-indigo-200/70'
-                      }`}
-                    >
-                      {c.courseCode}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isSelected
-                          ? 'bg-white/20 text-white'
-                          : isEn
-                          ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      }`}
-                    >
-                      {isEn ? '🌐 Inter/EN' : '🇹🇭 ภาคไทย'} • ปี {c.yearLevel || 1}
-                    </span>
-                  </div>
-                  <div
-                    className={`font-bold text-xs mt-1.5 line-clamp-1 ${
-                      isSelected ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    {c.courseName}
-                  </div>
-                </div>
-
-                <div
-                  className={`flex items-center justify-between text-[10px] pt-1 border-t ${
-                    isSelected ? 'border-white/20 text-indigo-100' : 'border-slate-100 text-slate-500'
-                  }`}
-                >
-                  <span className="truncate">
-                    {c.dayOfWeek || ''} {c.startTime ? `${c.startTime}-${c.endTime}` : ''}
-                  </span>
-                  <span className="font-semibold shrink-0 ml-1">ห้อง {c.room || '-'}</span>
-                </div>
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>ตั้งค่าหัวกระดาษ/สัดส่วนคะแนน</span>
               </button>
-            );
-          })}
-        </div>
+
+              <button
+                type="button"
+                onClick={() => setPrintBlankForm(!printBlankForm)}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  printBlankForm
+                    ? 'bg-amber-50 border-amber-300 text-amber-900'
+                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>{printBlankForm ? 'โหมดพิมพ์: ช่องว่างกรอกปากกา' : 'โหมดพิมพ์: แสดงคะแนน'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-emerald-700 border border-emerald-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-sky-700 border border-sky-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Import CSV</span>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleImportCsv(file);
+                    e.target.value = '';
+                  }
+                }}
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowCourseCards((prev) => !prev)}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                  showCourseCards
+                    ? 'bg-indigo-600 text-white border-indigo-700'
+                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>การ์ดวิชา ({availableCourses.length})</span>
+                {showCourseCards ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+
+            {/* Course Cards Grid (Sub-collapsible) */}
+            {showCourseCards && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 animate-in fade-in duration-150">
+                {availableCourses.map((c, idx) => {
+                  const sKey = (c as any).sectionKey || c.courseCode;
+                  const isSelected =
+                    sKey === selectedCourseCode ||
+                    (!(c as any).sectionKey && c.courseCode === selectedCourseCode);
+                  const ttTitle =
+                    'timetableTitle' in c ? String((c as TimetableItem).timetableTitle || '') : '';
+                  const isEn =
+                    (c as any).programType === 'ENGLISH' ||
+                    (c as any).programType === 'INTERNATIONAL' ||
+                    /inter|eng|english|นานาชาติ/i.test(ttTitle) ||
+                    /^[A-Za-z0-9\s:,\-\(\)\/\.]+$/.test((c.courseName || '').trim());
+
+                  return (
+                    <button
+                      key={`${sKey}-${idx}`}
+                      type="button"
+                      onClick={() => {
+                        handleCourseChange(sKey);
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                          setShowCourseCards(false);
+                        }
+                      }}
+                      className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-500/30'
+                          : 'bg-white hover:bg-indigo-50/50 text-slate-800 border-slate-200 hover:border-indigo-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span
+                            className={`font-mono font-extrabold text-xs px-2 py-0.5 rounded-md ${
+                              isSelected
+                                ? 'bg-white/20 text-white'
+                                : 'bg-indigo-50 text-indigo-800 border border-indigo-200/70'
+                            }`}
+                          >
+                            {c.courseCode}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isSelected
+                                ? 'bg-white/20 text-white'
+                                : isEn
+                                ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            }`}
+                          >
+                            {isEn ? '🌐 Inter/EN' : '🇹🇭 ภาคไทย'} • ปี {c.yearLevel || 1}
+                          </span>
+                        </div>
+                        <div
+                          className={`font-bold text-xs mt-1.5 line-clamp-1 ${
+                            isSelected ? 'text-white' : 'text-slate-900'
+                          }`}
+                        >
+                          {c.courseName}
+                        </div>
+                      </div>
+
+                      <div
+                        className={`flex items-center justify-between text-[10px] pt-1 border-t ${
+                          isSelected
+                            ? 'border-white/20 text-indigo-100'
+                            : 'border-slate-100 text-slate-500'
+                        }`}
+                      >
+                        <span className="truncate">
+                          {c.dayOfWeek || ''} {c.startTime ? `${c.startTime}-${c.endTime}` : ''}
+                        </span>
+                        <span className="font-semibold shrink-0 ml-1">ห้อง {c.room || '-'}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Bottom-Right Red Chevron Toggle to collapse extra tools */}
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsExtraToolsOpen(false);
+                  setShowCourseCards(false);
+                  setShowConfigPanel(false);
+                }}
+                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition cursor-pointer shadow-2xs"
+                title="ยุบเก็บเครื่องมือเสริม"
+                aria-label="ยุบเก็บเครื่องมือเสริม"
+              >
+                <ChevronUp className="w-5 h-5 stroke-[2.75]" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Collapsible Header & Score Weights Configuration */}

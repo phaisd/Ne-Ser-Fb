@@ -23,6 +23,8 @@ import {
   UserCheck,
   ArrowRight,
   Users,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { AttendanceRecord, Course, CourseEnrollment, CourseGradeSheet, LoginAuditRecord, Student, TimetableItem } from '@/types';
 import { InstructorWorkloadDashboard } from '@/components/workload/InstructorWorkloadDashboard';
@@ -72,6 +74,8 @@ export default function InstructorWorkloadPage() {
   const [filterAcademicYear, setFilterAcademicYear] = useState<string>('ALL');
   const [filterSemester, setFilterSemester] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'CARDS' | 'WEEKLY'>('CARDS');
+  const [isExtraToolsOpen, setIsExtraToolsOpen] = useState<boolean>(false);
+  const [showDashboardOnMobile, setShowDashboardOnMobile] = useState<boolean>(false);
 
   // Resolve authentication state
   useEffect(() => {
@@ -370,17 +374,17 @@ export default function InstructorWorkloadPage() {
   }
 
   return (
-    <div className="space-y-6 pb-10">
-      {/* 1. Instructor Workload Hero Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-slate-800 print:bg-white print:text-slate-900 print:border-slate-300 print:shadow-none">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold print:hidden">
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>พอร์ทัลภาระงานสอนส่วนตัว (Instructor Workload Portal)</span>
+    <div className="space-y-4 sm:space-y-6 pb-10">
+      {/* 1. Instructor Workload Hero Header (Compact on mobile) */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-8 text-white shadow-xl border border-slate-800 print:bg-white print:text-slate-900 print:border-slate-300 print:shadow-none">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 sm:gap-5">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] sm:text-xs font-bold print:hidden">
+              <UserCheck className="w-3.5 h-3.5 shrink-0" />
+              <span>พอร์ทัลภาระงานสอนส่วนตัว (Instructor Workload)</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2.5">
-              <Briefcase className="w-7 h-7 text-amber-400 shrink-0 print:text-indigo-700" />
+            <h1 className="text-lg sm:text-3xl font-black tracking-tight flex items-start sm:items-center gap-2 leading-snug">
+              <Briefcase className="w-5 h-5 sm:w-7 sm:h-7 text-amber-400 shrink-0 mt-0.5 sm:mt-0 print:text-indigo-700" />
               <span>ภาระงานสอนของ {currentUser.name}</span>
             </h1>
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300 print:text-slate-600">
@@ -390,59 +394,60 @@ export default function InstructorWorkloadPage() {
                   {currentUser.instructorType}
                 </span>
               )}
-              <span className="font-mono text-slate-400">• {currentUser.email || currentUser.gmail}</span>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0 print:hidden">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 print:hidden">
+            <Link
+              href="/attendance"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold shadow-md transition"
+            >
+              <CheckSquare className="w-4 h-4 shrink-0" />
+              <span>ไปหน้าเช็คชื่อนิสิต</span>
+            </Link>
+
             <button
               type="button"
               onClick={handleExportMyWorkloadExcel}
               disabled={filteredCourses.length === 0}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer disabled:opacity-50"
             >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>ส่งออก Excel (.xlsx)</span>
+              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <span>ส่งออก Excel</span>
             </button>
 
             <button
               type="button"
               onClick={() => window.print()}
               disabled={filteredCourses.length === 0}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition cursor-pointer disabled:opacity-50"
             >
-              <Printer className="w-4 h-4" />
-              <span>พิมพ์บัตรภาระงาน</span>
+              <Printer className="w-4 h-4 shrink-0" />
+              <span>พิมพ์</span>
             </button>
-
-            <Link
-              href="/attendance"
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold shadow-md transition"
-            >
-              <CheckSquare className="w-4 h-4" />
-              <span>ไปหน้าเช็คชื่อนิสิต</span>
-            </Link>
           </div>
         </div>
       </div>
 
-      {/* 2. Instructor Operational Dashboard (Directly below Hero Header) */}
-      <InstructorWorkloadDashboard
-        allCoursesCount={allMyCourses.length}
-        filteredCourses={filteredCourses}
-        stats={stats}
-        attendanceRecords={attendanceRecords}
-        gradesMap={gradesMap}
-        loadingDetails={loadingDashboardDetails}
-        loginHistory={loginHistory}
-        loginSecurity={loginSecurity}
-        studentsSummary={studentsSummary}
-      />
+      {/* 2. Instructor Operational Dashboard (Collapsible on mobile, visible on md+) */}
+      <div className={`${showDashboardOnMobile ? 'block' : 'hidden md:block'}`}>
+        <InstructorWorkloadDashboard
+          allCoursesCount={allMyCourses.length}
+          filteredCourses={filteredCourses}
+          stats={stats}
+          attendanceRecords={attendanceRecords}
+          gradesMap={gradesMap}
+          loadingDetails={loadingDashboardDetails}
+          loginHistory={loginHistory}
+          loginSecurity={loginSecurity}
+          studentsSummary={studentsSummary}
+        />
+      </div>
 
-      {/* 3. Multi-Dimensional Filters Panel: ระดับ, หลักสูตรภาษา, ปีการศึกษา, ภาคเรียน */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 print:hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {/* 3. Multi-Dimensional Filters Panel with Bottom-Right Red Chevron Toggle */}
+      <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3 print:hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           {/* Search box */}
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -451,157 +456,201 @@ export default function InstructorWorkloadPage() {
               placeholder="ค้นหารหัสวิชา, ชื่อรายวิชา (ไทย/EN), สาขาวิชา หรือห้องเรียน..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
             />
           </div>
 
-          {/* หลักสูตรภาษา (Program Language Filter) */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold shrink-0">
-            <button
-              type="button"
-              onClick={() => setFilterProgram('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                filterProgram === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              ทุกหลักสูตรภาษา
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterProgram('THAI')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1 ${
-                filterProgram === 'THAI'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <span>🇹🇭</span>
-              <span>ภาคภาษาไทย</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterProgram('ENGLISH')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1 ${
-                filterProgram === 'ENGLISH'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span>ภาคภาษาอังกฤษ</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Row: ระดับการศึกษา, ชั้นปี, ปีการศึกษา, ภาคเรียน + View Switcher */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-bold text-slate-500 flex items-center gap-1 mr-1">
-              <Filter className="w-3.5 h-3.5 text-indigo-600" />
-              <span>ตัวกรอง:</span>
-            </span>
-
-            {/* ระดับการศึกษา */}
-            <select
-              aria-label="กรองตามระดับการศึกษา"
-              value={filterDegree}
-              onChange={(e) => setFilterDegree(e.target.value)}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
-            >
-              <option value="ALL">ระดับการศึกษา: ทั้งหมด</option>
-              {availableDegrees.map((deg) => (
-                <option key={deg} value={deg}>
-                  ระดับ: {deg}
-                </option>
-              ))}
-            </select>
-
-            {/* ชั้นปี */}
-            <select
-              aria-label="กรองตามชั้นปี"
-              value={filterYearLevel}
-              onChange={(e) => setFilterYearLevel(e.target.value)}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
-            >
-              <option value="ALL">ชั้นปี: ทั้งหมด</option>
-              <option value="1">ชั้นปีที่ 1</option>
-              <option value="2">ชั้นปีที่ 2</option>
-              <option value="3">ชั้นปีที่ 3</option>
-              <option value="4">ชั้นปีที่ 4</option>
-            </select>
-
-            {/* ปีการศึกษา */}
-            <select
-              aria-label="กรองตามปีการศึกษา"
-              value={filterAcademicYear}
-              onChange={(e) => setFilterAcademicYear(e.target.value)}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
-            >
-              <option value="ALL">ปีการศึกษา: ทั้งหมด</option>
-              {availableAcademicYears.map((yr) => (
-                <option key={yr} value={yr}>
-                  ปีการศึกษา {yr}
-                </option>
-              ))}
-            </select>
-
-            {/* ภาคเรียน */}
-            <select
-              aria-label="กรองตามภาคการศึกษา"
-              value={filterSemester}
-              onChange={(e) => setFilterSemester(e.target.value)}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
-            >
-              <option value="ALL">ภาคเรียน: ทั้งหมด</option>
-              {availableSemesters.map((sem) => (
-                <option key={sem} value={sem}>
-                  ภาคเรียนที่ {sem}
-                </option>
-              ))}
-            </select>
-
-            {hasActiveFilters && (
+          {/* View Mode Switcher */}
+          <div className="flex items-center justify-between sm:justify-end gap-2">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold flex-1 sm:flex-initial">
               <button
                 type="button"
-                onClick={handleResetFilters}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 font-bold transition cursor-pointer"
+                onClick={() => setViewMode('CARDS')}
+                className={`flex-1 sm:flex-initial justify-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  viewMode === 'CARDS'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>ล้างตัวกรอง</span>
+                <List className="w-3.5 h-3.5 shrink-0" />
+                <span>การ์ดวิชา ({filteredCourses.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('WEEKLY')}
+                className={`flex-1 sm:flex-initial justify-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  viewMode === 'WEEKLY'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+                <span>ตารางรายสัปดาห์</span>
+              </button>
+            </div>
+
+            {!isExtraToolsOpen && (
+              <button
+                type="button"
+                onClick={() => setIsExtraToolsOpen(true)}
+                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition cursor-pointer shrink-0 shadow-2xs"
+                title="คลี่ตัวกรองและสถิติภาระงาน"
+                aria-label="คลี่ตัวกรองและสถิติภาระงาน"
+              >
+                <ChevronDown className="w-5 h-5 stroke-[2.75]" />
               </button>
             )}
           </div>
-
-          {/* View Mode Switcher */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl font-bold">
-            <button
-              type="button"
-              onClick={() => setViewMode('CARDS')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                viewMode === 'CARDS'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <List className="w-3.5 h-3.5" />
-              <span>รายการรายวิชา</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('WEEKLY')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                viewMode === 'WEEKLY'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>ตารางสอนรายสัปดาห์</span>
-            </button>
-          </div>
         </div>
+
+        {/* Expanded Filters & Mobile Dashboard Toggle */}
+        {isExtraToolsOpen && (
+          <div className="pt-3 border-t border-slate-100 space-y-3 animate-in fade-in duration-150">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {/* หลักสูตรภาษา (Program Language Filter) */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setFilterProgram('ALL')}
+                  className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
+                    filterProgram === 'ALL'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  ทุกหลักสูตร
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterProgram('THAI')}
+                  className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1 ${
+                    filterProgram === 'THAI'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span>🇹🇭 ภาคไทย</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterProgram('ENGLISH')}
+                  className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1 ${
+                    filterProgram === 'ENGLISH'
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Inter/EN</span>
+                </button>
+              </div>
+
+              {/* Mobile Toggle for Operational Dashboard */}
+              <button
+                type="button"
+                onClick={() => setShowDashboardOnMobile((prev) => !prev)}
+                className={`md:hidden px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
+                  showDashboardOnMobile
+                    ? 'bg-indigo-600 text-white border-indigo-700'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}
+              >
+                <span>📊 แดชบอร์ดสถิติภาระงาน</span>
+                {showDashboardOnMobile ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+
+            {/* Filter Row: ระดับการศึกษา, ชั้นปี, ปีการศึกษา, ภาคเรียน */}
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold text-slate-500 flex items-center gap-1 mr-1">
+                  <Filter className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>ตัวกรอง:</span>
+                </span>
+
+                <select
+                  aria-label="กรองตามระดับการศึกษา"
+                  value={filterDegree}
+                  onChange={(e) => setFilterDegree(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                >
+                  <option value="ALL">ระดับการศึกษา: ทั้งหมด</option>
+                  {availableDegrees.map((deg) => (
+                    <option key={deg} value={deg}>
+                      ระดับ: {deg}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  aria-label="กรองตามชั้นปี"
+                  value={filterYearLevel}
+                  onChange={(e) => setFilterYearLevel(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                >
+                  <option value="ALL">ชั้นปี: ทั้งหมด</option>
+                  <option value="1">ชั้นปีที่ 1</option>
+                  <option value="2">ชั้นปีที่ 2</option>
+                  <option value="3">ชั้นปีที่ 3</option>
+                  <option value="4">ชั้นปีที่ 4</option>
+                </select>
+
+                <select
+                  aria-label="กรองตามปีการศึกษา"
+                  value={filterAcademicYear}
+                  onChange={(e) => setFilterAcademicYear(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                >
+                  <option value="ALL">ปีการศึกษา: ทั้งหมด</option>
+                  {availableAcademicYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      ปีการศึกษา {yr}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  aria-label="กรองตามภาคการศึกษา"
+                  value={filterSemester}
+                  onChange={(e) => setFilterSemester(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                >
+                  <option value="ALL">ภาคเรียน: ทั้งหมด</option>
+                  {availableSemesters.map((sem) => (
+                    <option key={sem} value={sem}>
+                      ภาคเรียนที่ {sem}
+                    </option>
+                  ))}
+                </select>
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 font-bold transition cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>ล้างตัวกรอง</span>
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsExtraToolsOpen(false)}
+                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center transition cursor-pointer shrink-0 shadow-2xs ml-auto"
+                title="ยุบตัวกรอง"
+                aria-label="ยุบตัวกรอง"
+              >
+                <ChevronUp className="w-5 h-5 stroke-[2.75]" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. Workload Content */}
