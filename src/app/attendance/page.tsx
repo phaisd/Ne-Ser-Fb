@@ -703,63 +703,49 @@ export default function AttendancePage() {
 
       {/* Page Header (Hidden on Print) */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 sm:gap-4 print:hidden">
-        <div className="flex items-start sm:items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="text-lg sm:text-3xl font-extrabold text-slate-900 flex items-center gap-2 sm:gap-3">
-              <CheckSquare className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-600 shrink-0" />
-              <span className="truncate">{t.attTitle}</span>
-            </h1>
-            <p className="hidden sm:block text-sm text-slate-500 mt-1">
-              {t.attDesc}
-            </p>
-          </div>
-
-          {/* Mobile Compact Toggle Buttons for Mode Menu & Profile */}
-          <div className="flex sm:hidden items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsModeMenuExpanded((prev) => !prev)}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border flex items-center gap-1 transition cursor-pointer shadow-2xs ${
-                isModeMenuExpanded
-                  ? 'bg-emerald-600 text-white border-emerald-700'
-                  : 'bg-white text-slate-800 border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
-              <span>{isModeMenuExpanded ? 'ยุบเมนู' : 'เมนูโหมด (6)'}</span>
-              {isModeMenuExpanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
-              )}
-            </button>
-          </div>
+        {/* Row 1: Full System Title (2 lines on mobile, no truncation, scaled font size) */}
+        <div className="min-w-0">
+          <h1 className="text-[15px] sm:text-2xl lg:text-3xl font-extrabold text-slate-900 flex items-start sm:items-center gap-2 sm:gap-3 leading-snug">
+            <CheckSquare className="w-5 h-5 sm:w-8 sm:h-8 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+            <span className="break-words">{t.attTitle}</span>
+          </h1>
+          <p className="hidden sm:block text-sm text-slate-500 mt-1">
+            {t.attDesc}
+          </p>
         </div>
 
-        {/* Mobile Active Mode Pill Bar (shown when Mode Menu is collapsed on mobile) */}
-        {!isModeMenuExpanded && (
-          <div className="flex sm:hidden items-center justify-between gap-2 px-3 py-2 rounded-xl bg-emerald-50/90 border border-emerald-200 text-xs">
-            <div className="flex items-center gap-1.5 font-bold text-emerald-950 truncate">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span className="truncate">
-                โหมดปัจจุบัน:{' '}
-                {activeMode === 'ROLL_CALL' && 'อาจารย์เช็คชื่อ (Roll-Call)'}
-                {activeMode === 'ROADMAP' && 'แผนผัง 16 คาบ (Roadmap)'}
-                {activeMode === 'ELIGIBILITY' && 'สรุปสิทธิ์สอบ 80%'}
-                {activeMode === 'GRADE_SHEET' && 'ใบกรอกคะแนนวัดผล'}
-                {activeMode === 'QR_CODE' && 'เปิดจอ QR ห้องเรียน'}
-                {activeMode === 'HISTORY' && `ประวัติการเช็คชื่อ (${visibleHistoryRecords.length})`}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsModeMenuExpanded(true)}
-              className="text-[11px] font-extrabold text-emerald-700 hover:text-emerald-900 underline shrink-0 cursor-pointer"
-            >
-              สลับโหมด ⌄
-            </button>
+        {/* Row 2 on Mobile: Active Mode Status + "เมนูโหมด (6)" Toggle Button on its own row */}
+        <div className="flex sm:hidden items-center justify-between gap-2 px-3 py-2 rounded-xl bg-emerald-50/90 border border-emerald-200 text-xs">
+          <div className="flex items-center gap-1.5 font-bold text-emerald-950 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <span className="leading-tight">
+              {activeMode === 'ROLL_CALL' && 'อาจารย์เช็คชื่อ (Roll-Call)'}
+              {activeMode === 'ROADMAP' && 'แผนผัง 16 คาบ (Roadmap)'}
+              {activeMode === 'ELIGIBILITY' && 'สรุปสิทธิ์สอบ 80%'}
+              {activeMode === 'GRADE_SHEET' && 'ใบกรอกคะแนนวัดผล'}
+              {activeMode === 'QR_CODE' && 'เปิดจอ QR ห้องเรียน'}
+              {activeMode === 'HISTORY' && `ประวัติการเช็คชื่อ (${visibleHistoryRecords.length})`}
+            </span>
           </div>
-        )}
+
+          <button
+            type="button"
+            onClick={() => setIsModeMenuExpanded((prev) => !prev)}
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border flex items-center gap-1 transition cursor-pointer shadow-2xs shrink-0 ${
+              isModeMenuExpanded
+                ? 'bg-emerald-600 text-white border-emerald-700'
+                : 'bg-white text-slate-800 border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+            <span>{isModeMenuExpanded ? 'ยุบเมนู' : 'เมนูโหมด (6)'}</span>
+            {isModeMenuExpanded ? (
+              <ChevronUp className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
 
         {/* Mode switcher tabs (2x3 Grid on Mobile when expanded; 2x3 Always Visible on Desktop sm+) */}
         <div
@@ -934,7 +920,7 @@ export default function AttendancePage() {
                     >
                       {isAdmin ? '👑 Admin Mode' : '🔒 อาจารย์ผู้สอน'}
                     </span>
-                    <span className="text-xs sm:text-sm font-bold text-white truncate">
+                    <span className="text-xs sm:text-sm font-bold text-white leading-snug">
                       {currentUser.name}
                     </span>
                   </div>
