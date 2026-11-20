@@ -941,38 +941,39 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   const selectedOccupant = selectedSeat ? seatOccupantMap.get(selectedSeat.toUpperCase()) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-7xl max-h-[96vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-slate-900/80 backdrop-blur-xs overflow-hidden sm:overflow-y-auto">
+      <div className="relative w-full max-w-7xl h-full sm:h-auto sm:max-h-[96vh] flex flex-col bg-white rounded-none sm:rounded-2xl shadow-2xl border-0 sm:border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-700 via-amber-800 to-slate-900 text-white shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/10 rounded-xl backdrop-blur-xs">
-              <Users className="w-5 h-5 text-amber-300" />
+        <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-gradient-to-r from-amber-700 via-amber-800 to-slate-900 text-white shrink-0 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="p-1.5 sm:p-2 bg-white/10 rounded-xl backdrop-blur-xs shrink-0">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base sm:text-lg leading-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h3 className="font-bold text-sm sm:text-lg leading-tight truncate">
                   แผนผังที่นั่ง & ตรวจเช็คผู้เข้าที่นั่ง
                 </h3>
-                <span className="text-[11px] bg-amber-400 text-slate-900 font-extrabold px-2 py-0.5 rounded-full">
+                <span className="hidden sm:inline-block text-[11px] bg-amber-400 text-slate-900 font-extrabold px-2 py-0.5 rounded-full shrink-0">
                   Grid Matrix
                 </span>
               </div>
-              <p className="text-xs text-amber-200/90 truncate max-w-md sm:max-w-xl">
+              <p className="text-[11px] sm:text-xs text-amber-200/90 truncate max-w-[200px] sm:max-w-xl">
                 {event.title} • {config.venueName || event.location || 'คณะพุทธศาสตร์'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setIsMobileQrOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition shadow-xs cursor-pointer"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition shadow-xs cursor-pointer whitespace-nowrap"
               title="สแกน QR Code เข้าใช้งานจุดตรวจเช็คที่นั่งบนมือถือ หรือแชร์ผังที่นั่ง"
             >
               <Smartphone className="w-3.5 h-3.5 text-indigo-200" />
-              <span>QR มือถือ</span>
+              <span className="hidden sm:inline">QR มือถือ</span>
+              <span className="sm:hidden">QR</span>
             </button>
 
             {onOpenSeatScanner && (
@@ -982,7 +983,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                   onClose();
                   onOpenSeatScanner(event);
                 }}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition shadow-xs cursor-pointer"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition shadow-xs cursor-pointer"
                 title="เปิดกล้องสแกนตรวจเช็คผู้เข้าที่นั่ง"
               >
                 <Camera className="w-3.5 h-3.5 text-emerald-200" />
@@ -993,7 +994,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             <button
               type="button"
               onClick={() => setIsConfigDrawerOpen(!isConfigDrawerOpen)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer border ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer border ${
                 isConfigDrawerOpen
                   ? 'bg-amber-400 text-slate-900 border-amber-300'
                   : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
@@ -1030,13 +1031,13 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         )}
 
         {/* Toolbar & Stats Bar */}
-        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="bg-slate-50 border-b border-slate-200 px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
           {/* Left: Zone Switcher Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap pb-1 sm:pb-0 shrink-0">
             <button
               type="button"
               onClick={() => setActiveZoneId('ALL')}
-              className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer whitespace-nowrap shrink-0 ${
                 activeZoneId === 'ALL'
                   ? 'bg-slate-800 text-white shadow-xs'
                   : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -1052,7 +1053,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                   key={zone.id}
                   type="button"
                   onClick={() => setActiveZoneId(zone.id)}
-                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 border ${
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 border whitespace-nowrap shrink-0 ${
                     isActive
                       ? `${zoneColor.bg} text-white ${zoneColor.border} shadow-xs`
                       : `bg-white ${zoneColor.text} hover:${zoneColor.lightBg} border-slate-200`
@@ -1067,16 +1068,16 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           </div>
 
           {/* Right: Actions, Search & Zoom */}
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap">
             {/* Search participant */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="ค้นหาชื่อ/รหัส/ที่นั่ง..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-amber-500 bg-white w-40 sm:w-48"
+                className="pl-8 pr-3 py-1 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-amber-500 bg-white w-36 sm:w-48"
               />
               {searchQuery && (
                 <button
@@ -1093,7 +1094,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               type="button"
               onClick={() => setIsAssignModalOpen(true)}
               disabled={isSaving}
-              className="px-2.5 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer"
+              className="px-2.5 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
               title="จัดที่นั่งอัตโนมัติ เรียงตามสถานภาพ เพศ หรือกลุ่ม"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-200" />
@@ -1107,7 +1108,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                 setImportExportTab('EXPORT');
                 setIsImportExportModalOpen(true);
               }}
-              className="px-2.5 py-1 text-xs font-bold bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer"
+              className="px-2.5 py-1 text-xs font-bold bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
               title="นำเข้าหรือส่งออกข้อมูลผังที่นั่งด้วยไฟล์ Excel / CSV"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-200" />
@@ -1120,14 +1121,14 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               type="button"
               onClick={handleClearAllSeats}
               disabled={isSaving || stats.assignedCount === 0}
-              className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition cursor-pointer disabled:opacity-40"
+              className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition cursor-pointer disabled:opacity-40 shrink-0"
               title="ล้างข้อมูลการจัดที่นั่งทั้งหมด"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
 
             {/* Zoom Controls */}
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5">
+            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setZoomLevel((z) => Math.max(0.6, z - 0.1))}
@@ -1159,81 +1160,80 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           </div>
         </div>
 
-        {/* Stats Pill Banner */}
-        <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between text-xs text-slate-600 flex-wrap gap-2 shrink-0">
-          <div className="flex items-center gap-4 flex-wrap">
-            <span className="flex items-center gap-1 font-semibold text-slate-700">
+        {/* Stats & Legend Pill Banner (Optimized Single Swipeable Rows for Mobile) */}
+        <div className="bg-white border-b border-slate-200 px-3 sm:px-4 py-2 flex flex-col gap-1.5 shrink-0 text-xs">
+          {/* Stats Row */}
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar whitespace-nowrap text-slate-600 pb-0.5">
+            <span className="flex items-center gap-1 font-semibold text-slate-700 shrink-0">
               <Users className="w-3.5 h-3.5 text-slate-500" />
               ผู้เข้าร่วม: <b className="text-slate-900">{stats.totalParticipants}</b> คน
             </span>
-            <span className="flex items-center gap-1">
-              ความจุผัง: <b className="text-slate-900">{stats.totalCapacity}</b> ที่นั่ง
+            <span className="flex items-center gap-1 shrink-0">
+              ความจุ: <b className="text-slate-900">{stats.totalCapacity}</b> ที่
             </span>
-            <span className="flex items-center gap-1.5 bg-blue-50 text-blue-800 px-2 py-0.5 rounded-md font-semibold border border-blue-200">
-              <span className="w-2 h-2 rounded-full bg-blue-600" />
-              จัดแล้ว: <b>{stats.assignedCount}</b> ที่นั่ง ({stats.totalParticipants > 0 ? Math.round((stats.assignedCount / stats.totalParticipants) * 100) : 0}%)
+            <span className="flex items-center gap-1 bg-blue-50 text-blue-800 px-2 py-0.5 rounded-md font-semibold border border-blue-200 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+              จัดแล้ว: <b>{stats.assignedCount}</b> ที่ ({stats.totalParticipants > 0 ? Math.round((stats.assignedCount / stats.totalParticipants) * 100) : 0}%)
             </span>
-            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md font-semibold border border-emerald-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-              เข้าที่นั่งแล้ว: <b>{stats.checkedInCount}</b> คน
+            <span className="flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md font-semibold border border-emerald-200 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+              เข้าที่นั่ง: <b>{stats.checkedInCount}</b> คน
             </span>
-            <span className="flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">
-              ที่นั่งว่าง: <b>{stats.vacantCount}</b> ที่
+            <span className="flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md shrink-0">
+              ว่าง: <b>{stats.vacantCount}</b> ที่
             </span>
             {stats.unassignedCount > 0 && (
-              <span className="flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 font-bold">
+              <span className="flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 font-bold shrink-0">
                 ⚠️ ยังไม่มีที่นั่ง: {stats.unassignedCount} คน
               </span>
             )}
           </div>
 
-          {/* Multi-Status Color Legend */}
-          <div className="w-full flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80 text-[11px] overflow-x-auto pb-0.5">
-            <div className="flex items-center gap-1.5 shrink-0 text-slate-700 font-bold">
-              <span>สัญลักษณ์ตัวแทนที่นั่ง:</span>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black shadow-2xs">
+          {/* Multi-Status Color Legend - 1 Line Horizontal Swipeable */}
+          <div className="w-full flex items-center gap-2 pt-1 border-t border-slate-100 text-[11px] overflow-x-auto no-scrollbar whitespace-nowrap pb-0.5">
+            <span className="shrink-0 text-slate-700 font-bold text-[10px] sm:text-xs">สัญลักษณ์สี:</span>
+            <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black shadow-2xs whitespace-nowrap shrink-0">
                 <span className="w-2 h-2 rounded-full bg-slate-950" />
                 <span>พระภิกษุ ({stats.statusCounts.MONK})</span>
               </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-900 text-amber-100 font-extrabold shadow-2xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-900 text-amber-100 font-extrabold shadow-2xs whitespace-nowrap shrink-0">
                 <span className="w-2 h-2 rounded-full bg-amber-300" />
                 <span>ภิกษุณี/Inter ({stats.statusCounts.BHIKKHUNI})</span>
               </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-600 text-white font-extrabold shadow-2xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-600 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
                 <span className="w-2 h-2 rounded-full bg-white" />
                 <span>สามเณร ({stats.statusCounts.SAMANERA})</span>
               </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 font-bold border border-amber-300 shadow-2xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 font-bold border border-amber-300 shadow-2xs whitespace-nowrap shrink-0">
                 <span className="w-2 h-2 rounded-full bg-amber-500" />
                 <span>แม่ชี ({stats.statusCounts.MAECHI})</span>
               </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-600 text-white font-extrabold shadow-2xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-600 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
                 <span className="w-2 h-2 rounded-full bg-white" />
                 <span>ฆราวาสชาย ({stats.statusCounts.LAY_MALE})</span>
               </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-700 text-white font-extrabold shadow-2xs">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-700 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
                 <span className="w-2 h-2 rounded-full bg-white" />
                 <span>ฆราวาสหญิง ({stats.statusCounts.LAY_FEMALE})</span>
               </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white text-slate-600 border border-slate-300 font-medium">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white text-slate-600 border border-slate-300 font-medium whitespace-nowrap shrink-0">
                 <span className="w-2 h-2 rounded-xs bg-slate-200 border border-slate-400" />
                 <span>ว่าง ({stats.vacantCount})</span>
               </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-200 text-slate-600 font-medium">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-200 text-slate-600 font-medium whitespace-nowrap shrink-0">
                 <span>— ทางเดิน/เสา ({stats.disabledCount})</span>
               </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
-                <span>✓ เช็คอินเข้าห้องแล้ว</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-300 whitespace-nowrap shrink-0">
+                <span>✓ เช็คอินแล้ว</span>
               </span>
             </div>
           </div>
@@ -1242,13 +1242,13 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         {/* Main Content Area: Seat Grid + Side Drawer */}
         <div className="relative flex-1 flex overflow-hidden bg-slate-100/70">
           {/* Stage / Front of the Hall Indicator */}
-          <div className="flex-1 flex flex-col overflow-auto p-4 sm:p-6 items-center">
+          <div className="flex-1 flex flex-col overflow-auto p-2 sm:p-6 items-center">
             {/* Front Stage Graphic */}
-            <div className="w-full max-w-3xl mb-6 flex flex-col items-center shrink-0">
-              <div className="w-full py-2 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-slate-900 rounded-xl shadow-md text-center font-black tracking-wider text-xs sm:text-sm border border-amber-400 flex items-center justify-center gap-2">
+            <div className="w-full max-w-3xl mb-3 sm:mb-6 flex flex-col items-center shrink-0">
+              <div className="w-full py-1.5 sm:py-2 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-slate-900 rounded-lg sm:rounded-xl shadow-md text-center font-black tracking-wider text-[11px] sm:text-sm border border-amber-400 flex items-center justify-center gap-1.5 sm:gap-2">
                 <span>🏛️ ด้านหน้าหอประชุม / แท่นบรรยาย / พระวิปัสสนาจารย์ (STAGE FRONT)</span>
               </div>
-              <div className="w-32 h-1 bg-amber-400/50 rounded-full mt-1" />
+              <div className="w-20 sm:w-32 h-1 bg-amber-400/50 rounded-full mt-1" />
             </div>
 
             {/* Zones Grid Container */}
@@ -1432,15 +1432,23 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             </div>
           </div>
 
-          {/* Right Selected Seat Inspector Drawer */}
+          {/* Backdrop for mobile bottom sheet */}
           {selectedSeat && (
-            <div className="w-80 sm:w-96 bg-white border-l border-slate-200 shadow-xl flex flex-col shrink-0 animate-in slide-in-from-right duration-200 z-20">
-              <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+            <div
+              className="fixed inset-0 bg-slate-900/50 z-30 sm:hidden animate-in fade-in duration-150"
+              onClick={() => setSelectedSeat(null)}
+            />
+          )}
+
+          {/* Selected Seat Inspector Drawer: Bottom sheet on mobile, right side drawer on desktop */}
+          {selectedSeat && (
+            <div className="fixed sm:static inset-x-0 bottom-0 sm:inset-auto w-full sm:w-96 max-h-[80vh] sm:max-h-none bg-white border-t sm:border-t-0 sm:border-l border-slate-200 shadow-2xl sm:shadow-xl flex flex-col shrink-0 rounded-t-2xl sm:rounded-none z-40 sm:z-20 animate-in slide-in-from-bottom sm:slide-in-from-right duration-200">
+              <div className="p-3.5 sm:p-4 bg-slate-900 text-white flex items-center justify-between">
                 <div>
                   <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
                     รายละเอียดจุดที่นั่ง
                   </span>
-                  <h4 className="text-xl font-black text-white flex items-center gap-2">
+                  <h4 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
                     {selectedSeat}
                     {disabledSet.has(selectedSeat.toUpperCase()) && (
                       <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-normal">
@@ -1452,7 +1460,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setSelectedSeat(null)}
-                  className="p-1 text-slate-400 hover:text-white rounded-lg transition"
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg transition"
                 >
                   <X className="w-5 h-5" />
                 </button>
