@@ -203,13 +203,22 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     setVipassanaModalEvent,
   ]);
 
-  // Also persist station whenever Scanner / Interview / Attendance modal is opened on this device
+  // Also persist station whenever Scanner / Interview / Attendance / Seating modal is opened on this device
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const activeEvt = vipassanaScannerEvent || vipassanaInterviewEvent || vipassanaModalEvent;
+    const activeEvt =
+      vipassanaSeatScannerEvent ||
+      vipassanaSeatingEvent ||
+      vipassanaScannerEvent ||
+      vipassanaInterviewEvent ||
+      vipassanaModalEvent;
     if (!activeEvt) return;
     const activeAction = vipassanaInterviewEvent
       ? 'INTERVIEW'
+      : vipassanaSeatScannerEvent
+      ? 'SEAT_SCAN'
+      : vipassanaSeatingEvent
+      ? 'SEATING'
       : vipassanaScannerEvent
       ? 'SCAN'
       : 'ATTENDANCE';
@@ -224,13 +233,23 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
       sessionStorage.setItem('mcu_active_vipassana_station', stationData);
       localStorage.setItem('mcu_active_vipassana_station', stationData);
     } catch {}
-  }, [vipassanaScannerEvent, vipassanaInterviewEvent, vipassanaModalEvent]);
+  }, [
+    vipassanaScannerEvent,
+    vipassanaInterviewEvent,
+    vipassanaModalEvent,
+    vipassanaSeatingEvent,
+    vipassanaSeatScannerEvent,
+  ]);
 
   // Intercept accidental mobile hardware Back button / Swipe Back when a Vipassana modal is open
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const isAnyModalOpen = Boolean(
-      vipassanaScannerEvent || vipassanaInterviewEvent || vipassanaModalEvent
+      vipassanaScannerEvent ||
+        vipassanaInterviewEvent ||
+        vipassanaModalEvent ||
+        vipassanaSeatingEvent ||
+        vipassanaSeatScannerEvent
     );
     if (!isAnyModalOpen) return;
 
@@ -610,6 +629,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           registrations={registrationsList.filter((r) => r.eventId === vipassanaSeatingEvent.id)}
           onRefresh={onRefresh}
           onOpenSeatScanner={(e) => setVipassanaSeatScannerEvent(e)}
+          onOpenEventQr={(e) => setVipassanaQrEvent(e)}
         />
       )}
 

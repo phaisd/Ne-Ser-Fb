@@ -15,6 +15,7 @@ import {
   Sparkles,
   Calendar,
   MapPin,
+  ScanLine,
 } from 'lucide-react';
 import type { StudentEvent } from '@/types';
 
@@ -32,6 +33,7 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
   const [smartQrDataUrl, setSmartQrDataUrl] = useState<string>('');
   const [scanQrDataUrl, setScanQrDataUrl] = useState<string>('');
   const [interviewQrDataUrl, setInterviewQrDataUrl] = useState<string>('');
+  const [seatScanQrDataUrl, setSeatScanQrDataUrl] = useState<string>('');
   const [seatingQrDataUrl, setSeatingQrDataUrl] = useState<string>('');
   const [copiedMode, setCopiedMode] = useState<string | null>(null);
 
@@ -46,6 +48,9 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
     : '';
   const interviewUrl = event
     ? `${origin}/admin?tab=EVENTS&eventId=${encodeURIComponent(event.id)}&action=INTERVIEW`
+    : '';
+  const seatScanUrl = event
+    ? `${origin}/admin?tab=EVENTS&eventId=${encodeURIComponent(event.id)}&action=SEAT_SCAN`
     : '';
   const seatingUrl = event
     ? `${origin}/events/seating?eventId=${encodeURIComponent(event.id)}`
@@ -71,17 +76,23 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
         margin: 1,
         color: { dark: '#78350f', light: '#ffffff' },
       }),
+      QRCode.toDataURL(seatScanUrl, {
+        width: 420,
+        margin: 1,
+        color: { dark: '#047857', light: '#ffffff' },
+      }),
       QRCode.toDataURL(seatingUrl, {
         width: 420,
         margin: 1,
         color: { dark: '#0f172a', light: '#ffffff' },
       }),
     ])
-      .then(([smart, scan, interview, seating]) => {
+      .then(([smart, scan, interview, seatScan, seating]) => {
         if (!active) return;
         setSmartQrDataUrl(smart);
         setScanQrDataUrl(scan);
         setInterviewQrDataUrl(interview);
+        setSeatScanQrDataUrl(seatScan);
         setSeatingQrDataUrl(seating);
       })
       .catch((err) => console.error('QR generation failed:', err));
@@ -89,7 +100,7 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
     return () => {
       active = false;
     };
-  }, [isOpen, event, smartUrl, scanUrl, interviewUrl, seatingUrl]);
+  }, [isOpen, event, smartUrl, scanUrl, interviewUrl, seatScanUrl, seatingUrl]);
 
   if (!isOpen || !event) return null;
 
@@ -126,10 +137,13 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
       `🧘 3) สำหรับพระวิปัสสนาจารย์ (เปิดหน้าสอบอารมณ์สติปัฏฐาน 4 & สแกนป้ายชื่อด่วน):`,
       `${interviewUrl}`,
       ``,
-      `🪑 4) สำหรับผู้เข้าร่วม (สแกนค้นหาที่นั่ง & ดูผังห้องจริงด้วยตนเอง ไม่ต้องล็อกอิน):`,
+      `🎫 4) สำหรับเจ้าหน้าที่จุดทางเข้าห้อง (เปิดจุดสแกนตรวจเช็คผู้เข้าที่นั่งบนมือถือ):`,
+      `${seatScanUrl}`,
+      ``,
+      `🪑 5) สำหรับผู้เข้าร่วม (สแกนค้นหาที่นั่ง & ดูผังห้องจริงด้วยตนเอง ไม่ต้องล็อกอิน):`,
       `${seatingUrl}`,
       ``,
-      `💡 วิธีใช้งานบนมือถือ: กดลิงก์หรือสแกน QR Code -> เข้าสู่ระบบ -> เลือกกลุ่มที่ท่านดูแล -> กดเปิดกล้องสแกนป้ายคล้องคอนิสิตได้ทันที`,
+      `💡 วิธีใช้งานบนมือถือ: กดลิงก์หรือสแกน QR Code -> เข้าสู่ระบบ -> เปิดกล้องสแกนป้ายคล้องคอนิสิตหรือตรวจสอบที่นั่งได้ทันที`,
     ].join('\n');
 
     handleCopyText(message, 'LINE_ALL');
@@ -137,7 +151,7 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in print:p-0 print:bg-white print:static print:block print:overflow-visible">
-      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[95vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden print:shadow-none print:border-none print:max-h-none print:w-full print:static print:block print:overflow-visible print:h-auto">
+      <div className="bg-white rounded-3xl max-w-7xl w-full max-h-[95vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden print:shadow-none print:border-none print:max-h-none print:w-full print:static print:block print:overflow-visible print:h-auto">
         {/* Header (Screen only) */}
         <div className="print:hidden px-4 sm:px-6 py-4 bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
@@ -222,8 +236,8 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
             </div>
           </div>
 
-          {/* 4 QR Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* 5 QR Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {/* Card 1: Smart Auto-Role QR (Recommended Single QR for the project) */}
             <div className="rounded-2xl border-2 border-indigo-400 bg-gradient-to-b from-indigo-50/70 via-white to-indigo-50/30 p-4 flex flex-col justify-between space-y-3 shadow-sm">
               <div className="space-y-1.5 text-center">
@@ -385,7 +399,60 @@ export const VipassanaEventQrModal: React.FC<VipassanaEventQrModalProps> = ({
               </div>
             </div>
 
-            {/* Card 4: Public Self-Service Seat Finder */}
+            {/* Card 4: Staff Rapid Seat Scanner QR */}
+            <div className="rounded-2xl border-2 border-teal-400 bg-gradient-to-b from-teal-50/70 via-white to-teal-50/30 p-4 flex flex-col justify-between space-y-3 shadow-sm">
+              <div className="space-y-1.5 text-center">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-teal-700 text-white">
+                  <ScanLine className="w-3 h-3 text-teal-200" />
+                  <span>สำหรับเจ้าหน้าที่จุดเข้าห้อง</span>
+                </span>
+                <h4 className="font-extrabold text-teal-950 text-sm">
+                  สแกนตรวจเช็คผู้เข้าที่นั่ง
+                </h4>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  เปิดตรงไปหน้า <strong>จุดสแกนเช็คชื่อเข้าที่นั่ง</strong> ส่องป้ายคล้องคอเพื่อตรวจเช็คอินและแจ้งเลขที่นั่ง/แถวทันที
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center justify-center py-2">
+                {seatScanQrDataUrl ? (
+                  <img
+                    src={seatScanQrDataUrl}
+                    alt="Seat Scanner QR"
+                    className="w-44 h-44 rounded-2xl border-2 border-teal-200 bg-white p-2 shadow-xs object-contain"
+                  />
+                ) : (
+                  <div className="w-44 h-44 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400">
+                    กำลังสร้าง QR...
+                  </div>
+                )}
+                <span className="text-[10px] font-bold text-teal-800 mt-1.5">
+                  เข้าหน้าสแกนเช็คอินที่นั่งทันที
+                </span>
+              </div>
+
+              <div className="space-y-1.5 print:hidden">
+                <button
+                  type="button"
+                  onClick={() => handleCopyText(seatScanUrl, 'SEAT_SCAN')}
+                  className="w-full py-2 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+                >
+                  {copiedMode === 'SEAT_SCAN' ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200" />
+                      <span>คัดลอกลิงก์สแกนที่นั่งแล้ว!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>คัดลอกลิงก์สแกนที่นั่ง</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Card 5: Public Self-Service Seat Finder */}
             <div className="rounded-2xl border-2 border-slate-400 bg-gradient-to-b from-slate-50/70 via-white to-slate-50/30 p-4 flex flex-col justify-between space-y-3 shadow-sm">
               <div className="space-y-1.5 text-center">
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-slate-900 text-amber-300">
