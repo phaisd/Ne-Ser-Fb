@@ -16,6 +16,7 @@ import {
   Edit3,
   Trash2,
   QrCode,
+  Smartphone,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
 import { getAuthUser } from '@/lib/auth-client';
@@ -243,47 +244,98 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                 </div>
               </div>
 
-              {/* Card Action Buttons */}
-              <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100 flex-wrap">
-                {/* ปุ่ม QR เข้าระบบโครงการบนมือถือ (แยกแต่ละโครงการ) */}
-                {onOpenVipassanaQr && (
-                  <button
-                    type="button"
-                    onClick={(evt) => {
-                      evt.stopPropagation();
-                      onOpenVipassanaQr(e);
-                    }}
-                    className="px-2.5 py-1 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
-                    title="สร้าง QR Code และคัดลอกลิงก์ประจำโครงการนี้ สำหรับส่งให้พระวิปัสสนาจารย์และอาจารย์ผู้ดูแลเปิดสแกนบนมือถือ"
-                  >
-                    <QrCode className="w-3 h-3 text-amber-300" />
-                    <span>QR เข้าระบบมือถือ</span>
-                  </button>
-                )}
-
+              {/* Card Action Areas (Zone 1: ปฏิบัติการหน้างานสด + Zone 2: เอกสาร & ประมวลผล & จัดการ) */}
+              <div className="pt-2.5 border-t border-slate-100 space-y-2.5">
+                {/* Zone 1: จุดปฏิบัติการหน้างานสด (Live Operations Grid) */}
                 {(e.eventType === 'MEDITATION' ||
                   e.durationFormat === 'LONG_TERM_MEDITATION' ||
                   e.meditationConfig?.isMeditationEvent ||
                   e.title?.includes('วิปัสสนา') ||
                   e.title?.includes('กัมมัฏฐาน') ||
                   e.title?.toLowerCase().includes('meditation')) && (
-                  <>
-                    {/* ปุ่มเส้นสีแดง 1: จุดสแกนสด (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
-                    {canAccessScanner && (
-                      <button
-                        type="button"
-                        onClick={(evt) => {
-                          evt.stopPropagation();
-                          onOpenVipassanaScanner(e);
-                        }}
-                        className="px-2.5 py-1 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
-                        title="เปิดจุดสแกนเช็คชื่ออัตโนมัติ (กล้องมือถือ/ปืนสแกนบาร์โค้ด)"
-                      >
-                        <Camera className="w-3 h-3 text-emerald-200" />
-                        <span>จุดสแกนสด</span>
-                      </button>
-                    )}
+                  <div className="bg-slate-50/90 rounded-xl p-2 border border-slate-200/70 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-bold px-0.5">
+                      <span className="flex items-center gap-1.5 text-slate-700">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block shadow-xs" />
+                        <span>จุดปฏิบัติงานสด</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        หน้างาน & สแกนเนอร์
+                      </span>
+                    </div>
 
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {/* 1. จุดสแกนสด (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
+                      {canAccessScanner && (
+                        <button
+                          type="button"
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            onOpenVipassanaScanner(e);
+                          }}
+                          className="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white transition font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          title="เปิดจุดสแกนเช็คชื่ออัตโนมัติ (กล้องมือถือ/ปืนสแกนบาร์โค้ด)"
+                        >
+                          <Camera className="w-3.5 h-3.5 text-emerald-100" />
+                          <span className="truncate">จุดสแกนสด</span>
+                        </button>
+                      )}
+
+                      {/* 2. แผนผังที่นั่ง & เช็คอินที่นั่ง (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
+                      {canAccessScanner && onOpenVipassanaSeating && (
+                        <button
+                          type="button"
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            onOpenVipassanaSeating(e);
+                          }}
+                          className="px-2.5 py-1.5 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white transition font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          title="เปิดผังที่นั่ง จัดที่นั่งอัตโนมัติ และตรวจเช็คจุดที่นั่ง"
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-amber-300" />
+                          <span className="truncate">ผังที่นั่ง & เช็คอิน</span>
+                        </button>
+                      )}
+
+                      {/* 3. สอบอารมณ์สติปัฏฐาน 4 (สำหรับ Admin ทุกระดับ และ พระวิปัสสนาจารย์) */}
+                      {canAccessInterview && (
+                        <button
+                          type="button"
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            onOpenVipassanaInterview(e);
+                          }}
+                          className="px-2.5 py-1.5 text-xs rounded-lg bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white transition font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          title="เปิดแบบสอบอารมณ์สติปัฏฐาน 4 สำหรับพระวิปัสสนาจารย์"
+                        >
+                          <Award className="w-3.5 h-3.5 text-amber-200" />
+                          <span className="truncate">สอบอารมณ์ 4</span>
+                        </button>
+                      )}
+
+                      {/* 4. QR เข้าระบบโครงการบนมือถือ (แยกแต่ละโครงการ) */}
+                      {onOpenVipassanaQr && (
+                        <button
+                          type="button"
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            onOpenVipassanaQr(e);
+                          }}
+                          className="px-2.5 py-1.5 text-xs rounded-lg bg-purple-600 hover:bg-purple-700 active:scale-[0.98] text-white transition font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          title="สร้าง QR Code และคัดลอกลิงก์ประจำโครงการนี้ สำหรับส่งให้พระวิปัสสนาจารย์และอาจารย์ผู้ดูแลเปิดสแกนบนมือถือ"
+                        >
+                          <Smartphone className="w-3.5 h-3.5 text-purple-200" />
+                          <span className="truncate">QR มือถือ</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Zone 2: เอกสาร & ประมวลผล & การจัดการโครงการ (Documents, Reports, Certs & Admin) */}
+                <div className="flex items-center justify-between gap-1.5 flex-wrap pt-0.5">
+                  {/* เอกสาร & ประมวลผล */}
+                  <div className="flex items-center gap-1 flex-wrap">
                     {/* ปุ่มพิมพ์ป้ายคล้องคอ (เฉพาะ Admin ทุกระดับ) */}
                     {isAdmin && (
                       <button
@@ -292,31 +344,15 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                           evt.stopPropagation();
                           onOpenVipassanaBadges(e);
                         }}
-                        className="px-2.5 py-1 text-xs rounded-lg border border-purple-300 bg-purple-50 hover:bg-purple-100 text-purple-900 transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                        className="px-2 py-1 text-xs rounded-lg border border-purple-200/80 bg-purple-50/70 hover:bg-purple-100/80 text-purple-900 transition font-bold flex items-center gap-1 cursor-pointer"
                         title="พิมพ์ป้ายชื่อคล้องคอพร้อม QR Code"
                       >
                         <Sparkles className="w-3 h-3 text-purple-600" />
-                        <span>พิมพ์ป้ายคล้องคอ</span>
+                        <span>พิมพ์ป้าย</span>
                       </button>
                     )}
 
-                    {/* ปุ่มแผนผังที่นั่ง & เช็คอินที่นั่ง (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
-                    {canAccessScanner && onOpenVipassanaSeating && (
-                      <button
-                        type="button"
-                        onClick={(evt) => {
-                          evt.stopPropagation();
-                          onOpenVipassanaSeating(e);
-                        }}
-                        className="px-2.5 py-1 text-xs rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
-                        title="เปิดผังที่นั่ง จัดที่นั่งอัตโนมัติ และตรวจเช็คจุดที่นั่ง"
-                      >
-                        <MapPin className="w-3 h-3 text-amber-300" />
-                        <span>ผังที่นั่ง & เช็คอิน</span>
-                      </button>
-                    )}
-
-                    {/* ปุ่มเส้นสีแดง 2: เช็คชื่อ 4 รอบ & พิมพ์ (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
+                    {/* ปุ่มเช็คชื่อ 4 รอบ & พิมพ์ (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
                     {canAccessAttendance && (
                       <button
                         type="button"
@@ -324,27 +360,11 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                           evt.stopPropagation();
                           onOpenVipassanaModal(e);
                         }}
-                        className="px-2.5 py-1 text-xs rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                        className="px-2 py-1 text-xs rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition font-bold flex items-center gap-1 cursor-pointer"
                         title="เปิดแบบฟอร์มบันทึกเวลา 4 รอบ และพิมพ์เอกสาร A4"
                       >
-                        <FileSpreadsheet className="w-3 h-3 text-purple-200" />
-                        <span>เช็คชื่อ 4 รอบ & พิมพ์</span>
-                      </button>
-                    )}
-
-                    {/* ปุ่มเส้นสีน้ำเงิน: สอบอารมณ์สติปัฏฐาน 4 (สำหรับ Admin ทุกระดับ และ พระวิปัสสนาจารย์) */}
-                    {canAccessInterview && (
-                      <button
-                        type="button"
-                        onClick={(evt) => {
-                          evt.stopPropagation();
-                          onOpenVipassanaInterview(e);
-                        }}
-                        className="px-2.5 py-1 text-xs rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
-                        title="เปิดแบบสอบอารมณ์สติปัฏฐาน 4 สำหรับพระวิปัสสนาจารย์"
-                      >
-                        <Award className="w-3 h-3 text-amber-200" />
-                        <span>สอบอารมณ์สติปัฏฐาน 4</span>
+                        <FileSpreadsheet className="w-3 h-3 text-slate-500" />
+                        <span>เช็คชื่อ 4 รอบ</span>
                       </button>
                     )}
 
@@ -356,38 +376,59 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                           evt.stopPropagation();
                           onOpenVipassanaEvaluation(e);
                         }}
-                        className="px-2.5 py-1 text-xs rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition font-bold flex items-center gap-1 cursor-pointer shadow-xs"
+                        className="px-2 py-1 text-xs rounded-lg border border-teal-200/80 bg-teal-50/70 hover:bg-teal-100/80 text-teal-900 transition font-bold flex items-center gap-1 cursor-pointer"
                         title="เปิดระบบประมวลผลผ่านโครงการร่วม 2 มิติ และออกวุฒิบัตรดิจิทัล"
                       >
-                        <Award className="w-3 h-3 text-teal-200" />
-                        <span>ประมวลผล & วุฒิบัตร</span>
+                        <Award className="w-3 h-3 text-teal-600" />
+                        <span>วุฒิบัตร</span>
                       </button>
                     )}
-                  </>
-                )}
 
-                {/* ปุ่มแก้ไข & ลบโครงการ (เฉพาะ Admin ทุกระดับ) */}
-                {isAdmin && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(evt) => onOpenEditEvent(e, evt)}
-                      className="px-2.5 py-1 text-xs rounded-lg text-slate-700 hover:bg-slate-100 border border-slate-200 transition font-medium flex items-center gap-1 cursor-pointer"
-                      title="แก้ไขรายละเอียดโครงการ"
-                    >
-                      <Edit3 className="w-3 h-3 text-slate-500" />
-                      <span>แก้ไข</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(evt) => onOpenDeleteEvent(e, evt)}
-                      className="p-1 rounded-lg text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
-                      title="ลบโครงการนี้"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </>
-                )}
+                    {/* หากไม่ใช่โครงการวิปัสสนา แต่มีปุ่ม QR โครงการ */}
+                    {!(e.eventType === 'MEDITATION' ||
+                      e.durationFormat === 'LONG_TERM_MEDITATION' ||
+                      e.meditationConfig?.isMeditationEvent ||
+                      e.title?.includes('วิปัสสนา') ||
+                      e.title?.includes('กัมมัฏฐาน') ||
+                      e.title?.toLowerCase().includes('meditation')) &&
+                      onOpenVipassanaQr && (
+                        <button
+                          type="button"
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            onOpenVipassanaQr(e);
+                          }}
+                          className="px-2 py-1 text-xs rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <QrCode className="w-3 h-3 text-amber-300" />
+                          <span>QR โครงการ</span>
+                        </button>
+                      )}
+                  </div>
+
+                  {/* แอดมิน: แก้ไข & ลบโครงการ */}
+                  {isAdmin && (
+                    <div className="flex items-center gap-1 ml-auto shrink-0">
+                      <button
+                        type="button"
+                        onClick={(evt) => onOpenEditEvent(e, evt)}
+                        className="px-2 py-1 text-xs rounded-lg text-slate-600 hover:bg-slate-100 border border-slate-200 transition font-medium flex items-center gap-1 cursor-pointer"
+                        title="แก้ไขรายละเอียดโครงการ"
+                      >
+                        <Edit3 className="w-3 h-3 text-slate-500" />
+                        <span>แก้ไข</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(evt) => onOpenDeleteEvent(e, evt)}
+                        className="p-1 rounded-lg text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
+                        title="ลบโครงการนี้"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );
