@@ -130,6 +130,8 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       studentName: string;
       seatNumber: string;
       seatZone: string;
+      seatCheckedIn?: boolean;
+      checkinText?: string;
       status: 'VALID' | 'DUPLICATE_SEAT' | 'NOT_FOUND';
       statusNote?: string;
     }>
@@ -334,6 +336,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   const handleExportSeatingXlsx = () => {
     const rows = registrations.map((r, idx) => {
       const st = detectParticipantStatus(r.studentName, r.role);
+      const isCheckedIn = !!r.seatCheckinAt;
       return [
         idx + 1,
         r.studentCode,
@@ -346,12 +349,15 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         r.groupNumber || '',
         r.seatNumber || '',
         r.seatZone || '',
+        isCheckedIn ? 'เช็คอินแล้ว' : 'ยังไม่เข้าที่นั่ง',
+        r.seatCheckinAt ? new Date(r.seatCheckinAt).toLocaleString('th-TH') : '-',
+        r.seatCheckinBy || '-',
       ];
     });
 
     const sheet: XlsxSheet = {
-      name: 'ผังที่นั่ง',
-      title: `ผังที่นั่ง: ${event.title}`,
+      name: 'ผังที่นั่งและตรวจเช็ค',
+      title: `ผังที่นั่ง & รายงานตรวจเช็คผู้เข้าที่นั่ง: ${event.title}`,
       subtitle: `สถานที่: ${config.venueName || event.location || 'คณะพุทธศาสตร์'} • วันที่ส่งออก: ${new Date().toLocaleDateString('th-TH')}`,
       headers: [
         'ลำดับ',
@@ -365,13 +371,16 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         'กลุ่มที่',
         'หมายเลขที่นั่ง (Seat No.)',
         'โซนที่นั่ง (Zone)',
+        'สถานะตรวจเช็คเข้าที่นั่ง',
+        'วันเวลาที่เช็คอิน',
+        'ผู้ตรวจเช็ค',
       ],
       rows,
-      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 22, 20],
+      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 22, 20, 22, 22, 20],
     };
 
     downloadXlsx(
-      `ผังที่นั่ง_${event.title.replace(/[\/\\:*?"<>|]/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      `ผังที่นั่งและตรวจเช็ค_${event.title.replace(/[\/\\:*?"<>|]/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`,
       [sheet]
     );
   };
@@ -390,11 +399,15 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       'กลุ่มที่',
       'หมายเลขที่นั่ง',
       'โซนที่นั่ง',
+      'สถานะตรวจเช็คเข้าที่นั่ง',
+      'วันเวลาที่เช็คอิน',
+      'ผู้ตรวจเช็ค',
     ];
 
     const lines = [headers.join(',')];
     registrations.forEach((r, idx) => {
       const st = detectParticipantStatus(r.studentName, r.role);
+      const isCheckedIn = !!r.seatCheckinAt;
       const row = [
         idx + 1,
         `"${r.studentCode}"`,
@@ -407,6 +420,9 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         `"${r.groupNumber || ''}"`,
         `"${r.seatNumber || ''}"`,
         `"${r.seatZone || ''}"`,
+        `"${isCheckedIn ? 'เช็คอินแล้ว' : 'ยังไม่เข้าที่นั่ง'}"`,
+        `"${r.seatCheckinAt ? new Date(r.seatCheckinAt).toLocaleString('th-TH') : '-'}"`,
+        `"${r.seatCheckinBy || '-'}"`,
       ];
       lines.push(row.join(','));
     });
@@ -415,7 +431,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ผังที่นั่ง_${event.title.replace(/[\/\\:*?"<>|]/g, '_')}.csv`;
+    a.download = `ผังที่นั่งและตรวจเช็ค_${event.title.replace(/[\/\\:*?"<>|]/g, '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -423,18 +439,18 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   // Download Blank Excel Template
   const handleDownloadBlankTemplate = () => {
     const sampleRows = [
-      [1, '6701501001', 'T101', 'พระมหาสมชาย กิตฺติโสภโณ', 'พระภิกษุ', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 'A-01', 'โซน A'],
-      [2, '6701501002', 'T102', 'สามเณรธีรภัทร สุขใจ', 'สามเณร', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 'A-02', 'โซน A'],
-      [3, '6701501003', 'T103', 'แม่ชีวิมล บุญประเสริฐ', 'แม่ชี', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 2, 'B-01', 'โซน B'],
-      [4, '6701501004', 'T104', 'นายก้องภพ ใจดี', 'คฤหัสถ์ชาย', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 2, 'B-02', 'โซน B'],
-      [5, '6701501005', 'T105', 'นางสาวพรทิพย์ สดใส', 'คฤหัสถ์หญิง', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 3, 'C-01', 'โซน C'],
-      [6, '6701501006', 'I301', 'Ven. Dhammapalo', 'พระภิกษุ', 'ENGLISH', 'ปริญญาตรี', 'Buddhism', 12, 'A-03', 'โซน A'],
+      [1, '6701501001', 'T101', 'พระมหาสมชาย กิตฺติโสภโณ', 'พระภิกษุ', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 'A-01', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:30:00', 'จนท.สมชาย'],
+      [2, '6701501002', 'T102', 'สามเณรธีรภัทร สุขใจ', 'สามเณร', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 'A-02', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
+      [3, '6701501003', 'T103', 'แม่ชีวิมล บุญประเสริฐ', 'แม่ชี', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 2, 'B-01', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
+      [4, '6701501004', 'T104', 'นายก้องภพ ใจดี', 'คฤหัสถ์ชาย', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 2, 'B-02', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:32:15', 'จนท.สมชาย'],
+      [5, '6701501005', 'T105', 'นางสาวพรทิพย์ สดใส', 'คฤหัสถ์หญิง', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 3, 'C-01', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
+      [6, '6701501006', 'I301', 'Ven. Dhammapalo', 'พระภิกษุ', 'ENGLISH', 'ปริญญาตรี', 'Buddhism', 12, 'A-03', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:35:00', 'จนท.สมชาย'],
     ];
 
     const sheet: XlsxSheet = {
-      name: 'แม่แบบจัดผังที่นั่ง',
-      title: 'แม่แบบไฟล์ Excel กำหนดหมายเลขที่นั่ง (Seating Template)',
-      subtitle: 'คำแนะนำ: ระบุรหัสนิสิต และหมายเลขที่นั่งที่ต้องการจัดสรร (เช่น A-01, A-02)',
+      name: 'แม่แบบจัดผังที่นั่งและเช็คอิน',
+      title: 'แม่แบบไฟล์ Excel กำหนดหมายเลขที่นั่ง & ตรวจเช็ค (Seating & Checkin Template)',
+      subtitle: 'คำแนะนำ: ระบุรหัสนิสิต, หมายเลขที่นั่ง (เช่น A-01) และสามารถระบุสถานะตรวจเช็ค (เช็คอินแล้ว/ยังไม่เข้าที่นั่ง) ได้',
       headers: [
         'ลำดับ',
         'รหัสนิสิต',
@@ -447,9 +463,12 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         'กลุ่มที่',
         'หมายเลขที่นั่ง (Seat No.)',
         'โซนที่นั่ง (Zone)',
+        'สถานะตรวจเช็คเข้าที่นั่ง',
+        'วันเวลาที่เช็คอิน',
+        'ผู้ตรวจเช็ค',
       ],
       rows: sampleRows,
-      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 22, 20],
+      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 22, 20, 22, 22, 20],
     };
 
     downloadXlsx(
@@ -470,6 +489,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     let seatCol = -1;
     let zoneCol = -1;
     let nameCol = -1;
+    let checkinCol = -1;
 
     for (let i = 0; i < Math.min(5, matrix.length); i++) {
       const row = matrix[i].map((c) => String(c || '').trim().toLowerCase());
@@ -493,6 +513,13 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         seatCol = sIdx;
         zoneCol = row.findIndex((cell) => cell.includes('โซน') || cell.includes('zone'));
         nameCol = row.findIndex((cell) => cell.includes('ชื่อ') || cell.includes('name'));
+        checkinCol = row.findIndex(
+          (cell) =>
+            cell.includes('ตรวจเช็ค') ||
+            cell.includes('เช็คอิน') ||
+            cell.includes('checkin') ||
+            cell.includes('เข้าที่นั่ง')
+        );
         break;
       }
     }
@@ -523,6 +550,34 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       if (!rawCode && !rawSeat) continue;
       if (rawCode.includes('รหัส') || rawCode.toLowerCase().includes('student')) continue;
 
+      let seatCheckedIn: boolean | undefined = undefined;
+      let checkinText = '';
+      if (checkinCol !== -1 && row[checkinCol] !== undefined) {
+        checkinText = String(row[checkinCol] || '').trim();
+        const rawChk = checkinText.toLowerCase();
+        if (
+          rawChk.includes('เช็คอินแล้ว') ||
+          rawChk.includes('เข้าที่นั่งแล้ว') ||
+          rawChk === 'y' ||
+          rawChk === 'yes' ||
+          rawChk === '1' ||
+          rawChk === 'true' ||
+          rawChk === 'checked' ||
+          rawChk === 'attended' ||
+          rawChk === 'pass'
+        ) {
+          seatCheckedIn = true;
+        } else if (
+          rawChk.includes('ยังไม่') ||
+          rawChk === 'n' ||
+          rawChk === 'no' ||
+          rawChk === '0' ||
+          rawChk === 'false'
+        ) {
+          seatCheckedIn = false;
+        }
+      }
+
       const matchedReg = regMap.get(rawCode.toLowerCase());
       let status: 'VALID' | 'DUPLICATE_SEAT' | 'NOT_FOUND' = 'VALID';
       let statusNote = '';
@@ -544,6 +599,8 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         studentName: matchedReg?.studentName || (nameCol !== -1 ? row[nameCol] : '') || '-',
         seatNumber: rawSeat,
         seatZone: rawZone || matchedReg?.seatZone || '',
+        seatCheckedIn,
+        checkinText,
         status,
         statusNote,
       });
@@ -647,6 +704,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             studentCode: r.studentCode,
             seatNumber: r.seatNumber,
             seatZone: r.seatZone,
+            seatCheckedIn: r.seatCheckedIn,
           })),
         }),
       });
@@ -2003,7 +2061,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                     <div className="p-3.5 bg-indigo-50/70 rounded-xl border border-indigo-200 text-indigo-900 space-y-1">
                       <div className="font-bold">คำแนะนำการส่งออก:</div>
                       <p className="text-[11px] text-indigo-800 leading-relaxed">
-                        ไฟล์ที่ส่งออกจะรวบรวมรายชื่อผู้เข้าร่วมโครงการทั้งหมด ({registrations.length} ท่าน) พร้อมสถานภาพ (พระภิกษุ/สามเณร/แม่ชี/ฆราวาส), หลักสูตรภาษา (ไทย/Inter), กลุ่ม, และหมายเลขที่นั่งปัจจุบัน ท่านสามารถนำไปกำหนดเลขที่นั่งในโปรแกรม Excel ได้อย่างอิสระ แล้วนำกลับมาอัปโหลดในแท็บ &quot;นำเข้า&quot;
+                        ไฟล์ที่ส่งออกจะรวบรวมรายชื่อผู้เข้าร่วมโครงการทั้งหมด ({registrations.length} ท่าน) พร้อมสถานภาพ (พระภิกษุ/สามเณร/แม่ชี/ฆราวาส), หลักสูตรภาษา (ไทย/Inter), กลุ่ม, หมายเลขที่นั่ง, โซน, และสถานะตรวจเช็คผู้เข้าที่นั่ง (วันเวลาเช็คอิน, ผู้ตรวจเช็ค) ท่านสามารถนำไปกำหนดเลขที่นั่งหรือบันทึกเช็คอินในโปรแกรม Excel ได้อย่างอิสระ แล้วนำกลับมาอัปโหลดในแท็บ &quot;นำเข้า&quot;
                       </p>
                     </div>
 
@@ -2069,7 +2127,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                         คลิกเพื่อเลือกไฟล์ หรือลากไฟล์ Excel (.xlsx) / CSV มาวางที่นี่
                       </div>
                       <div className="text-[10px] text-slate-500">
-                        ระบบจะตรวจจับคอลัมน์รหัสนิสิตและหมายเลขที่นั่งให้อัตโนมัติ
+                        ระบบจะตรวจจับคอลัมน์รหัสนิสิต หมายเลขที่นั่ง โซน และสถานะตรวจเช็คเข้าที่นั่งให้อัตโนมัติ
                       </div>
                       {importFileName && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg border border-indigo-200 text-indigo-800 text-[11px] font-bold shadow-xs">
@@ -2124,8 +2182,9 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                 <th className="p-2 w-28">รหัสนิสิต</th>
                                 <th className="p-2">ชื่อผู้เข้าร่วม</th>
                                 <th className="p-2 w-24">เลขที่นั่ง</th>
-                                <th className="p-2 w-24">โซน</th>
-                                <th className="p-2 w-32 text-center">สถานะ</th>
+                                <th className="p-2 w-20">โซน</th>
+                                <th className="p-2 w-28 text-center">ตรวจเช็คเข้าที่นั่ง</th>
+                                <th className="p-2 w-28 text-center">สถานะ</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -2137,6 +2196,19 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                     {row.seatNumber || '-'}
                                   </td>
                                   <td className="p-2 text-slate-500">{row.seatZone || '-'}</td>
+                                  <td className="p-2 text-center">
+                                    {row.seatCheckedIn === true ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                        ✓ เช็คอินแล้ว
+                                      </span>
+                                    ) : row.seatCheckedIn === false ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                                        ยังไม่เข้าที่นั่ง
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-slate-400">-</span>
+                                    )}
+                                  </td>
                                   <td className="p-2 text-center">
                                     {row.status === 'VALID' ? (
                                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">

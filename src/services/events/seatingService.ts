@@ -472,6 +472,8 @@ export async function batchImportSeatingFromRows(
     studentCode: string;
     seatNumber?: string;
     seatZone?: string;
+    seatCheckedIn?: boolean;
+    seatCheckinBy?: string;
   }>
 ): Promise<{
   totalProcessed: number;
@@ -502,8 +504,22 @@ export async function batchImportSeatingFromRows(
 
     const target = regMap.get(cleanCode);
     if (target) {
-      target.seatNumber = row.seatNumber ? row.seatNumber.trim().toUpperCase() : undefined;
-      target.seatZone = row.seatZone ? row.seatZone.trim() : target.seatZone;
+      if (row.seatNumber !== undefined) {
+        target.seatNumber = row.seatNumber ? row.seatNumber.trim().toUpperCase() : undefined;
+      }
+      if (row.seatZone !== undefined) {
+        target.seatZone = row.seatZone ? row.seatZone.trim() : target.seatZone;
+      }
+      if (row.seatCheckedIn !== undefined) {
+        if (row.seatCheckedIn) {
+          target.seatCheckinAt = target.seatCheckinAt || new Date().toISOString();
+          target.seatCheckinBy = row.seatCheckinBy || target.seatCheckinBy || 'Import File';
+          if (target.status !== 'ATTENDED') target.status = 'ATTENDED';
+        } else {
+          target.seatCheckinAt = undefined;
+          target.seatCheckinBy = undefined;
+        }
+      }
       target.updatedAt = new Date().toISOString();
       matchedCount++;
     } else {
