@@ -317,13 +317,14 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
 
         {/* Footer Practice Location Text Input */}
         <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
-          <span className="font-bold text-slate-700 whitespace-nowrap">สถานที่ปฏิบัติ (ท้ายป้าย):</span>
+          <span className="font-bold text-slate-700 whitespace-nowrap">ข้อความท้ายป้าย (พิมพ์เอง):</span>
           <input
             type="text"
             value={footerLocationText}
+            maxLength={60}
             onChange={(e) => setFooterLocationText(e.target.value)}
-            placeholder="ระบุสถานที่ปฏิบัติ..."
-            className="w-40 sm:w-52 text-xs font-semibold text-amber-900 focus:outline-none"
+            placeholder="เช่น ศาลาปฏิบัติธรรม / ห้อง 101"
+            className="w-44 sm:w-56 text-xs font-semibold text-amber-900 focus:outline-none"
           />
         </div>
 

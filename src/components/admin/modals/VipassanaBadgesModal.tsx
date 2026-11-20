@@ -64,14 +64,25 @@ export function VipassanaBadgesModal({
   const [qrScale, setQrScale] = useState<QrScaleMode>('2X');
   const [showScanPass, setShowScanPass] = useState(false);
   const [showStudentName, setShowStudentName] = useState(true);
-  const [footerLocationText, setFooterLocationText] = useState<string>(
-    event.location || 'สถานที่ปฏิบัติวิปัสสนากัมมัฏฐาน'
-  );
+  const [footerLocationText, setFooterLocationText] = useState<string>('');
   const [qrCodeUrls, setQrCodeUrls] = useState<Record<string, string>>({});
-
+  // Admin types the footer text manually (no auto-fetch of long event location).
+  // Saved per event in localStorage so it persists between sessions.
   useEffect(() => {
-    setFooterLocationText(event.location || 'สถานที่ปฏิบัติวิปัสสนากัมมัฏฐาน');
-  }, [event.location, event.id]);
+    try {
+      const saved = localStorage.getItem(`mcu_badge_footer_text_${event.id}`);
+      setFooterLocationText(saved !== null ? saved : 'สถานที่ปฏิบัติ');
+    } catch {
+      setFooterLocationText('สถานที่ปฏิบัติ');
+    }
+  }, [event.id]);
+
+  const handleFooterTextChange = (val: string) => {
+    setFooterLocationText(val);
+    try {
+      localStorage.setItem(`mcu_badge_footer_text_${event.id}`, val);
+    } catch {}
+  };
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportingPng, setIsExportingPng] = useState(false);
@@ -625,7 +636,7 @@ export function VipassanaBadgesModal({
           showStudentName={showStudentName}
           setShowStudentName={setShowStudentName}
           footerLocationText={footerLocationText}
-          setFooterLocationText={setFooterLocationText}
+          setFooterLocationText={handleFooterTextChange}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
         />
