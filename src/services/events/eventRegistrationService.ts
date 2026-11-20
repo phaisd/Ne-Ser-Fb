@@ -218,6 +218,7 @@ export async function registerStudentForEvent(
 export interface BatchImportResult {
   totalSubmitted: number;
   importedCount: number;
+  updatedCount?: number;
   skippedCount: number;
   replacedCount: number;
   items: EventRegistration[];
@@ -283,10 +284,13 @@ export async function batchImportEventRegistrations(
 
   const nowIso = new Date().toISOString();
   const createdItems: EventRegistration[] = [];
+  const updatedItems: EventRegistration[] = [];
+  let updatedCount = 0;
   let skippedCount = 0;
   let replacedCount = (mode === 'REPLACE_ALL' || mode === 'REPLACE_EVENT') ? local.length : 0;
 
-  const seenInBatch = new Set<string>();
+  const seenCodesInBatch = new Set<string>();
+  const seenGroupsInBatch = new Set<string>();
 
   for (let idx = 0; idx < items.length; idx++) {
     const row = items[idx];
@@ -325,20 +329,19 @@ export async function batchImportEventRegistrations(
       }
     }
 
-    const dedupeKey = `${finalStudentCode || ''}_${finalGroupCode || ''}_${row.studentName || ''}`.toLowerCase();
-    if (seenInBatch.has(dedupeKey)) {
+    const codeLower = (finalStudentCode || '').toLowerCase();
+    const groupLower = (finalGroupCode || '').toLowerCase();
+
+    // Skip intra-batch duplicates by studentCode or groupSpecificCode
+    if (
+      (codeLower && seenCodesInBatch.has(codeLower)) ||
+      (groupLower && seenGroupsInBatch.has(groupLower))
+    ) {
       skippedCount++;
       continue;
     }
-    seenInBatch.add(dedupeKey);
-
-    if (mode === 'APPEND') {
-      const codeCheck = (finalStudentCode || '').toLowerCase();
-      if (codeCheck && existingCodesInEvent.has(codeCheck)) {
-        skippedCount++;
-        continue;
-      }
-    }
+    if (codeLower) seenCodesInBatch.add(codeLower);
+    if (groupLower) seenGroupsInBatch.add(groupLower);
 
     const sInfo =
       studentMap.get((finalStudentCode || '').toLowerCase()) ||
@@ -346,6 +349,39 @@ export async function batchImportEventRegistrations(
       {};
     const gNum = row.groupNumber !== undefined ? Number(row.groupNumber) : undefined;
     const gName = row.groupName || (gNum ? `กลุ่มที่ ${gNum}` : 'ทั่วไป');
+
+    if (mode === 'APPEND') {
+      const codeCheck = (finalStudentCode || '').toLowerCase();
+      const groupCheck = (finalGroupCode || '').toLowerCase();
+      const nameKey = normalizeStudentName(row.studentName || '');
+
+      // Check if student already exists in this event
+      const existing = local.find(
+        (r) =>
+          String(r.eventId || '').trim() === targetEventId &&
+          ((codeCheck && r.studentCode?.toLowerCase() === codeCheck) ||
+            (groupCheck && r.groupSpecificCode?.toLowerCase() === groupCheck) ||
+            (nameKey && normalizeStudentName(r.studentName) === nameKey))
+      );
+
+      if (existing) {
+        // Update group and profile details!
+        if (gNum !== undefined && gNum > 0) existing.groupNumber = gNum;
+        if (gName) existing.groupName = gName;
+        if (finalGroupCode) existing.groupSpecificCode = finalGroupCode;
+        if (finalStudentCode && isStudentId(finalStudentCode)) existing.studentCode = finalStudentCode;
+        if (row.studentName) existing.studentName = row.studentName;
+        if (row.degreeLevel) existing.degreeLevel = row.degreeLevel;
+        if (row.programType) existing.programType = row.programType as any;
+        if (row.major) existing.major = row.major;
+        if (row.yearLevel) existing.yearLevel = Number(row.yearLevel);
+        existing.updatedAt = nowIso;
+        updatedItems.push(existing);
+        updatedCount++;
+        skippedCount++;
+        continue;
+      }
+    }
 
     const newReg: EventRegistration = {
       id: `reg-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`,
@@ -379,37 +415,68 @@ export async function batchImportEventRegistrations(
   writeLocalJson('event_registrations.json', local);
 
   const gClient = getSheetsClient();
-  if (gClient && createdItems.length > 0) {
+  if (gClient) {
     try {
-      const appendRows = createdItems.map((reg) => [
-        reg.id,
-        reg.eventId,
-        reg.studentCode,
-        reg.studentName,
-        reg.status || 'REGISTERED',
-        reg.role || 'STUDENT',
-        reg.major || '',
-        reg.yearLevel || 1,
-        reg.department || '',
-        reg.groupName || '',
-        reg.createdAt || new Date().toISOString(),
-        reg.groupNumber || '',
-        reg.groupSpecificCode || '',
-        reg.degreeLevel || '',
-        reg.programType || '',
-        reg.remarks || '',
-        reg.attendedAt || '',
-        JSON.stringify(reg.dailyAttendance || {}),
-      ]);
-      await gClient.appendValues('EventRegistrations!A:R', appendRows);
+      if (createdItems.length > 0) {
+        const appendRows = createdItems.map((reg) => [
+          reg.id,
+          reg.eventId,
+          reg.studentCode,
+          reg.studentName,
+          reg.status || 'REGISTERED',
+          reg.role || 'STUDENT',
+          reg.major || '',
+          reg.yearLevel || 1,
+          reg.department || '',
+          reg.groupName || '',
+          reg.createdAt || new Date().toISOString(),
+          reg.groupNumber !== undefined ? String(reg.groupNumber) : '',
+          reg.groupSpecificCode || '',
+          reg.degreeLevel || '',
+          reg.programType || '',
+          reg.remarks || '',
+          reg.attendedAt || '',
+          JSON.stringify(reg.dailyAttendance || {}),
+        ]);
+        await gClient.appendValues('EventRegistrations!A:R', appendRows);
+      }
+
+      if (updatedItems.length > 0) {
+        const rows = await gClient.getValues('EventRegistrations!A2:C');
+        if (rows && rows.length > 0) {
+          const idToRowIndex = new Map<string, number>();
+          const codeToRowIndex = new Map<string, number>();
+          rows.forEach((r, rowIdx) => {
+            const rId = String(r[0] || '').trim();
+            const rCode = String(r[2] || '').trim().toLowerCase();
+            if (rId) idToRowIndex.set(rId, rowIdx + 2);
+            if (rCode) codeToRowIndex.set(rCode, rowIdx + 2);
+          });
+
+          for (const reg of updatedItems) {
+            const rowNum =
+              idToRowIndex.get(reg.id) ||
+              (reg.studentCode ? codeToRowIndex.get(reg.studentCode.toLowerCase()) : undefined);
+            if (!rowNum) continue;
+
+            await gClient.updateValues(`EventRegistrations!J${rowNum}:M${rowNum}`, [[
+              reg.groupName || '',
+              reg.createdAt || '',
+              reg.groupNumber !== undefined ? String(reg.groupNumber) : '',
+              reg.groupSpecificCode || '',
+            ]]);
+          }
+        }
+      }
     } catch (err) {
-      console.warn('Google Sheets append failed for EventRegistrations:', err);
+      console.warn('Google Sheets sync failed for EventRegistrations:', err);
     }
   }
 
   return {
     totalSubmitted: items.length,
     importedCount: createdItems.length,
+    updatedCount,
     skippedCount,
     replacedCount,
     items: createdItems,

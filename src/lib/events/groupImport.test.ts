@@ -253,4 +253,43 @@ describe('groupImport helpers', () => {
       studentName: 'สามเณรพัชรพล เจริญเกียรติ',
     });
   });
+
+  it('correctly parses user pasted CSV text with commas and non-breaking spaces', () => {
+    const userCsv = `แบบฟอร์มนำเข้ารายชื่อนิสิตแบบจัดกลุ่ม (เลขเฉพาะกลุ่ม),,,,,,,
+"ใส่รหัสประจำกลุ่มในคอลัมน์ ""เลขเฉพาะกลุ่ม"" (เช่น T101, T201, G01-01)",,,,,,,
+กลุ่ม,เลขเฉพาะกลุ่ม,รหัสนิสิต,ชื่อ-นามสกุล,หลักสูตร,หลักสูตรภาษา,สาขาวิชา,ชั้นปี
+1,B1T01,6801401003,พระวิชัย วิชโย,ปริญญาตรี,THAI,บาลีสันสกฤต,4
+1,B1T02,6701501004,พระมหากุศล กุสลจิตโต,ปริญญาตรี,THAI,ศาสนาและปรัชญา,3
+1,B1T13,\u00A06901501091,พระกิติศักดิ์ กิตฺติสกฺโก,ปริญญาตรี,THAI,วิปัสสนาภาวนา,1
+2,B2T15,6701501050,สามเณรพัชรพล เจริญเกียรติ,ปริญญาตรี,THAI,บาลีสันสกฤต,3
+12,B1216,\u00A06901501004,\u00A0นายศิรภพ สนิทใจ,ปริญญาตรี,THAI,พระพุทธศาสนา,1`;
+
+    const res = parseGroupedParticipantsText(userCsv);
+    expect(res.warnings).toEqual([]);
+    expect(res.items).toHaveLength(5);
+    expect(res.items[0].studentCode).toBe('6801401003');
+    expect(res.items[0].groupSpecificCode).toBe('B1T01');
+    expect(res.items[2].studentCode).toBe('6901501091');
+    expect(res.items[2].groupSpecificCode).toBe('B1T13');
+    expect(res.items[3].studentCode).toBe('6701501050');
+    expect(res.items[3].groupSpecificCode).toBe('B2T15');
+    expect(res.items[4].studentCode).toBe('6901501004');
+    expect(res.items[4].groupSpecificCode).toBe('B1216');
+    expect(res.items[4].groupNumber).toBe(12);
+  });
+
+  it('correctly parses space-separated rows when neither tabs nor commas are used', () => {
+    const spaceText = `แบบฟอร์มนำเข้ารายชื่อนิสิตแบบจัดกลุ่ม (เลขเฉพาะกลุ่ม)
+ใส่รหัสประจำกลุ่มในคอลัมน์ "เลขเฉพาะกลุ่ม" (เช่น T101, T201, G01-01)
+กลุ่ม   เลขเฉพาะกลุ่ม   รหัสนิสิต   ชื่อ-นามสกุล   หลักสูตร   หลักสูตรภาษา   สาขาวิชา   ชั้นปี
+1   B1T01   6801401003   พระวิชัย วิชโย   ปริญญาตรี   THAI   บาลีสันสกฤต   4
+1   B1T02   6701501004   พระมหากุศล กุสลจิตโต   ปริญญาตรี   THAI   ศาสนาและปรัชญา   3`;
+
+    const res = parseGroupedParticipantsText(spaceText);
+    expect(res.warnings).toEqual([]);
+    expect(res.items).toHaveLength(2);
+    expect(res.items[0].studentCode).toBe('6801401003');
+    expect(res.items[0].groupSpecificCode).toBe('B1T01');
+    expect(res.items[0].studentName).toBe('พระวิชัย วิชโย');
+  });
 });

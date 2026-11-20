@@ -159,12 +159,16 @@ export async function POST(request: Request) {
         items,
         mode === 'REPLACE_EVENT' ? 'REPLACE_EVENT' : 'APPEND'
       );
+      const parts: string[] = [];
+      if (result.importedCount > 0) parts.push(`เพิ่มใหม่ ${result.importedCount} คน`);
+      if ((result.updatedCount || 0) > 0) parts.push(`อัปเดตกลุ่ม/ข้อมูลเดิม ${result.updatedCount} คน`);
+      if (result.skippedCount > 0) parts.push(`ข้ามแถวว่าง ${result.skippedCount} แถว`);
+      const successMsg = parts.length > 0 ? `นำเข้าสำเร็จ: ${parts.join(', ')}` : 'บันทึกข้อมูลสำเร็จ';
+
       return NextResponse.json({
         success: true,
         data: result,
-        message: `นำเข้าผู้เข้าร่วมกิจกรรมสำเร็จ ${result.importedCount} คน${
-          result.skippedCount > 0 ? ` (ข้ามรายการซ้ำ/ไม่สมบูรณ์ ${result.skippedCount} รายการ)` : ''
-        }`,
+        message: successMsg,
       });
     }
 

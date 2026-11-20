@@ -120,9 +120,26 @@ function normalizeHeaderKey(header: string): string {
   return header.trim().replace(/^["']|["']$/g, '').replace(/[\s_()（）/\-]+/g, '').toLowerCase();
 }
 
-function splitDelimitedLine(line: string, delimiter: '\t' | ','): string[] {
+function splitDelimitedLine(line: string, delimiter: '\t' | ',' | 'spaces'): string[] {
   if (delimiter === '\t') {
     return line.split('\t').map((cell) => cell.trim());
+  }
+  if (delimiter === 'spaces') {
+    // If the line is a header line with known Thai column names separated by single or multiple spaces
+    if (
+      line.includes('เลขเฉพาะกลุ่ม') ||
+      line.includes('รหัสนิสิต') ||
+      line.includes('ชื่อ-นามสกุล') ||
+      line.includes('ชื่อนามสกุล')
+    ) {
+      const parts = line.split(/\t+|\s{2,}/).map((c) => c.trim()).filter(Boolean);
+      if (parts.length >= 4) return parts;
+      return line.split(/\s+/).map((c) => c.trim()).filter(Boolean);
+    }
+    return line
+      .split(/\t+|\s{2,}/)
+      .map((cell) => cell.trim())
+      .filter(Boolean);
   }
   const result: string[] = [];
   let current = '';
@@ -197,11 +214,21 @@ export function parseGroupedParticipantsText(
   // Robust delimiter detection: sample first 10 non-empty lines
   let tabCount = 0;
   let commaCount = 0;
+  let multiSpaceCount = 0;
   for (let i = 0; i < Math.min(10, lines.length); i++) {
     tabCount += (lines[i].match(/\t/g) || []).length;
     commaCount += (lines[i].match(/,/g) || []).length;
+    multiSpaceCount += (lines[i].match(/\s{2,}/g) || []).length;
   }
-  const delimiter: '\t' | ',' = tabCount > 0 && tabCount >= commaCount ? '\t' : ',';
+
+  let delimiter: '\t' | ',' | 'spaces' = ',';
+  if (tabCount > 0 && tabCount >= commaCount && tabCount >= multiSpaceCount) {
+    delimiter = '\t';
+  } else if (commaCount > 0 && commaCount >= multiSpaceCount) {
+    delimiter = ',';
+  } else if (multiSpaceCount > 0) {
+    delimiter = 'spaces';
+  }
 
   // Search first 8 lines to find the true header row matching aliases
   let headerRowIndex = -1;

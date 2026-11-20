@@ -427,8 +427,8 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                 onChange={(e) => setImportMode(e.target.value as 'APPEND' | 'REPLACE_EVENT')}
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-800"
               >
-                <option value="APPEND">เพิ่มต่อจากรายชื่อเดิม (ข้ามเลขซ้ำอัตโนมัติ)</option>
-                <option value="REPLACE_EVENT">แทนที่รายชื่อทั้งหมดของกิจกรรมนี้</option>
+                <option value="APPEND">เพิ่ม/อัปเดตข้อมูลกลุ่มนิสิต (แนะนำ: บันทึกกลุ่มและเลขเฉพาะกลุ่มให้นิสิตทันที)</option>
+                <option value="REPLACE_EVENT">แทนที่รายชื่อทั้งหมดของกิจกรรมนี้ (ล้างรายชื่อเดิมออกก่อน)</option>
               </select>
             </div>
           </div>
