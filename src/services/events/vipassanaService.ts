@@ -20,7 +20,7 @@ async function loadAndHydrateRegistrations(): Promise<EventRegistration[]> {
   return local;
 }
 
-async function syncUpdatedRegistrationsToSheets(updatedRegs: EventRegistration[]): Promise<void> {
+export async function syncUpdatedRegistrationsToSheets(updatedRegs: EventRegistration[]): Promise<void> {
   if (!updatedRegs || updatedRegs.length === 0) return;
   const gClient = getSheetsClient();
   if (!gClient) return;

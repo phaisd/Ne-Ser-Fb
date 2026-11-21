@@ -2,6 +2,7 @@ import { StudentEvent, EventRegistration, EventSeatingConfig, SeatZone } from '@
 import { readLocalJson, writeLocalJson } from '../storageHelper';
 import { getEvents, updateEvent } from './eventCoreService';
 import { getEventRegistrations } from './eventRegistrationService';
+import { syncUpdatedRegistrationsToSheets } from './vipassanaService';
 import {
   generateZoneSeatCodes,
   detectParticipantStatus,
@@ -540,5 +541,101 @@ export async function batchImportSeatingFromRows(
     matchedCount,
     unmatchedCount,
     unmatchedCodes: unmatchedCodes.slice(0, 50),
+  };
+}
+
+/**
+ * Record Daily & Period Seat Inspection (สุ่มตรวจที่นั่งประจำวัน/รอบ)
+ * บันทึกว่านิสิตอยู่ที่นั่ง หรือ ที่นั่งว่าง (สแกนเข้าแต่แอบออกไปข้างนอก)
+ */
+export async function recordDailySeatInspection(params: {
+  eventId: string;
+  dayKey: string; // e.g. 'day_1'
+  periodKey: 'p1' | 'p2' | 'p3' | 'p4';
+  records: Array<{
+    registrationId?: string;
+    studentCode?: string;
+    seatNumber?: string;
+    seatOccupied: boolean | null; // true = อยู่ที่นั่ง, false = ที่นั่งว่าง (สแกนแต่ไม่อยู่), null = ล้างค่า
+  }>;
+  recordedBy?: string;
+}): Promise<{
+  success: boolean;
+  updatedCount: number;
+  emptySeatCount: number;
+  error?: string;
+}> {
+  const { eventId, dayKey, periodKey, records, recordedBy } = params;
+  if (!eventId || !dayKey || !periodKey || !Array.isArray(records)) {
+    throw new Error('ข้อมูลไม่ครบถ้วน (ต้องการ eventId, dayKey, periodKey, records)');
+  }
+
+  const localList = readLocalJson<any[]>('event_registrations.json', []);
+  const eventRegs = localList.filter((r) => r.eventId === eventId);
+  if (eventRegs.length === 0) {
+    return { success: true, updatedCount: 0, emptySeatCount: 0 };
+  }
+
+  const idMap = new Map<string, any>();
+  const codeMap = new Map<string, any>();
+  const seatMap = new Map<string, any>();
+
+  eventRegs.forEach((r) => {
+    if (r.id) idMap.set(String(r.id).trim().toLowerCase(), r);
+    if (r.studentCode) codeMap.set(String(r.studentCode).trim().toLowerCase(), r);
+    if (r.groupSpecificCode) codeMap.set(String(r.groupSpecificCode).trim().toLowerCase(), r);
+    if (r.seatNumber) seatMap.set(String(r.seatNumber).trim().toUpperCase(), r);
+  });
+
+  const nowIso = new Date().toISOString();
+  const updatedList: EventRegistration[] = [];
+  let emptySeatCount = 0;
+
+  for (const item of records) {
+    let target = item.registrationId ? idMap.get(item.registrationId.trim().toLowerCase()) : null;
+    if (!target && item.studentCode) {
+      target = codeMap.get(item.studentCode.trim().toLowerCase());
+    }
+    if (!target && item.seatNumber) {
+      target = seatMap.get(item.seatNumber.trim().toUpperCase());
+    }
+
+    if (!target) continue;
+
+    if (!target.dailyAttendance) target.dailyAttendance = {};
+    if (!target.dailyAttendance[dayKey]) target.dailyAttendance[dayKey] = {};
+    const existingPeriod = target.dailyAttendance[dayKey][periodKey] || {};
+
+    if (item.seatOccupied === null) {
+      delete existingPeriod.seatOccupied;
+      delete existingPeriod.seatCheckedAt;
+      delete existingPeriod.seatCheckedBy;
+    } else {
+      existingPeriod.seatOccupied = item.seatOccupied;
+      existingPeriod.seatCheckedAt = nowIso;
+      existingPeriod.seatCheckedBy = recordedBy || 'STAFF_INSPECTION';
+      if (item.seatOccupied === false) {
+        emptySeatCount++;
+      }
+    }
+
+    target.dailyAttendance[dayKey][periodKey] = existingPeriod;
+    target.updatedAt = nowIso;
+    updatedList.push(target);
+  }
+
+  if (updatedList.length > 0) {
+    writeLocalJson('event_registrations.json', localList);
+    try {
+      await syncUpdatedRegistrationsToSheets(updatedList);
+    } catch (e) {
+      console.warn('Could not sync seat inspection to sheets:', e);
+    }
+  }
+
+  return {
+    success: true,
+    updatedCount: updatedList.length,
+    emptySeatCount,
   };
 }

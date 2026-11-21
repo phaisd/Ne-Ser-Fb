@@ -36,6 +36,11 @@ import {
   Smartphone,
   ExternalLink,
   Copy,
+  Calendar,
+  Clock,
+  CheckCheck,
+  UserX,
+  AlertOctagon,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { StudentEvent, EventRegistration, EventSeatingConfig, SeatZone } from '@/types/event';
@@ -58,6 +63,14 @@ interface VipassanaSeatMapModalProps {
   onOpenSeatScanner?: (event: StudentEvent) => void;
   onOpenEventQr?: (event: StudentEvent) => void;
 }
+
+const INSPECTION_PERIODS = [
+  { id: 'p1', nameTh: 'ภาคเช้ามืด', time: '04.00 - 04.30 น.', icon: '🌅' },
+  { id: 'p2', nameTh: 'ภาคเช้า', time: '08.00 - 08.30 น.', icon: '☀️' },
+  { id: 'p3', nameTh: 'ภาคบ่าย', time: '12.30 - 13.00 น.', icon: '🌤️' },
+  { id: 'p4', nameTh: 'ภาคค่ำ', time: '17.30 - 18.00 น.', icon: '🌙' },
+] as const;
+type InspectionPeriodKey = 'p1' | 'p2' | 'p3' | 'p4';
 
 const ZONE_COLORS: Record<string, { bg: string; border: string; text: string; lightBg: string; ring: string }> = {
   amber: { bg: 'bg-amber-500', border: 'border-amber-400', text: 'text-amber-900', lightBg: 'bg-amber-50', ring: 'ring-amber-500' },
@@ -142,6 +155,30 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     }>
   >([]);
   const [isImporting, setIsImporting] = useState(false);
+
+  // Daily & Period Seat Inspection State (ตรวจเช็คที่นั่งรายวัน/สุ่มรอบ)
+  const totalDays = useMemo(() => {
+    if (event.totalDays && event.totalDays > 0) return event.totalDays;
+    if (event.startDate && event.endDate) {
+      const s = new Date(event.startDate).getTime();
+      const e = new Date(event.endDate).getTime();
+      const diff = Math.round((e - s) / 86400000) + 1;
+      if (diff > 0 && diff <= 30) return diff;
+    }
+    return 10;
+  }, [event.totalDays, event.startDate, event.endDate]);
+
+  const [inspectionDay, setInspectionDay] = useState<number | 'ALL'>('ALL');
+  const [inspectionPeriod, setInspectionPeriod] = useState<InspectionPeriodKey>(() => {
+    const now = new Date();
+    const curMin = now.getHours() * 60 + now.getMinutes();
+    if (curMin < 6 * 60) return 'p1';
+    if (curMin < 12 * 60) return 'p2';
+    if (curMin < 17 * 60) return 'p3';
+    return 'p4';
+  });
+  const [isSavingInspection, setIsSavingInspection] = useState(false);
+  const [isAbsentReportOpen, setIsAbsentReportOpen] = useState(false);
 
   // Mobile QR Code Modal State
   const [isMobileQrOpen, setIsMobileQrOpen] = useState(false);
@@ -255,6 +292,162 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       statusCounts,
     };
   }, [config, registrations]);
+
+  // Daily & Period Inspection Stats & Absent from Seat List
+  const dailyStats = useMemo(() => {
+    if (inspectionDay === 'ALL') return null;
+    const dayKey = `day_${inspectionDay}`;
+
+    const absentList: Array<{
+      reg: EventRegistration;
+      seatNumber: string;
+      scanTime?: string;
+    }> = [];
+
+    let scannedTotal = 0;
+    let presentInSeat = 0;
+    let absentFromSeat = 0;
+    let unscannedPresent = 0;
+    let notScanned = 0;
+
+    registrations.forEach((r) => {
+      if (!r.seatNumber) return;
+      const att = r.dailyAttendance?.[dayKey]?.[inspectionPeriod];
+      const isScanned = Boolean(att && (att.status === 'PRESENT' || att.status === 'LATE' || att.checkInTime));
+      const occ = att?.seatOccupied;
+
+      if (isScanned) {
+        scannedTotal++;
+        if (occ === false) {
+          absentFromSeat++;
+          absentList.push({
+            reg: r,
+            seatNumber: r.seatNumber,
+            scanTime: att?.checkInTime,
+          });
+        } else if (occ === true) {
+          presentInSeat++;
+        }
+      } else {
+        if (occ === true) {
+          unscannedPresent++;
+        } else {
+          notScanned++;
+        }
+      }
+    });
+
+    return {
+      dayKey,
+      scannedTotal,
+      presentInSeat,
+      absentFromSeat,
+      unscannedPresent,
+      notScanned,
+      absentList,
+    };
+  }, [registrations, inspectionDay, inspectionPeriod]);
+
+  // Handle Save Seat Inspection for a single seat
+  const handleSaveSeatInspection = async (
+    target: { registrationId?: string; studentCode?: string; seatNumber?: string },
+    seatOccupied: boolean | null
+  ) => {
+    if (inspectionDay === 'ALL') return;
+    setIsSavingInspection(true);
+    try {
+      const dayKey = `day_${inspectionDay}`;
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'record_daily_seat_inspection',
+          eventId: event.id,
+          dayKey,
+          periodKey: inspectionPeriod,
+          records: [{ ...target, seatOccupied }],
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'บันทึกไม่สำเร็จ');
+      setMessage({
+        text:
+          seatOccupied === false
+            ? '🚨 บันทึกที่นั่งว่าง (ไม่อยู่ที่นั่ง) เรียบร้อย'
+            : seatOccupied === true
+            ? '✓ บันทึกว่าอยู่ที่นั่งปกติ เรียบร้อย'
+            : 'ล้างสถานะการตรวจรอบนี้เรียบร้อย',
+        type: 'success',
+      });
+      onRefresh();
+    } catch (err: any) {
+      setMessage({ text: err.message || 'เกิดข้อผิดพลาดในการบันทึก', type: 'error' });
+    } finally {
+      setIsSavingInspection(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  // Handle Batch Mark All Scanned Students as Occupied
+  const handleMarkAllScannedOccupied = async () => {
+    if (inspectionDay === 'ALL') return;
+    const dayKey = `day_${inspectionDay}`;
+
+    const scannedInRegs = registrations.filter((r) => {
+      if (!r.seatNumber) return false;
+      const att = r.dailyAttendance?.[dayKey]?.[inspectionPeriod];
+      return Boolean(att && (att.status === 'PRESENT' || att.status === 'LATE' || att.checkInTime));
+    });
+
+    if (scannedInRegs.length === 0) {
+      alert(
+        `ยังไม่พบข้อมูลผู้สแกนเข้าในรอบนี้ (วันที่ ${inspectionDay} • ${
+          INSPECTION_PERIODS.find((p) => p.id === inspectionPeriod)?.nameTh
+        })`
+      );
+      return;
+    }
+
+    if (
+      !confirm(
+        `ยืนยันตั้งค่าผู้สแกนเข้าทั้งหมด ${scannedInRegs.length} ท่านว่า "อยู่ที่นั่งครบ"?\n\nหลังจากกดแล้ว ท่านสามารถดูผังและแตะเฉพาะเก้าอี้/เบาะที่ว่างได้ทันที`
+      )
+    ) {
+      return;
+    }
+
+    setIsSavingInspection(true);
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'record_daily_seat_inspection',
+          eventId: event.id,
+          dayKey,
+          periodKey: inspectionPeriod,
+          records: scannedInRegs.map((r) => ({
+            registrationId: r.id,
+            studentCode: r.studentCode,
+            seatNumber: r.seatNumber,
+            seatOccupied: true,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'บันทึกไม่สำเร็จ');
+      setMessage({
+        text: `✓ ตั้งค่าผู้สแกนแล้ว ${scannedInRegs.length} ท่านว่า "อยู่ที่นั่ง" เรียบร้อย ท่านสามารถแตะเฉพาะที่นั่งว่างได้เลย`,
+        type: 'success',
+      });
+      onRefresh();
+    } catch (err: any) {
+      setMessage({ text: err.message || 'เกิดข้อผิดพลาด', type: 'error' });
+    } finally {
+      setIsSavingInspection(false);
+      setTimeout(() => setMessage(null), 4000);
+    }
+  };
 
   // Handle Save Seating Config
   const handleSaveConfig = async (newConfig: EventSeatingConfig) => {
@@ -1267,82 +1460,238 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           </div>
         </div>
 
-        {/* Stats & Legend Pill Banner (Optimized Single Swipeable Rows for Mobile) */}
-        <div className="bg-white border-b border-slate-200 px-3 sm:px-4 py-2 flex flex-col gap-1.5 shrink-0 text-xs">
-          {/* Stats Row */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar whitespace-nowrap text-slate-600 pb-0.5">
-            <span className="flex items-center gap-1 font-semibold text-slate-700 shrink-0">
-              <Users className="w-3.5 h-3.5 text-slate-500" />
-              ผู้เข้าร่วม: <b className="text-slate-900">{stats.totalParticipants}</b> คน
+        {/* Daily & Period Inspection Bar (ตรวจเช็ครายวัน & ตามรอบปฏิบัติธรรม) */}
+        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-3 sm:px-4 py-2 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 border-b border-indigo-950 shrink-0">
+          {/* Day selection */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap pb-0.5 md:pb-0">
+            <span className="text-[11px] font-bold text-amber-300 shrink-0 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              <span>ตรวจรายวัน:</span>
             </span>
-            <span className="flex items-center gap-1 shrink-0">
-              ความจุ: <b className="text-slate-900">{stats.totalCapacity}</b> ที่
-            </span>
-            <span className="flex items-center gap-1 bg-blue-50 text-blue-800 px-2 py-0.5 rounded-md font-semibold border border-blue-200 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-              จัดแล้ว: <b>{stats.assignedCount}</b> ที่ ({stats.totalParticipants > 0 ? Math.round((stats.assignedCount / stats.totalParticipants) * 100) : 0}%)
-            </span>
-            <span className="flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md font-semibold border border-emerald-200 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-              เข้าที่นั่ง: <b>{stats.checkedInCount}</b> คน
-            </span>
-            <span className="flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md shrink-0">
-              ว่าง: <b>{stats.vacantCount}</b> ที่
-            </span>
-            {stats.unassignedCount > 0 && (
-              <span className="flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 font-bold shrink-0">
-                ⚠️ ยังไม่มีที่นั่ง: {stats.unassignedCount} คน
-              </span>
-            )}
+
+            <button
+              type="button"
+              onClick={() => setInspectionDay('ALL')}
+              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer ${
+                inspectionDay === 'ALL'
+                  ? 'bg-amber-400 text-slate-950 shadow-xs ring-2 ring-amber-300'
+                  : 'bg-white/10 hover:bg-white/20 text-slate-300'
+              }`}
+            >
+              ผังรวม (ตลอดโครงการ)
+            </button>
+
+            {Array.from({ length: totalDays }, (_, idx) => {
+              const dNum = idx + 1;
+              const isSelected = inspectionDay === dNum;
+              return (
+                <button
+                  key={dNum}
+                  type="button"
+                  onClick={() => setInspectionDay(dNum)}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer ${
+                    isSelected
+                      ? 'bg-indigo-500 text-white shadow-xs ring-2 ring-indigo-300'
+                      : 'bg-white/10 hover:bg-white/20 text-slate-300'
+                  }`}
+                >
+                  วัน {dNum}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Multi-Status Color Legend - 1 Line Horizontal Swipeable */}
+          {/* Period selection & quick batch inspection buttons */}
+          {inspectionDay !== 'ALL' && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0 pt-1 md:pt-0 border-t md:border-t-0 border-white/10">
+              <span className="text-[11px] font-bold text-indigo-300 shrink-0 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-indigo-300" />
+                <span>รอบ:</span>
+              </span>
+
+              {INSPECTION_PERIODS.map((period) => {
+                const isSelected = inspectionPeriod === period.id;
+                return (
+                  <button
+                    key={period.id}
+                    type="button"
+                    onClick={() => setInspectionPeriod(period.id)}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1 ${
+                      isSelected
+                        ? 'bg-emerald-500 text-slate-950 shadow-xs ring-2 ring-emerald-300'
+                        : 'bg-white/10 hover:bg-white/20 text-slate-300'
+                    }`}
+                    title={`${period.nameTh} (${period.time})`}
+                  >
+                    <span>{period.icon}</span>
+                    <span>{period.nameTh}</span>
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={handleMarkAllScannedOccupied}
+                disabled={isSavingInspection}
+                className="ml-1 px-2.5 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer shrink-0 disabled:opacity-50"
+                title="ตั้งค่าให้นิสิตทุกคนที่สแกนแล้ว อยู่ที่นั่งครบทั้งหมด แล้วท่านค่อยแตะเฉพาะคนที่ไม่อยู่"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">ถือว่าสแกนแล้วอยู่ครบ</span>
+                <span className="sm:hidden">อยู่ครบ</span>
+              </button>
+
+              {dailyStats && dailyStats.absentFromSeat > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsAbsentReportOpen(true)}
+                  className="px-2.5 py-1 text-xs font-black bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer shrink-0 animate-bounce"
+                  title="คลิกดูรายชื่อนิสิตที่สแกนเข้าแต่ตรวจพบว่าที่นั่งว่าง"
+                >
+                  <AlertOctagon className="w-3.5 h-3.5" />
+                  <span>🚨 สแกนแต่ไม่อยู่ {dailyStats.absentFromSeat} คน</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Stats & Legend Pill Banner */}
+        <div className="bg-white border-b border-slate-200 px-3 sm:px-4 py-2 flex flex-col gap-1.5 shrink-0 text-xs">
+          {/* Stats Row */}
+          {inspectionDay === 'ALL' ? (
+            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar whitespace-nowrap text-slate-600 pb-0.5">
+              <span className="flex items-center gap-1 font-semibold text-slate-700 shrink-0">
+                <Users className="w-3.5 h-3.5 text-slate-500" />
+                ผู้เข้าร่วม: <b className="text-slate-900">{stats.totalParticipants}</b> คน
+              </span>
+              <span className="flex items-center gap-1 shrink-0">
+                ความจุ: <b className="text-slate-900">{stats.totalCapacity}</b> ที่
+              </span>
+              <span className="flex items-center gap-1 bg-blue-50 text-blue-800 px-2 py-0.5 rounded-md font-semibold border border-blue-200 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                จัดแล้ว: <b>{stats.assignedCount}</b> ที่ ({stats.totalParticipants > 0 ? Math.round((stats.assignedCount / stats.totalParticipants) * 100) : 0}%)
+              </span>
+              <span className="flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md font-semibold border border-emerald-200 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                เข้าที่นั่ง: <b>{stats.checkedInCount}</b> คน
+              </span>
+              <span className="flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md shrink-0">
+                ว่าง: <b>{stats.vacantCount}</b> ที่
+              </span>
+              {stats.unassignedCount > 0 && (
+                <span className="flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 font-bold shrink-0">
+                  ⚠️ ยังไม่มีที่นั่ง: {stats.unassignedCount} คน
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar whitespace-nowrap text-slate-600 pb-0.5">
+              <span className="flex items-center gap-1 font-extrabold text-indigo-950 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200 shrink-0">
+                <span>{INSPECTION_PERIODS.find((p) => p.id === inspectionPeriod)?.icon}</span>
+                <span>
+                  ตรวจวันที่ {inspectionDay} • {INSPECTION_PERIODS.find((p) => p.id === inspectionPeriod)?.nameTh}
+                </span>
+              </span>
+              <span className="flex items-center gap-1 shrink-0">
+                มีที่นั่ง: <b className="text-slate-900">{stats.assignedCount}</b> ที่
+              </span>
+              <span className="flex items-center gap-1 bg-blue-50 text-blue-900 px-2 py-0.5 rounded-md font-bold border border-blue-200 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                สแกนแล้ว: <b>{dailyStats?.scannedTotal || 0}</b> คน
+              </span>
+              <span className="flex items-center gap-1 bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded-md font-bold border border-emerald-300 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                อยู่ที่นั่ง: <b>{dailyStats?.presentInSeat || 0}</b> คน
+              </span>
+              <span
+                className={`flex items-center gap-1 px-2.5 py-0.5 rounded-md font-black shrink-0 ${
+                  (dailyStats?.absentFromSeat || 0) > 0
+                    ? 'bg-rose-600 text-white border border-rose-300 animate-pulse shadow-xs cursor-pointer'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+                onClick={() => (dailyStats?.absentFromSeat || 0) > 0 && setIsAbsentReportOpen(true)}
+              >
+                <span>🚨 สแกนแต่ที่นั่งว่าง: {dailyStats?.absentFromSeat || 0} คน</span>
+              </span>
+              <span className="flex items-center gap-1 bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md shrink-0">
+                ยังไม่สแกน: <b>{dailyStats?.notScanned || 0}</b> คน
+              </span>
+              {(dailyStats?.unscannedPresent || 0) > 0 && (
+                <span className="flex items-center gap-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-md border border-amber-300 font-bold shrink-0">
+                  ⚠️ อยู่ที่นั่งแต่ไม่สแกน: {dailyStats?.unscannedPresent} คน
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Color Legend */}
           <div className="w-full flex items-center gap-2 pt-1 border-t border-slate-100 text-[11px] overflow-x-auto no-scrollbar whitespace-nowrap pb-0.5">
             <span className="shrink-0 text-slate-700 font-bold text-[10px] sm:text-xs">สัญลักษณ์สี:</span>
-            <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black shadow-2xs whitespace-nowrap shrink-0">
-                <span className="w-2 h-2 rounded-full bg-slate-950" />
-                <span>พระภิกษุ ({stats.statusCounts.MONK})</span>
-              </span>
+            {inspectionDay === 'ALL' ? (
+              <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black shadow-2xs whitespace-nowrap shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-slate-950" />
+                  <span>พระภิกษุ ({stats.statusCounts.MONK})</span>
+                </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-900 text-amber-100 font-extrabold shadow-2xs whitespace-nowrap shrink-0">
-                <span className="w-2 h-2 rounded-full bg-amber-300" />
-                <span>ภิกษุณี/Inter ({stats.statusCounts.BHIKKHUNI})</span>
-              </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-900 text-amber-100 font-extrabold shadow-2xs whitespace-nowrap shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-amber-300" />
+                  <span>ภิกษุณี/Inter ({stats.statusCounts.BHIKKHUNI})</span>
+                </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-600 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
-                <span className="w-2 h-2 rounded-full bg-white" />
-                <span>สามเณร ({stats.statusCounts.SAMANERA})</span>
-              </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-600 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-white" />
+                  <span>สามเณร ({stats.statusCounts.SAMANERA})</span>
+                </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 font-bold border border-amber-300 shadow-2xs whitespace-nowrap shrink-0">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span>แม่ชี ({stats.statusCounts.MAECHI})</span>
-              </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 font-bold border border-amber-300 shadow-2xs whitespace-nowrap shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span>แม่ชี ({stats.statusCounts.MAECHI})</span>
+                </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-600 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
-                <span className="w-2 h-2 rounded-full bg-white" />
-                <span>ฆราวาสชาย ({stats.statusCounts.LAY_MALE})</span>
-              </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-600 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-white" />
+                  <span>ฆราวาสชาย ({stats.statusCounts.LAY_MALE})</span>
+                </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-700 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
-                <span className="w-2 h-2 rounded-full bg-white" />
-                <span>ฆราวาสหญิง ({stats.statusCounts.LAY_FEMALE})</span>
-              </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-700 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-white" />
+                  <span>ฆราวาสหญิง ({stats.statusCounts.LAY_FEMALE})</span>
+                </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white text-slate-600 border border-slate-300 font-medium whitespace-nowrap shrink-0">
-                <span className="w-2 h-2 rounded-xs bg-slate-200 border border-slate-400" />
-                <span>ว่าง ({stats.vacantCount})</span>
-              </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white text-slate-600 border border-slate-300 font-medium whitespace-nowrap shrink-0">
+                  <span className="w-2 h-2 rounded-xs bg-slate-200 border border-slate-400" />
+                  <span>ว่าง ({stats.vacantCount})</span>
+                </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-200 text-slate-600 font-medium whitespace-nowrap shrink-0">
-                <span>— ทางเดิน/เสา ({stats.disabledCount})</span>
-              </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-200 text-slate-600 font-medium whitespace-nowrap shrink-0">
+                  <span>— ทางเดิน/เสา ({stats.disabledCount})</span>
+                </span>
 
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-300 whitespace-nowrap shrink-0">
-                <span>✓ เช็คอินแล้ว</span>
-              </span>
-            </div>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-300 whitespace-nowrap shrink-0">
+                  <span>✓ เช็คอินแล้ว</span>
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-600 text-white font-bold whitespace-nowrap shrink-0">
+                  <span>🟢 นั่งอยู่ปกติ</span>
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-rose-600 text-white font-black animate-pulse whitespace-nowrap shrink-0">
+                  <span>🚨 สแกนแต่ที่นั่งว่าง (ไม่อยู่)</span>
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-blue-600 text-white font-medium whitespace-nowrap shrink-0">
+                  <span>🔵 สแกนแล้วรอตรวจ</span>
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-600 font-medium whitespace-nowrap shrink-0 opacity-60">
+                  <span>⚪ ยังไม่สแกน (ขาด)</span>
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950 font-bold whitespace-nowrap shrink-0">
+                  <span>⚠️ นั่งอยู่แต่ไม่สแกน</span>
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1467,27 +1816,112 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                   const occCategory = detectParticipantStatus(occupant.studentName, occupant.role).category;
                                   const theme = STATUS_THEMES[occCategory] || STATUS_THEMES.UNKNOWN;
 
+                                  const isDaily = inspectionDay !== 'ALL';
+                                  const dayKey = isDaily ? `day_${inspectionDay}` : '';
+                                  const att = isDaily ? occupant.dailyAttendance?.[dayKey]?.[inspectionPeriod] : null;
+                                  const isScanned = Boolean(
+                                    att && (att.status === 'PRESENT' || att.status === 'LATE' || att.checkInTime)
+                                  );
+                                  const isSeatOccupied = att?.seatOccupied;
+
+                                  let dailyBgClass = theme.bgClass;
+                                  let dailyBorderClass = theme.borderClass;
+                                  let dailyTextClass = theme.textClass;
+                                  let dailyBadge: { text: string; bg: string; pulse?: boolean } | null = null;
+                                  let isDimmed = false;
+
+                                  if (isDaily) {
+                                    if (isScanned && isSeatOccupied === false) {
+                                      // 🚨 สแกนเข้าแต่ที่นั่งว่าง!
+                                      dailyBgClass = 'bg-rose-600';
+                                      dailyBorderClass = 'border-rose-300 ring-4 ring-rose-400';
+                                      dailyTextClass = 'text-white font-black';
+                                      dailyBadge = { text: '🚨 ไม่อยู่', bg: 'bg-rose-800 text-white', pulse: true };
+                                    } else if (isScanned && isSeatOccupied === true) {
+                                      // 🟢 สแกนแล้ว และนั่งอยู่ปกติ
+                                      dailyBgClass = 'bg-emerald-600';
+                                      dailyBorderClass = 'border-emerald-300 ring-2 ring-emerald-400';
+                                      dailyTextClass = 'text-white font-bold';
+                                      dailyBadge = { text: '✓ อยู่', bg: 'bg-emerald-800 text-white' };
+                                    } else if (isScanned && isSeatOccupied === undefined) {
+                                      // 🔵 สแกนแล้ว แต่ยังไม่ตรวจที่นั่ง
+                                      dailyBgClass = theme.bgClass;
+                                      dailyBorderClass = 'border-blue-400 ring-2 ring-blue-300';
+                                      dailyTextClass = theme.textClass;
+                                      dailyBadge = { text: '✓ สแกน', bg: 'bg-blue-600 text-white' };
+                                    } else if (!isScanned && isSeatOccupied === true) {
+                                      // 🟡 นั่งอยู่แต่ยังไม่ได้สแกน
+                                      dailyBgClass = 'bg-amber-400';
+                                      dailyBorderClass = 'border-amber-600 ring-2 ring-amber-400';
+                                      dailyTextClass = 'text-slate-950 font-black';
+                                      dailyBadge = { text: '⚠️ ไม่สแกน', bg: 'bg-amber-800 text-amber-100' };
+                                    } else {
+                                      // ⚪ ยังไม่สแกนในรอบนี้ (ขาด)
+                                      isDimmed = true;
+                                      dailyBgClass = 'bg-slate-100';
+                                      dailyBorderClass = 'border-dashed border-slate-300';
+                                      dailyTextClass = 'text-slate-400';
+                                    }
+                                  }
+
                                   return (
                                     <button
                                       key={cIdx}
                                       type="button"
                                       onClick={() => setSelectedSeat(seatCode)}
-                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${theme.bgClass} ${theme.hoverClass} ${theme.textClass} flex flex-col items-center justify-center shadow-xs transition cursor-pointer relative border ${theme.borderClass} ${
-                                        isSelected ? 'ring-3 ring-amber-400 scale-105 z-10' : ''
+                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${
+                                        isDaily ? dailyBgClass : theme.bgClass
+                                      } ${isDaily ? '' : theme.hoverClass} ${
+                                        isDaily ? dailyTextClass : theme.textClass
+                                      } flex flex-col items-center justify-center shadow-xs transition cursor-pointer relative border ${
+                                        isDaily ? dailyBorderClass : theme.borderClass
+                                      } ${isDimmed ? 'opacity-35 hover:opacity-100' : ''} ${
+                                        isSelected ? 'ring-4 ring-amber-400 scale-105 z-10' : ''
                                       } ${isSearchMatched ? 'ring-4 ring-yellow-300 animate-bounce' : ''}`}
-                                      title={`[${theme.label}${isCheckedIn ? ' • เช็คอินแล้ว' : ''}] ${seatCode}: ${occupant.studentName} (${occupant.studentCode})`}
+                                      title={
+                                        isDaily
+                                          ? `[${seatCode}] ${occupant.studentName} (${occupant.studentCode})\nสถานะตรวจที่นั่ง: ${
+                                              isScanned && isSeatOccupied === false
+                                                ? '🚨 สแกนเข้าแต่ที่นั่งว่าง (ไม่อยู่ที่นั่ง)'
+                                                : isScanned && isSeatOccupied === true
+                                                ? '🟢 สแกนแล้ว และนั่งอยู่ปกติ'
+                                                : isScanned
+                                                ? '🔵 สแกนแล้ว (ยังไม่ตรวจที่นั่ง)'
+                                                : !isScanned && isSeatOccupied === true
+                                                ? '🟡 นั่งอยู่ แต่ยังไม่ได้สแกน'
+                                                : '⚪ ยังไม่สแกนในรอบนี้'
+                                            }\nเวลาสแกน: ${att?.checkInTime || '-'}`
+                                          : `[${theme.label}${isCheckedIn ? ' • เช็คอินแล้ว' : ''}] ${seatCode}: ${
+                                              occupant.studentName
+                                            } (${occupant.studentCode})`
+                                      }
                                     >
                                       <span className="text-[10px] leading-none">{seatCode}</span>
                                       <span className="text-[8px] font-medium truncate max-w-[34px] opacity-95">
-                                        {occupant.groupSpecificCode || (occupant.groupNumber ? `ก.${occupant.groupNumber}` : occupant.studentName.split(' ')[0])}
+                                        {occupant.groupSpecificCode ||
+                                          (occupant.groupNumber
+                                            ? `ก.${occupant.groupNumber}`
+                                            : occupant.studentName.split(' ')[0])}
                                       </span>
-                                      {isCheckedIn && (
-                                        <span
-                                          className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 text-white rounded-full border-1.5 border-white flex items-center justify-center text-[8px] font-black shadow-xs"
-                                          title="เช็คอินเข้าที่นั่งแล้ว"
-                                        >
-                                          ✓
-                                        </span>
+                                      {isDaily ? (
+                                        dailyBadge && (
+                                          <span
+                                            className={`absolute -top-1 -right-1 px-1 py-0.2 rounded-full text-[7.5px] font-black shadow-xs ${
+                                              dailyBadge.bg
+                                            } ${dailyBadge.pulse ? 'animate-pulse ring-2 ring-white' : ''}`}
+                                          >
+                                            {dailyBadge.text}
+                                          </span>
+                                        )
+                                      ) : (
+                                        isCheckedIn && (
+                                          <span
+                                            className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 text-white rounded-full border-1.5 border-white flex items-center justify-center text-[8px] font-black shadow-xs"
+                                            title="เช็คอินเข้าที่นั่งแล้ว"
+                                          >
+                                            ✓
+                                          </span>
+                                        )
                                       )}
                                     </button>
                                   );
@@ -1574,6 +2008,123 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               </div>
 
               <div className="p-4 flex-1 overflow-y-auto space-y-4 text-xs">
+                {/* Daily & Period Inspection Box (ตรวจนิสิตสแกนเข้าแต่ไม่เข้านั่ง) */}
+                {inspectionDay !== 'ALL' && selectedOccupant && (
+                  <div className="bg-gradient-to-br from-indigo-50/90 to-purple-50/90 rounded-2xl p-4 border-2 border-indigo-200 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-indigo-200/80">
+                      <div className="font-extrabold text-xs text-indigo-950 flex items-center gap-1.5">
+                        <span className="text-base">{INSPECTION_PERIODS.find((p) => p.id === inspectionPeriod)?.icon}</span>
+                        <span>
+                          ตรวจที่นั่ง วันที่ {inspectionDay} • {INSPECTION_PERIODS.find((p) => p.id === inspectionPeriod)?.nameTh}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-indigo-600 font-mono font-bold bg-white px-2 py-0.5 rounded-full border border-indigo-200">
+                        {INSPECTION_PERIODS.find((p) => p.id === inspectionPeriod)?.time}
+                      </span>
+                    </div>
+
+                    {(() => {
+                      const dayKey = `day_${inspectionDay}`;
+                      const att = selectedOccupant.dailyAttendance?.[dayKey]?.[inspectionPeriod];
+                      const isScanned = Boolean(att && (att.status === 'PRESENT' || att.status === 'LATE' || att.checkInTime));
+                      const isOccupied = att?.seatOccupied;
+
+                      return (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-2 text-[11px]">
+                            <div className="bg-white p-2 rounded-xl border border-indigo-100">
+                              <span className="text-slate-500 block text-[10px]">การสแกนรอบนี้:</span>
+                              {isScanned ? (
+                                <span className="font-extrabold text-emerald-700 flex items-center gap-1 mt-0.5">
+                                  ✓ สแกนแล้ว {att?.checkInTime ? `(${att.checkInTime})` : ''}
+                                </span>
+                              ) : (
+                                <span className="font-bold text-slate-500 block mt-0.5">
+                                  ❌ ยังไม่พบการสแกน
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="bg-white p-2 rounded-xl border border-indigo-100">
+                              <span className="text-slate-500 block text-[10px]">ผลตรวจที่นั่ง:</span>
+                              {isOccupied === false ? (
+                                <span className="font-black text-rose-600 block mt-0.5 animate-pulse">
+                                  🚨 ที่นั่งว่าง (ไม่อยู่)
+                                </span>
+                              ) : isOccupied === true ? (
+                                <span className="font-extrabold text-emerald-700 block mt-0.5">
+                                  🟢 นั่งอยู่ปกติ
+                                </span>
+                              ) : (
+                                <span className="font-medium text-slate-400 block mt-0.5">
+                                  ⚪ ยังไม่ได้ตรวจ
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Mobile Touch Action Buttons */}
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleSaveSeatInspection(
+                                  { registrationId: selectedOccupant.id, studentCode: selectedOccupant.studentCode, seatNumber: selectedSeat },
+                                  false
+                                )
+                              }
+                              disabled={isSavingInspection}
+                              className={`p-3 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-1 transition cursor-pointer shadow-xs ${
+                                isOccupied === false
+                                  ? 'bg-rose-600 text-white ring-3 ring-rose-400'
+                                  : 'bg-white hover:bg-rose-50 text-rose-700 border-2 border-rose-300'
+                              }`}
+                            >
+                              <span className="text-xl">🚨</span>
+                              <span>ที่นั่งว่าง (ไม่อยู่)</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleSaveSeatInspection(
+                                  { registrationId: selectedOccupant.id, studentCode: selectedOccupant.studentCode, seatNumber: selectedSeat },
+                                  true
+                                )
+                              }
+                              disabled={isSavingInspection}
+                              className={`p-3 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-1 transition cursor-pointer shadow-xs ${
+                                isOccupied === true
+                                  ? 'bg-emerald-600 text-white ring-3 ring-emerald-400'
+                                  : 'bg-white hover:bg-emerald-50 text-emerald-800 border-2 border-emerald-400'
+                              }`}
+                            >
+                              <span className="text-xl">✅</span>
+                              <span>นั่งอยู่ปกติ</span>
+                            </button>
+                          </div>
+
+                          {isOccupied !== undefined && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleSaveSeatInspection(
+                                  { registrationId: selectedOccupant.id, studentCode: selectedOccupant.studentCode, seatNumber: selectedSeat },
+                                  null
+                                )
+                              }
+                              disabled={isSavingInspection}
+                              className="w-full text-center text-[10.5px] text-slate-400 hover:text-slate-700 transition cursor-pointer pt-0.5 underline"
+                            >
+                              ล้างผลตรวจรอบนี้ (คืนค่าเริ่มต้น)
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 {/* Seat Occupant Info */}
                 {selectedOccupant ? (
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
@@ -2576,6 +3127,92 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                   type="button"
                   onClick={() => setIsMobileQrOpen(false)}
                   className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                >
+                  ปิด
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Absent From Seat Report Modal */}
+        {isAbsentReportOpen && dailyStats && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/80 backdrop-blur-xs">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+              <div className="px-4 py-3 bg-gradient-to-r from-rose-700 to-rose-900 text-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <AlertOctagon className="w-5 h-5 text-rose-200" />
+                  <div>
+                    <h4 className="font-black text-sm sm:text-base leading-tight">
+                      รายงานผู้สแกนเข้า แต่ตรวจพบว่าที่นั่งว่าง ({dailyStats.absentList.length} ท่าน)
+                    </h4>
+                    <p className="text-[11px] text-rose-200">
+                      วันที่ {inspectionDay} • {INSPECTION_PERIODS.find((p) => p.id === inspectionPeriod)?.nameTh}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAbsentReportOpen(false)}
+                  className="p-1 text-rose-200 hover:text-white rounded-lg transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-4 flex-1 overflow-y-auto space-y-3 text-xs">
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-[11px] leading-relaxed">
+                  💡 รายชื่อด้านล่างนี้คือผู้ที่มีการสแกนเข้ารอบปฏิบัติธรรม แต่เจ้าหน้าที่ตรวจพบว่าไม่อยู่ที่นั่ง (ที่นั่งว่าง) ใช้สำหรับดูสถิติและรายงานคณะกรรมการดำเนินงาน
+                </div>
+
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                      <tr>
+                        <th className="p-2.5 w-10 text-center">ลำดับ</th>
+                        <th className="p-2.5 w-20">ที่นั่ง</th>
+                        <th className="p-2.5 w-24">รหัส</th>
+                        <th className="p-2.5">ชื่อ-สกุล</th>
+                        <th className="p-2.5 w-20 text-center">กลุ่ม</th>
+                        <th className="p-2.5 w-24 text-center">เวลาสแกน</th>
+                        <th className="p-2.5 w-24 text-center">การจัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {dailyStats.absentList.map((item, idx) => (
+                        <tr key={item.reg.id} className="hover:bg-rose-50/50">
+                          <td className="p-2 text-center text-slate-500 font-mono">{idx + 1}</td>
+                          <td className="p-2 font-mono font-black text-rose-700">{item.seatNumber}</td>
+                          <td className="p-2 font-mono text-slate-800">{item.reg.studentCode}</td>
+                          <td className="p-2 font-bold text-slate-900">{item.reg.studentName}</td>
+                          <td className="p-2 text-center text-slate-600">{item.reg.groupNumber || '-'}</td>
+                          <td className="p-2 text-center font-mono text-slate-500">{item.scanTime || '-'}</td>
+                          <td className="p-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleSaveSeatInspection(
+                                  { registrationId: item.reg.id, studentCode: item.reg.studentCode, seatNumber: item.seatNumber },
+                                  true
+                                )
+                              }
+                              className="px-2 py-1 text-[10.5px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-md transition cursor-pointer"
+                            >
+                              เปลี่ยนเป็นอยู่
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsAbsentReportOpen(false)}
+                  className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition cursor-pointer"
                 >
                   ปิด
                 </button>

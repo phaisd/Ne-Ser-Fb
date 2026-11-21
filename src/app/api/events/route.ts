@@ -423,6 +423,37 @@ export async function POST(request: Request) {
       });
     }
 
+    // Record Daily & Period Seat Inspection (สุ่มตรวจที่นั่งประจำวัน/รอบ - ตรวจนิสิตสแกนแต่ไม่เข้านั่ง)
+    if (action === 'record_daily_seat_inspection') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId, dayKey, periodKey, records } = body;
+      if (!eventId || !dayKey || !periodKey || !Array.isArray(records)) {
+        return NextResponse.json(
+          { success: false, error: 'ข้อมูลไม่ครบถ้วน (ต้องการ eventId, dayKey, periodKey, records)' },
+          { status: 400 }
+        );
+      }
+
+      const { recordDailySeatInspection } = await import('@/services');
+      const result = await recordDailySeatInspection({
+        eventId,
+        dayKey,
+        periodKey,
+        records,
+        recordedBy: staffAuth.user?.name || staffAuth.user?.email || 'STAFF_INSPECTOR',
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `บันทึกการตรวจที่นั่งสำเร็จ (${result.updatedCount} ท่าน${
+          result.emptySeatCount > 0 ? `, พบที่นั่งว่าง ${result.emptySeatCount} ท่าน` : ''
+        })`,
+      });
+    }
+
     // Create a new event
     if (action === 'create_event' || action === 'add_event') {
       const adminAuth = requireAdminOrOfficer(request);
