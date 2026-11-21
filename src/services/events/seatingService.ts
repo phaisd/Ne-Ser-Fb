@@ -46,7 +46,7 @@ export async function saveEventSeatingConfig(
 export async function assignSeatsAuto(
   eventId: string,
   options: {
-    sortBy?: 'GROUP' | 'STUDENT_CODE' | 'NAME' | 'STATUS_GENDER' | 'STATUS_INTER' | 'MAX_CAPACITY';
+    sortBy?: 'GROUP' | 'STUDENT_CODE' | 'NAME' | 'STATUS_GENDER' | 'STATUS_INTER' | 'MAX_CAPACITY' | 'VASSA';
     clearExisting?: boolean;
   } = {}
 ): Promise<{ assignedCount: number; unassignedCount: number; totalParticipants: number }> {
@@ -113,6 +113,23 @@ export async function assignSeatsAuto(
       const stB = detectParticipantStatus(b.studentName, b.role);
       if (stA.priority !== stB.priority) {
         return stA.priority - stB.priority;
+      }
+      return (a.studentCode || '').localeCompare(b.studentCode || '');
+    }
+
+    // 1.1 เรียงตามพรรษา (อาวุโสพรรษาตามพระธรรมวินัย พระภิกษุพรรษามากนั่งหน้าสุด)
+    if (sortBy === 'VASSA') {
+      const stA = detectParticipantStatus(a.studentName, a.role);
+      const stB = detectParticipantStatus(b.studentName, b.role);
+      if (stA.priority !== stB.priority) {
+        return stA.priority - stB.priority;
+      }
+      if (stA.category === 'MONK' && stB.category === 'MONK') {
+        const vassaA = parseInt(String(a.vasa || '0').replace(/\D/g, ''), 10) || 0;
+        const vassaB = parseInt(String(b.vasa || '0').replace(/\D/g, ''), 10) || 0;
+        if (vassaA !== vassaB) {
+          return vassaB - vassaA; // พรรษามาก่อน (มากไปน้อย)
+        }
       }
       return (a.studentCode || '').localeCompare(b.studentCode || '');
     }

@@ -125,7 +125,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   const [isConfigDrawerOpen, setIsConfigDrawerOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [autoSortBy, setAutoSortBy] = useState<
-    'STATUS_GENDER' | 'STATUS_INTER' | 'MAX_CAPACITY' | 'GROUP' | 'STUDENT_CODE' | 'NAME'
+    'STATUS_GENDER' | 'STATUS_INTER' | 'VASSA' | 'MAX_CAPACITY' | 'GROUP' | 'STUDENT_CODE' | 'NAME'
   >('STATUS_GENDER');
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -567,11 +567,11 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         expGroupCode,
         r.studentName,
         st.label,
-        formatVasaCell(r.vasa),
         r.programType || 'THAI',
         r.degreeLevel || 'ปริญญาตรี',
         r.major || '',
         r.groupNumber || '',
+        formatVasaCell(r.vasa),
         r.seatNumber || '',
         r.seatZone || '',
         isCheckedIn ? 'เช็คอินแล้ว' : 'ยังไม่เข้าที่นั่ง',
@@ -590,11 +590,11 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         'เลขเฉพาะกลุ่ม',
         'ชื่อ-ฉายา/สกุล',
         'สถานภาพ/เพศ',
-        'พรรษา(ถ้ามี)',
         'หลักสูตรภาษา',
         'ระดับการศึกษา',
         'สาขาวิชา',
         'กลุ่มที่',
+        'พรรษา',
         'หมายเลขที่นั่ง (Seat No.)',
         'โซนที่นั่ง (Zone)',
         'สถานะตรวจเช็คเข้าที่นั่ง',
@@ -602,7 +602,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         'ผู้ตรวจเช็ค',
       ],
       rows,
-      columnWidths: [8, 16, 14, 28, 16, 12, 14, 16, 24, 10, 22, 20, 22, 22, 20],
+      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 12, 22, 20, 22, 22, 20],
     };
 
     downloadXlsx(
@@ -623,13 +623,13 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       'เลขเฉพาะกลุ่ม',
       'ชื่อ-ฉายา/สกุล',
       'สถานภาพ/เพศ',
-      'พรรษา(ถ้ามี)',
       'หลักสูตรภาษา',
       'ระดับการศึกษา',
       'สาขาวิชา',
       'กลุ่มที่',
-      'หมายเลขที่นั่ง',
-      'โซนที่นั่ง',
+      'พรรษา',
+      'หมายเลขที่นั่ง (Seat No.)',
+      'โซนที่นั่ง (Zone)',
       'สถานะตรวจเช็คเข้าที่นั่ง',
       'วันเวลาที่เช็คอิน',
       'ผู้ตรวจเช็ค',
@@ -658,11 +658,11 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         `"${expGroupCode}"`,
         `"${r.studentName}"`,
         `"${st.label}"`,
-        `"${formatVasaCell(r.vasa)}"`,
         `"${r.programType || 'THAI'}"`,
         `"${r.degreeLevel || 'ปริญญาตรี'}"`,
         `"${r.major || ''}"`,
         `"${r.groupNumber || ''}"`,
+        `"${formatVasaCell(r.vasa)}"`,
         `"${r.seatNumber || ''}"`,
         `"${r.seatZone || ''}"`,
         `"${isCheckedIn ? 'เช็คอินแล้ว' : 'ยังไม่เข้าที่นั่ง'}"`,
@@ -684,29 +684,29 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   // Download Blank Excel Template
   const handleDownloadBlankTemplate = () => {
     const sampleRows = [
-      [1, '6701501001', 'T101', 'พระมหาสมชาย กิตฺติโสภโณ', 'พระภิกษุ', 12, 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 'A-01', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:30:00', 'จนท.สมชาย'],
-      [2, '6701501002', 'T102', 'สามเณรธีรภัทร สุขใจ', 'สามเณร', '', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 'A-02', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
-      [3, '6701501003', 'T103', 'แม่ชีวิมล บุญประเสริฐ', 'แม่ชี', '', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 2, 'B-01', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
-      [4, '6701501004', 'T104', 'นายก้องภพ ใจดี', 'คฤหัสถ์ชาย', '', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 2, 'B-02', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:32:15', 'จนท.สมชาย'],
-      [5, '6701501005', 'T105', 'นางสาวพรทิพย์ สดใส', 'คฤหัสถ์หญิง', '', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 3, 'C-01', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
-      [6, '6701501006', 'I301', 'Ven. Dhammapalo', 'พระภิกษุ', 5, 'ENGLISH', 'ปริญญาตรี', 'Buddhism', 12, 'A-03', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:35:00', 'จนท.สมชาย'],
+      [1, '6701501001', 'T101', 'พระมหาสมชาย กิตฺติโสภโณ', 'พระภิกษุ', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 25, 'A-01', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:30:00', 'จนท.สมชาย'],
+      [2, '6701501002', 'T102', 'สามเณรธีรภัทร สุขใจ', 'สามเณร', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, '', 'A-02', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
+      [3, '6701501003', 'T103', 'แม่ชีวิมล บุญประเสริฐ', 'แม่ชี', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 2, '', 'B-01', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
+      [4, '6701501004', 'T104', 'นายก้องภพ ใจดี', 'คฤหัสถ์ชาย', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 2, '', 'B-02', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:32:15', 'จนท.สมชาย'],
+      [5, '6701501005', 'T105', 'นางสาวพรทิพย์ สดใส', 'คฤหัสถ์หญิง', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 3, '', 'C-01', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
+      [6, '6701501006', 'I301', 'Ven. Dhammapalo', 'พระภิกษุ', 'ENGLISH', 'ปริญญาตรี', 'Buddhism', 12, 10, 'A-03', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:35:00', 'จนท.สมชาย'],
     ];
 
     const sheet: XlsxSheet = {
       name: 'แม่แบบจัดผังที่นั่งและเช็คอิน',
       title: 'แม่แบบไฟล์ Excel กำหนดหมายเลขที่นั่ง & ตรวจเช็ค (Seating & Checkin Template)',
-      subtitle: 'คำแนะนำ: ระบุรหัสนิสิต, หมายเลขที่นั่ง (เช่น A-01) และสถานะตรวจเช็คได้ • คอลัมน์พรรษาใส่เฉพาะพระภิกษุ (ตัวเลข เช่น 5) สามเณร/แม่ชี/ฆราวาสให้เว้นว่าง',
+      subtitle: 'คำแนะนำ: ระบุรหัสนิสิต, หมายเลขที่นั่ง (เช่น A-01) และสามารถระบุสถานะตรวจเช็ค (เช็คอินแล้ว/ยังไม่เข้าที่นั่ง) ได้',
       headers: [
         'ลำดับ',
         'รหัสนิสิต',
         'เลขเฉพาะกลุ่ม',
         'ชื่อ-ฉายา/สกุล',
         'สถานภาพ/เพศ',
-        'พรรษา(ถ้ามี)',
         'หลักสูตรภาษา',
         'ระดับการศึกษา',
         'สาขาวิชา',
         'กลุ่มที่',
+        'พรรษา',
         'หมายเลขที่นั่ง (Seat No.)',
         'โซนที่นั่ง (Zone)',
         'สถานะตรวจเช็คเข้าที่นั่ง',
@@ -714,7 +714,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         'ผู้ตรวจเช็ค',
       ],
       rows: sampleRows,
-      columnWidths: [8, 16, 14, 28, 16, 12, 14, 16, 24, 10, 22, 20, 22, 22, 20],
+      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 12, 22, 20, 22, 22, 20],
     };
 
     downloadXlsx(
@@ -2608,7 +2608,32 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                   />
                 </label>
 
-                {/* 5. เรียงตามตัวอักษรชื่อ-สกุล */}
+                {/* 5. จัดเรียงตามพรรษา (พระภิกษุพรรษามาก ➔ พรรษาน้อย) */}
+                <label
+                  className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition ${
+                    autoSortBy === 'VASSA' ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/30' : 'bg-slate-50 border-slate-200'
+                  }`}
+                  onClick={() => setAutoSortBy('VASSA')}
+                >
+                  <div className="space-y-0.5 pr-2">
+                    <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                      <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">ตามพรรษา</span>
+                      <span>จัดตามพรรษา (พระภิกษุพรรษามาก ➔ พรรษาน้อย)</span>
+                    </div>
+                    <div className="text-[11px] text-slate-600">
+                      เรียงพระภิกษุตามพรรษามากไปน้อย จากนั้นตามด้วยสามเณร และฆราวาส ตามลำดับอาวุโส
+                    </div>
+                  </div>
+                  <input
+                    type="radio"
+                    name="autoSortBy"
+                    checked={autoSortBy === 'VASSA'}
+                    onChange={() => setAutoSortBy('VASSA')}
+                    className="accent-amber-600 mt-1"
+                  />
+                </label>
+
+                {/* 6. เรียงตามตัวอักษรชื่อ-สกุล */}
                 <label
                   className={`flex items-start justify-between p-3 rounded-xl border cursor-pointer transition ${
                     autoSortBy === 'NAME' ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/30' : 'bg-slate-50 border-slate-200'
