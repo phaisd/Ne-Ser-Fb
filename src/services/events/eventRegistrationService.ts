@@ -580,12 +580,21 @@ export async function batchImportEventRegistrations(
               if (!rowNum) continue;
 
               updateBatches.push({
-                range: `EventRegistrations!J${rowNum}:M${rowNum}`,
+                range: `EventRegistrations!D${rowNum}:P${rowNum}`,
                 values: [[
+                  reg.studentName || '',
+                  reg.status || 'REGISTERED',
+                  reg.role || 'STUDENT',
+                  reg.major || '',
+                  reg.yearLevel || 1,
+                  reg.department || '',
                   reg.groupName || '',
                   reg.createdAt || '',
                   reg.groupNumber !== undefined ? String(reg.groupNumber) : '',
                   reg.groupSpecificCode || '',
+                  reg.degreeLevel || '',
+                  reg.programType || '',
+                  reg.remarks || '',
                 ]],
               });
             }

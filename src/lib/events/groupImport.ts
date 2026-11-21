@@ -111,8 +111,12 @@ const HEADER_ALIASES: Record<string, keyof GroupedParticipantInput | 'ignore'> =
   สถานภาพ: 'role',
   สถานภาพเพศ: 'role',
   เพศสถานภาพ: 'role',
-  เพศ: 'role',
+  สถานะเพศ: 'role',
+  เพศสถานะ: 'role',
   สถานะ: 'role',
+  เพศ: 'role',
+  genderstatus: 'role',
+  statusgender: 'role',
 
   // พรรษา
   vasa: 'vasa',
@@ -497,8 +501,66 @@ export function parseGroupedParticipantsText(
 
     const resolvedGroupName = groupName || (groupNumber ? `กลุ่มที่ ${groupNumber}` : undefined);
 
-    let finalRole = role;
-    if (!finalRole || finalRole === 'STUDENT') {
+    let finalRole = role?.trim();
+    if (finalRole) {
+      const lowerR = finalRole.toLowerCase();
+      if (
+        lowerR === 'monk' ||
+        lowerR === 'monks' ||
+        lowerR === 'bhikkhu' ||
+        lowerR.includes('ภิกษุ') ||
+        lowerR.includes('ภิกขุ') ||
+        lowerR === 'พระ'
+      ) {
+        finalRole = 'พระภิกษุ';
+      } else if (
+        lowerR === 'novice' ||
+        lowerR === 'novices' ||
+        lowerR === 'samanera' ||
+        lowerR === 'samaneras' ||
+        lowerR.includes('สามเณร') ||
+        lowerR === 'เณร'
+      ) {
+        finalRole = 'สามเณร';
+      } else if (
+        lowerR === 'bhikkhuni' ||
+        lowerR === 'bhikshuni' ||
+        lowerR.includes('ภิกษุณี') ||
+        lowerR.includes('สามเณรี')
+      ) {
+        finalRole = 'ภิกษุณี';
+      } else if (
+        lowerR === 'nun' ||
+        lowerR === 'nuns' ||
+        lowerR === 'maechi' ||
+        lowerR.includes('แม่ชี') ||
+        lowerR === 'ชี'
+      ) {
+        finalRole = 'แม่ชี';
+      } else if (
+        lowerR.includes('คฤหัสถ์ชาย') ||
+        lowerR.includes('ฆราวาสชาย') ||
+        lowerR === 'lay male' ||
+        lowerR === 'lay_male' ||
+        lowerR === 'layman' ||
+        lowerR === 'male' ||
+        lowerR === 'ชาย'
+      ) {
+        finalRole = lowerR.includes('ฆราวาส') ? 'ฆราวาสชาย' : 'คฤหัสถ์ชาย';
+      } else if (
+        lowerR.includes('คฤหัสถ์หญิง') ||
+        lowerR.includes('ฆราวาสหญิง') ||
+        lowerR === 'lay female' ||
+        lowerR === 'lay_female' ||
+        lowerR === 'laywoman' ||
+        lowerR === 'female' ||
+        lowerR === 'หญิง'
+      ) {
+        finalRole = lowerR.includes('ฆราวาส') ? 'ฆราวาสหญิง' : 'คฤหัสถ์หญิง';
+      }
+    }
+
+    if (!finalRole || finalRole === 'STUDENT' || finalRole === 'นิสิต') {
       const cleanLower = (studentName || '').trim().toLowerCase();
       if (
         cleanLower.startsWith('พระมหา') ||
@@ -508,21 +570,56 @@ export function parseGroupedParticipantsText(
         cleanLower.startsWith('ven.') ||
         cleanLower.startsWith('ven ') ||
         cleanLower.startsWith('phra') ||
-        cleanLower.startsWith('พระ')
+        cleanLower.startsWith('พระ') ||
+        cleanLower.startsWith('ashin') ||
+        cleanLower.startsWith('rev.') ||
+        cleanLower.startsWith('rev ') ||
+        cleanLower.includes('thero') ||
+        cleanLower.includes('ภิกษุ') ||
+        cleanLower.includes('ภิกขุ')
       ) {
         finalRole = 'พระภิกษุ';
-      } else if (cleanLower.startsWith('สามเณร') || cleanLower.startsWith('สามเณร.') || cleanLower.startsWith('samanera')) {
+      } else if (
+        cleanLower.startsWith('สามเณร') ||
+        cleanLower.startsWith('สามเณร.') ||
+        cleanLower.startsWith('เณร') ||
+        cleanLower.startsWith('samanera') ||
+        cleanLower.startsWith('novice')
+      ) {
         finalRole = 'สามเณร';
-      } else if (cleanLower.startsWith('แม่ชี') || cleanLower.startsWith('ชี') || cleanLower.startsWith('maechi')) {
+      } else if (
+        cleanLower.startsWith('แม่ชี') ||
+        cleanLower.startsWith('ชี') ||
+        cleanLower.startsWith('maechi') ||
+        cleanLower.startsWith('nun')
+      ) {
         finalRole = 'แม่ชี';
-      } else if (cleanLower.startsWith('ภิกษุณี') || cleanLower.startsWith('bhikkhuni')) {
+      } else if (
+        cleanLower.startsWith('ภิกษุณี') ||
+        cleanLower.startsWith('สามเณรี') ||
+        cleanLower.startsWith('bhikkhuni')
+      ) {
         finalRole = 'ภิกษุณี';
-      } else if (cleanLower.startsWith('นาย') || cleanLower.startsWith('mr.') || cleanLower.startsWith('mr ')) {
-        finalRole = 'ฆราวาสชาย';
-      } else if (cleanLower.startsWith('นางสาว') || cleanLower.startsWith('นาง') || cleanLower.startsWith('ms.') || cleanLower.startsWith('mrs.')) {
-        finalRole = 'ฆราวาสหญิง';
+      } else if (
+        cleanLower.startsWith('นาย') ||
+        cleanLower.startsWith('mr.') ||
+        cleanLower.startsWith('mr ') ||
+        cleanLower.startsWith('ด.ช.') ||
+        cleanLower.startsWith('เด็กชาย')
+      ) {
+        finalRole = 'คฤหัสถ์ชาย';
+      } else if (
+        cleanLower.startsWith('นางสาว') ||
+        cleanLower.startsWith('นาง') ||
+        cleanLower.startsWith('ms.') ||
+        cleanLower.startsWith('mrs.') ||
+        cleanLower.startsWith('miss') ||
+        cleanLower.startsWith('ด.ญ.') ||
+        cleanLower.startsWith('เด็กหญิง')
+      ) {
+        finalRole = 'คฤหัสถ์หญิง';
       } else {
-        finalRole = role || 'STUDENT';
+        finalRole = role || 'นิสิต';
       }
     }
 

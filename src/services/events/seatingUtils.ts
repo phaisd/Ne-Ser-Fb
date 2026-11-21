@@ -44,9 +44,90 @@ export function detectParticipantStatus(
   const cleanName = (name || '').trim().toLowerCase();
   const cleanRole = (role || '').trim().toLowerCase();
 
-  // 1. พระภิกษุ (Monk)
+  const isBhikkhuniRole =
+    cleanRole === 'ภิกษุณี' ||
+    cleanRole === 'สามเณรี' ||
+    cleanRole === 'bhikkhuni' ||
+    cleanRole === 'bhikshuni' ||
+    cleanRole.includes('ภิกษุณี') ||
+    cleanRole.includes('สามเณรี') ||
+    cleanRole.includes('bhikkhuni');
+
+  const isMonkRole =
+    !isBhikkhuniRole &&
+    (cleanRole === 'monk' ||
+      cleanRole === 'monks' ||
+      cleanRole === 'พระภิกษุ' ||
+      cleanRole === 'ภิกษุ' ||
+      cleanRole === 'พระ' ||
+      cleanRole.includes('พระภิกษุ') ||
+      (cleanRole.includes('ภิกษุ') && !cleanRole.includes('ภิกษุณี')) ||
+      (cleanRole.includes('ภิกขุ') && !cleanRole.includes('ภิกขุนี')) ||
+      (cleanRole.includes('bhikkhu') && !cleanRole.includes('bhikkhuni')) ||
+      cleanRole.includes('monk'));
+
+  const isSamaneraRole =
+    cleanRole === 'สามเณร' ||
+    cleanRole === 'เณร' ||
+    cleanRole === 'novice' ||
+    cleanRole === 'novices' ||
+    cleanRole === 'samanera' ||
+    cleanRole === 'samaneras' ||
+    cleanRole.includes('สามเณร') ||
+    cleanRole.includes('samanera') ||
+    cleanRole.includes('novice');
+
+  const isMaechiRole =
+    cleanRole === 'แม่ชี' ||
+    cleanRole === 'ชี' ||
+    cleanRole === 'nun' ||
+    cleanRole === 'nuns' ||
+    cleanRole === 'maechi' ||
+    cleanRole.includes('แม่ชี') ||
+    cleanRole.includes('maechi') ||
+    cleanRole.includes('nun');
+
+  const isLayMaleRole =
+    cleanRole === 'คฤหัสถ์ชาย' ||
+    cleanRole === 'ฆราวาสชาย' ||
+    cleanRole === 'อุบาสก' ||
+    cleanRole === 'ชาย' ||
+    cleanRole === 'lay male' ||
+    cleanRole === 'lay_male' ||
+    cleanRole === 'layman' ||
+    cleanRole === 'male' ||
+    cleanRole.includes('คฤหัสถ์ชาย') ||
+    cleanRole.includes('ฆราวาสชาย') ||
+    cleanRole.includes('lay male');
+
+  const isLayFemaleRole =
+    cleanRole === 'คฤหัสถ์หญิง' ||
+    cleanRole === 'ฆราวาสหญิง' ||
+    cleanRole === 'อุบาสิกา' ||
+    cleanRole === 'หญิง' ||
+    cleanRole === 'lay female' ||
+    cleanRole === 'lay_female' ||
+    cleanRole === 'laywoman' ||
+    cleanRole === 'female' ||
+    cleanRole.includes('คฤหัสถ์หญิง') ||
+    cleanRole.includes('ฆราวาสหญิง') ||
+    cleanRole.includes('lay female');
+
+  // 1. ภิกษุณี / สามเณรี (Bhikkhuni) - Checked before monk to avoid substring clash with 'ภิกษุ' or 'bhikkhu'
   if (
-    cleanRole === 'monk' ||
+    isBhikkhuniRole ||
+    cleanName.startsWith('ภิกษุณี') ||
+    cleanName.startsWith('สามเณรี') ||
+    cleanName.startsWith('bhikkhuni') ||
+    cleanName.includes('bhikkhuni') ||
+    cleanName.includes('ภิกษุณี')
+  ) {
+    return { category: 'BHIKKHUNI', label: 'ภิกษุณี', priority: 3 };
+  }
+
+  // 2. พระภิกษุ (Monk)
+  if (
+    isMonkRole ||
     cleanName.startsWith('พระ') ||
     cleanName.startsWith('พระมหา') ||
     cleanName.startsWith('พระครู') ||
@@ -55,14 +136,19 @@ export function detectParticipantStatus(
     cleanName.startsWith('ven.') ||
     cleanName.startsWith('ven ') ||
     cleanName.startsWith('phra') ||
+    cleanName.startsWith('ashin') ||
+    cleanName.startsWith('rev.') ||
+    cleanName.startsWith('rev ') ||
+    cleanName.includes('thero') ||
     cleanName.includes('ภิกขุ') ||
     cleanName.includes('ภิกษุ')
   ) {
     return { category: 'MONK', label: 'พระภิกษุ', priority: 1 };
   }
 
-  // 2. สามเณร (Novice / Samanera)
+  // 3. สามเณร (Novice / Samanera)
   if (
+    isSamaneraRole ||
     cleanName.startsWith('สามเณร') ||
     cleanName.startsWith('เณร') ||
     cleanName.startsWith('samanera') ||
@@ -71,17 +157,9 @@ export function detectParticipantStatus(
     return { category: 'SAMANERA', label: 'สามเณร', priority: 2 };
   }
 
-  // 3. ภิกษุณี / สามเณรี (Bhikkhuni)
-  if (
-    cleanName.startsWith('ภิกษุณี') ||
-    cleanName.startsWith('สามเณรี') ||
-    cleanName.startsWith('bhikkhuni')
-  ) {
-    return { category: 'BHIKKHUNI', label: 'ภิกษุณี', priority: 3 };
-  }
-
   // 4. แม่ชี (Nun / Maechi)
   if (
+    isMaechiRole ||
     cleanName.startsWith('แม่ชี') ||
     cleanName.startsWith('ชี') ||
     cleanName.startsWith('maechi') ||
@@ -92,6 +170,7 @@ export function detectParticipantStatus(
 
   // 5. คฤหัสถ์ชาย (Lay Male)
   if (
+    isLayMaleRole ||
     cleanName.startsWith('นาย') ||
     cleanName.startsWith('mr.') ||
     cleanName.startsWith('mr ') ||
@@ -103,6 +182,7 @@ export function detectParticipantStatus(
 
   // 6. คฤหัสถ์หญิง (Lay Female)
   if (
+    isLayFemaleRole ||
     cleanName.startsWith('นาง') ||
     cleanName.startsWith('นางสาว') ||
     cleanName.startsWith('น.ส.') ||
@@ -110,6 +190,7 @@ export function detectParticipantStatus(
     cleanName.startsWith('ms ') ||
     cleanName.startsWith('mrs.') ||
     cleanName.startsWith('mrs ') ||
+    cleanName.startsWith('miss') ||
     cleanName.startsWith('เด็กหญิง') ||
     cleanName.startsWith('ด.ญ.')
   ) {
