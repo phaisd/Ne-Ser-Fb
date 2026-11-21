@@ -472,6 +472,7 @@ export async function batchImportSeatingFromRows(
     studentCode: string;
     seatNumber?: string;
     seatZone?: string;
+    vasa?: string;
     seatCheckedIn?: boolean;
     seatCheckinBy?: string;
   }>
@@ -509,6 +510,10 @@ export async function batchImportSeatingFromRows(
       }
       if (row.seatZone !== undefined) {
         target.seatZone = row.seatZone ? row.seatZone.trim() : target.seatZone;
+      }
+      if (row.vasa !== undefined && row.vasa !== null) {
+        const v = String(row.vasa).replace(/\s*พรรษา$/g, '').trim();
+        target.vasa = v && v !== '-' ? v : undefined;
       }
       if (row.seatCheckedIn !== undefined) {
         if (row.seatCheckedIn) {
