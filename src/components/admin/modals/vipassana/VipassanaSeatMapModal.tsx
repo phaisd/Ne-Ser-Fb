@@ -1893,7 +1893,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                             }\nเวลาสแกน: ${att?.checkInTime || '-'}`
                                           : `[${theme.label}${isCheckedIn ? ' • เช็คอินแล้ว' : ''}] ${seatCode}: ${
                                               occupant.studentName
-                                            } (${occupant.studentCode})`
+                                            }${occupant.vasa ? ` (${occupant.vasa} พรรษา)` : ''} (${occupant.studentCode})`
                                       }
                                     >
                                       <span className="text-[10px] leading-none">{seatCode}</span>
@@ -2155,6 +2155,12 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                       <div className="text-slate-600">
                         สาขาวิชา: {selectedOccupant.major || '-'}
                       </div>
+                      {selectedOccupant.vasa && (
+                        <div className="text-amber-800 font-bold flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 w-fit text-[11px]">
+                          <span>พรรษา:</span>
+                          <span>{selectedOccupant.vasa} พรรษา</span>
+                        </div>
+                      )}
                       {selectedOccupant.seatCheckinAt && (
                         <div className="text-[11px] text-emerald-700 pt-1 border-t border-slate-200">
                           เข้าที่นั่งเมื่อ: {new Date(selectedOccupant.seatCheckinAt).toLocaleTimeString('th-TH')} น.
@@ -2206,7 +2212,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                           .filter((r) => !r.seatNumber)
                           .map((r) => (
                             <option key={r.id} value={r.id}>
-                              {r.studentName} ({r.studentCode}) {r.groupNumber ? `- กลุ่ม ${r.groupNumber}` : ''}
+                              {r.studentName} ({r.studentCode}) {r.vasa ? `[${r.vasa} พรรษา]` : ''} {r.groupNumber ? `- กลุ่ม ${r.groupNumber}` : ''}
                             </option>
                           ))}
                       </select>

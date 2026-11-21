@@ -1,5 +1,161 @@
 [
   {
+    "id": "evt-1795168621983",
+    "title": "โครงการปฏิบัติวิปัสสนากัมมัฎฐาน นิสิตคณะพุทธศาตร์",
+    "description": "โครงการปฏิบัติวิปัสสนากัมมัฏฐานประจำปี สำหรับนิสิตคณะพุทธศาสตร์ ชั้นปีที่ 1 - 4 รวม 10 วัน ณ อาคารโพธิญาณมหาวิชชาลัย จ.นครปฐม",
+    "location": "อาคารโพธิญาณมหาวิชชาลัย จ.นครปฐม",
+    "startDate": "2026-11-12",
+    "endDate": "2026-11-21",
+    "capacity": 150,
+    "isActive": true,
+    "academicYear": "2569",
+    "activityHours": 72,
+    "eventType": "MEDITATION",
+    "targetGroup": "FACULTY",
+    "meditationConfig": {
+      "daysCount": 10,
+      "startDate": "2026-11-12",
+      "endDate": "2026-11-21",
+      "locationTh": "อาคารโพธิญาณมหาวิชชาลัย จ.นครปฐม",
+      "isMeditationEvent": true,
+      "periods": [
+        {
+          "id": "p1",
+          "time": "04.00-04.30",
+          "nameTh": "ภาคเช้ามืด",
+          "nameEn": "Dawn Period"
+        },
+        {
+          "id": "p2",
+          "time": "08.00-08.30",
+          "nameTh": "ภาคเช้า",
+          "nameEn": "Morning Period"
+        },
+        {
+          "id": "p3",
+          "time": "12.30-13.00",
+          "nameTh": "ภาคบ่าย",
+          "nameEn": "Afternoon Period"
+        },
+        {
+          "id": "p4",
+          "time": "17.30-18.00",
+          "nameTh": "ภาคค่ำ",
+          "nameEn": "Evening Period"
+        }
+      ],
+      "groups": [
+        {
+          "groupNumber": 1,
+          "nameTh": "กลุ่มที่ 1",
+          "nameEn": "Group 1",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 2,
+          "nameTh": "กลุ่มที่ 2",
+          "nameEn": "Group 2",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 3,
+          "nameTh": "กลุ่มที่ 3",
+          "nameEn": "Group 3",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 4,
+          "nameTh": "กลุ่มที่ 4",
+          "nameEn": "Group 4",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 5,
+          "nameTh": "กลุ่มที่ 5",
+          "nameEn": "Group 5",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 6,
+          "nameTh": "กลุ่มที่ 6",
+          "nameEn": "Group 6",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 7,
+          "nameTh": "กลุ่มที่ 7",
+          "nameEn": "Group 7",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 8,
+          "nameTh": "กลุ่มที่ 8",
+          "nameEn": "Group 8",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 9,
+          "nameTh": "กลุ่มที่ 9",
+          "nameEn": "Group 9",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 10,
+          "nameTh": "กลุ่มที่ 10",
+          "nameEn": "Group 10",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 11,
+          "nameTh": "กลุ่มที่ 11",
+          "nameEn": "Group 11",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 12,
+          "nameTh": "กลุ่มที่ 12 (English)",
+          "nameEn": "Group 12 (English)",
+          "program": "ENGLISH"
+        },
+        {
+          "groupNumber": 13,
+          "nameTh": "กลุ่มที่ 13",
+          "nameEn": "Group 13",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 14,
+          "nameTh": "กลุ่มที่ 14",
+          "nameEn": "Group 14",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 15,
+          "nameTh": "กลุ่มที่ 15",
+          "nameEn": "Group 15",
+          "program": "THAI"
+        },
+        {
+          "groupNumber": 16,
+          "nameTh": "กลุ่มที่ 16",
+          "nameEn": "Group 16",
+          "program": "THAI"
+        }
+      ]
+    },
+    "createdAt": "2026-11-20T09:57:01.983Z",
+    "updatedAt": "2026-11-21T07:09:15.088Z",
+    "eventTime": "04:00 - 21:00 น.",
+    "semester": 1,
+    "maxParticipants": 150,
+    "status": "ACTIVE",
+    "targetDegree": "ALL",
+    "targetProgram": "ALL",
+    "coordinatorName": "คณะพุทธศาสตร์",
+    "coordinatorTitle": "ผู้รับผิดชอบ: คณะพุทธศาสตร์",
+    "showCoordinator": true
+  },
+  {
     "id": "2a384a4c-2186-481c-a0cd-1238e427d756",
     "tenantId": "b8eef236-b993-4bc9-a08c-b02935131b84",
     "title": "โครงการปฏิบัติวิปัสสนากัมมัฏฐานประจำปี นิสิตคณะพุทธศาสตร์ (Annual Meditation Practice)",
