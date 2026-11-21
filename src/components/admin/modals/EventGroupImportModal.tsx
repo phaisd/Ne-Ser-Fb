@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  AlertTriangle,
   CheckCircle2,
   Copy,
   Download,
@@ -182,7 +183,7 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
   }, [directoryStudents, dirSearch, dirYearFilter, dirProgramFilter]);
 
   const parsedPaste = useMemo(() => {
-    if (activeTab !== 'paste') return { items: [], warnings: [], detectedGroups: [] };
+    if (activeTab !== 'paste') return { items: [], warnings: [], duplicates: [], detectedGroups: [] };
     const parsedNum = defaultGroupNum ? Number.parseInt(defaultGroupNum, 10) : undefined;
     return parseGroupedParticipantsText(rawText, {
       defaultGroupNumber: Number.isFinite(parsedNum) && (parsedNum as number) > 0 ? parsedNum : undefined,
@@ -656,11 +657,91 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                 rows={6}
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
+                onDrop={async (e) => {
+                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files[0];
+                    const lower = file.name.toLowerCase();
+                    try {
+                      if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
+                        const buffer = await file.arrayBuffer();
+                        const tsv = await parseXlsxToTsv(buffer);
+                        setRawText(tsv);
+                      } else {
+                        const text = await file.text();
+                        setRawText(text);
+                      }
+                      setErrorMsg(null);
+                    } catch (err: unknown) {
+                      setErrorMsg('ไม่สามารถอ่านไฟล์ที่ลากวางได้: ' + (err instanceof Error ? err.message : String(err)));
+                    }
+                  }
+                }}
+                onDragOver={(e) => {
+                  if (e.dataTransfer.types.includes('Files')) {
+                    e.preventDefault();
+                  }
+                }}
                 placeholder={
                   'วางข้อมูลจาก Excel หรือ CSV ได้เลย (รองรับ 10 คอลัมน์):\nกลุ่ม\tเลขเฉพาะกลุ่ม\tรหัสนิสิต\tชื่อ-นามสกุล\tหลักสูตร\tหลักสูตรภาษา\tสาขาวิชา\tชั้นปี\tสถานภาพ/เพศ\tพรรษา(ถ้ามี)\n1\tB1T01\t6801401003\tพระวิชัย วิชโย\tปริญญาตรี\tTHAI\tบาลีสันสกฤต\t4\tพระภิกษุ\t41\n1\tB1T02\t6701501004\tพระมหากุศล กุสลจิตโต\tปริญญาตรี\tTHAI\tศาสนาและปรัชญา\t3\tพระภิกษุ\t20\n1\tB1T03\t6701501075\tพระดำรงพล กตปุญฺโญ\tปริญญาตรี\tTHAI\tวิปัสสนาภาวนา\t3\tพระภิกษุ\t\n1\tB1T16\t6801501076\tสามเณรอภิสร ใสสะอาด\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t2\tสามเณร\t\n2\tB2T01\t6701501046\tBounmy Xaymonty\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t3\tฆราวาสชาย\t\n12\tB1201\t6601501013\tแม่ชีสุวีรา\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t4\tแม่ชี\t'
                 }
                 className="w-full p-3 rounded-2xl border border-slate-300 font-mono text-xs bg-slate-50/40 focus:ring-2 focus:ring-emerald-500 outline-none"
               />
+
+              {/* Duplicate Warning Box (Red Text / Red Alert) */}
+              {parsedPaste.duplicates && parsedPaste.duplicates.length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-red-50/90 border-2 border-red-300 text-red-700 space-y-2 shadow-xs animate-in fade-in">
+                  <div className="font-bold flex items-center justify-between text-xs text-red-800">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>
+                        แจ้งเตือน: พบรหัสนิสิต / ชื่อนิสิตซ้ำในรายการที่วาง ({parsedPaste.duplicates.length} รายการ)
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-normal text-red-600">
+                      (กรุณาตรวจสอบข้อมูล)
+                    </span>
+                  </div>
+
+                  <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 font-mono text-[11px]">
+                    {parsedPaste.duplicates.map((dup, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-2 p-2 rounded-xl bg-white/90 border border-red-200 shadow-2xs text-red-700"
+                      >
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white shrink-0">
+                          แถวที่ {dup.row}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-bold text-red-900">
+                            รหัส: <span className="underline decoration-red-400 font-mono">{dup.studentCode || '-'}</span> | ชื่อ: <span className="underline decoration-red-400">{dup.studentName}</span>
+                          </span>
+                          {dup.groupSpecificCode && (
+                            <span className="text-emerald-700 font-semibold ml-1.5 font-mono">
+                              [กลุ่ม: {dup.groupSpecificCode}]
+                            </span>
+                          )}
+                          <div className="text-[10px] text-red-600 mt-0.5 font-sans">
+                            {dup.duplicateType === 'both' && (
+                              <span>⚠️ ซ้ำทั้งรหัสนิสิตและชื่อกับแถวที่ <strong>{dup.originalRow}</strong></span>
+                            )}
+                            {dup.duplicateType === 'code' && (
+                              <span>⚠️ รหัสนิสิตซ้ำกับแถวที่ <strong>{dup.originalRow}</strong></span>
+                            )}
+                            {dup.duplicateType === 'name' && (
+                              <span>⚠️ ชื่อนิสิตซ้ำกับแถวที่ <strong>{dup.originalRow}</strong></span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-[11px] text-red-600 font-sans leading-relaxed">
+                    💡 <strong>คำแนะนำ:</strong> หากนิสิตมีเลขเฉพาะกลุ่มต่างกัน (เช่น B1207 และ B1210) ระบบจะนำเข้าให้ครบทั้ง 2 แถวตามเลขกลุ่ม แต่หากเป็นข้อมูลที่วางซ้ำซ้อนโดยไม่ได้ตั้งใจ กรุณาลบแถวที่ซ้ำออกจากกล่องข้อความก่อนกดยืนยันนำเข้า
+                  </p>
+                </div>
+              )}
 
               {parsedPaste.warnings.length > 0 && (
                 <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px]">
@@ -926,48 +1007,78 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                       </td>
                     </tr>
                   ) : (
-                    previewItems.slice(0, 50).map((it, idx) => (
-                      <tr key={`${it.studentCode}-${it.groupSpecificCode || ''}-${idx}`} className="hover:bg-slate-50">
-                        <td className="px-2.5 py-1.5 text-center font-semibold text-indigo-700">
-                          {it.groupNumber || (it.groupName ? it.groupName.replace(/[^\d]/g, '') : '-')}
-                        </td>
-                        <td className="px-2.5 py-1.5 font-mono font-bold text-emerald-700">
-                          {it.groupSpecificCode || '-'}
-                        </td>
-                        <td className="px-2.5 py-1.5 font-mono text-slate-800">
-                          {it.studentCode || '-'}
-                        </td>
-                        <td className="px-2.5 py-1.5 text-slate-900 font-medium">{it.studentName}</td>
-                        <td className="px-2.5 py-1.5 text-slate-600">
-                          {it.degreeLevel || '-'}
-                        </td>
-                        <td className="px-2.5 py-1.5 text-center">
-                          <span
-                            className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                              it.programType === 'ENGLISH'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-blue-100 text-blue-800'
+                    previewItems.slice(0, 50).map((it, idx) => {
+                      const isDup = it.isDuplicate;
+                      return (
+                        <tr
+                          key={`${it.studentCode}-${it.groupSpecificCode || ''}-${idx}`}
+                          className={
+                            isDup
+                              ? 'bg-red-50/80 hover:bg-red-100/70 text-red-950 font-medium'
+                              : 'hover:bg-slate-50'
+                          }
+                        >
+                          <td className="px-2.5 py-1.5 text-center font-semibold text-indigo-700">
+                            {it.groupNumber || (it.groupName ? it.groupName.replace(/[^\d]/g, '') : '-')}
+                          </td>
+                          <td className="px-2.5 py-1.5 font-mono font-bold text-emerald-700">
+                            {it.groupSpecificCode || '-'}
+                          </td>
+                          <td
+                            className={`px-2.5 py-1.5 font-mono ${
+                              isDup ? 'text-red-700 font-bold' : 'text-slate-800'
                             }`}
                           >
-                            {it.programType || 'THAI'}
-                          </span>
-                        </td>
-                        <td className="px-2.5 py-1.5 text-slate-600 truncate max-w-[130px]" title={it.major}>
-                          {it.major || '-'}
-                        </td>
-                        <td className="px-2.5 py-1.5 text-center font-mono text-slate-600">
-                          {it.yearLevel ? `ปี ${it.yearLevel}` : '-'}
-                        </td>
-                        <td className="px-2.5 py-1.5 text-center">
-                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
-                            {it.role || 'นิสิต'}
-                          </span>
-                        </td>
-                        <td className="px-2.5 py-1.5 text-center font-mono text-slate-700 font-semibold">
-                          {it.vasa || '-'}
-                        </td>
-                      </tr>
-                    ))
+                            {it.studentCode || '-'}
+                          </td>
+                          <td
+                            className={`px-2.5 py-1.5 font-medium ${
+                              isDup ? 'text-red-950 font-bold' : 'text-slate-900'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>{it.studentName}</span>
+                              {isDup && (
+                                <span
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-300 shrink-0"
+                                  title={it.duplicateMessage}
+                                >
+                                  ⚠️ ซ้ำแถว {it.duplicateRow}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2.5 py-1.5 text-slate-600">
+                            {it.degreeLevel || '-'}
+                          </td>
+                          <td className="px-2.5 py-1.5 text-center">
+                            <span
+                              className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                it.programType === 'ENGLISH'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}
+                            >
+                              {it.programType || 'THAI'}
+                            </span>
+                          </td>
+                          <td className="px-2.5 py-1.5 text-slate-600 truncate max-w-[130px]" title={it.major}>
+                            {it.major || '-'}
+                          </td>
+                          <td className="px-2.5 py-1.5 text-center font-mono text-slate-600">
+                            {it.yearLevel ? `ปี ${it.yearLevel}` : '-'}
+                          </td>
+                          <td className="px-2.5 py-1.5 text-center">
+                            <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                              {it.role || 'นิสิต'}
+                            </span>
+                          </td>
+                          <td className="px-2.5 py-1.5 text-center font-mono text-slate-700 font-semibold">
+                            {it.vasa || '-'}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

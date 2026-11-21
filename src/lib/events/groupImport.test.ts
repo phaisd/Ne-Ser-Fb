@@ -365,4 +365,62 @@ describe('groupImport helpers', () => {
     expect(formatGroupDisplay(3, [{ groupNumber: 3, programType: 'THAI' }])).toBe('กลุ่ม 3 (ไทย)');
     expect(formatGroupDisplay(5, [{ groupNumber: 5, programType: 'ENGLISH' }])).toBe('Group 5 (English)');
   });
+
+  describe('Duplicate student detection in pasted text', () => {
+    it('detects both student code and student name duplicates and reports row numbers', () => {
+      const tsv = [
+        'กลุ่ม\tเลขเฉพาะกลุ่ม\tรหัสนิสิต\tชื่อ-นามสกุล\tหลักสูตร\tหลักสูตรภาษา\tสาขาวิชา\tชั้นปี',
+        '1\tB1207\t6801401002\tนางสาววชิราวัลย์ มหพรภัสสร์\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t4',
+        '1\tB1208\t6801401005\tนายสมคิด จิตดี\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t4',
+        '2\tB1210\t6801401002\tนางสาววชิราวัลย์ มหพรภัสสร์\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t2',
+      ].join('\n');
+
+      const res = parseGroupedParticipantsText(tsv);
+      expect(res.items).toHaveLength(3);
+      expect(res.duplicates).toHaveLength(1);
+
+      const dup = res.duplicates[0];
+      expect(dup.row).toBe(4);
+      expect(dup.originalRow).toBe(2);
+      expect(dup.studentCode).toBe('6801401002');
+      expect(dup.studentName).toBe('นางสาววชิราวัลย์ มหพรภัสสร์');
+      expect(dup.groupSpecificCode).toBe('B1210');
+      expect(dup.duplicateType).toBe('both');
+      expect(dup.message).toContain('แถวที่ 4');
+      expect(dup.message).toContain('6801401002');
+      expect(dup.message).toContain('ซ้ำทั้งรหัสนิสิตและชื่อกับแถวที่ 2');
+
+      expect(res.items[0].isDuplicate).toBeFalsy();
+      expect(res.items[2].isDuplicate).toBe(true);
+      expect(res.items[2].duplicateRow).toBe(2);
+    });
+
+    it('detects duplicate student code when names differ', () => {
+      const csv = [
+        'กลุ่ม,เลขเฉพาะกลุ่ม,รหัสนิสิต,ชื่อ-นามสกุล',
+        '1,T101,6701501001,พระสมชาย',
+        '1,T102,6701501001,พระสมเกียรติ',
+      ].join('\n');
+
+      const res = parseGroupedParticipantsText(csv);
+      expect(res.duplicates).toHaveLength(1);
+      expect(res.duplicates[0].duplicateType).toBe('code');
+      expect(res.duplicates[0].row).toBe(3);
+      expect(res.duplicates[0].originalRow).toBe(2);
+    });
+
+    it('detects duplicate student name when codes differ or prefixes vary', () => {
+      const csv = [
+        'กลุ่ม,เลขเฉพาะกลุ่ม,รหัสนิสิต,ชื่อ-นามสกุล',
+        '1,T101,6701501001,นายสมชาย ใจดี',
+        '1,T102,6701501002,สมชาย ใจดี',
+      ].join('\n');
+
+      const res = parseGroupedParticipantsText(csv);
+      expect(res.duplicates).toHaveLength(1);
+      expect(res.duplicates[0].duplicateType).toBe('name');
+      expect(res.duplicates[0].row).toBe(3);
+      expect(res.duplicates[0].originalRow).toBe(2);
+    });
+  });
 });

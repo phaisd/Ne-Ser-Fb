@@ -16,11 +16,25 @@ export interface GroupedParticipantInput {
   vasa?: string;
   remarks?: string;
   status?: 'REGISTERED' | 'ATTENDED' | 'CANCELLED';
+  isDuplicate?: boolean;
+  duplicateRow?: number;
+  duplicateMessage?: string;
+}
+
+export interface GroupImportDuplicate {
+  row: number; // 1-based row number
+  originalRow: number; // 1-based row number where first found
+  studentCode: string;
+  studentName: string;
+  groupSpecificCode?: string;
+  duplicateType: 'both' | 'code' | 'name';
+  message: string;
 }
 
 export interface ParsedGroupImportResult {
   items: GroupedParticipantInput[];
   warnings: string[];
+  duplicates: GroupImportDuplicate[];
   detectedGroups: number[];
 }
 
@@ -204,6 +218,18 @@ export interface ParseGroupImportOptions {
 }
 
 /**
+ * Normalizes student name for duplicate checking by removing honorifics/titles and whitespace.
+ */
+export function normalizeStudentNameForCheck(name: string): string {
+  if (!name) return '';
+  return name
+    .trim()
+    .replace(/^(พระมหา|พระครู|พระอธิการ|เจ้าคุณ|พระ|สามเณร|แม่ชี|ภิกษุณี|สามเณรี|นาย|นางสาว|นาง|ดร\.|ven\.|ven|phra|rev\.|rev|dr\.|dr|asst\.|assoc\.|prof\.)\s*/i, '')
+    .replace(/[\s\u00A0]+/g, '')
+    .toLowerCase();
+}
+
+/**
  * Parses pasted Excel (TSV) or CSV rows of grouped participants.
  * Supports explicit group-specific codes (e.g. `T321`, `G01-01`) in `studentCode`,
  * headered or headerless columns, and auto-generates group codes if omitted.
@@ -214,26 +240,30 @@ export function parseGroupedParticipantsText(
 ): ParsedGroupImportResult {
   const trimmed = rawText.replace(/^\uFEFF/, '').trim();
   if (!trimmed) {
-    return { items: [], warnings: ['ยังไม่มีข้อมูลสำหรับนำเข้า'], detectedGroups: [] };
+    return { items: [], warnings: ['ยังไม่มีข้อมูลสำหรับนำเข้า'], duplicates: [], detectedGroups: [] };
   }
 
-  const lines = trimmed
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const rawLines = trimmed.split(/\r?\n/);
+  const linesWithRowNumber: { text: string; rowNum: number }[] = [];
+  for (let idx = 0; idx < rawLines.length; idx++) {
+    const t = rawLines[idx].trim();
+    if (t) {
+      linesWithRowNumber.push({ text: t, rowNum: idx + 1 });
+    }
+  }
 
-  if (lines.length === 0) {
-    return { items: [], warnings: [], detectedGroups: [] };
+  if (linesWithRowNumber.length === 0) {
+    return { items: [], warnings: [], duplicates: [], detectedGroups: [] };
   }
 
   // Robust delimiter detection: sample first 10 non-empty lines
   let tabCount = 0;
   let commaCount = 0;
   let multiSpaceCount = 0;
-  for (let i = 0; i < Math.min(10, lines.length); i++) {
-    tabCount += (lines[i].match(/\t/g) || []).length;
-    commaCount += (lines[i].match(/,/g) || []).length;
-    multiSpaceCount += (lines[i].match(/\s{2,}/g) || []).length;
+  for (let i = 0; i < Math.min(10, linesWithRowNumber.length); i++) {
+    tabCount += (linesWithRowNumber[i].text.match(/\t/g) || []).length;
+    commaCount += (linesWithRowNumber[i].text.match(/,/g) || []).length;
+    multiSpaceCount += (linesWithRowNumber[i].text.match(/\s{2,}/g) || []).length;
   }
 
   let delimiter: '\t' | ',' | 'spaces' = ',';
@@ -249,8 +279,8 @@ export function parseGroupedParticipantsText(
   let headerRowIndex = -1;
   let mappedHeaders: (keyof GroupedParticipantInput | 'ignore' | undefined)[] = [];
 
-  for (let i = 0; i < Math.min(8, lines.length); i++) {
-    const rowCells = splitDelimitedLine(lines[i], delimiter);
+  for (let i = 0; i < Math.min(8, linesWithRowNumber.length); i++) {
+    const rowCells = splitDelimitedLine(linesWithRowNumber[i].text, delimiter);
     const currentMapped = rowCells.map((h) => HEADER_ALIASES[normalizeHeaderKey(h)]);
     const matchCount = currentMapped.filter(
       (m) =>
@@ -273,20 +303,24 @@ export function parseGroupedParticipantsText(
   const hasHeader = headerRowIndex !== -1;
   const startIndex = hasHeader ? headerRowIndex + 1 : 0;
   const warnings: string[] = [];
+  const duplicates: GroupImportDuplicate[] = [];
   const items: GroupedParticipantInput[] = [];
   const groupSeqCounter = new Map<string, number>();
 
-  for (let i = startIndex; i < lines.length; i += 1) {
-    const cells = splitDelimitedLine(lines[i], delimiter);
+  const seenByCode = new Map<string, { row: number; studentCode: string; studentName: string; groupSpecificCode?: string }>();
+  const seenByName = new Map<string, { row: number; studentCode: string; studentName: string; groupSpecificCode?: string }>();
+
+  for (let i = startIndex; i < linesWithRowNumber.length; i += 1) {
+    const { text: lineText, rowNum } = linesWithRowNumber[i];
+    const cells = splitDelimitedLine(lineText, delimiter);
     if (cells.every((c) => !c)) continue;
 
     // If no header was found, skip apparent title or instruction rows
     if (!hasHeader) {
-      const lineStr = lines[i];
       if (
-        lineStr.includes('แบบฟอร์ม') ||
-        lineStr.includes('คำแนะนำ') ||
-        (lineStr.includes('เลขเฉพาะกลุ่ม') && cells.filter(Boolean).length <= 2)
+        lineText.includes('แบบฟอร์ม') ||
+        lineText.includes('คำแนะนำ') ||
+        (lineText.includes('เลขเฉพาะกลุ่ม') && cells.filter(Boolean).length <= 2)
       ) {
         continue;
       }
@@ -453,9 +487,11 @@ export function parseGroupedParticipantsText(
     }
 
     if (!studentName) {
-      warnings.push(`แถวที่ ${i + 1}: ไม่พบชื่อ-นามสกุล (ข้ามรายการ)`);
+      warnings.push(`แถวที่ ${rowNum}: ไม่พบชื่อ-นามสกุล (ข้ามรายการ)`);
       continue;
     }
+
+    const hadInputCode = Boolean(studentCode.trim() || groupSpecificCode.trim());
 
     // Clean and normalize whitespace/non-breaking space
     studentCode = studentCode.replace(/[\s\u00A0]+/g, '');
@@ -632,6 +668,72 @@ export function parseGroupedParticipantsText(
       }
     }
 
+    // Duplicate detection: check if studentCode or studentName was seen previously
+    const codeKey = (studentCode || '').trim().toLowerCase();
+    const nameNorm = normalizeStudentNameForCheck(studentName);
+    const isValidCode = hadInputCode && Boolean(codeKey) && codeKey !== '-' && codeKey !== 'n/a' && codeKey !== 'none';
+
+    let isDuplicateRow = false;
+    let duplicateRow: number | undefined;
+    let duplicateMessage: string | undefined;
+
+    const codeMatch = isValidCode ? seenByCode.get(codeKey) : undefined;
+    const nameMatch = nameNorm ? seenByName.get(nameNorm) : undefined;
+
+    if (codeMatch && nameMatch && codeMatch.row === nameMatch.row) {
+      isDuplicateRow = true;
+      duplicateRow = codeMatch.row;
+      const grpInfo = groupSpecificCode ? ` [กลุ่ม: ${groupSpecificCode}]` : '';
+      const prevGrpInfo = codeMatch.groupSpecificCode ? ` [กลุ่ม: ${codeMatch.groupSpecificCode}]` : '';
+      duplicateMessage = `แถวที่ ${rowNum}: รหัส ${studentCode} | ชื่อ ${studentName}${grpInfo} — ซ้ำทั้งรหัสนิสิตและชื่อกับแถวที่ ${codeMatch.row}${prevGrpInfo}`;
+      duplicates.push({
+        row: rowNum,
+        originalRow: codeMatch.row,
+        studentCode,
+        studentName,
+        groupSpecificCode: groupSpecificCode || undefined,
+        duplicateType: 'both',
+        message: duplicateMessage,
+      });
+    } else if (codeMatch) {
+      isDuplicateRow = true;
+      duplicateRow = codeMatch.row;
+      const grpInfo = groupSpecificCode ? ` [กลุ่ม: ${groupSpecificCode}]` : '';
+      const prevGrpInfo = codeMatch.groupSpecificCode ? ` [กลุ่ม: ${codeMatch.groupSpecificCode}]` : '';
+      duplicateMessage = `แถวที่ ${rowNum}: รหัส ${studentCode} | ชื่อ ${studentName}${grpInfo} — รหัสนิสิตซ้ำกับแถวที่ ${codeMatch.row} (ชื่อเดิม: ${codeMatch.studentName}${prevGrpInfo})`;
+      duplicates.push({
+        row: rowNum,
+        originalRow: codeMatch.row,
+        studentCode,
+        studentName,
+        groupSpecificCode: groupSpecificCode || undefined,
+        duplicateType: 'code',
+        message: duplicateMessage,
+      });
+    } else if (nameMatch) {
+      isDuplicateRow = true;
+      duplicateRow = nameMatch.row;
+      const grpInfo = groupSpecificCode ? ` [กลุ่ม: ${groupSpecificCode}]` : '';
+      const prevGrpInfo = nameMatch.groupSpecificCode ? ` [กลุ่ม: ${nameMatch.groupSpecificCode}]` : '';
+      duplicateMessage = `แถวที่ ${rowNum}: รหัส ${studentCode} | ชื่อ ${studentName}${grpInfo} — ชื่อนิสิตซ้ำกับแถวที่ ${nameMatch.row} (รหัสเดิม: ${nameMatch.studentCode}${prevGrpInfo})`;
+      duplicates.push({
+        row: rowNum,
+        originalRow: nameMatch.row,
+        studentCode,
+        studentName,
+        groupSpecificCode: groupSpecificCode || undefined,
+        duplicateType: 'name',
+        message: duplicateMessage,
+      });
+    }
+
+    if (isValidCode && !seenByCode.has(codeKey)) {
+      seenByCode.set(codeKey, { row: rowNum, studentCode, studentName, groupSpecificCode });
+    }
+    if (nameNorm && !seenByName.has(nameNorm)) {
+      seenByName.set(nameNorm, { row: rowNum, studentCode, studentName, groupSpecificCode });
+    }
+
     items.push({
       studentCode,
       groupSpecificCode: groupSpecificCode || undefined,
@@ -647,6 +749,9 @@ export function parseGroupedParticipantsText(
       vasa,
       remarks,
       status: 'REGISTERED',
+      isDuplicate: isDuplicateRow,
+      duplicateRow,
+      duplicateMessage,
     });
   }
 
@@ -654,7 +759,7 @@ export function parseGroupedParticipantsText(
     new Set(items.map((it) => it.groupNumber).filter((n): n is number => typeof n === 'number' && n > 0))
   ).sort((a, b) => a - b);
 
-  return { items, warnings, detectedGroups };
+  return { items, warnings, duplicates, detectedGroups };
 }
 
 export function getGroupKeyFromRegistration(reg: Pick<EventRegistration, 'groupNumber' | 'groupName'>): string {
