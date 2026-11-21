@@ -47,6 +47,7 @@ import {
 } from '@/services/events/seatingUtils';
 import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
 import { parseXlsxBuffer } from '@/lib/utils/xlsx-import';
+import { VipassanaSeatMapPrintModal } from './VipassanaSeatMapPrintModal';
 
 interface VipassanaSeatMapModalProps {
   isOpen: boolean;
@@ -122,6 +123,9 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   // Excel / CSV Import & Export Modal State
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [importExportTab, setImportExportTab] = useState<'EXPORT' | 'IMPORT'>('EXPORT');
+
+  // Print A4 Seating Chart Modal State
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [importFileName, setImportFileName] = useState('');
   const [importRawText, setImportRawText] = useState('');
   const [importPreviewRows, setImportPreviewRows] = useState<
@@ -1179,6 +1183,18 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-200" />
               <span className="hidden sm:inline">นำเข้า/ส่งออก Excel</span>
               <span className="sm:hidden">Excel</span>
+            </button>
+
+            {/* Print A4 Seating Chart Button */}
+            <button
+              type="button"
+              onClick={() => setIsPrintModalOpen(true)}
+              className="px-2.5 py-1 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+              title="พิมพ์ตารางที่นั่ง A4 (ทั้งแบบรวมทุกโซนใน 1 หน้า หรือแยกตามโซน)"
+            >
+              <Printer className="w-3.5 h-3.5 text-blue-200" />
+              <span className="hidden sm:inline">พิมพ์ตารางที่นั่ง A4</span>
+              <span className="sm:hidden">พิมพ์ A4</span>
             </button>
 
             {/* Clear all seats */}
@@ -2533,6 +2549,17 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               </div>
             </div>
           </div>
+        )}
+
+        {/* Print Seating Chart A4 Modal */}
+        {isPrintModalOpen && (
+          <VipassanaSeatMapPrintModal
+            isOpen={isPrintModalOpen}
+            onClose={() => setIsPrintModalOpen(false)}
+            event={event}
+            config={config}
+            registrations={registrations}
+          />
         )}
       </div>
     </div>
