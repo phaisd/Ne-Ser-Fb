@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Printer,
   X,
@@ -14,6 +15,9 @@ import {
   Eye,
   SlidersHorizontal,
   ChevronDown,
+  Image as ImageIcon,
+  Loader2,
+  Download,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, EventSeatingConfig, SeatZone } from '@/types/event';
 import {
@@ -47,6 +51,13 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
   const [showGroupCode, setShowGroupCode] = useState<boolean>(true);
   const [colorMode, setColorMode] = useState<'COLOR' | 'INK_SAVER'>('COLOR');
   const [isPrinting, setIsPrinting] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [isExportingPng, setIsExportingPng] = useState<boolean>(false);
+  const [pngProgress, setPngProgress] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Automatically adjust orientation when print mode changes
   const handleSelectMode = (mode: PrintMode) => {
@@ -141,7 +152,78 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
     }, 250);
   };
 
-  if (!isOpen) return null;
+  // Export to PNG Image
+  const handleSaveToPng = async () => {
+    if (isExportingPng) return;
+    setIsExportingPng(true);
+    setPngProgress('เตรียมบันทึกรูปภาพ...');
+
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const cleanEventTitle = event.title.replace(/[\/\\:*?"<>|]/g, '_').slice(0, 40);
+      const today = new Date().toISOString().slice(0, 10);
+
+      const captureAndDownload = async (el: HTMLElement, filename: string) => {
+        const origBorder = el.style.border;
+        const origShadow = el.style.boxShadow;
+        const origRadius = el.style.borderRadius;
+        el.style.border = 'none';
+        el.style.boxShadow = 'none';
+        el.style.borderRadius = '0';
+
+        const canvas = await html2canvas(el, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: el.scrollWidth,
+        });
+
+        el.style.border = origBorder;
+        el.style.boxShadow = origShadow;
+        el.style.borderRadius = origRadius;
+
+        const imgData = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = imgData;
+        link.download = filename;
+        link.click();
+      };
+
+      if (printMode === 'ALL_ZONES_OVERVIEW') {
+        const el = document.getElementById('seatmap-all-zones-view');
+        if (!el) throw new Error('ไม่พบองค์ประกอบผังที่นั่งรวม');
+        setPngProgress('กำลังบันทึกภาพผังรวมทุกโซน...');
+        await captureAndDownload(el, `ผังที่นั่งรวมทุกโซน_${cleanEventTitle}_${today}.png`);
+      } else if (printMode === 'BY_ZONE') {
+        const zonesToExport = displayedZones;
+        for (let i = 0; i < zonesToExport.length; i++) {
+          const z = zonesToExport[i];
+          setPngProgress(`กำลังบันทึกภาพ ${z.name} (${i + 1}/${zonesToExport.length})...`);
+          const el = document.getElementById(`seatmap-zone-page-${z.id}`);
+          if (el) {
+            await captureAndDownload(el, `ผังที่นั่ง_${z.name.replace(/[\/\\:*?"<>|\s]/g, '_')}_${today}.png`);
+            if (zonesToExport.length > 1) {
+              await new Promise((r) => setTimeout(r, 400));
+            }
+          }
+        }
+      } else if (printMode === 'ROSTER_TABLE') {
+        const el = document.getElementById('seatmap-roster-table-view');
+        if (!el) throw new Error('ไม่พบองค์ประกอบตารางรายชื่อ');
+        setPngProgress('กำลังบันทึกภาพบัญชีรายชื่อ...');
+        await captureAndDownload(el, `บัญชีรายชื่อเรียงตามที่นั่ง_${cleanEventTitle}_${today}.png`);
+      }
+    } catch (err: any) {
+      console.error('Save to PNG failed:', err);
+      alert(err.message || 'บันทึกรูปภาพ PNG ไม่สำเร็จ');
+    } finally {
+      setIsExportingPng(false);
+      setPngProgress(null);
+    }
+  };
+
+  if (!isOpen || !mounted) return null;
 
   const printDateStr = new Date().toLocaleDateString('th-TH', {
     year: 'numeric',
@@ -151,8 +233,11 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
     minute: '2-digit',
   });
 
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:inset-auto print:z-auto">
+  return createPortal(
+    <div
+      id="vipassana-seatmap-portal-root"
+      className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static print:inset-auto print:z-auto"
+    >
       {/* Dynamic Print Styles for A4 Paper formatting */}
       <style>{`
         @media print {
@@ -164,33 +249,57 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
             background: #ffffff !important;
             margin: 0 !important;
             padding: 0 !important;
-            overflow: visible !important;
+            width: 100% !important;
             height: auto !important;
             min-height: 100% !important;
+            overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          body > * {
+          body > *:not(#vipassana-seatmap-portal-root) {
+            display: none !important;
             visibility: hidden !important;
           }
-          #vipassana-seatmap-print-wrapper,
-          #vipassana-seatmap-print-wrapper * {
-            visibility: visible !important;
-          }
-          #vipassana-seatmap-print-wrapper {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+          #vipassana-seatmap-portal-root {
+            display: block !important;
+            position: static !important;
             width: 100% !important;
+            height: auto !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
-            display: block !important;
             overflow: visible !important;
-            z-index: 999999 !important;
+            visibility: visible !important;
           }
-          .no-print {
+          #vipassana-seatmap-portal-root * {
+            visibility: visible !important;
+          }
+          #vipassana-seatmap-portal-root > div {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            overflow: visible !important;
+            max-height: none !important;
+            max-width: none !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
+          .no-print, .print\\:hidden {
             display: none !important;
+          }
+          #vipassana-seatmap-print-wrapper {
+            position: static !important;
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            overflow: visible !important;
           }
           .zone-page-break {
             page-break-after: always !important;
@@ -241,11 +350,33 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 self-end sm:self-auto">
+            {/* Save to PNG Button */}
+            <button
+              type="button"
+              onClick={handleSaveToPng}
+              disabled={isExportingPng || isPrinting}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition cursor-pointer disabled:opacity-50"
+              title="บันทึกผังที่นั่งหรือตารางเป็นรูปภาพ PNG ความละเอียดสูง"
+            >
+              {isExportingPng ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-200" />
+                  <span>{pngProgress || 'กำลังบันทึก PNG...'}</span>
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="w-4 h-4 text-emerald-200" />
+                  <span>บันทึกเป็นรูปภาพ (Save to PNG)</span>
+                </>
+              )}
+            </button>
+
+            {/* Print Button */}
             <button
               type="button"
               onClick={handleTriggerPrint}
-              disabled={isPrinting}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition cursor-pointer"
+              disabled={isPrinting || isExportingPng}
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition cursor-pointer disabled:opacity-50"
             >
               <Printer className="w-4 h-4 text-blue-200" />
               <span>พิมพ์ออกเครื่องพิมพ์ / PDF</span>
@@ -408,7 +539,10 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
             {/* MODE 1: ALL ZONES OVERVIEW (1 A4 PAGE)                                   */}
             {/* ========================================================================= */}
             {printMode === 'ALL_ZONES_OVERVIEW' && (
-              <div className="bg-white border border-slate-300 p-6 sm:p-8 rounded-xl shadow-md text-slate-900 flex flex-col gap-4 print:border-none print:shadow-none print:p-0 print:rounded-none">
+              <div
+                id="seatmap-all-zones-view"
+                className="bg-white border border-slate-300 p-6 sm:p-8 rounded-xl shadow-md text-slate-900 flex flex-col gap-4 print:border-none print:shadow-none print:p-0 print:rounded-none"
+              >
                 {/* Document Header */}
                 <div className="border-b-2 border-slate-800 pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <div>
@@ -667,6 +801,7 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
                   return (
                     <div
                       key={zone.id}
+                      id={`seatmap-zone-page-${zone.id}`}
                       className="zone-page-break bg-white border border-slate-300 p-6 sm:p-8 rounded-xl shadow-md text-slate-900 flex flex-col justify-between min-h-[92vh] print:min-h-[100vh] print:border-none print:shadow-none print:p-0 print:rounded-none"
                     >
                       {/* Top Header */}
@@ -888,7 +1023,10 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
             {/* MODE 3: ROSTER TABLE (ATTENDANCE & CHECKLIST TABLE)                       */}
             {/* ========================================================================= */}
             {printMode === 'ROSTER_TABLE' && (
-              <div className="bg-white border border-slate-300 p-6 sm:p-8 rounded-xl shadow-md text-slate-900 flex flex-col gap-4 print:border-none print:shadow-none print:p-0 print:rounded-none">
+              <div
+                id="seatmap-roster-table-view"
+                className="bg-white border border-slate-300 p-6 sm:p-8 rounded-xl shadow-md text-slate-900 flex flex-col gap-4 print:border-none print:shadow-none print:p-0 print:rounded-none"
+              >
                 {/* Header */}
                 <div className="border-b-2 border-slate-800 pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <div>
@@ -990,6 +1128,7 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
