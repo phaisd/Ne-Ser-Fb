@@ -127,47 +127,51 @@ export async function getEventRegistrations(
     }
   }
 
-  if (list.length === 0 && raw.length > 0) {
-    list = raw.map((r) => {
-      const sInfo = studentMap.get((r.studentCode || '').trim().toLowerCase()) || {};
-      const degree = r.degreeLevel || sInfo.degree || (sInfo.yearLevel ? 'ปริญญาตรี' : 'ปริญญาตรี');
-      const prog = r.programType || r.program || sInfo.programType || 'THAI';
-
-      return {
-        id: r.id,
-        eventId: r.eventId,
-        eventTitle: eventTitleMap.get(r.eventId) || 'กิจกรรมนิสิต',
-        studentCode: r.studentCode || '',
-        studentName: r.studentName || sInfo.fullName || '',
-        status: r.status || 'REGISTERED',
-        role: r.role || 'STUDENT',
-        degreeLevel: degree,
-        programType: prog,
-        major: r.major || sInfo.major || 'พระพุทธศาสนา',
-        yearLevel: r.yearLevel || sInfo.yearLevel || 1,
-        department: r.department || sInfo.department || '',
-        groupName: r.groupName || (r.groupNumber ? `กลุ่มที่ ${r.groupNumber}` : 'ทั่วไป'),
-        groupNumber: r.groupNumber !== undefined ? Number(r.groupNumber) : undefined,
-        groupSpecificCode: r.groupSpecificCode || undefined,
-        age: r.age ?? sInfo.age,
-        vasa: r.vasa || sInfo.vasa || '',
-        dailyAttendance: r.dailyAttendance || {},
-        vipassanaInterviews: r.vipassanaInterviews || {},
-        attendedDays: Array.isArray(r.attendedDays) ? r.attendedDays : undefined,
-        passedMeditation: r.passedMeditation,
-        finalMeditationResult: r.finalMeditationResult,
-        certificateIssued: r.certificateIssued,
-        certificateDocNo: r.certificateDocNo,
-        certificateIssuedAt: r.certificateIssuedAt,
-        seatZone: r.seatZone,
-        seatNumber: r.seatNumber,
-        seatCheckinAt: r.seatCheckinAt,
-        seatCheckinBy: r.seatCheckinBy,
-        remarks: r.remarks || '',
-        attendedAt: r.attendedAt || '',
-        createdAt: r.createdAt ? String(r.createdAt) : new Date().toISOString(),
-        updatedAt: r.updatedAt,
-      };
+  // Merge any local records that are not in Google Sheets so imported data is never lost
+  const loadedIds = new Set(list.map((l) => l.id));
+  if (raw.length > 0) {
+    raw.forEach((r) => {
+      if (r.id && !loadedIds.has(r.id)) {
+        const sInfo = studentMap.get((r.studentCode || '').trim().toLowerCase()) || {};
+        const degree = r.degreeLevel || sInfo.degree || 'ปริญญาตรี';
+        const prog = r.programType || r.program || sInfo.programType || 'THAI';
+        list.push({
+          id: r.id,
+          eventId: r.eventId,
+          eventTitle: eventTitleMap.get(r.eventId) || 'กิจกรรมนิสิต',
+          studentCode: r.studentCode || '',
+          studentName: r.studentName || sInfo.fullName || '',
+          status: r.status || 'REGISTERED',
+          role: r.role || 'STUDENT',
+          degreeLevel: degree,
+          programType: prog,
+          major: r.major || sInfo.major || 'พระพุทธศาสนา',
+          yearLevel: r.yearLevel || sInfo.yearLevel || 1,
+          department: r.department || sInfo.department || '',
+          groupName: r.groupName || (r.groupNumber ? `กลุ่มที่ ${r.groupNumber}` : 'ทั่วไป'),
+          groupNumber: r.groupNumber !== undefined ? Number(r.groupNumber) : undefined,
+          groupSpecificCode: r.groupSpecificCode || undefined,
+          age: r.age ?? sInfo.age,
+          vasa: r.vasa || sInfo.vasa || '',
+          dailyAttendance: r.dailyAttendance || {},
+          vipassanaInterviews: r.vipassanaInterviews || {},
+          attendedDays: Array.isArray(r.attendedDays) ? r.attendedDays : undefined,
+          passedMeditation: r.passedMeditation,
+          finalMeditationResult: r.finalMeditationResult,
+          certificateIssued: r.certificateIssued,
+          certificateDocNo: r.certificateDocNo,
+          certificateIssuedAt: r.certificateIssuedAt,
+          seatZone: r.seatZone,
+          seatNumber: r.seatNumber,
+          seatCheckinAt: r.seatCheckinAt,
+          seatCheckinBy: r.seatCheckinBy,
+          remarks: r.remarks || '',
+          attendedAt: r.attendedAt || '',
+          createdAt: r.createdAt ? String(r.createdAt) : new Date().toISOString(),
+          updatedAt: r.updatedAt,
+        });
+        loadedIds.add(r.id);
+      }
     });
   }
 
@@ -379,11 +383,18 @@ export async function batchImportEventRegistrations(
     const codeLower = (finalStudentCode || '').toLowerCase();
     const groupLower = (finalGroupCode || '').toLowerCase();
 
-    // Skip intra-batch duplicates by studentCode or groupSpecificCode
-    if (
-      (codeLower && seenCodesInBatch.has(codeLower)) ||
-      (groupLower && seenGroupsInBatch.has(groupLower))
-    ) {
+    // Skip intra-batch duplicates:
+    // If groupSpecificCode is present, deduplicate strictly by groupSpecificCode
+    // (allowing distinct group codes e.g. B1207 and B1210 even if sharing a studentCode).
+    // If no groupSpecificCode is present, deduplicate by studentCode.
+    let isDuplicate = false;
+    if (groupLower) {
+      isDuplicate = seenGroupsInBatch.has(groupLower);
+    } else if (codeLower) {
+      isDuplicate = seenCodesInBatch.has(codeLower);
+    }
+
+    if (isDuplicate) {
       skippedCount++;
       continue;
     }
@@ -403,13 +414,18 @@ export async function batchImportEventRegistrations(
       const nameKey = normalizeStudentName(row.studentName || '');
 
       // Check if student already exists in this event
-      const existing = local.find(
-        (r) =>
-          String(r.eventId || '').trim() === targetEventId &&
-          ((codeCheck && r.studentCode?.toLowerCase() === codeCheck) ||
-            (groupCheck && r.groupSpecificCode?.toLowerCase() === groupCheck) ||
-            (nameKey && normalizeStudentName(r.studentName) === nameKey))
-      );
+      // If both have groupSpecificCode, match strictly by groupSpecificCode.
+      // Otherwise match by studentCode or normalized name.
+      const existing = local.find((r) => {
+        if (String(r.eventId || '').trim() !== targetEventId) return false;
+        if (groupCheck && r.groupSpecificCode) {
+          return r.groupSpecificCode.toLowerCase() === groupCheck;
+        }
+        return (
+          (codeCheck && r.studentCode?.toLowerCase() === codeCheck) ||
+          (nameKey && normalizeStudentName(r.studentName) === nameKey)
+        );
+      });
 
       if (existing) {
         // Update group and profile details!
@@ -467,7 +483,7 @@ export async function batchImportEventRegistrations(
     try {
       if (mode === 'REPLACE_ALL' || mode === 'REPLACE_EVENT') {
         const allRows = await gClient.getValues('EventRegistrations!A1:AJ');
-        const header = (allRows[0] && allRows[0].length >= 18 ? allRows[0].slice(0, 18) : null) || [
+        const header = (allRows[0] && allRows[0].length >= 21 ? allRows[0].slice(0, 21) : null) || [
           'id',
           'eventId',
           'studentCode',
@@ -486,6 +502,9 @@ export async function batchImportEventRegistrations(
           'remarks',
           'attendedAt',
           'dailyAttendance',
+          'vipassanaInterviews',
+          'attendedDays',
+          'extraMeta',
         ];
 
         const isTargetEvent = (r: unknown[]) => {
@@ -516,18 +535,25 @@ export async function batchImportEventRegistrations(
           reg.remarks || '',
           reg.attendedAt || '',
           JSON.stringify(reg.dailyAttendance || {}),
+          '',
+          '',
+          JSON.stringify({ vasa: reg.vasa || '' }),
         ]);
 
         const combined = [...otherEventRows, ...newSheetRows];
         await gClient.clearValues(`EventRegistrations!A1:AJ${Math.max(allRows.length + 500, 2000)}`);
-        await gClient.updateValues('EventRegistrations!A1:R1', [header.slice(0, 18)]);
+        await gClient.updateValues('EventRegistrations!A1:U1', [header.slice(0, 21)]);
         if (combined.length > 0) {
           const CHUNK_SIZE = 500;
           for (let i = 0; i < combined.length; i += CHUNK_SIZE) {
             const chunk = combined.slice(i, i + CHUNK_SIZE);
             const startRow = i + 2;
             const endRow = startRow + chunk.length - 1;
-            await gClient.updateValues(`EventRegistrations!A${startRow}:R${endRow}`, chunk.map((r) => r.slice(0, 18)));
+            await gClient.updateValues(`EventRegistrations!A${startRow}:U${endRow}`, chunk.map((r) => {
+              const rowArr = [...r];
+              while (rowArr.length < 21) rowArr.push('');
+              return rowArr.slice(0, 21);
+            }));
           }
         }
       } else {
@@ -580,8 +606,10 @@ export async function batchImportEventRegistrations(
               if (!rowNum) continue;
 
               updateBatches.push({
-                range: `EventRegistrations!D${rowNum}:P${rowNum}`,
+                range: `EventRegistrations!B${rowNum}:R${rowNum}`,
                 values: [[
+                  reg.eventId,
+                  reg.studentCode || '',
                   reg.studentName || '',
                   reg.status || 'REGISTERED',
                   reg.role || 'STUDENT',
@@ -595,8 +623,16 @@ export async function batchImportEventRegistrations(
                   reg.degreeLevel || '',
                   reg.programType || '',
                   reg.remarks || '',
+                  reg.attendedAt || '',
+                  JSON.stringify(reg.dailyAttendance || {}),
                 ]],
               });
+              if (reg.vasa) {
+                updateBatches.push({
+                  range: `EventRegistrations!U${rowNum}:U${rowNum}`,
+                  values: [[JSON.stringify({ vasa: reg.vasa })]],
+                });
+              }
             }
 
             if (updateBatches.length > 0) {
