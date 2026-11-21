@@ -86,10 +86,9 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
     if (programMode === 'THAI') return false;
     return (
       event.targetProgram === 'ENGLISH' ||
-      event.title.toLowerCase().includes('inter') ||
-      selectedGroup === 12
+      event.title.toLowerCase().includes('inter')
     );
-  }, [programMode, event, selectedGroup]);
+  }, [programMode, event]);
 
   const [selectedSession, setSelectedSession] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState('');

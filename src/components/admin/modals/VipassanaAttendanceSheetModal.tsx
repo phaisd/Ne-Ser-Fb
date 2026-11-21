@@ -182,11 +182,12 @@ export function VipassanaAttendanceSheetModal({
   // Determine current active language/program
   const activeProgram = useMemo<'THAI' | 'ENGLISH'>(() => {
     if (programMode !== 'AUTO') return programMode;
-    // Auto-detect based on selected group
-    if (selectedGroup === 12) return 'ENGLISH';
+    // Group 12 is explicitly Thai program (แม่ชี/ฆราวาส ภาคไทย)
+    if (selectedGroup === 12) return 'THAI';
     // Check registrations in this group
     const inGroup = registrations.filter((r) => r.groupNumber === selectedGroup);
-    if (inGroup.some((r) => r.programType === 'ENGLISH')) return 'ENGLISH';
+    const engCount = inGroup.filter((r) => r.programType === 'ENGLISH' || r.programType === 'INTER').length;
+    if (inGroup.length > 0 && engCount > inGroup.length / 2) return 'ENGLISH';
     return 'THAI';
   }, [programMode, selectedGroup, registrations]);
 

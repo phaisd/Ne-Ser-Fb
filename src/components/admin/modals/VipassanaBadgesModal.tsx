@@ -764,7 +764,7 @@ export function VipassanaBadgesModal({
                     {pageRegistrations.map((reg, cardIdx) => {
                       const overallIdx = pageIdx * badgesPerPage + cardIdx;
                       const gNum = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
-                      const isEnglish = reg.programType === 'ENGLISH' || gNum === 12;
+                      const isEnglish = gNum === 12 ? false : (reg.programType === 'ENGLISH' || reg.programType === 'INTER');
 
                       // Exact print heights per card
                       const printCardHeight =

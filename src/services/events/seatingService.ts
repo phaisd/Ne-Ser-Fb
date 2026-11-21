@@ -136,8 +136,8 @@ export async function assignSeatsAuto(
 
     // 2. เรียงตามสถานภาพ + แยกหลักสูตรภาษา (ไทย vs International)
     if (sortBy === 'STATUS_INTER') {
-      const isInterA = a.programType === 'ENGLISH' || a.programType === 'INTER' || a.groupNumber === 12;
-      const isInterB = b.programType === 'ENGLISH' || b.programType === 'INTER' || b.groupNumber === 12;
+      const isInterA = a.programType === 'ENGLISH' || a.programType === 'INTER';
+      const isInterB = b.programType === 'ENGLISH' || b.programType === 'INTER';
       const stA = detectParticipantStatus(a.studentName, a.role);
       const stB = detectParticipantStatus(b.studentName, b.role);
 

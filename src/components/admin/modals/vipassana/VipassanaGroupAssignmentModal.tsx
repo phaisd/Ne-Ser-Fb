@@ -109,7 +109,7 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
         if (!cloned[key]) {
           cloned[key] = {
             groupNumber: g,
-            groupName: g === 12 ? 'กลุ่ม 12 (นานาชาติ / English)' : `กลุ่ม ${g}`,
+            groupName: `กลุ่ม ${g}`,
             advisors: [],
             vipassanaMasters: [],
             notes: '',
@@ -375,7 +375,7 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                       <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-bold inline-flex items-center justify-center shrink-0">
                         {gNum}
                       </span>
-                      <span>{gNum === 12 ? `Group ${gNum} (English)` : `กลุ่ม ${gNum} (ไทย)`}</span>
+                      <span>{`กลุ่ม ${gNum} (ไทย)`}</span>
                     </div>
                     <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
                       <span>นิสิต: {pCount} คน</span>

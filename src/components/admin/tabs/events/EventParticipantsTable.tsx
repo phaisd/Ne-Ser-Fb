@@ -440,7 +440,9 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
                     <td className="px-4 py-3.5 text-slate-600 font-medium">
                       <div>
                         {r.groupNumber
-                          ? r.groupNumber === 12 || r.programType === 'ENGLISH'
+                          ? r.groupNumber === 12
+                            ? `กลุ่ม 12 (ไทย)`
+                            : r.programType === 'ENGLISH' || r.programType === 'INTER'
                             ? `Group ${r.groupNumber} (English)`
                             : `กลุ่ม ${r.groupNumber} (ไทย)`
                           : r.groupName || 'ทั่วไป'}

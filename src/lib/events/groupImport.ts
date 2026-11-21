@@ -873,20 +873,25 @@ export function buildGroupedStudentsFromDirectory(
 }
 
 /**
- * Format group name with program language tag (e.g. "กลุ่ม 1 (ไทย)", "Group 12 (English)")
+ * Format group name with program language tag (e.g. "กลุ่ม 1 (ไทย)", "กลุ่ม 12 (ไทย)")
  */
 export function formatGroupDisplay(
   g: number,
   registrations?: Array<{ groupNumber?: number; programType?: string }>,
   customName?: string
 ): string {
-  const inGroup = (registrations || []).filter((r) => r.groupNumber === g);
-  const englishCount = inGroup.filter((r) => r.programType === 'ENGLISH').length;
-  const isEnglish = g === 12 || (inGroup.length > 0 && englishCount > 0 && englishCount >= inGroup.length / 2);
-
   if (customName && !customName.match(/^กลุ่มที่?\s*\d+$/i)) {
-    return isEnglish ? `Group ${g} (English) - ${customName}` : `กลุ่ม ${g} (ไทย) - ${customName}`;
+    return customName;
   }
+
+  // Group 12 is explicitly Thai program (แม่ชี/ฆราวาส ภาคไทย) as per curriculum specification
+  if (g === 12) {
+    return `กลุ่ม 12 (ไทย)`;
+  }
+
+  const inGroup = (registrations || []).filter((r) => r.groupNumber === g);
+  const englishCount = inGroup.filter((r) => r.programType === 'ENGLISH' || r.programType === 'INTER').length;
+  const isEnglish = inGroup.length > 0 && englishCount > inGroup.length / 2;
 
   return isEnglish ? `Group ${g} (English)` : `กลุ่ม ${g} (ไทย)`;
 }

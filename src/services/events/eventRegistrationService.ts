@@ -460,7 +460,7 @@ export async function batchImportEventRegistrations(
       status: 'REGISTERED',
       role: (row.role || (sInfo.role ? sInfo.role : 'STUDENT')) as any,
       degreeLevel: row.degreeLevel || sInfo.degree || 'ปริญญาตรี',
-      programType: (row.programType as any) || (gNum === 12 ? 'ENGLISH' : sInfo.programType || 'THAI'),
+      programType: (row.programType as any) || sInfo.programType || 'THAI',
       major: row.major || sInfo.major || 'พระพุทธศาสนา',
       yearLevel: row.yearLevel !== undefined ? Number(row.yearLevel) : (sInfo.yearLevel || 1),
       vasa: row.vasa !== undefined ? row.vasa : (sInfo.vasa || ''),
