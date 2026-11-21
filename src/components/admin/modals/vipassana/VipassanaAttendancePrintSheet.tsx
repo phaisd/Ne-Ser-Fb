@@ -128,7 +128,7 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
             {/* Subhead: Group */}
             <div className="flex items-center justify-between border-b-2 border-black pb-1">
               <div className="text-base font-bold font-sans">
-                Group : {selectedGroup !== 'ALL' ? selectedGroup : '12'}
+                Group : {selectedGroup !== 'ALL' ? `${selectedGroup} (English)` : '12 (English)'}
               </div>
             </div>
 
@@ -278,7 +278,7 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
             {/* Subhead: Group and Big Number Watermark */}
             <div className="flex items-center justify-between border-b-2 border-black pb-1">
               <div className="text-base font-bold font-sans">
-                กลุ่มที่ : {selectedGroup !== 'ALL' ? selectedGroup : '3'}
+                กลุ่มที่ : {selectedGroup !== 'ALL' ? `${selectedGroup} (ไทย)` : '3 (ไทย)'}
               </div>
               <div className="text-2xl font-black font-sans px-2 border border-black rounded">
                 {selectedGroup !== 'ALL' ? selectedGroup : '3'}

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
 import { downloadCsvFile, downloadXlsx, type XlsxSheet } from '@/lib/utils';
+import { formatGroupDisplay } from '@/lib/events/groupImport';
 import { VipassanaExecutiveReportModal } from './vipassana';
 import {
   StudentEvaluationRow,
@@ -636,10 +637,10 @@ export const VipassanaCombinedEvaluationModal: React.FC<VipassanaCombinedEvaluat
                 }}
                 className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer"
               >
-                <option value="ALL">ทุกกลุ่ม ({availableGroups.length})</option>
+                <option value="ALL">ทุกกลุ่ม (All Groups)</option>
                 {availableGroups.map((g) => (
                   <option key={g} value={g}>
-                    กลุ่ม {g}
+                    {formatGroupDisplay(g, registrations, event.meditationConfig?.groupAssignments?.[String(g)]?.groupName)}
                   </option>
                 ))}
               </select>

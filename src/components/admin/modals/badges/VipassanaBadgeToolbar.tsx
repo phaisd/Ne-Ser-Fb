@@ -22,6 +22,7 @@ import type {
   QrScaleMode,
 } from './types';
 import type { WatermarkMode } from '@/hooks/useWatermarkSettings';
+import { formatGroupDisplay } from '@/lib/events/groupImport';
 
 interface VipassanaBadgeToolbarProps {
   selectedGroup: number | 'ALL';
@@ -111,10 +112,10 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
             }}
             className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-bold text-purple-950 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
           >
-            <option value="ALL">ทุกกลุ่ม ({registrationsCount} รูป/คน)</option>
+            <option value="ALL">ทุกกลุ่ม (All Groups - {registrationsCount} คน)</option>
             {availableGroups.map((g) => (
               <option key={g} value={g}>
-                {g === 12 ? `กลุ่มที่ 12 (Inter)` : `กลุ่มที่ ${g}`}
+                {formatGroupDisplay(g)}
               </option>
             ))}
           </select>

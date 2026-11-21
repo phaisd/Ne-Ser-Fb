@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { StudentEvent, EventRegistration } from '@/types';
 import { exportMultiPagePdf } from '@/lib/utils/pdf-export';
+import { formatGroupDisplay } from '@/lib/events/groupImport';
 import { VipassanaBadgesModal } from './VipassanaBadgesModal';
 import { VipassanaLiveScannerModal } from './VipassanaLiveScannerModal';
 import { VipassanaInterviewSheetModal } from './VipassanaInterviewSheetModal';
@@ -561,10 +562,10 @@ export function VipassanaAttendanceSheetModal({
                 >
                   {availableGroups.map((g) => (
                     <option key={g} value={g}>
-                      {g === 12 ? `กลุ่ม 12 (English)` : `กลุ่ม ${g}`}
+                      {formatGroupDisplay(g, registrations, event.meditationConfig?.groupAssignments?.[String(g)]?.groupName)}
                     </option>
                   ))}
-                  <option value="ALL">ทุกกลุ่ม (All)</option>
+                  <option value="ALL">ทุกกลุ่ม (All Groups)</option>
                 </select>
               </div>
 
@@ -797,7 +798,7 @@ export function VipassanaAttendanceSheetModal({
             <div className="flex items-center gap-3 flex-wrap">
               <span className="font-bold text-indigo-950 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-indigo-600" />
-                ผู้รับผิดชอบกลุ่ม {selectedGroup}:
+                ผู้รับผิดชอบ{formatGroupDisplay(selectedGroup, registrations, event.meditationConfig?.groupAssignments?.[String(selectedGroup)]?.groupName)}:
               </span>
               <div className="flex items-center gap-1.5 text-slate-700">
                 <span className="font-semibold text-indigo-900">อาจารย์/ผู้ช่วย:</span>

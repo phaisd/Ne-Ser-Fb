@@ -29,6 +29,7 @@ import {
 import type { StudentEvent, EventRegistration, MeditationPeriodConfig } from '@/types/event';
 import { playBeep, triggerHaptic } from '@/lib/utils/audio-feedback';
 import { getAuthUser } from '@/lib/auth-client';
+import { formatGroupDisplay } from '@/lib/events/groupImport';
 import jsQR from 'jsqr';
 
 interface BarcodeDetectorInstance {
@@ -797,10 +798,10 @@ export function VipassanaLiveScannerModal({
                   }}
                   className="bg-transparent font-bold text-purple-950 text-xs focus:outline-none cursor-pointer"
                 >
-                  <option value="ALL">ทุกกลุ่ม</option>
+                  <option value="ALL">ทุกกลุ่ม (All Groups)</option>
                   {availableGroups.map((g) => (
                     <option key={g} value={g}>
-                      {g === 12 ? 'กลุ่ม 12 (EN)' : `กลุ่ม ${g}`}
+                      {formatGroupDisplay(g, registrations, event.meditationConfig?.groupAssignments?.[String(g)]?.groupName)}
                     </option>
                   ))}
                 </select>

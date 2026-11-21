@@ -660,3 +660,22 @@ export function buildGroupedStudentsFromDirectory(
     };
   });
 }
+
+/**
+ * Format group name with program language tag (e.g. "กลุ่ม 1 (ไทย)", "Group 12 (English)")
+ */
+export function formatGroupDisplay(
+  g: number,
+  registrations?: Array<{ groupNumber?: number; programType?: string }>,
+  customName?: string
+): string {
+  const inGroup = (registrations || []).filter((r) => r.groupNumber === g);
+  const englishCount = inGroup.filter((r) => r.programType === 'ENGLISH').length;
+  const isEnglish = g === 12 || (inGroup.length > 0 && englishCount > 0 && englishCount >= inGroup.length / 2);
+
+  if (customName && !customName.match(/^กลุ่มที่?\s*\d+$/i)) {
+    return isEnglish ? `Group ${g} (English) - ${customName}` : `กลุ่ม ${g} (ไทย) - ${customName}`;
+  }
+
+  return isEnglish ? `Group ${g} (English)` : `กลุ่ม ${g} (ไทย)`;
+}

@@ -31,6 +31,7 @@ import {
   VipassanaRapidQrScannerModal,
 } from './vipassana';
 import { getAuthUser } from '@/lib/auth-client';
+import { formatGroupDisplay } from '@/lib/events/groupImport';
 
 interface VipassanaInterviewSheetModalProps {
   isOpen: boolean;
@@ -505,10 +506,10 @@ export const VipassanaInterviewSheetModal: React.FC<VipassanaInterviewSheetModal
                   }}
                   className="bg-transparent font-bold text-amber-900 outline-none cursor-pointer"
                 >
-                  <option value="ALL">ทุกกลุ่ม ({availableGroups.length})</option>
+                  <option value="ALL">ทุกกลุ่ม (All Groups)</option>
                   {availableGroups.map((g) => (
                     <option key={g} value={g}>
-                      {g === 12 ? 'กลุ่ม 12 (English)' : `กลุ่ม ${g}`}
+                      {formatGroupDisplay(g, registrations, event.meditationConfig?.groupAssignments?.[String(g)]?.groupName)}
                     </option>
                   ))}
                 </select>

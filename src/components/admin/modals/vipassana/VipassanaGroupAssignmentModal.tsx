@@ -375,8 +375,7 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                       <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-bold inline-flex items-center justify-center shrink-0">
                         {gNum}
                       </span>
-                      <span>กลุ่ม {gNum}</span>
-                      {gNum === 12 && <span className="text-[10px] text-amber-700">(Inter)</span>}
+                      <span>{gNum === 12 ? `Group ${gNum} (English)` : `กลุ่ม ${gNum} (ไทย)`}</span>
                     </div>
                     <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
                       <span>นิสิต: {pCount} คน</span>

@@ -355,4 +355,14 @@ describe('groupImport helpers', () => {
 
     expect(res.items[5].role).toBe('แม่ชี');
   });
+
+  it('formats group display label with (ไทย) and (English)', async () => {
+    const { formatGroupDisplay } = await import('./groupImport');
+    expect(formatGroupDisplay(1)).toBe('กลุ่ม 1 (ไทย)');
+    expect(formatGroupDisplay(2)).toBe('กลุ่ม 2 (ไทย)');
+    expect(formatGroupDisplay(12)).toBe('Group 12 (English)');
+    expect(formatGroupDisplay(12, [{ groupNumber: 12, programType: 'ENGLISH' }])).toBe('Group 12 (English)');
+    expect(formatGroupDisplay(3, [{ groupNumber: 3, programType: 'THAI' }])).toBe('กลุ่ม 3 (ไทย)');
+    expect(formatGroupDisplay(5, [{ groupNumber: 5, programType: 'ENGLISH' }])).toBe('Group 5 (English)');
+  });
 });

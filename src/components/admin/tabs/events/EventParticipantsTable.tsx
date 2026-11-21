@@ -438,7 +438,13 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
                       <div className="text-[11px] text-slate-400">ชั้นปีที่ {r.yearLevel || 1}</div>
                     </td>
                     <td className="px-4 py-3.5 text-slate-600 font-medium">
-                      <div>{r.groupName || 'ทั่วไป'}</div>
+                      <div>
+                        {r.groupNumber
+                          ? r.groupNumber === 12 || r.programType === 'ENGLISH'
+                            ? `Group ${r.groupNumber} (English)`
+                            : `กลุ่ม ${r.groupNumber} (ไทย)`
+                          : r.groupName || 'ทั่วไป'}
+                      </div>
                       {r.seatNumber ? (
                         <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200" title={`ที่นั่ง: ${r.seatNumber} (${r.seatZone || 'โซนมาตรฐาน'})${r.seatCheckinAt ? ' - เช็คอินเข้าที่นั่งแล้ว' : ''}`}>
                           <span>🪑 {r.seatNumber}</span>
