@@ -35,92 +35,92 @@ export async function getEventRegistrations(
     try {
       const rows = await gClient.getValues('EventRegistrations!A2:AJ');
       if (rows && rows.length > 0) {
-        list = rows
-          .map((rawR) => {
-            const isShifted = !rawR[0] && rawR[17] && String(rawR[17]).startsWith('reg-');
-            const r = isShifted ? rawR.slice(17) : rawR;
-            const id = r[0] || '';
-            const evId = r[1] || localMap.get(id)?.eventId || '';
-            if (!id && !evId) return null;
+        const loaded: EventRegistration[] = [];
+        for (const rawR of rows) {
+          const isShifted = !rawR[0] && rawR[17] && String(rawR[17]).startsWith('reg-');
+          const r = isShifted ? rawR.slice(17) : rawR;
+          const id = r[0] || '';
+          const evId = r[1] || localMap.get(id)?.eventId || '';
+          if (!id || !evId) continue;
 
-            const local = localMap.get(id) || {};
-            let dailyAttendance = local.dailyAttendance || {};
-            if (r[17]) {
-              try {
-                const parsed = typeof r[17] === 'string' ? JSON.parse(r[17]) : r[17];
-                dailyAttendance = { ...parsed, ...(local.dailyAttendance || {}) };
-              } catch {
-                // fallback to local
-              }
+          const local = localMap.get(id) || {};
+          let dailyAttendance = local.dailyAttendance || {};
+          if (r[17]) {
+            try {
+              const parsed = typeof r[17] === 'string' ? JSON.parse(r[17]) : r[17];
+              dailyAttendance = { ...parsed, ...(local.dailyAttendance || {}) };
+            } catch {
+              // fallback to local
             }
-            let vipassanaInterviews = local.vipassanaInterviews || {};
-            if (r[18]) {
-              try {
-                const parsed = typeof r[18] === 'string' ? JSON.parse(r[18]) : r[18];
-                vipassanaInterviews = { ...parsed, ...(local.vipassanaInterviews || {}) };
-              } catch {
-                // fallback to local
-              }
+          }
+          let vipassanaInterviews = local.vipassanaInterviews || {};
+          if (r[18]) {
+            try {
+              const parsed = typeof r[18] === 'string' ? JSON.parse(r[18]) : r[18];
+              vipassanaInterviews = { ...parsed, ...(local.vipassanaInterviews || {}) };
+            } catch {
+              // fallback to local
             }
-            let attendedDays: number[] | undefined = local.attendedDays;
-            if (!attendedDays && r[19]) {
-              try {
-                attendedDays = typeof r[19] === 'string' ? JSON.parse(r[19]) : r[19];
-              } catch {}
-            }
-            let extraMeta: Record<string, any> = {};
-            if (r[20]) {
-              try {
-                extraMeta = typeof r[20] === 'string' ? JSON.parse(r[20]) : r[20];
-              } catch {}
-            }
-            const sCode = r[2] || local.studentCode || '';
-            const sInfo = studentMap.get(sCode.trim().toLowerCase()) || {};
-            const groupNum = r[11]
-              ? Number(r[11])
-              : local.groupNumber !== undefined
-              ? Number(local.groupNumber)
-              : r[9]
-              ? parseInt(String(r[9]).replace(/\D/g, ''), 10) || undefined
-              : undefined;
+          }
+          let attendedDays: number[] | undefined = local.attendedDays;
+          if (!attendedDays && r[19]) {
+            try {
+              attendedDays = typeof r[19] === 'string' ? JSON.parse(r[19]) : r[19];
+            } catch {}
+          }
+          let extraMeta: Record<string, any> = {};
+          if (r[20]) {
+            try {
+              extraMeta = typeof r[20] === 'string' ? JSON.parse(r[20]) : r[20];
+            } catch {}
+          }
+          const sCode = r[2] || local.studentCode || '';
+          const sInfo = studentMap.get(sCode.trim().toLowerCase()) || {};
+          const groupNum = r[11]
+            ? Number(r[11])
+            : local.groupNumber !== undefined
+            ? Number(local.groupNumber)
+            : r[9]
+            ? parseInt(String(r[9]).replace(/\D/g, ''), 10) || undefined
+            : undefined;
 
-            return {
-              id,
-              eventId: evId,
-              eventTitle: eventTitleMap.get(evId) || 'กิจกรรมนิสิต',
-              studentCode: sCode,
-              studentName: r[3] || local.studentName || sInfo.fullName || '',
-              status: (local.status || r[4] || 'REGISTERED') as any,
-              role: (r[5] || local.role || 'STUDENT') as any,
-              major: r[6] || local.major || sInfo.major || 'พระพุทธศาสนา',
-              yearLevel: r[7] ? Number(r[7]) : (local.yearLevel || sInfo.yearLevel || 1),
-              department: r[8] || local.department || sInfo.department || '',
-              groupName: r[9] || local.groupName || (groupNum ? `กลุ่มที่ ${groupNum}` : 'ทั่วไป'),
-              createdAt: r[10] || local.createdAt || new Date().toISOString(),
-              groupNumber: groupNum,
-              groupSpecificCode: r[12] || local.groupSpecificCode || undefined,
-              degreeLevel: r[13] || local.degreeLevel || sInfo.degree || 'ปริญญาตรี',
-              programType: r[14] || local.programType || sInfo.programType || 'THAI',
-              remarks: local.remarks !== undefined && local.remarks !== '' ? local.remarks : (r[15] || ''),
-              attendedAt: local.attendedAt || r[16] || '',
-              age: local.age ?? extraMeta.age ?? sInfo.age,
-              vasa: local.vasa || extraMeta.vasa || sInfo.vasa || '',
-              dailyAttendance,
-              vipassanaInterviews,
-              attendedDays,
-              passedMeditation: local.passedMeditation ?? extraMeta.passedMeditation,
-              finalMeditationResult: local.finalMeditationResult ?? extraMeta.finalMeditationResult,
-              certificateIssued: local.certificateIssued ?? extraMeta.certificateIssued,
-              certificateDocNo: local.certificateDocNo ?? extraMeta.certificateDocNo,
-              certificateIssuedAt: local.certificateIssuedAt ?? extraMeta.certificateIssuedAt,
-              seatZone: local.seatZone || extraMeta.seatZone,
-              seatNumber: local.seatNumber || extraMeta.seatNumber,
-              seatCheckinAt: local.seatCheckinAt || extraMeta.seatCheckinAt,
-              seatCheckinBy: local.seatCheckinBy || extraMeta.seatCheckinBy,
-              updatedAt: local.updatedAt || extraMeta.updatedAt,
-            };
-          })
-          .filter((item): item is EventRegistration => Boolean(item && item.id && item.eventId));
+          loaded.push({
+            id,
+            eventId: evId,
+            eventTitle: eventTitleMap.get(evId) || 'กิจกรรมนิสิต',
+            studentCode: sCode,
+            studentName: r[3] || local.studentName || sInfo.fullName || '',
+            status: (local.status || r[4] || 'REGISTERED') as any,
+            role: (r[5] || local.role || 'STUDENT') as any,
+            major: r[6] || local.major || sInfo.major || 'พระพุทธศาสนา',
+            yearLevel: r[7] ? Number(r[7]) : (local.yearLevel || sInfo.yearLevel || 1),
+            department: r[8] || local.department || sInfo.department || '',
+            groupName: r[9] || local.groupName || (groupNum ? `กลุ่มที่ ${groupNum}` : 'ทั่วไป'),
+            createdAt: r[10] || local.createdAt || new Date().toISOString(),
+            groupNumber: groupNum,
+            groupSpecificCode: r[12] || local.groupSpecificCode || undefined,
+            degreeLevel: r[13] || local.degreeLevel || sInfo.degree || 'ปริญญาตรี',
+            programType: r[14] || local.programType || sInfo.programType || 'THAI',
+            remarks: local.remarks !== undefined && local.remarks !== '' ? local.remarks : (r[15] || ''),
+            attendedAt: local.attendedAt || r[16] || '',
+            age: local.age ?? extraMeta.age ?? sInfo.age,
+            vasa: local.vasa || extraMeta.vasa || sInfo.vasa || '',
+            dailyAttendance,
+            vipassanaInterviews,
+            attendedDays,
+            passedMeditation: local.passedMeditation ?? extraMeta.passedMeditation,
+            finalMeditationResult: local.finalMeditationResult ?? extraMeta.finalMeditationResult,
+            certificateIssued: local.certificateIssued ?? extraMeta.certificateIssued,
+            certificateDocNo: local.certificateDocNo ?? extraMeta.certificateDocNo,
+            certificateIssuedAt: local.certificateIssuedAt ?? extraMeta.certificateIssuedAt,
+            seatZone: local.seatZone || extraMeta.seatZone,
+            seatNumber: local.seatNumber || extraMeta.seatNumber,
+            seatCheckinAt: local.seatCheckinAt || extraMeta.seatCheckinAt,
+            seatCheckinBy: local.seatCheckinBy || extraMeta.seatCheckinBy,
+            updatedAt: local.updatedAt || extraMeta.updatedAt,
+          });
+        }
+        list = loaded;
       }
     } catch (err) {
       console.warn('Google Sheets read error for EventRegistrations, falling back to local file:', err);
