@@ -7,6 +7,7 @@ import {
   Download,
   FileSpreadsheet,
   Layers,
+  Trash2,
   Upload,
   Users,
   X,
@@ -87,8 +88,13 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
   const [dirStartSeq, setDirStartSeq] = useState<number>(1);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const existingParticipantCount = useMemo(() => {
+    return registrationsList.filter((r) => r.eventId === targetEventId).length;
+  }, [registrationsList, targetEventId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -292,6 +298,70 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
     }
   };
 
+  const handleClearExistingRegistrations = async () => {
+    if (!targetEventId) return;
+    const ev = eventsList.find((e) => e.id === targetEventId);
+    const evTitle = ev?.title || 'โครงการนี้';
+    if (
+      !window.confirm(
+        `คุณแน่ใจหรือไม่ว่าต้องการล้างรายชื่อนิสิตทั้งหมดของ "${evTitle}" (${existingParticipantCount} คน) ออกทั้งหมด?\n\nข้อมูลการจัดกลุ่มและรายชื่อจะถูกลบออกจากระบบและ Google Sheets เพื่อให้สามารถนำเข้าชุดใหม่ได้ตั้งแต่ต้น`
+      )
+    ) {
+      return;
+    }
+
+    setIsClearing(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    try {
+      let res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'clear_event_registrations',
+          eventId: targetEventId,
+        }),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        const localUser = getAuthUser();
+        if (localUser && (localUser.email || localUser.id)) {
+          await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sync-session',
+              email: localUser.email,
+              gmail: localUser.gmail,
+              id: localUser.id,
+              rememberMe: true,
+            }),
+          });
+          res = await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'clear_event_registrations',
+              eventId: targetEventId,
+            }),
+          });
+        }
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error || 'ล้างรายชื่อไม่สำเร็จ');
+        return;
+      }
+      setSuccessMsg(data.message || 'ล้างรายชื่อนิสิตเดิมออกเรียบร้อยแล้ว');
+      onImported();
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!targetEventId) {
       setErrorMsg('กรุณาเลือกกิจกรรมปลายทางก่อนนำเข้า');
@@ -393,44 +463,73 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
         {/* Scrollable Body */}
         <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs">
           {/* Target Event & Mode */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                กิจกรรมปลายทางที่จะนำเข้านิสิต:
-              </label>
-              <select
-                value={targetEventId}
-                onChange={(e) => setTargetEventId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-800"
-              >
-                {!eventsList.some((ev) => ev.id === targetEventId) && targetEventId && (
-                  <option value={targetEventId}>
-                    {initialEventTitle || 'โครงการที่เลือก'}
-                  </option>
-                )}
-                {eventsList.length === 0 && !targetEventId ? (
-                  <option value="">-- ยังไม่มีโครงการ/กิจกรรม --</option>
-                ) : (
-                  eventsList.map((ev) => (
-                    <option key={ev.id} value={ev.id}>
-                      {ev.title} ({ev.academicYear})
+          <div className="space-y-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  กิจกรรมปลายทางที่จะนำเข้านิสิต:
+                </label>
+                <select
+                  value={targetEventId}
+                  onChange={(e) => setTargetEventId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-800"
+                >
+                  {!eventsList.some((ev) => ev.id === targetEventId) && targetEventId && (
+                    <option value={targetEventId}>
+                      {initialEventTitle || 'โครงการที่เลือก'}
                     </option>
-                  ))
-                )}
-              </select>
+                  )}
+                  {eventsList.length === 0 && !targetEventId ? (
+                    <option value="">-- ยังไม่มีโครงการ/กิจกรรม --</option>
+                  ) : (
+                    eventsList.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.title} ({ev.academicYear})
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">รูปแบบการนำเข้า:</label>
+                <select
+                  value={importMode}
+                  onChange={(e) => setImportMode(e.target.value as 'APPEND' | 'REPLACE_EVENT')}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-800"
+                >
+                  <option value="APPEND">
+                    1. เพิ่ม/อัปเดตข้อมูลกลุ่มนิสิต (แนะนำ: อัปเดตรายชื่อเดิม และเพิ่มคนใหม่)
+                  </option>
+                  <option value="REPLACE_EVENT">
+                    2. แทนที่รายชื่อทั้งหมดของกิจกรรมนี้ (ล้างรายชื่อเดิมในระบบและ Google Sheets ออก แล้วใส่ชุดนี้แทน)
+                  </option>
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">รูปแบบการนำเข้า:</label>
-              <select
-                value={importMode}
-                onChange={(e) => setImportMode(e.target.value as 'APPEND' | 'REPLACE_EVENT')}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-800"
-              >
-                <option value="APPEND">เพิ่ม/อัปเดตข้อมูลกลุ่มนิสิต (แนะนำ: บันทึกกลุ่มและเลขเฉพาะกลุ่มให้นิสิตทันที)</option>
-                <option value="REPLACE_EVENT">แทนที่รายชื่อทั้งหมดของกิจกรรมนี้ (ล้างรายชื่อเดิมออกก่อน)</option>
-              </select>
-            </div>
+            {/* Quick Clear Existing Banner */}
+            {existingParticipantCount > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs">
+                <div className="flex items-center gap-2 text-amber-900 font-semibold">
+                  <Users className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>
+                    ปัจจุบันมีนิสิตในกิจกรรมนี้แล้ว{' '}
+                    <strong className="text-amber-800 underline font-bold">{existingParticipantCount}</strong>{' '}
+                    คน
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  disabled={isClearing || isSubmitting}
+                  onClick={handleClearExistingRegistrations}
+                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer text-xs"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isClearing ? 'กำลังล้างข้อมูล...' : 'ล้างข้อมูลเก่าออกทั้งหมด (เริ่มใส่ข้อมูลใหม่)'}</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 3 Source Tabs */}

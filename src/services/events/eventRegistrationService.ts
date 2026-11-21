@@ -424,11 +424,36 @@ export async function batchImportEventRegistrations(
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      if (createdItems.length > 0) {
-        const colARows = await gClient.getValues('EventRegistrations!A:A');
-        const nextStartRow = Math.max(2, colARows.length + 1);
-        const endRow = nextStartRow + createdItems.length - 1;
-        const appendRows = createdItems.map((reg) => [
+      if (mode === 'REPLACE_ALL' || mode === 'REPLACE_EVENT') {
+        const allRows = await gClient.getValues('EventRegistrations!A1:R');
+        const header = allRows[0] || [
+          'id',
+          'eventId',
+          'studentCode',
+          'studentName',
+          'status',
+          'role',
+          'major',
+          'yearLevel',
+          'department',
+          'groupName',
+          'createdAt',
+          'groupNumber',
+          'groupSpecificCode',
+          'degreeLevel',
+          'programType',
+          'remarks',
+          'attendedAt',
+          'dailyAttendance',
+        ];
+
+        const otherEventRows = allRows.slice(1).filter((r) => {
+          const isShifted = !r[0] && r[17] && String(r[17]).startsWith('reg-');
+          const evId = isShifted ? r[18] : r[1];
+          return String(evId || '').trim() !== targetEventId;
+        });
+
+        const newSheetRows = createdItems.map((reg) => [
           reg.id,
           reg.eventId,
           reg.studentCode,
@@ -448,43 +473,82 @@ export async function batchImportEventRegistrations(
           reg.attendedAt || '',
           JSON.stringify(reg.dailyAttendance || {}),
         ]);
-        await gClient.updateValues(`EventRegistrations!A${nextStartRow}:R${endRow}`, appendRows);
-      }
 
-      if (updatedItems.length > 0) {
-        const rows = await gClient.getValues('EventRegistrations!A2:AJ');
-        if (rows && rows.length > 0) {
-          const idToRowIndex = new Map<string, number>();
-          const codeToRowIndex = new Map<string, number>();
-          rows.forEach((rawR, rowIdx) => {
-            const isShifted = !rawR[0] && rawR[17] && String(rawR[17]).startsWith('reg-');
-            const r = isShifted ? rawR.slice(17) : rawR;
-            const rId = String(r[0] || '').trim();
-            const rCode = String(r[2] || '').trim().toLowerCase();
-            if (rId) idToRowIndex.set(rId, rowIdx + 2);
-            if (rCode) codeToRowIndex.set(rCode, rowIdx + 2);
-          });
-
-          const updateBatches: Array<{ range: string; values: unknown[][] }> = [];
-          for (const reg of updatedItems) {
-            const rowNum =
-              idToRowIndex.get(reg.id) ||
-              (reg.studentCode ? codeToRowIndex.get(reg.studentCode.toLowerCase()) : undefined);
-            if (!rowNum) continue;
-
-            updateBatches.push({
-              range: `EventRegistrations!J${rowNum}:M${rowNum}`,
-              values: [[
-                reg.groupName || '',
-                reg.createdAt || '',
-                reg.groupNumber !== undefined ? String(reg.groupNumber) : '',
-                reg.groupSpecificCode || '',
-              ]],
-            });
+        const combined = [...otherEventRows, ...newSheetRows];
+        await gClient.clearValues(`EventRegistrations!A1:R${Math.max(allRows.length + 100, 200)}`);
+        await gClient.updateValues('EventRegistrations!A1:R1', [header]);
+        if (combined.length > 0) {
+          const CHUNK_SIZE = 500;
+          for (let i = 0; i < combined.length; i += CHUNK_SIZE) {
+            const chunk = combined.slice(i, i + CHUNK_SIZE);
+            const startRow = i + 2;
+            const endRow = startRow + chunk.length - 1;
+            await gClient.updateValues(`EventRegistrations!A${startRow}:R${endRow}`, chunk);
           }
+        }
+      } else {
+        if (createdItems.length > 0) {
+          const colARows = await gClient.getValues('EventRegistrations!A:A');
+          const nextStartRow = Math.max(2, colARows.length + 1);
+          const endRow = nextStartRow + createdItems.length - 1;
+          const appendRows = createdItems.map((reg) => [
+            reg.id,
+            reg.eventId,
+            reg.studentCode,
+            reg.studentName,
+            reg.status || 'REGISTERED',
+            reg.role || 'STUDENT',
+            reg.major || '',
+            reg.yearLevel || 1,
+            reg.department || '',
+            reg.groupName || '',
+            reg.createdAt || new Date().toISOString(),
+            reg.groupNumber !== undefined ? String(reg.groupNumber) : '',
+            reg.groupSpecificCode || '',
+            reg.degreeLevel || '',
+            reg.programType || '',
+            reg.remarks || '',
+            reg.attendedAt || '',
+            JSON.stringify(reg.dailyAttendance || {}),
+          ]);
+          await gClient.updateValues(`EventRegistrations!A${nextStartRow}:R${endRow}`, appendRows);
+        }
 
-          if (updateBatches.length > 0) {
-            await gClient.batchUpdateValues(updateBatches);
+        if (updatedItems.length > 0) {
+          const rows = await gClient.getValues('EventRegistrations!A2:AJ');
+          if (rows && rows.length > 0) {
+            const idToRowIndex = new Map<string, number>();
+            const codeToRowIndex = new Map<string, number>();
+            rows.forEach((rawR, rowIdx) => {
+              const isShifted = !rawR[0] && rawR[17] && String(rawR[17]).startsWith('reg-');
+              const r = isShifted ? rawR.slice(17) : rawR;
+              const rId = String(r[0] || '').trim();
+              const rCode = String(r[2] || '').trim().toLowerCase();
+              if (rId) idToRowIndex.set(rId, rowIdx + 2);
+              if (rCode) codeToRowIndex.set(rCode, rowIdx + 2);
+            });
+
+            const updateBatches: Array<{ range: string; values: unknown[][] }> = [];
+            for (const reg of updatedItems) {
+              const rowNum =
+                idToRowIndex.get(reg.id) ||
+                (reg.studentCode ? codeToRowIndex.get(reg.studentCode.toLowerCase()) : undefined);
+              if (!rowNum) continue;
+
+              updateBatches.push({
+                range: `EventRegistrations!J${rowNum}:M${rowNum}`,
+                values: [[
+                  reg.groupName || '',
+                  reg.createdAt || '',
+                  reg.groupNumber !== undefined ? String(reg.groupNumber) : '',
+                  reg.groupSpecificCode || '',
+                ]],
+              });
+            }
+
+            if (updateBatches.length > 0) {
+              await gClient.batchUpdateValues(updateBatches);
+            }
           }
         }
       }
@@ -501,6 +565,52 @@ export async function batchImportEventRegistrations(
     replacedCount,
     items: createdItems,
   };
+}
+
+export async function clearEventRegistrations(
+  eventId: string
+): Promise<{ deletedCount: number }> {
+  const targetId = String(eventId || '').trim();
+  if (!targetId) {
+    throw new Error('กรุณาระบุ eventId');
+  }
+
+  let local = readLocalJson<EventRegistration[]>('event_registrations.json', []);
+  const initialCount = local.length;
+  local = local.filter((r) => String(r.eventId || '').trim() !== targetId);
+  const deletedCount = initialCount - local.length;
+  writeLocalJson('event_registrations.json', local);
+
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const allRows = await gClient.getValues('EventRegistrations!A1:R');
+      if (allRows && allRows.length > 0) {
+        const header = allRows[0];
+        const remainingRows = allRows.slice(1).filter((r) => {
+          const isShifted = !r[0] && r[17] && String(r[17]).startsWith('reg-');
+          const evId = isShifted ? r[18] : r[1];
+          return String(evId || '').trim() !== targetId;
+        });
+
+        await gClient.clearValues(`EventRegistrations!A1:R${Math.max(allRows.length + 100, 200)}`);
+        await gClient.updateValues('EventRegistrations!A1:R1', [header]);
+        if (remainingRows.length > 0) {
+          const CHUNK_SIZE = 500;
+          for (let i = 0; i < remainingRows.length; i += CHUNK_SIZE) {
+            const chunk = remainingRows.slice(i, i + CHUNK_SIZE);
+            const startRow = i + 2;
+            const endRow = startRow + chunk.length - 1;
+            await gClient.updateValues(`EventRegistrations!A${startRow}:R${endRow}`, chunk);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets clear failed for EventRegistrations:', err);
+    }
+  }
+
+  return { deletedCount };
 }
 
 export async function checkInEventStudent(

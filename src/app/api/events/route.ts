@@ -172,6 +172,28 @@ export async function POST(request: Request) {
       });
     }
 
+    // Clear all registrations for an event (ล้างรายชื่อผู้เข้าร่วมทั้งหมดของโครงการ)
+    if (action === 'clear_event_registrations') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId } = body;
+      if (!eventId) {
+        return NextResponse.json(
+          { success: false, error: 'กรุณาระบุกิจกรรมที่ต้องการล้างรายชื่อ' },
+          { status: 400 }
+        );
+      }
+
+      const { clearEventRegistrations } = await import('@/services');
+      const result = await clearEventRegistrations(eventId);
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `ล้างรายชื่อนิสิตในกิจกรรมสำเร็จ (${result.deletedCount} คน)`,
+      });
+    }
+
     // Save Vipassana Interview (สติปัฏฐาน 4) evaluation results
     if (action === 'save_vipassana_interview') {
       const staffAuth = requireStaffOrInstructor(request);
