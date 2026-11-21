@@ -103,11 +103,22 @@ const HEADER_ALIASES: Record<string, keyof GroupedParticipantInput | 'ignore'> =
   สังกัด: 'department',
   คณะ: 'department',
 
-  // บทบาท / พรรษา / หมายเหตุ
+  // บทบาท / สถานภาพ / เพศ
   role: 'role',
+  status: 'role',
+  gender: 'role',
   บทบาท: 'role',
+  สถานภาพ: 'role',
+  สถานภาพเพศ: 'role',
+  เพศสถานภาพ: 'role',
+  เพศ: 'role',
+  สถานะ: 'role',
+
+  // พรรษา
   vasa: 'vasa',
   พรรษา: 'vasa',
+  พรรษาถ้ามี: 'vasa',
+  จำนวนพรรษา: 'vasa',
   remarks: 'remarks',
   remark: 'remarks',
   หมายเหตุ: 'remarks',
@@ -371,6 +382,8 @@ export function parseGroupedParticipantsText(
           major = cells[6]?.trim() || '';
           const yr = Number.parseInt(cells[7]?.replace(/[^\d]/g, '') || '', 10);
           if (Number.isFinite(yr) && yr > 0) yearLevel = yr;
+          if (cells[8]) role = cells[8].trim();
+          if (cells[9]) vasa = cells[9].trim();
         } else {
           groupSpecificCode = cells[0]?.trim() || '';
           studentCode = cells[1]?.trim() || '';
@@ -380,6 +393,8 @@ export function parseGroupedParticipantsText(
           major = cells[5]?.trim() || '';
           const yr = Number.parseInt(cells[6]?.replace(/[^\d]/g, '') || '', 10);
           if (Number.isFinite(yr) && yr > 0) yearLevel = yr;
+          if (cells[7]) role = cells[7].trim();
+          if (cells[8]) vasa = cells[8].trim();
         }
       } else if (cells.length >= 6) {
         // 6-7 cols fallback: [กลุ่ม, เลขเฉพาะกลุ่ม/รหัส, ชื่อ-นามสกุล, หลักสูตรภาษา, สาขาวิชา, ชั้นปี]
@@ -482,6 +497,35 @@ export function parseGroupedParticipantsText(
 
     const resolvedGroupName = groupName || (groupNumber ? `กลุ่มที่ ${groupNumber}` : undefined);
 
+    let finalRole = role;
+    if (!finalRole || finalRole === 'STUDENT') {
+      const cleanLower = (studentName || '').trim().toLowerCase();
+      if (
+        cleanLower.startsWith('พระมหา') ||
+        cleanLower.startsWith('พระครู') ||
+        cleanLower.startsWith('พระอธิการ') ||
+        cleanLower.startsWith('เจ้าคุณ') ||
+        cleanLower.startsWith('ven.') ||
+        cleanLower.startsWith('ven ') ||
+        cleanLower.startsWith('phra') ||
+        cleanLower.startsWith('พระ')
+      ) {
+        finalRole = 'พระภิกษุ';
+      } else if (cleanLower.startsWith('สามเณร') || cleanLower.startsWith('สามเณร.') || cleanLower.startsWith('samanera')) {
+        finalRole = 'สามเณร';
+      } else if (cleanLower.startsWith('แม่ชี') || cleanLower.startsWith('ชี') || cleanLower.startsWith('maechi')) {
+        finalRole = 'แม่ชี';
+      } else if (cleanLower.startsWith('ภิกษุณี') || cleanLower.startsWith('bhikkhuni')) {
+        finalRole = 'ภิกษุณี';
+      } else if (cleanLower.startsWith('นาย') || cleanLower.startsWith('mr.') || cleanLower.startsWith('mr ')) {
+        finalRole = 'ฆราวาสชาย';
+      } else if (cleanLower.startsWith('นางสาว') || cleanLower.startsWith('นาง') || cleanLower.startsWith('ms.') || cleanLower.startsWith('mrs.')) {
+        finalRole = 'ฆราวาสหญิง';
+      } else {
+        finalRole = role || 'STUDENT';
+      }
+    }
+
     items.push({
       studentCode,
       groupSpecificCode: groupSpecificCode || undefined,
@@ -493,7 +537,7 @@ export function parseGroupedParticipantsText(
       major,
       yearLevel,
       department,
-      role: role || 'STUDENT',
+      role: finalRole,
       vasa,
       remarks,
       status: 'REGISTERED',

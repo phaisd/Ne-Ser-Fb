@@ -6,6 +6,8 @@ import {
   Copy,
   Download,
   FileSpreadsheet,
+  HelpCircle,
+  Info,
   Layers,
   Trash2,
   Upload,
@@ -38,11 +40,13 @@ interface EventGroupImportModalProps {
 type ImportSourceTab = 'paste' | 'clone' | 'directory';
 
 const SAMPLE_CSV = [
-  'กลุ่ม,เลขเฉพาะกลุ่ม,รหัสนิสิต,ชื่อ-นามสกุล,หลักสูตร,หลักสูตรภาษา,สาขาวิชา,ชั้นปี',
-  '1,T101,6701501011,พระมหาสมชาย กิตฺติโสภโณ,ปริญญาตรี,THAI,พระพุทธศาสนา,2',
-  '1,T102,6701501011,สามเณรธีรภัทร สุขใจ,ปริญญาโท,THAI,พระพุทธศาสนา,2',
-  '2,T201,6701501011,นายก้องภพ ใจดี,ปริญญาเอก,THAI,ศาสนาและปรัชญา,3',
-  '3,I301,6701501011,Ven. Dhammapalo,ปริญญาตรี,ENGLISH,Buddhism,1',
+  'กลุ่ม,เลขเฉพาะกลุ่ม,รหัสนิสิต,ชื่อ-นามสกุล,หลักสูตร,หลักสูตรภาษา,สาขาวิชา,ชั้นปี,สถานภาพ/เพศ,พรรษา(ถ้ามี)',
+  '1,B1T01,6801401003,พระวิชัย วิชโย,ปริญญาตรี,THAI,บาลีสันสกฤต,4,พระภิกษุ,41',
+  '1,B1T02,6701501004,พระมหากุศล กุสลจิตโต,ปริญญาตรี,THAI,ศาสนาและปรัชญา,3,พระภิกษุ,20',
+  '1,B1T03,6701501075,พระดำรงพล กตปุญฺโญ,ปริญญาตรี,THAI,วิปัสสนาภาวนา,3,พระภิกษุ,',
+  '1,B1T16,6801501076,สามเณรอภิสร ใสสะอาด,ปริญญาตรี,THAI,พระพุทธศาสนา,2,สามเณร,',
+  '2,B2T01,6701501046,Bounmy Xaymonty,ปริญญาตรี,THAI,พระพุทธศาสนา,3,ฆราวาสชาย,',
+  '12,B1201,6601501013,แม่ชีสุวีรา,ปริญญาตรี,THAI,พระพุทธศาสนา,4,แม่ชี,',
 ].join('\n');
 
 export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
@@ -246,22 +250,26 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
       'หลักสูตรภาษา',
       'สาขาวิชา',
       'ชั้นปี',
+      'สถานภาพ/เพศ',
+      'พรรษา(ถ้ามี)',
     ];
     const sampleRows = [
-      ['1', 'T101', '6701501011', 'พระมหาสมชาย กิตฺติโสภโณ', 'ปริญญาตรี', 'THAI', 'พระพุทธศาสนา', '2'],
-      ['1', 'T102', '6701501012', 'สามเณรธีรภัทร สุขใจ', 'ปริญญาโท', 'THAI', 'พระพุทธศาสนา', '2'],
-      ['2', 'T201', '6701501013', 'นายก้องภพ ใจดี', 'ปริญญาเอก', 'THAI', 'ศาสนาและปรัชญา', '3'],
-      ['3', 'I301', '6701501014', 'Ven. Dhammapalo', 'ปริญญาตรี', 'ENGLISH', 'Buddhism', '1'],
+      ['1', 'B1T01', '6801401003', 'พระวิชัย วิชโย', 'ปริญญาตรี', 'THAI', 'บาลีสันสกฤต', '4', 'พระภิกษุ', '41'],
+      ['1', 'B1T02', '6701501004', 'พระมหากุศล กุสลจิตโต', 'ปริญญาตรี', 'THAI', 'ศาสนาและปรัชญา', '3', 'พระภิกษุ', '20'],
+      ['1', 'B1T03', '6701501075', 'พระดำรงพล กตปุญฺโญ', 'ปริญญาตรี', 'THAI', 'วิปัสสนาภาวนา', '3', 'พระภิกษุ', ''],
+      ['1', 'B1T16', '6801501076', 'สามเณรอภิสร ใสสะอาด', 'ปริญญาตรี', 'THAI', 'พระพุทธศาสนา', '2', 'สามเณร', ''],
+      ['2', 'B2T01', '6701501046', 'Bounmy Xaymonty', 'ปริญญาตรี', 'THAI', 'พระพุทธศาสนา', '3', 'ฆราวาสชาย', ''],
+      ['12', 'B1201', '6601501013', 'แม่ชีสุวีรา', 'ปริญญาตรี', 'THAI', 'พระพุทธศาสนา', '4', 'แม่ชี', ''],
     ];
     const sheet: XlsxSheet = {
       name: 'แบบฟอร์มจัดกลุ่มนิสิต',
       title: 'แบบฟอร์มนำเข้ารายชื่อนิสิตแบบจัดกลุ่ม (เลขเฉพาะกลุ่ม)',
-      subtitle: 'ใส่รหัสประจำกลุ่มในคอลัมน์ "เลขเฉพาะกลุ่ม" (เช่น T101, T201, G01-01)',
+      subtitle: 'ใส่รหัสประจำกลุ่มในคอลัมน์ "เลขเฉพาะกลุ่ม" (เช่น B1T01) • คอลัมน์พรรษาระบุเฉพาะพระภิกษุ (แม่ชี/ฆราวาสให้เว้นว่าง)',
       headers,
       rows: sampleRows,
-      columnWidths: [8, 16, 16, 32, 14, 16, 22, 10],
+      columnWidths: [8, 16, 16, 32, 14, 16, 22, 10, 16, 14],
     };
-    downloadXlsx('sample-grouped-participants.xlsx', [sheet]);
+    downloadXlsx('แบบฟอร์มนำเข้ารายชื่อนิสิตแบบจัดกลุ่ม_10คอลัมน์.xlsx', [sheet]);
   };
 
   const handleDownloadSample = () => {
@@ -628,12 +636,28 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                 </div>
               </div>
 
+              {/* Guidance Notice for Vasa and Status/Gender */}
+              <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                  <Info className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>คำแนะนำเกี่ยวกับคอลัมน์ &quot;สถานภาพ/เพศ&quot; และ &quot;พรรษา(ถ้ามี)&quot;:</span>
+                </div>
+                <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-amber-950">
+                  <li>
+                    <strong>พรรษา(ถ้ามี):</strong> ระบุเฉพาะพระภิกษุสงฆ์ (จำนวนปีพรรษา เช่น 41, 20) ส่วนสามเณร แม่ชี และฆราวาส <u>สามารถเว้นว่างได้</u>
+                  </li>
+                  <li>
+                    <strong>สถานภาพ/เพศ:</strong> ระบุ พระภิกษุ, สามเณร, แม่ชี, ฆราวาสชาย, ฆราวาสหญิง (หากเว้นว่าง ระบบจะตรวจจับจากคำนำหน้าชื่อให้อัตโนมัติ)
+                  </li>
+                </ul>
+              </div>
+
               <textarea
                 rows={6}
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder={
-                  'วางข้อมูลจาก Excel หรือ CSV ได้เลย (รองรับ 8 คอลัมน์):\nกลุ่ม\tเลขเฉพาะกลุ่ม\tรหัสนิสิต\tชื่อ-นามสกุล\tหลักสูตร\tหลักสูตรภาษา\tสาขาวิชา\tชั้นปี\n1\tT101\t6701501011\tพระมหาสมชาย กิตฺติโสภโณ\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t2\n1\tT102\t6701501011\tสามเณรธีรภัทร สุขใจ\tปริญญาโท\tTHAI\tพระพุทธศาสนา\t2\n2\tT201\t6701501011\tนายก้องภพ ใจดี\tปริญญาเอก\tTHAI\tศาสนาและปรัชญา\t3\n3\tI301\t6701501011\tVen. Dhammapalo\tปริญญาตรี\tENGLISH\tBuddhism\t1'
+                  'วางข้อมูลจาก Excel หรือ CSV ได้เลย (รองรับ 10 คอลัมน์):\nกลุ่ม\tเลขเฉพาะกลุ่ม\tรหัสนิสิต\tชื่อ-นามสกุล\tหลักสูตร\tหลักสูตรภาษา\tสาขาวิชา\tชั้นปี\tสถานภาพ/เพศ\tพรรษา(ถ้ามี)\n1\tB1T01\t6801401003\tพระวิชัย วิชโย\tปริญญาตรี\tTHAI\tบาลีสันสกฤต\t4\tพระภิกษุ\t41\n1\tB1T02\t6701501004\tพระมหากุศล กุสลจิตโต\tปริญญาตรี\tTHAI\tศาสนาและปรัชญา\t3\tพระภิกษุ\t20\n1\tB1T03\t6701501075\tพระดำรงพล กตปุญฺโญ\tปริญญาตรี\tTHAI\tวิปัสสนาภาวนา\t3\tพระภิกษุ\t\n1\tB1T16\t6801501076\tสามเณรอภิสร ใสสะอาด\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t2\tสามเณร\t\n2\tB2T01\t6701501046\tBounmy Xaymonty\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t3\tฆราวาสชาย\t\n12\tB1201\t6601501013\tแม่ชีสุวีรา\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t4\tแม่ชี\t'
                 }
                 className="w-full p-3 rounded-2xl border border-slate-300 font-mono text-xs bg-slate-50/40 focus:ring-2 focus:ring-emerald-500 outline-none"
               />
@@ -890,12 +914,14 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                     <th className="px-2.5 py-2 font-bold text-center">หลักสูตรภาษา</th>
                     <th className="px-2.5 py-2 font-bold">สาขาวิชา</th>
                     <th className="px-2.5 py-2 font-bold text-center">ชั้นปี</th>
+                    <th className="px-2.5 py-2 font-bold text-center">สถานภาพ/เพศ</th>
+                    <th className="px-2.5 py-2 font-bold text-center">พรรษา</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {previewItems.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-3 py-6 text-center text-slate-400">
+                      <td colSpan={10} className="px-3 py-6 text-center text-slate-400">
                         กรุณาวางข้อมูล หรือเลือกไฟล์ CSV / TSV เพื่อดูตัวอย่างก่อนนำเข้า
                       </td>
                     </tr>
@@ -931,6 +957,14 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                         </td>
                         <td className="px-2.5 py-1.5 text-center font-mono text-slate-600">
                           {it.yearLevel ? `ปี ${it.yearLevel}` : '-'}
+                        </td>
+                        <td className="px-2.5 py-1.5 text-center">
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                            {it.role || 'นิสิต'}
+                          </span>
+                        </td>
+                        <td className="px-2.5 py-1.5 text-center font-mono text-slate-700 font-semibold">
+                          {it.vasa || '-'}
                         </td>
                       </tr>
                     ))

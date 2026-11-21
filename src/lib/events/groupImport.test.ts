@@ -323,4 +323,36 @@ describe('groupImport helpers', () => {
     console.log('Detected delimiter and count:', res.items.length);
     expect(res.items.length).toBeGreaterThan(30);
   });
+
+  it('correctly parses 10-column table with สถานภาพ/เพศ and พรรษา(ถ้ามี)', () => {
+    const raw = `แบบฟอร์มนำเข้ารายชื่อนิสิตแบบจัดกลุ่ม (เลขเฉพาะกลุ่ม)
+ใส่รหัสประจำกลุ่มในคอลัมน์ "เลขเฉพาะกลุ่ม" (เช่น T101, T201, G01-01)
+กลุ่ม\tเลขเฉพาะกลุ่ม\tรหัสนิสิต\tชื่อ-นามสกุล\tหลักสูตร\tหลักสูตรภาษา\tสาขาวิชา\tชั้นปี\tสถานภาพ/เพศ\tพรรษา(ถ้ามี)
+1\tB1T01\t6801401003\tพระวิชัย วิชโย\tปริญญาตรี\tTHAI\tบาลีสันสกฤต\t4\tพระภิกษุ\t41
+1\tB1T02\t6701501004\tพระมหากุศล กุสลจิตโต\tปริญญาตรี\tTHAI\tศาสนาและปรัชญา\t3\tพระภิกษุ\t20
+1\tB1T03\t6701501075\tพระดำรงพล กตปุญฺโญ\tปริญญาตรี\tTHAI\tวิปัสสนาภาวนา\t3\tพระภิกษุ\t
+1\tB1T16\t6801501076\tสามเณรอภิสร ใสสะอาด\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t2\tสามเณร\t
+2\tB2T01\t6701501046\tBounmy Xaymonty\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t3\tฆราวาสชาย\t
+12\tB1201\t6601501013\tแม่ชีสุวีรา\tปริญญาตรี\tTHAI\tพระพุทธศาสนา\t4\tแม่ชี\t`;
+
+    const res = parseGroupedParticipantsText(raw);
+    expect(res.items.length).toBe(6);
+    expect(res.items[0].groupSpecificCode).toBe('B1T01');
+    expect(res.items[0].studentName).toBe('พระวิชัย วิชโย');
+    expect(res.items[0].role).toBe('พระภิกษุ');
+    expect(res.items[0].vasa).toBe('41');
+
+    expect(res.items[1].role).toBe('พระภิกษุ');
+    expect(res.items[1].vasa).toBe('20');
+
+    expect(res.items[2].role).toBe('พระภิกษุ');
+    expect(res.items[2].vasa).toBeFalsy();
+
+    expect(res.items[3].role).toBe('สามเณร');
+    expect(res.items[3].vasa).toBeFalsy();
+
+    expect(res.items[4].role).toBe('ฆราวาสชาย');
+
+    expect(res.items[5].role).toBe('แม่ชี');
+  });
 });

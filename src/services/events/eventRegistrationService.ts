@@ -243,6 +243,7 @@ export async function batchImportEventRegistrations(
     programType?: string;
     major?: string;
     yearLevel?: number;
+    role?: string;
     vasa?: string | number;
     remarks?: string;
   }>,
@@ -277,6 +278,45 @@ export async function batchImportEventRegistrations(
   }
 
   let local = readLocalJson<EventRegistration[]>('event_registrations.json', []);
+
+  const gClient = getSheetsClient();
+  if (gClient && mode === 'APPEND') {
+    try {
+      const existingSheetRows = await gClient.getValues('EventRegistrations!A2:AJ');
+      if (existingSheetRows && existingSheetRows.length > 0) {
+        for (const rawR of existingSheetRows) {
+          const isShifted = !rawR[0] && rawR[17] && String(rawR[17]).startsWith('reg-');
+          const r = isShifted ? rawR.slice(17) : rawR;
+          const id = String(r[0] || '').trim();
+          const evId = String(r[1] || '').trim();
+          if (evId === targetEventId && id && !local.some((l) => l.id === id)) {
+            local.push({
+              id,
+              eventId: evId,
+              studentCode: String(r[2] || '').trim(),
+              studentName: String(r[3] || '').trim(),
+              status: (r[4] || 'REGISTERED') as any,
+              role: (r[5] || 'STUDENT') as any,
+              major: String(r[6] || '').trim(),
+              yearLevel: Number(r[7]) || 1,
+              department: String(r[8] || '').trim(),
+              groupName: String(r[9] || '').trim(),
+              createdAt: String(r[10] || new Date().toISOString()).trim(),
+              groupNumber: r[11] ? Number(r[11]) : undefined,
+              groupSpecificCode: String(r[12] || '').trim(),
+              degreeLevel: String(r[13] || '').trim(),
+              programType: (r[14] || 'THAI') as any,
+              remarks: String(r[15] || '').trim(),
+              attendedAt: String(r[16] || '').trim(),
+              dailyAttendance: {},
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Could not read existing sheet rows for deduplication:', e);
+    }
+  }
 
   if (mode === 'REPLACE_ALL' || mode === 'REPLACE_EVENT') {
     local = local.filter((r) => String(r.eventId || '').trim() !== targetEventId);
@@ -382,6 +422,8 @@ export async function batchImportEventRegistrations(
         if (row.programType) existing.programType = row.programType as any;
         if (row.major) existing.major = row.major;
         if (row.yearLevel) existing.yearLevel = Number(row.yearLevel);
+        if (row.role) existing.role = row.role as any;
+        if (row.vasa !== undefined) existing.vasa = row.vasa;
         existing.updatedAt = nowIso;
         updatedItems.push(existing);
         updatedCount++;
@@ -400,12 +442,12 @@ export async function batchImportEventRegistrations(
       groupName: gName,
       groupSpecificCode: finalGroupCode || undefined,
       status: 'REGISTERED',
-      role: 'STUDENT',
+      role: (row.role || (sInfo.role ? sInfo.role : 'STUDENT')) as any,
       degreeLevel: row.degreeLevel || sInfo.degree || 'ปริญญาตรี',
       programType: (row.programType as any) || (gNum === 12 ? 'ENGLISH' : sInfo.programType || 'THAI'),
       major: row.major || sInfo.major || 'พระพุทธศาสนา',
       yearLevel: row.yearLevel !== undefined ? Number(row.yearLevel) : (sInfo.yearLevel || 1),
-      vasa: row.vasa || sInfo.vasa || '',
+      vasa: row.vasa !== undefined ? row.vasa : (sInfo.vasa || ''),
       remarks: row.remarks || '',
       dailyAttendance: {},
       createdAt: nowIso,
@@ -421,12 +463,11 @@ export async function batchImportEventRegistrations(
   local.push(...createdItems);
   writeLocalJson('event_registrations.json', local);
 
-  const gClient = getSheetsClient();
   if (gClient) {
     try {
       if (mode === 'REPLACE_ALL' || mode === 'REPLACE_EVENT') {
-        const allRows = await gClient.getValues('EventRegistrations!A1:R');
-        const header = allRows[0] || [
+        const allRows = await gClient.getValues('EventRegistrations!A1:AJ');
+        const header = (allRows[0] && allRows[0].length >= 18 ? allRows[0].slice(0, 18) : null) || [
           'id',
           'eventId',
           'studentCode',
@@ -447,11 +488,14 @@ export async function batchImportEventRegistrations(
           'dailyAttendance',
         ];
 
-        const otherEventRows = allRows.slice(1).filter((r) => {
-          const isShifted = !r[0] && r[17] && String(r[17]).startsWith('reg-');
-          const evId = isShifted ? r[18] : r[1];
-          return String(evId || '').trim() !== targetEventId;
-        });
+        const isTargetEvent = (r: unknown[]) => {
+          const cell1 = String(r[1] || '').trim();
+          const cell18 = String(r[18] || '').trim();
+          if (cell1 === targetEventId || cell18 === targetEventId) return true;
+          return r.some((c) => String(c || '').trim() === targetEventId);
+        };
+
+        const otherEventRows = allRows.slice(1).filter((r) => !isTargetEvent(r));
 
         const newSheetRows = createdItems.map((reg) => [
           reg.id,
@@ -475,15 +519,15 @@ export async function batchImportEventRegistrations(
         ]);
 
         const combined = [...otherEventRows, ...newSheetRows];
-        await gClient.clearValues(`EventRegistrations!A1:R${Math.max(allRows.length + 100, 200)}`);
-        await gClient.updateValues('EventRegistrations!A1:R1', [header]);
+        await gClient.clearValues(`EventRegistrations!A1:AJ${Math.max(allRows.length + 500, 2000)}`);
+        await gClient.updateValues('EventRegistrations!A1:R1', [header.slice(0, 18)]);
         if (combined.length > 0) {
           const CHUNK_SIZE = 500;
           for (let i = 0; i < combined.length; i += CHUNK_SIZE) {
             const chunk = combined.slice(i, i + CHUNK_SIZE);
             const startRow = i + 2;
             const endRow = startRow + chunk.length - 1;
-            await gClient.updateValues(`EventRegistrations!A${startRow}:R${endRow}`, chunk);
+            await gClient.updateValues(`EventRegistrations!A${startRow}:R${endRow}`, chunk.map((r) => r.slice(0, 18)));
           }
         }
       } else {
@@ -584,24 +628,26 @@ export async function clearEventRegistrations(
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const allRows = await gClient.getValues('EventRegistrations!A1:R');
+      const allRows = await gClient.getValues('EventRegistrations!A1:AJ');
       if (allRows && allRows.length > 0) {
         const header = allRows[0];
-        const remainingRows = allRows.slice(1).filter((r) => {
-          const isShifted = !r[0] && r[17] && String(r[17]).startsWith('reg-');
-          const evId = isShifted ? r[18] : r[1];
-          return String(evId || '').trim() !== targetId;
-        });
+        const isTargetEvent = (r: unknown[]) => {
+          const cell1 = String(r[1] || '').trim();
+          const cell18 = String(r[18] || '').trim();
+          if (cell1 === targetId || cell18 === targetId) return true;
+          return r.some((c) => String(c || '').trim() === targetId);
+        };
+        const remainingRows = allRows.slice(1).filter((r) => !isTargetEvent(r));
 
-        await gClient.clearValues(`EventRegistrations!A1:R${Math.max(allRows.length + 100, 200)}`);
-        await gClient.updateValues('EventRegistrations!A1:R1', [header]);
+        await gClient.clearValues(`EventRegistrations!A1:AJ${Math.max(allRows.length + 500, 2000)}`);
+        await gClient.updateValues('EventRegistrations!A1:R1', [header.slice(0, 18)]);
         if (remainingRows.length > 0) {
           const CHUNK_SIZE = 500;
           for (let i = 0; i < remainingRows.length; i += CHUNK_SIZE) {
             const chunk = remainingRows.slice(i, i + CHUNK_SIZE);
             const startRow = i + 2;
             const endRow = startRow + chunk.length - 1;
-            await gClient.updateValues(`EventRegistrations!A${startRow}:R${endRow}`, chunk);
+            await gClient.updateValues(`EventRegistrations!A${startRow}:R${endRow}`, chunk.map((r) => r.slice(0, 18)));
           }
         }
       }
