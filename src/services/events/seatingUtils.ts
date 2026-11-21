@@ -49,9 +49,11 @@ export function detectParticipantStatus(
     cleanRole === 'สามเณรี' ||
     cleanRole === 'bhikkhuni' ||
     cleanRole === 'bhikshuni' ||
+    cleanRole === 'samaneri' ||
     cleanRole.includes('ภิกษุณี') ||
     cleanRole.includes('สามเณรี') ||
-    cleanRole.includes('bhikkhuni');
+    cleanRole.includes('bhikkhuni') ||
+    cleanRole.includes('samaneri');
 
   const isMonkRole =
     !isBhikkhuniRole &&
@@ -113,16 +115,31 @@ export function detectParticipantStatus(
     cleanRole.includes('ฆราวาสหญิง') ||
     cleanRole.includes('lay female');
 
-  // 1. ภิกษุณี / สามเณรี (Bhikkhuni) - Checked before monk to avoid substring clash with 'ภิกษุ' or 'bhikkhu'
+  // 1. ภิกษุณี / สามเณรี (Bhikkhuni / Samaneri) - Checked before monk to avoid substring clash with 'ภิกษุ' or 'bhikkhu'
   if (
     isBhikkhuniRole ||
     cleanName.startsWith('ภิกษุณี') ||
     cleanName.startsWith('สามเณรี') ||
     cleanName.startsWith('bhikkhuni') ||
+    cleanName.startsWith('samaneri') ||
     cleanName.includes('bhikkhuni') ||
-    cleanName.includes('ภิกษุณี')
+    cleanName.includes('samaneri') ||
+    cleanName.includes('ภิกษุณี') ||
+    cleanName.includes('สามเณรี')
   ) {
-    return { category: 'BHIKKHUNI', label: 'ภิกษุณี', priority: 3 };
+    const isSamaneri =
+      cleanRole === 'สามเณรี' ||
+      cleanRole === 'samaneri' ||
+      cleanRole.includes('สามเณรี') ||
+      cleanRole.includes('samaneri') ||
+      cleanName.startsWith('สามเณรี') ||
+      cleanName.startsWith('samaneri');
+
+    return {
+      category: 'BHIKKHUNI',
+      label: isSamaneri ? 'สามเณรี' : 'ภิกษุณี',
+      priority: 3,
+    };
   }
 
   // 2. พระภิกษุ (Monk)
@@ -237,8 +254,8 @@ export const STATUS_THEMES: Record<ParticipantStatusCategory, StatusThemeConfig>
   },
   BHIKKHUNI: {
     key: 'BHIKKHUNI',
-    label: 'ภิกษุณี / พระนานาชาติ',
-    shortLabel: 'ภิกษุณี/Inter',
+    label: 'ภิกษุณี / สามเณรี / พระนานาชาติ',
+    shortLabel: 'ภิกษุณี/สามเณรี/Inter',
     colorName: 'สีกรักน้ำตาลเข้ม',
     dotColor: '#713f12',
     bgClass: 'bg-yellow-900',

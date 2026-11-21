@@ -525,10 +525,15 @@ export function parseGroupedParticipantsText(
       } else if (
         lowerR === 'bhikkhuni' ||
         lowerR === 'bhikshuni' ||
-        lowerR.includes('ภิกษุณี') ||
-        lowerR.includes('สามเณรี')
+        lowerR.includes('ภิกษุณี')
       ) {
         finalRole = 'ภิกษุณี';
+      } else if (
+        lowerR === 'samaneri' ||
+        lowerR === 'samaneris' ||
+        lowerR.includes('สามเณรี')
+      ) {
+        finalRole = 'สามเณรี';
       } else if (
         lowerR === 'nun' ||
         lowerR === 'nuns' ||
@@ -596,10 +601,14 @@ export function parseGroupedParticipantsText(
         finalRole = 'แม่ชี';
       } else if (
         cleanLower.startsWith('ภิกษุณี') ||
-        cleanLower.startsWith('สามเณรี') ||
         cleanLower.startsWith('bhikkhuni')
       ) {
         finalRole = 'ภิกษุณี';
+      } else if (
+        cleanLower.startsWith('สามเณรี') ||
+        cleanLower.startsWith('samaneri')
+      ) {
+        finalRole = 'สามเณรี';
       } else if (
         cleanLower.startsWith('นาย') ||
         cleanLower.startsWith('mr.') ||
