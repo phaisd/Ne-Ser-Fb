@@ -134,6 +134,21 @@ export class GoogleSheetsClient {
   }
 
   /**
+   * Batch update multiple ranges in a single HTTP request
+   */
+  async batchUpdateValues(data: Array<{ range: string; values: unknown[][] }>) {
+    if (data.length === 0) return;
+    const endpoint = `/values:batchUpdate`;
+    return this.fetchSheets(endpoint, {
+      method: 'POST',
+      body: JSON.stringify({
+        valueInputOption: 'USER_ENTERED',
+        data,
+      }),
+    });
+  }
+
+  /**
    * Clear values in range (e.g. 'CertificateRequests!A2:Z1000')
    */
   async clearValues(range: string) {
