@@ -133,6 +133,8 @@ export function UserTableRow({
                 ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                 : u.instructorType === 'อาจารย์ผู้ช่วยสอน'
                 ? 'bg-amber-50 text-amber-800 border-amber-200'
+                : u.instructorType.includes('เจ้าหน้าที่')
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
                 : 'bg-emerald-50 text-emerald-800 border-emerald-200'
             }`}
           >

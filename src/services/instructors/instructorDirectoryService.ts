@@ -15,19 +15,29 @@ export async function syncInstructorToSheet(instructor: InstructorAccount): Prom
     const cleanId = (instructor.id || '').trim().toLowerCase();
     const cleanEmail = (instructor.email || '').trim().toLowerCase();
     const cleanGmail = (instructor.gmail || '').trim().toLowerCase();
+    const cleanName = (instructor.name || '').trim().toLowerCase();
+    const cleanNameNoTitle = stripLeadingTitles(cleanName);
 
     let rowIndex = -1;
     if (rows && rows.length > 0) {
       rowIndex = rows.findIndex((r) => {
         const rId = (r[0] || '').trim().toLowerCase();
+        const rName = (r[1] || '').trim().toLowerCase();
+        const rNameNoTitle = stripLeadingTitles(rName);
         const isCol2Email = (r[2] || '').includes('@');
         const rEmail = isCol2Email ? (r[2] || '').trim().toLowerCase() : (r[3] || '').trim().toLowerCase();
         const rGmail = isCol2Email ? (r[3] || '').trim().toLowerCase() : (r[4] || '').trim().toLowerCase();
-        return (
-          (cleanId && rId === cleanId) ||
-          (cleanEmail && rEmail === cleanEmail) ||
-          (cleanGmail && rGmail === cleanGmail)
-        );
+
+        const matchId = cleanId && rId === cleanId;
+        const matchEmail = cleanEmail && rEmail === cleanEmail;
+        const matchGmail = cleanGmail && rGmail === cleanGmail;
+        const matchName = cleanName && (rName === cleanName || (cleanNameNoTitle && rNameNoTitle === cleanNameNoTitle));
+        const matchAlias = instructor.aliases?.some((al) => {
+          const cleanAl = al.toLowerCase().trim();
+          return cleanAl === rEmail || cleanAl === rGmail || cleanAl === rName;
+        });
+
+        return Boolean(matchId || matchEmail || matchGmail || matchName || matchAlias);
       });
     }
 

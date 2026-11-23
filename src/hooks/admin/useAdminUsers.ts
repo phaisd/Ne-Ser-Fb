@@ -286,6 +286,10 @@ export function useAdminUsers({
           userId: editingUser.id,
           updates: {
             ...editUserForm,
+            id: editingUser.id,
+            previousEmail: editingUser.email,
+            previousGmail: editingUser.gmail,
+            previousName: editingUser.name,
             role: roleToSave,
             email: editUserForm.email?.trim() || primaryEmail,
             gmail: editUserForm.gmail?.trim() || (primaryEmail.endsWith('@gmail.com') ? primaryEmail : ''),

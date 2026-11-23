@@ -138,11 +138,22 @@ export function AddUserModal({
                 { label: 'อาจารย์ประจำ', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
                 { label: 'อาจารย์พิเศษ', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
                 { label: 'อาจารย์ผู้ช่วยสอน', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+                { label: 'เจ้าหน้าที่', color: 'bg-blue-100 text-blue-800 border-blue-400' },
+                { label: 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', color: 'bg-teal-100 text-teal-800 border-teal-300' },
               ].map((item) => (
                 <button
                   key={item.label}
                   type="button"
-                  onClick={() => setNewUserForm({ ...newUserForm, instructorType: item.label })}
+                  onClick={() => {
+                    const nextRole = item.label === 'เจ้าหน้าที่' && (!newUserForm.role || newUserForm.role === 'INSTRUCTOR')
+                      ? 'OFFICER'
+                      : newUserForm.role;
+                    setNewUserForm({
+                      ...newUserForm,
+                      instructorType: item.label,
+                      role: nextRole,
+                    });
+                  }}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
                     (newUserForm.instructorType || 'อาจารย์ประจำ') === item.label
                       ? `${item.color} ring-2 ring-indigo-400 shadow-xs`
@@ -159,7 +170,7 @@ export function AddUserModal({
               type="text"
               value={newUserForm.instructorType || ''}
               onChange={(e) => setNewUserForm({ ...newUserForm, instructorType: e.target.value })}
-              placeholder="เลือกจากปุ่มด้านบน หรือพิมพ์ระบุ เช่น อาจารย์ประจำ, อาจารย์พิเศษ, อาจารย์ผู้ช่วยสอน"
+              placeholder="เลือกจากปุ่มด้านบน หรือพิมพ์ระบุ เช่น อาจารย์ประจำ, อาจารย์พิเศษ, อาจารย์ผู้ช่วยสอน, เจ้าหน้าที่"
               className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 text-xs"
             />
           </div>

@@ -129,13 +129,16 @@ export async function POST(request: Request) {
         const foundStudent = students.find(
           (s) =>
             (s.studentCode || '').toLowerCase() === cleanCode ||
-            (s.email || '').toLowerCase() === String(targetId).trim().toLowerCase()
+            (s.email || '').toLowerCase() === String(targetId).trim().toLowerCase() ||
+            (rawUpdates.previousEmail && (s.email || '').toLowerCase() === String(rawUpdates.previousEmail).trim().toLowerCase()) ||
+            (rawUpdates.name && (s.fullName || '').toLowerCase() === String(rawUpdates.name).trim().toLowerCase())
         );
         if (foundStudent) {
           const updatedStudent = await updateStudent(foundStudent.studentCode, {
             fullName: rawUpdates.name || foundStudent.fullName,
-            email: rawUpdates.email || foundStudent.email,
+            email: rawUpdates.email || rawUpdates.gmail || foundStudent.email,
             department: rawUpdates.department || foundStudent.department,
+            isActingOfficer: rawUpdates.isActingOfficer !== undefined ? Boolean(rawUpdates.isActingOfficer) : foundStudent.isActingOfficer,
           });
           if (updatedStudent) {
             return NextResponse.json({

@@ -3,6 +3,7 @@ import { readLocalJson, writeLocalJson, getSheetsClient } from '../storageHelper
 import { getStudents } from '../studentService';
 import { verifyPassword, hashPassword } from '@/lib/auth-security';
 import { getInstructorAccounts, syncInstructorToSheet } from './instructorDirectoryService';
+import { stripLeadingTitles } from '@/lib/utils/name-matcher';
 
 export async function authenticateInstructor(
   emailOrUsername: string,
@@ -220,16 +221,98 @@ export async function updateUserRole(
 
 export async function updateUserProfile(
   userId: string,
-  updates: Partial<InstructorAccount>
+  updates: Partial<InstructorAccount> & {
+    previousEmail?: string;
+    previousGmail?: string;
+    previousName?: string;
+  }
 ): Promise<InstructorAccount | null> {
   const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
   const cleanId = (userId || '').trim().toLowerCase();
-  const idx = list.findIndex(
+  const cleanPrevEmail = (updates.previousEmail || '').trim().toLowerCase();
+  const cleanPrevGmail = (updates.previousGmail || '').trim().toLowerCase();
+  const cleanPrevName = (updates.previousName || '').trim().toLowerCase();
+
+  let idx = list.findIndex(
     (u) =>
-      (u.id || '').toLowerCase() === cleanId ||
-      (u.email || '').toLowerCase() === cleanId ||
-      u.previousIds?.some((p) => p.toLowerCase() === cleanId)
+      (cleanId && (u.id || '').toLowerCase() === cleanId) ||
+      (cleanId && (u.email || '').toLowerCase() === cleanId) ||
+      (cleanId && (u.gmail || '').toLowerCase() === cleanId) ||
+      (cleanPrevEmail && (u.email || '').toLowerCase() === cleanPrevEmail) ||
+      (cleanPrevGmail && (u.gmail || '').toLowerCase() === cleanPrevGmail) ||
+      (cleanPrevName && (u.name || '').toLowerCase() === cleanPrevName) ||
+      (cleanPrevName && stripLeadingTitles(u.name || '').toLowerCase() === stripLeadingTitles(cleanPrevName)) ||
+      u.previousIds?.some((p) => p.toLowerCase() === cleanId) ||
+      u.aliases?.some((al) => al.toLowerCase() === cleanId)
   );
+
+  // If not found in local instructors.json, search persistent Google Sheets via getInstructorAccounts()
+  if (idx === -1) {
+    const allInstructors = await getInstructorAccounts();
+    const matched = allInstructors.find(
+      (u) =>
+        (cleanId && (u.id || '').toLowerCase() === cleanId) ||
+        (cleanId && (u.email || '').toLowerCase() === cleanId) ||
+        (cleanId && (u.gmail || '').toLowerCase() === cleanId) ||
+        (cleanId && (u.name || '').toLowerCase() === cleanId) ||
+        (cleanPrevEmail && (u.email || '').toLowerCase() === cleanPrevEmail) ||
+        (cleanPrevGmail && (u.gmail || '').toLowerCase() === cleanPrevGmail) ||
+        (cleanPrevName && (u.name || '').toLowerCase() === cleanPrevName) ||
+        (cleanPrevName && stripLeadingTitles(u.name || '').toLowerCase() === stripLeadingTitles(cleanPrevName)) ||
+        (updates.name && (u.name || '').toLowerCase() === updates.name.trim().toLowerCase()) ||
+        (updates.name && stripLeadingTitles(u.name || '').toLowerCase() === stripLeadingTitles(updates.name.trim())) ||
+        (updates.email && (u.email || '').toLowerCase() === updates.email.trim().toLowerCase()) ||
+        (updates.gmail && (u.gmail || '').toLowerCase() === updates.gmail.trim().toLowerCase()) ||
+        (cleanId && stripLeadingTitles(u.name || '').toLowerCase() === stripLeadingTitles(cleanId)) ||
+        u.previousIds?.some((p) => p.toLowerCase() === cleanId) ||
+        u.aliases?.some((al) => al.toLowerCase() === cleanId)
+    );
+    if (matched) {
+      list.push({ ...matched });
+      idx = list.length - 1;
+    }
+  }
+
+  // Also check if cleanId or updates.name matches existing list by name or title
+  if (idx === -1) {
+    idx = list.findIndex(
+      (u) =>
+        (cleanId && (u.name || '').toLowerCase() === cleanId) ||
+        (cleanId && stripLeadingTitles(u.name || '').toLowerCase() === stripLeadingTitles(cleanId)) ||
+        (updates.name && (u.name || '').toLowerCase() === updates.name.trim().toLowerCase()) ||
+        (updates.name && stripLeadingTitles(u.name || '').toLowerCase() === stripLeadingTitles(updates.name.trim()))
+    );
+  }
+
+  // If still not found, but an admin/officer is explicitly saving/updating this account,
+  // gracefully auto-provision into list so admin's work is never lost!
+  if (idx === -1 && (updates.name || cleanId)) {
+    const effectiveName = updates.name?.trim() || updates.previousName?.trim() || cleanId;
+    const effectiveEmail = (updates.email && updates.email.trim())
+      ? updates.email.trim().toLowerCase()
+      : (updates.gmail && updates.gmail.trim() ? updates.gmail.trim().toLowerCase() : `${cleanId.replace(/[^a-zA-Z0-9]/g, '') || 'officer'}@mcu.ac.th`);
+    const newAcc: InstructorAccount = {
+      id: userId && userId.startsWith('inst-') ? userId : 'inst-' + Date.now(),
+      name: effectiveName,
+      nameEn: updates.nameEn?.trim() || '',
+      email: effectiveEmail,
+      gmail: updates.gmail?.trim() || (effectiveEmail.endsWith('@gmail.com') ? effectiveEmail : ''),
+      department: updates.department?.trim() || 'สำนักงานคณบดี คณะพุทธศาสตร์',
+      instructorType: updates.instructorType?.trim() || 'เจ้าหน้าที่',
+      role: updates.role || 'OFFICER',
+      isActingOfficer: Boolean(updates.isActingOfficer),
+      isActive: true,
+      isSuspended: false,
+      password: 'Fb8323mcu',
+      defaultPassword: 'Fb8323mcu',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      aliases: [effectiveName, effectiveEmail, updates.previousEmail].filter(Boolean) as string[],
+    };
+    list.push(newAcc);
+    idx = list.length - 1;
+  }
+
   if (idx === -1) return null;
 
   const current = list[idx];
