@@ -129,6 +129,25 @@ export function VipassanaLiveScannerModal({
     return list;
   }, [registrations]);
 
+  // Helper to detect International / English practitioner
+  const isEnglishPractitioner = useCallback((r?: EventRegistration | null): boolean => {
+    if (!r) return false;
+    if (String(r.programType || '').toUpperCase() === 'ENGLISH') return true;
+    if (r.groupSpecificCode && /^B\d*E/i.test(r.groupSpecificCode)) return true;
+    const major = String(r.major || '').toLowerCase();
+    if (
+      major.includes('buddhist studies') ||
+      major.includes('english') ||
+      major.includes('international') ||
+      major.includes('inter')
+    ) {
+      return true;
+    }
+    const name = String(r.studentName || '').trim();
+    if (!/[\u0E00-\u0E7F]/.test(name) && /[a-zA-Z]/.test(name)) return true;
+    return false;
+  }, []);
+
   // Scanner states
   const [inputCode, setInputCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -178,6 +197,11 @@ export function VipassanaLiveScannerModal({
     firstCheckInTime?: string;
     scannedCode?: string;
     status?: 'PRESENT' | 'LATE' | 'SICK';
+    badgeTitle?: string;
+    badgeTitleEn?: string;
+    subNote?: string;
+    subNoteEn?: string;
+    isEnglish?: boolean;
   } | null>(null);
 
   // Camera states
@@ -497,19 +521,60 @@ export function VipassanaLiveScannerModal({
           }
           triggerHaptic(isExcessive ? 'ERROR' : isOverDuplicateLimit ? 'WARN' : isDuplicate ? 'WARN' : targetStatus === 'LATE' ? 'WARN' : 'SUCCESS');
 
+          const isEng = isEnglishPractitioner(reg);
+          let badgeTitle = '';
+          let badgeTitleEn = '';
+          let subNote = '';
+          let subNoteEn = '';
           let msg = '';
+
           if (isExcessive) {
-            msg = `🚨 บันทึก: ไม่ตั้งใจปฏิบัติ! ${reg.studentName} สแกนซ้ำผิดปกติเกิน 3 ครั้ง (ครั้งที่ ${scanCount})`;
+            badgeTitle = '🚨 ไม่ตั้งใจปฏิบัติ (สแกนเกิน 3 ครั้ง)';
+            badgeTitleEn = '🚨 Unmindful Flag (>3 Scans)';
+            subNote = `สแกนซ้ำผิดปกติ ${scanCount} ครั้งในรอบนี้`;
+            subNoteEn = `Flagged: Unmindful Practice (${scanCount} scans in session)`;
+            msg = isEng
+              ? `🚨 Flagged: Unmindful Practice (${reg.studentName} scanned #${scanCount})`
+              : `🚨 บันทึก: ไม่ตั้งใจปฏิบัติ! (${reg.studentName} สแกนซ้ำเกิน 3 ครั้ง • ครั้งที่ ${scanCount})`;
           } else if (isOverDuplicateLimit) {
-            msg = `⚠️ บันทึกว่าสแกนซ้ำ: ${reg.studentName} สแกนซ้ำเกิน 2 ครั้ง (ครั้งที่ ${scanCount})`;
+            badgeTitle = `⚠️ สแกนซ้ำครั้งที่ ${scanCount} • เชิญท่านต่อไป`;
+            badgeTitleEn = `⚠️ Repeated Scan #${scanCount} • Next, please`;
+            subNote = `สแกนซ้ำเกิน 2 ครั้ง • เชิญท่านต่อไป`;
+            subNoteEn = `Repeated scan • Next participant, please`;
+            msg = isEng
+              ? `⚠️ Repeated Scan #${scanCount}: ${reg.studentName} • Next, please`
+              : `⚠️ บันทึกว่าสแกนซ้ำ (ครั้งที่ ${scanCount}): ${reg.studentName} • เชิญท่านต่อไป`;
           } else if (isDuplicate) {
-            msg = `ℹ️ เช็คชื่อแล้ว (ครั้งที่ ${scanCount}): ${reg.studentName} ลงชื่อเมื่อ ${data.firstCheckInTime || checkInTime} น.`;
+            badgeTitle = 'ℹ️ เช็คชื่อแล้ว • เชิญท่านต่อไป';
+            badgeTitleEn = 'ℹ️ Already Checked • Next, please';
+            subNote = `เช็คชื่อไปแล้วเมื่อ ${data.firstCheckInTime || checkInTime} น. • เชิญท่านต่อไป`;
+            subNoteEn = `Already checked at ${data.firstCheckInTime || checkInTime} • Next, please`;
+            msg = isEng
+              ? `ℹ️ Already checked: ${reg.studentName} (${data.firstCheckInTime || checkInTime}) • Next, please`
+              : `ℹ️ เช็คชื่อแล้ว: ${reg.studentName} (${data.firstCheckInTime || checkInTime} น.) • เชิญท่านต่อไป`;
+          } else if (targetStatus === 'LATE') {
+            badgeTitle = '⚠️ เรียบร้อย (มาสาย) • เชิญท่านต่อไป';
+            badgeTitleEn = '⚠️ Recorded (Late) • Next, please';
+            subNote = `บันทึกเวลาปฏิบัติธรรมเรียบร้อย • เชิญท่านต่อไป`;
+            subNoteEn = `Attendance recorded (Late) • Next participant, please`;
+            msg = isEng
+              ? `⚠️ Recorded (Late): ${reg.studentName}${lateNote} • Next, please`
+              : `⚠️ เรียบร้อย (มาสาย): ${reg.studentName}${lateNote} • เชิญท่านต่อไป`;
           } else {
-            msg = `✓ บันทึกเรียบร้อยแล้ว: ${reg.studentName}${lateNote}`;
+            badgeTitle = '✓ เรียบร้อย • เชิญท่านต่อไป';
+            badgeTitleEn = '✓ Done • Next, please';
+            subNote = `บันทึกเวลาเข้าปฏิบัติธรรมเรียบร้อย • เชิญท่านต่อไป`;
+            subNoteEn = `Attendance recorded successfully • Next participant, please`;
+            msg = isEng
+              ? `✓ Done! ${reg.studentName} • Next, please`
+              : `✓ เรียบร้อย • เชิญท่านต่อไป: ${reg.studentName}`;
           }
 
           if (isWrongGroup) {
-            msg += ` ⚠️ (สังเกต: นิสิตสังกัดกลุ่มที่ ${regGroup || '-'})`;
+            const wrongMsg = isEng
+              ? ` ⚠️ (Note: Student belongs to Group ${regGroup || '-'})`
+              : ` ⚠️ (สังเกต: นิสิตสังกัดกลุ่มที่ ${regGroup || '-'})`;
+            msg += wrongMsg;
           }
 
           setLastFeedback({
@@ -522,6 +587,11 @@ export function VipassanaLiveScannerModal({
             isOverDuplicateLimit,
             firstCheckInTime: data.firstCheckInTime,
             status: targetStatus,
+            badgeTitle,
+            badgeTitleEn,
+            subNote,
+            subNoteEn,
+            isEnglish: isEng,
           });
 
           // Add to recent scans list
@@ -557,9 +627,18 @@ export function VipassanaLiveScannerModal({
         } else {
           if (soundEnabled) playBeep('ERROR');
           triggerHaptic('ERROR');
+          const notFoundTitle = '❌ ไม่พบรหัสนิสิต • ติดต่อเจ้าหน้าที่';
+          const notFoundTitleEn = '❌ Not Found • Contact Staff';
+          const notFoundSub = `รหัส ${cleanCode} ไม่มีในทะเบียนโครงการ • ติดต่อโต๊ะลงทะเบียน`;
+          const notFoundSubEn = `Code ${cleanCode} not registered • Please contact staff desk`;
+
           setLastFeedback({
             type: 'ERROR',
-            message: data.error || `ไม่พบข้อมูลนิสิต (รหัส: ${cleanCode}) ในโครงการนี้`,
+            message: `❌ ไม่พบรหัสนิสิต (${cleanCode}) • กรุณาติดต่อเจ้าหน้าที่`,
+            badgeTitle: notFoundTitle,
+            badgeTitleEn: notFoundTitleEn,
+            subNote: notFoundSub,
+            subNoteEn: notFoundSubEn,
             scannedCode: cleanCode,
           });
 
@@ -581,6 +660,7 @@ export function VipassanaLiveScannerModal({
         );
 
         if (localReg) {
+          const isEng = isEnglishPractitioner(localReg);
           const offlineItem = {
             studentCodeOrId: cleanCode,
             dayKey,
@@ -602,10 +682,17 @@ export function VipassanaLiveScannerModal({
 
           setLastFeedback({
             type: targetStatus === 'LATE' ? 'WARN' : 'SUCCESS',
-            message: `✓ บันทึกเรียบร้อยแล้ว (📦 ออฟไลน์): ${localReg.studentName} (${checkInTime} น. • รอซิงค์เมื่อต่อเน็ต)`,
+            message: isEng
+              ? `✓ Done (Offline Saved): ${localReg.studentName} • Next, please`
+              : `✓ บันทึกเรียบร้อย (โหมดออฟไลน์): ${localReg.studentName} • เชิญท่านต่อไป`,
             student: localReg,
             time: checkInTime,
             status: targetStatus,
+            badgeTitle: '✓ บันทึกเรียบร้อย (ออฟไลน์) • เชิญท่านต่อไป',
+            badgeTitleEn: '✓ Done (Offline) • Next, please',
+            subNote: 'บันทึกในเครื่องแล้ว รอเชื่อมต่อเน็ต • เชิญท่านต่อไป',
+            subNoteEn: 'Saved locally, pending sync • Next, please',
+            isEnglish: isEng,
           });
 
           setRecentScans((prev) => [
@@ -633,10 +720,18 @@ export function VipassanaLiveScannerModal({
         } else {
           if (soundEnabled) playBeep('ERROR');
           triggerHaptic('ERROR');
-          const errText = err instanceof Error ? err.message : String(err);
+          const notFoundTitle = '⚠️ กรุณาสแกนใหม่ หรือ ติดต่อเจ้าหน้าที่';
+          const notFoundTitleEn = '⚠️ Please scan again or contact staff';
+          const notFoundSub = `อ่าน QR Code ไม่สำเร็จ หรือ ไม่พบรหัส (${cleanCode}) • กรุณาถือใกล้/นิ่งขึ้น หรือติดต่อเจ้าหน้าที่`;
+          const notFoundSubEn = `QR unreadable or code (${cleanCode}) not found • Hold closer or contact staff`;
+
           setLastFeedback({
             type: 'ERROR',
-            message: `ไม่พบข้อมูลนิสิต (รหัส: ${cleanCode}) - ${errText}`,
+            message: `⚠️ กรุณาสแกนใหม่ (ถือใกล้/นิ่งขึ้น) หรือ ติดต่อเจ้าหน้าที่`,
+            badgeTitle: notFoundTitle,
+            badgeTitleEn: notFoundTitleEn,
+            subNote: notFoundSub,
+            subNoteEn: notFoundSubEn,
             scannedCode: cleanCode,
           });
 
@@ -1343,19 +1438,18 @@ export function VipassanaLiveScannerModal({
                               : 'bg-rose-900/60 text-rose-100'
                           }`}
                         >
-                          {lastFeedback.isOverDuplicateLimit
-                            ? `⚠️ บันทึกว่าสแกนซ้ำ (ครั้งที่ ${lastFeedback.scanCount})`
-                            : lastFeedback.type === 'SUCCESS'
-                            ? '✓ บันทึกเรียบร้อยแล้ว'
-                            : lastFeedback.type === 'WARN'
-                            ? lastFeedback.isDuplicate
-                              ? `ℹ️ เช็คชื่อแล้ว (ครั้งที่ ${lastFeedback.scanCount || 2})`
-                              : '⚠️ บันทึกเรียบร้อยแล้ว (สาย)'
-                            : '✗ ไม่พบข้อมูล (NOT FOUND)'}
+                          {lastFeedback.isEnglish
+                            ? (lastFeedback.badgeTitleEn || lastFeedback.badgeTitle)
+                            : lastFeedback.badgeTitle}
                         </span>
+                        {lastFeedback.isEnglish && (
+                          <span className="bg-indigo-900/60 text-indigo-100 text-[10px] font-black px-1.5 py-0.2 rounded">
+                            INTER / EN
+                          </span>
+                        )}
                         {lastFeedback.time && (
                           <span className="font-mono text-[10.5px] text-white/90">
-                            {lastFeedback.time} น.
+                            {lastFeedback.time} {lastFeedback.isEnglish ? '' : 'น.'}
                           </span>
                         )}
                       </div>
@@ -1426,7 +1520,7 @@ export function VipassanaLiveScannerModal({
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                         </span>
-                        <span>🟢 พร้อมสแกนคนต่อไป • นำบัตรมาแสดงที่กล้อง</span>
+                        <span>🟢 พร้อมสแกนคนต่อไป • Next, please</span>
                       </div>
                     )}
                   </>
@@ -1458,8 +1552,8 @@ export function VipassanaLiveScannerModal({
                   <RefreshCw className="w-5 h-5 animate-spin" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold text-blue-700">กำลังประมวลผล</div>
-                  <div className="text-sm sm:text-base font-black text-blue-950">⏳ กำลังบันทึกข้อมูล... กรุณารอสักครู่</div>
+                  <div className="text-xs font-bold text-blue-700">กำลังประมวลผล • Processing</div>
+                  <div className="text-sm sm:text-base font-black text-blue-950">⏳ กำลังบันทึกข้อมูล... • Saving...</div>
                 </div>
               </div>
             ) : kioskState === 'SUCCESS_COOLDOWN' && lastFeedback ? (
@@ -1477,30 +1571,41 @@ export function VipassanaLiveScannerModal({
                     {lastFeedback.isOverDuplicateLimit ? '⚠️' : '✓'}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[11px] sm:text-xs font-black tracking-wide uppercase opacity-95">
-                      {lastFeedback.isOverDuplicateLimit
-                        ? `⚠️ บันทึกว่าสแกนซ้ำ (สแกนเกิน 2 ครั้ง • ครั้งที่ ${lastFeedback.scanCount})`
-                        : lastFeedback.isDuplicate
-                        ? `ℹ️ เช็คชื่อแล้ว (ครั้งที่ ${lastFeedback.scanCount || 2})`
-                        : '✓ บันทึกเรียบร้อยแล้ว'}
+                    <div className="text-[11px] sm:text-xs font-black tracking-wide uppercase opacity-95 flex items-center gap-1.5 flex-wrap">
+                      <span>
+                        {lastFeedback.isEnglish
+                          ? (lastFeedback.badgeTitleEn || lastFeedback.badgeTitle)
+                          : lastFeedback.badgeTitle}
+                      </span>
+                      {lastFeedback.isEnglish && (
+                        <span className="bg-white/25 text-white text-[10px] font-black px-1.5 py-0.2 rounded">
+                          INTER / EN
+                        </span>
+                      )}
                     </div>
                     <div className="text-base sm:text-lg font-black truncate">
                       {lastFeedback.student?.studentName || lastFeedback.message}
                     </div>
                     <div className="text-xs opacity-90 font-mono flex items-center gap-2 flex-wrap">
                       <span>{lastFeedback.student?.studentCode}</span>
-                      {lastFeedback.student?.groupNumber && <span>• กลุ่ม {lastFeedback.student.groupNumber}</span>}
-                      {lastFeedback.student?.seatNumber && <span>• ที่นั่ง {lastFeedback.student.seatNumber}</span>}
-                      {lastFeedback.time && <span>• เวลา {lastFeedback.time} น.</span>}
+                      {lastFeedback.student?.groupNumber && (
+                        <span>• {lastFeedback.isEnglish ? `Group ${lastFeedback.student.groupNumber}` : `กลุ่ม ${lastFeedback.student.groupNumber}`}</span>
+                      )}
+                      {lastFeedback.student?.seatNumber && (
+                        <span>• {lastFeedback.isEnglish ? `Seat ${lastFeedback.student.seatNumber}` : `ที่นั่ง ${lastFeedback.student.seatNumber}`}</span>
+                      )}
+                      {lastFeedback.time && (
+                        <span>• {lastFeedback.isEnglish ? `Time ${lastFeedback.time}` : `เวลา ${lastFeedback.time} น.`}</span>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="text-right shrink-0 pl-2">
                   <span className="text-[11px] font-mono font-extrabold bg-black/25 px-2.5 py-1 rounded-lg inline-block">
-                    {lastFeedback.time} น.
+                    {lastFeedback.time} {lastFeedback.isEnglish ? '' : 'น.'}
                   </span>
-                  <div className="text-[10px] opacity-85 mt-1 animate-pulse">
-                    กำลังพร้อมสแกนคนต่อไป...
+                  <div className="text-[10px] font-black mt-1 text-emerald-100 flex items-center justify-end gap-1">
+                    <span>{lastFeedback.isEnglish ? '👉 Next, please' : '👉 เชิญท่านต่อไป'}</span>
                   </div>
                 </div>
               </div>
@@ -1510,10 +1615,19 @@ export function VipassanaLiveScannerModal({
                   <X className="w-5 h-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold text-rose-700">แจ้งเตือน</div>
-                  <div className="text-sm sm:text-base font-black text-rose-950">
-                    {lastFeedback?.message || '✗ ไม่พบข้อมูลนิสิต'}
+                  <div className="text-xs font-bold text-rose-700">
+                    {lastFeedback?.isEnglish ? 'Alert / Notification' : 'แจ้งเตือน'}
                   </div>
+                  <div className="text-sm sm:text-base font-black text-rose-950">
+                    {lastFeedback?.isEnglish
+                      ? (lastFeedback.badgeTitleEn || lastFeedback.message)
+                      : (lastFeedback?.badgeTitle || lastFeedback?.message || '✗ ไม่พบข้อมูลนิสิต')}
+                  </div>
+                  {lastFeedback?.subNote && (
+                    <div className="text-xs text-rose-700 font-semibold mt-0.5">
+                      {lastFeedback.isEnglish ? (lastFeedback.subNoteEn || lastFeedback.subNote) : lastFeedback.subNote}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1527,12 +1641,15 @@ export function VipassanaLiveScannerModal({
                   <div>
                     <div className="text-emerald-950 font-black text-sm sm:text-base flex items-center gap-2">
                       <span>🟢 พร้อมสแกนคนต่อไป</span>
+                      <span className="text-emerald-700 font-bold text-xs sm:text-sm">
+                        • Ready for next
+                      </span>
                       <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-200 text-emerald-900">
-                        อัตโนมัติ
+                        AUTO
                       </span>
                     </div>
                     <p className="text-[11.5px] text-emerald-700 font-medium">
-                      นำ QR Code บนป้ายคล้องคอของนิสิตมาแสดงที่กล้องได้ทันที
+                      นำ QR Code บนป้ายคล้องคอมาแสดงที่กล้อง (ระยะ 15-20 ซม.) • Hold badge to camera
                     </p>
                   </div>
                 </div>
@@ -1618,20 +1735,19 @@ export function VipassanaLiveScannerModal({
                             : 'bg-rose-700 text-white'
                         }`}
                       >
-                        {lastFeedback.isOverDuplicateLimit
-                          ? `⚠️ บันทึกว่าสแกนซ้ำ (สแกนเกิน 2 ครั้ง • ครั้งที่ ${lastFeedback.scanCount})`
-                          : lastFeedback.type === 'SUCCESS'
-                          ? '✓ บันทึกเรียบร้อยแล้ว (CHECK-IN RECORDED)'
-                          : lastFeedback.type === 'WARN'
-                          ? lastFeedback.isDuplicate
-                            ? `ℹ️ เช็คชื่อแล้ว (ครั้งที่ ${lastFeedback.scanCount || 2})`
-                            : '⚠️ บันทึกเรียบร้อยแล้วแต่สาย (LATE)'
-                          : '✗ ไม่พบข้อมูลนิสิต (NOT FOUND)'}
+                        {lastFeedback.isEnglish
+                          ? (lastFeedback.badgeTitleEn || lastFeedback.badgeTitle)
+                          : lastFeedback.badgeTitle}
                       </span>
+                      {lastFeedback.isEnglish && (
+                        <span className="bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">
+                          ENGLISH PROGRAM / INTER
+                        </span>
+                      )}
                       {lastFeedback.time && (
                         <span className="font-mono font-bold text-xs text-slate-500 flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{lastFeedback.time} น.</span>
+                          <span>{lastFeedback.time} {lastFeedback.isEnglish ? '' : 'น.'}</span>
                         </span>
                       )}
                     </div>
