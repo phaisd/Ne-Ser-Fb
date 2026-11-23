@@ -15,6 +15,9 @@ import {
   ShieldAlert,
   ChevronRight,
   BookOpen,
+  Search,
+  Copy,
+  Check,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, MeditationGroupAssignment, MeditationConfig } from '@/types/event';
 import type { UserAccount } from '@/types/instructor';
@@ -74,6 +77,79 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
   const regularStaffUsers = useMemo(() => {
     return systemUsers.filter((u) => u.role !== 'VIPASSANA_MASTER' && !(u.instructorType || '').includes('วิปัสสนา'));
   }, [systemUsers]);
+
+  // Search keyword states for instant filtering
+  const [advisorSearch, setAdvisorSearch] = useState<string>('');
+  const [masterSearch, setMasterSearch] = useState<string>('');
+
+  // Map of which groups each teacher/master is already assigned to
+  const userAssignedGroupsMap = useMemo(() => {
+    const map: Record<string, number[]> = {};
+    Object.entries(assignments).forEach(([gKey, gData]) => {
+      const gNum = parseInt(gKey, 10);
+      (gData.advisors || []).forEach((name) => {
+        if (!map[name]) map[name] = [];
+        if (!map[name].includes(gNum)) map[name].push(gNum);
+      });
+      (gData.vipassanaMasters || []).forEach((name) => {
+        if (!map[name]) map[name] = [];
+        if (!map[name].includes(gNum)) map[name].push(gNum);
+      });
+    });
+    return map;
+  }, [assignments]);
+
+  // Search filter for advisors
+  const filteredAdvisors = useMemo(() => {
+    const q = advisorSearch.trim().toLowerCase();
+    if (!q) return systemUsers;
+    return systemUsers.filter((u) => {
+      return (
+        (u.name || '').toLowerCase().includes(q) ||
+        (u.nameEn || '').toLowerCase().includes(q) ||
+        (u.department || '').toLowerCase().includes(q) ||
+        (u.instructorType || '').toLowerCase().includes(q) ||
+        (u.ecclesiasticalTitle || '').toLowerCase().includes(q) ||
+        (u.role || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        u.aliases?.some((al) => al.toLowerCase().includes(q))
+      );
+    });
+  }, [systemUsers, advisorSearch]);
+
+  const filteredRegularAdvisors = useMemo(() => {
+    return filteredAdvisors.filter((u) => u.role !== 'VIPASSANA_MASTER' && !(u.instructorType || '').includes('วิปัสสนา'));
+  }, [filteredAdvisors]);
+
+  const filteredVipassanaAdvisors = useMemo(() => {
+    return filteredAdvisors.filter((u) => u.role === 'VIPASSANA_MASTER' || (u.instructorType || '').includes('วิปัสสนา'));
+  }, [filteredAdvisors]);
+
+  // Search filter for masters
+  const filteredMasters = useMemo(() => {
+    const q = masterSearch.trim().toLowerCase();
+    if (!q) return systemUsers;
+    return systemUsers.filter((u) => {
+      return (
+        (u.name || '').toLowerCase().includes(q) ||
+        (u.nameEn || '').toLowerCase().includes(q) ||
+        (u.department || '').toLowerCase().includes(q) ||
+        (u.instructorType || '').toLowerCase().includes(q) ||
+        (u.ecclesiasticalTitle || '').toLowerCase().includes(q) ||
+        (u.role || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        u.aliases?.some((al) => al.toLowerCase().includes(q))
+      );
+    });
+  }, [systemUsers, masterSearch]);
+
+  const filteredMasterVipassana = useMemo(() => {
+    return filteredMasters.filter((u) => u.role === 'VIPASSANA_MASTER' || (u.instructorType || '').includes('วิปัสสนา'));
+  }, [filteredMasters]);
+
+  const filteredMasterOthers = useMemo(() => {
+    return filteredMasters.filter((u) => u.role !== 'VIPASSANA_MASTER' && !(u.instructorType || '').includes('วิปัสสนา'));
+  }, [filteredMasters]);
 
   // Input states for adding new advisor/master
   const [selectedUserAdvisorId, setSelectedUserAdvisorId] = useState<string>('');
@@ -304,6 +380,36 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
     }
   };
 
+  // Copy assignments from another group
+  const handleCopyFromGroup = (sourceGroup: number) => {
+    const src = assignments[String(sourceGroup)];
+    if (!src) return;
+    const srcAdvisors = src.advisors || [];
+    const srcMasters = src.vipassanaMasters || [];
+    if (srcAdvisors.length === 0 && srcMasters.length === 0) {
+      alert(`กลุ่ม ${sourceGroup} ยังไม่มีการระบุรายชื่อผู้ดูแล`);
+      return;
+    }
+    setAssignments((prev) => {
+      const cur = prev[currentGroupKey] || {
+        groupNumber: activeGroup,
+        groupName: `กลุ่ม ${activeGroup}`,
+        advisors: [],
+        vipassanaMasters: [],
+      };
+      const mergedAdvisors = Array.from(new Set([...(cur.advisors || []), ...srcAdvisors]));
+      const mergedMasters = Array.from(new Set([...(cur.vipassanaMasters || []), ...srcMasters]));
+      return {
+        ...prev,
+        [currentGroupKey]: {
+          ...cur,
+          advisors: mergedAdvisors,
+          vipassanaMasters: mergedMasters,
+        },
+      };
+    });
+  };
+
   // Group stats count
   const practitionerCountForGroup = (gNum: number) => {
     return registrations.filter((r) => {
@@ -409,13 +515,34 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                 </p>
               </div>
 
-              {/* Quick jump next group */}
-              <div className="flex items-center gap-1 text-xs">
+              {/* Quick jump next group + Copy from other group tool */}
+              <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                {availableGroups.length > 1 && (
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
+                      const fromG = e.target.value;
+                      if (fromG) {
+                        handleCopyFromGroup(parseInt(fromG, 10));
+                        e.target.value = '';
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50/70 hover:bg-purple-100 text-[11px] font-bold text-purple-900 cursor-pointer transition outline-none shadow-2xs"
+                    title="คัดลอกรายชื่ออาจารย์และพระวิปัสสนาจารย์จากกลุ่มอื่นมาใส่ในกลุ่มนี้"
+                  >
+                    <option value="" disabled>📋 คัดลอกผู้ดูแลจากกลุ่ม...</option>
+                    {availableGroups.filter((g) => g !== activeGroup).map((g) => (
+                      <option key={g} value={g}>
+                        กลุ่ม {g} (อ.{assignments[String(g)]?.advisors?.length || 0} | พระ {assignments[String(g)]?.vipassanaMasters?.length || 0})
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <button
                   type="button"
                   onClick={() => setActiveGroup((prev) => Math.max(1, prev - 1))}
                   disabled={activeGroup <= 1}
-                  className="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-30 cursor-pointer font-bold text-xs"
                 >
                   ◀ ก่อนหน้า
                 </button>
@@ -423,7 +550,7 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                   type="button"
                   onClick={() => setActiveGroup((prev) => Math.min(availableGroups[availableGroups.length - 1], prev + 1))}
                   disabled={activeGroup >= availableGroups[availableGroups.length - 1]}
-                  className="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-30 cursor-pointer font-bold text-xs"
                 >
                   ถัดไป ▶
                 </button>
@@ -479,53 +606,148 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                 )}
               </div>
 
-              {/* Add Advisor Inputs: Dropdown + Custom Text */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {/* Select from system accounts */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-600">
-                    เลือกจากบัญชีอาจารย์/เจ้าหน้าที่ในระบบ:
-                  </label>
-                  <div className="flex gap-1.5">
-                    <select
-                      value={selectedUserAdvisorId}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) {
-                          const found = systemUsers.find((u) => u.id === val);
-                          if (found) handleAddAdvisor(found.name);
-                        }
-                        setSelectedUserAdvisorId('');
-                      }}
-                      className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                    >
-                      <option value="">
-                        {isLoadingUsers ? 'กำลังโหลดรายชื่อ...' : `-- เลือกจากรายชื่อระบบ (${systemUsers.length}) --`}
-                      </option>
-                      <optgroup label={`อาจารย์และเจ้าหน้าที่ประจำ (${regularStaffUsers.length})`}>
-                        {regularStaffUsers.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.name} [{u.role || 'อาจารย์'}]{u.department ? ` - ${u.department}` : ''}
-                          </option>
-                        ))}
-                      </optgroup>
-                      {vipassanaMasterUsers.length > 0 && (
-                        <optgroup label={`พระวิปัสสนาจารย์ (${vipassanaMasterUsers.length})`}>
-                          {vipassanaMasterUsers.map((u) => (
-                            <option key={u.id} value={u.id}>
-                              {u.name} {u.instructorType ? `(${u.instructorType})` : ''}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </select>
+              {/* Add Advisor Inputs: Search Box + Dropdown + Custom Text */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                {/* Search & Select from system accounts */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                      <Search className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>ค้นหาและเลือกจากบัญชีในระบบ:</span>
+                    </label>
+                    {advisorSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setAdvisorSearch('')}
+                        className="text-[10px] text-indigo-600 hover:underline cursor-pointer"
+                      >
+                        ล้างคำค้น ({filteredAdvisors.length} ท่าน)
+                      </button>
+                    )}
                   </div>
+
+                  {/* Search input with icon */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="พิมพ์ค้นหาชื่ออาจารย์/เจ้าหน้าที่ เช่น ขันทอง, สมชาย..."
+                      value={advisorSearch}
+                      onChange={(e) => setAdvisorSearch(e.target.value)}
+                      className="w-full pl-8 pr-7 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/20 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                    />
+                    {advisorSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setAdvisorSearch('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        title="ล้างคำค้นหา"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick click matching badges when searching */}
+                  {advisorSearch.trim() && (
+                    <div className="p-2 bg-indigo-50/70 rounded-xl border border-indigo-100 space-y-1.5 animate-in fade-in">
+                      <div className="text-[10.5px] font-bold text-indigo-900 flex items-center justify-between">
+                        <span>ผลการค้นหา (พบ {filteredAdvisors.length} ท่าน):</span>
+                        <span className="text-[10px] font-normal text-indigo-700">แตะเพื่อเพิ่มทันที</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                        {filteredAdvisors.length === 0 ? (
+                          <span className="text-[11px] text-slate-400 italic">
+                            ไม่พบชื่อนี้ในระบบ (สามารถพิมพ์เพิ่มเองที่ช่องขวา)
+                          </span>
+                        ) : (
+                          filteredAdvisors.slice(0, 10).map((u) => {
+                            const isAdded = currentAssignment.advisors?.includes(u.name);
+                            const otherGroups = (userAssignedGroupsMap[u.name] || []).filter((g) => g !== activeGroup);
+                            return (
+                              <button
+                                key={u.id}
+                                type="button"
+                                onClick={() => {
+                                  if (!isAdded) handleAddAdvisor(u.name);
+                                }}
+                                disabled={isAdded}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer flex items-center gap-1.5 text-left ${
+                                  isAdded
+                                    ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
+                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-700 shadow-2xs active:scale-95'
+                                }`}
+                              >
+                                <Plus className="w-3 h-3 shrink-0" />
+                                <span className="truncate max-w-[180px]">{u.name}</span>
+                                {isAdded ? (
+                                  <span className="text-[10px] font-normal opacity-75">(เพิ่มแล้ว)</span>
+                                ) : otherGroups.length > 0 ? (
+                                  <span className="text-[10px] font-normal bg-indigo-800/60 px-1 rounded text-indigo-100">
+                                    กลุ่ม {otherGroups.join(',')}
+                                  </span>
+                                ) : null}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Select dropdown filtered by search */}
+                  <select
+                    value={selectedUserAdvisorId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val) {
+                        const found = systemUsers.find((u) => u.id === val);
+                        if (found) handleAddAdvisor(found.name);
+                      }
+                      setSelectedUserAdvisorId('');
+                    }}
+                    className="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="">
+                      {isLoadingUsers
+                        ? 'กำลังโหลดรายชื่อ...'
+                        : advisorSearch.trim()
+                        ? `-- เลือกจากผลการค้นหา (${filteredAdvisors.length} ท่าน) --`
+                        : `-- หรือเลือกจากรายชื่อระบบ (${systemUsers.length}) --`}
+                    </option>
+                    {filteredRegularAdvisors.length > 0 && (
+                      <optgroup label={`อาจารย์และเจ้าหน้าที่ประจำ (${filteredRegularAdvisors.length})`}>
+                        {filteredRegularAdvisors.map((u) => {
+                          const otherGroups = (userAssignedGroupsMap[u.name] || []).filter((g) => g !== activeGroup);
+                          const grpHint = otherGroups.length > 0 ? ` [ดูแลกลุ่ม ${otherGroups.join(',')}]` : '';
+                          return (
+                            <option key={u.id} value={u.id}>
+                              {u.name} [{u.role || 'อาจารย์'}]{u.department ? ` - ${u.department}` : ''}{grpHint}
+                            </option>
+                          );
+                        })}
+                      </optgroup>
+                    )}
+                    {filteredVipassanaAdvisors.length > 0 && (
+                      <optgroup label={`พระวิปัสสนาจารย์ (${filteredVipassanaAdvisors.length})`}>
+                        {filteredVipassanaAdvisors.map((u) => {
+                          const otherGroups = (userAssignedGroupsMap[u.name] || []).filter((g) => g !== activeGroup);
+                          const grpHint = otherGroups.length > 0 ? ` [ดูแลกลุ่ม ${otherGroups.join(',')}]` : '';
+                          return (
+                            <option key={u.id} value={u.id}>
+                              {u.name} {u.instructorType ? `(${u.instructorType})` : ''}{grpHint}
+                            </option>
+                          );
+                        })}
+                      </optgroup>
+                    )}
+                  </select>
                 </div>
 
                 {/* Type custom name */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-600">
-                    หรือพิมพ์ชื่ออาจารย์ / เจ้าหน้าที่ผู้ช่วย:
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-700 block">
+                    หรือพิมพ์ชื่ออาจารย์ / เจ้าหน้าที่ผู้ช่วยเอง:
                   </label>
                   <div className="flex gap-1.5">
                     <input
@@ -545,12 +767,15 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                       type="button"
                       onClick={() => handleAddAdvisor()}
                       disabled={!customAdvisorName.trim()}
-                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>เพิ่ม</span>
                     </button>
                   </div>
+                  <span className="text-[10.5px] text-slate-400 block">
+                    * ใช้สำหรับอาจารย์พิเศษ, วิทยากรภายนอก หรือผู้ช่วยงานที่ยังไม่มีบัญชีในระบบ
+                  </span>
                 </div>
               </div>
             </div>
@@ -604,53 +829,148 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                 )}
               </div>
 
-              {/* Add Master Inputs: Dropdown + Custom Text */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {/* Select from system accounts */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-600">
-                    เลือกพระอาจารย์จากบัญชีในระบบ:
-                  </label>
-                  <div className="flex gap-1.5">
-                    <select
-                      value={selectedUserMasterId}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) {
-                          const found = systemUsers.find((u) => u.id === val);
-                          if (found) handleAddMaster(found.name);
-                        }
-                        setSelectedUserMasterId('');
-                      }}
-                      className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-amber-500 outline-none"
-                    >
-                      <option value="">
-                        {isLoadingUsers ? 'กำลังโหลดรายชื่อ...' : `-- เลือกจากรายชื่อระบบ (${systemUsers.length}) --`}
-                      </option>
-                      {vipassanaMasterUsers.length > 0 && (
-                        <optgroup label={`⭐ พระวิปัสสนาจารย์ (${vipassanaMasterUsers.length})`}>
-                          {vipassanaMasterUsers.map((u) => (
-                            <option key={u.id} value={u.id}>
-                              {u.name} {u.instructorType ? `[${u.instructorType}]` : ''} {u.ecclesiasticalTitle ? `(${u.ecclesiasticalTitle})` : ''}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <optgroup label={`อาจารย์และพระภิกษุรูปอื่นในระบบ (${regularStaffUsers.length})`}>
-                        {regularStaffUsers.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.name} [{u.role || 'อาจารย์'}]
-                          </option>
-                        ))}
-                      </optgroup>
-                    </select>
+              {/* Add Master Inputs: Search Box + Dropdown + Custom Text */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                {/* Search & Select from system accounts */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                      <Search className="w-3.5 h-3.5 text-amber-600" />
+                      <span>ค้นหาและเลือกพระอาจารย์จากในระบบ:</span>
+                    </label>
+                    {masterSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setMasterSearch('')}
+                        className="text-[10px] text-amber-700 hover:underline cursor-pointer"
+                      >
+                        ล้างคำค้น ({filteredMasters.length} รูป)
+                      </button>
+                    )}
                   </div>
+
+                  {/* Search input with icon */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="พิมพ์ค้นหาสมณศักดิ์, ฉายา, หรือชื่อพระอาจารย์..."
+                      value={masterSearch}
+                      onChange={(e) => setMasterSearch(e.target.value)}
+                      className="w-full pl-8 pr-7 py-1.5 rounded-xl border border-amber-300 bg-amber-50/25 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition"
+                    />
+                    {masterSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setMasterSearch('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        title="ล้างคำค้นหา"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick click matching badges when searching */}
+                  {masterSearch.trim() && (
+                    <div className="p-2 bg-amber-50/80 rounded-xl border border-amber-200 space-y-1.5 animate-in fade-in">
+                      <div className="text-[10.5px] font-bold text-amber-950 flex items-center justify-between">
+                        <span>ผลการค้นหา (พบ {filteredMasters.length} รูป/ท่าน):</span>
+                        <span className="text-[10px] font-normal text-amber-800">แตะเพื่อเพิ่มทันที</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                        {filteredMasters.length === 0 ? (
+                          <span className="text-[11px] text-slate-400 italic">
+                            ไม่พบชื่อพระอาจารย์ในระบบ (สามารถพิมพ์เพิ่มเองที่ช่องขวา)
+                          </span>
+                        ) : (
+                          filteredMasters.slice(0, 10).map((u) => {
+                            const isAdded = currentAssignment.vipassanaMasters?.includes(u.name);
+                            const otherGroups = (userAssignedGroupsMap[u.name] || []).filter((g) => g !== activeGroup);
+                            return (
+                              <button
+                                key={u.id}
+                                type="button"
+                                onClick={() => {
+                                  if (!isAdded) handleAddMaster(u.name);
+                                }}
+                                disabled={isAdded}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer flex items-center gap-1.5 text-left ${
+                                  isAdded
+                                    ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
+                                    : 'bg-amber-600 hover:bg-amber-700 text-white border-amber-700 shadow-2xs active:scale-95'
+                                }`}
+                              >
+                                <Plus className="w-3 h-3 shrink-0" />
+                                <span className="truncate max-w-[180px]">{u.name}</span>
+                                {isAdded ? (
+                                  <span className="text-[10px] font-normal opacity-75">(เพิ่มแล้ว)</span>
+                                ) : otherGroups.length > 0 ? (
+                                  <span className="text-[10px] font-normal bg-amber-800/60 px-1 rounded text-amber-100">
+                                    กลุ่ม {otherGroups.join(',')}
+                                  </span>
+                                ) : null}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Select dropdown filtered by search */}
+                  <select
+                    value={selectedUserMasterId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val) {
+                        const found = systemUsers.find((u) => u.id === val);
+                        if (found) handleAddMaster(found.name);
+                      }
+                      setSelectedUserMasterId('');
+                    }}
+                    className="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                  >
+                    <option value="">
+                      {isLoadingUsers
+                        ? 'กำลังโหลดรายชื่อ...'
+                        : masterSearch.trim()
+                        ? `-- เลือกจากผลการค้นหา (${filteredMasters.length} รูป/ท่าน) --`
+                        : `-- หรือเลือกจากรายชื่อระบบ (${systemUsers.length}) --`}
+                    </option>
+                    {filteredMasterVipassana.length > 0 && (
+                      <optgroup label={`⭐ พระวิปัสสนาจารย์ (${filteredMasterVipassana.length})`}>
+                        {filteredMasterVipassana.map((u) => {
+                          const otherGroups = (userAssignedGroupsMap[u.name] || []).filter((g) => g !== activeGroup);
+                          const grpHint = otherGroups.length > 0 ? ` [สอบอารมณ์กลุ่ม ${otherGroups.join(',')}]` : '';
+                          return (
+                            <option key={u.id} value={u.id}>
+                              {u.name} {u.instructorType ? `[${u.instructorType}]` : ''} {u.ecclesiasticalTitle ? `(${u.ecclesiasticalTitle})` : ''}{grpHint}
+                            </option>
+                          );
+                        })}
+                      </optgroup>
+                    )}
+                    {filteredMasterOthers.length > 0 && (
+                      <optgroup label={`อาจารย์และพระภิกษุรูปอื่นในระบบ (${filteredMasterOthers.length})`}>
+                        {filteredMasterOthers.map((u) => {
+                          const otherGroups = (userAssignedGroupsMap[u.name] || []).filter((g) => g !== activeGroup);
+                          const grpHint = otherGroups.length > 0 ? ` [ดูแลกลุ่ม ${otherGroups.join(',')}]` : '';
+                          return (
+                            <option key={u.id} value={u.id}>
+                              {u.name} [{u.role || 'อาจารย์'}]{grpHint}
+                            </option>
+                          );
+                        })}
+                      </optgroup>
+                    )}
+                  </select>
                 </div>
 
                 {/* Type custom monk name */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-600">
-                    หรือพิมพ์สมณศักดิ์ / ฉายา / ชื่อพระอาจารย์:
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-700 block">
+                    หรือพิมพ์สมณศักดิ์ / ฉายา / ชื่อพระอาจารย์เอง:
                   </label>
                   <div className="flex gap-1.5">
                     <input
@@ -670,12 +990,15 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                       type="button"
                       onClick={() => handleAddMaster()}
                       disabled={!customMasterName.trim()}
-                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>เพิ่ม</span>
                     </button>
                   </div>
+                  <span className="text-[10.5px] text-slate-400 block">
+                    * ระบุพระวิปัสสนาจารย์ที่ได้รับอาราธนามาจากภายนอก หรือพระมหาเถระผู้ทรงคุณวุฒิ
+                  </span>
                 </div>
               </div>
             </div>
