@@ -24,6 +24,17 @@ export async function getEvents(): Promise<StudentEvent[]> {
               // fallback to local
             }
           }
+          let seatingConfig = local.seatingConfig || (meditationConfig as any)?.seatingConfig;
+          if (r[16]) {
+            try {
+              const parsed = typeof r[16] === 'string' ? JSON.parse(r[16]) : r[16];
+              if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+                seatingConfig = parsed;
+              }
+            } catch {
+              // fallback
+            }
+          }
           return {
             ...local,
             id,
@@ -42,7 +53,7 @@ export async function getEvents(): Promise<StudentEvent[]> {
             coordinatorName: r[13] || local.coordinatorName || '',
             showCoordinator: r[14] !== undefined ? (r[14] === 'TRUE' || r[14] === true) : (local.showCoordinator !== false),
             meditationConfig,
-            seatingConfig: local.seatingConfig,
+            seatingConfig,
           };
         });
       }
@@ -123,7 +134,7 @@ export async function createEvent(data: Partial<StudentEvent>): Promise<StudentE
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      await gClient.appendValues('Events!A:P', [[
+      await gClient.appendValues('Events!A:Q', [[
         newEvent.id,
         newEvent.title,
         newEvent.eventType,
@@ -140,6 +151,7 @@ export async function createEvent(data: Partial<StudentEvent>): Promise<StudentE
         newEvent.coordinatorName,
         newEvent.showCoordinator ? 'TRUE' : 'FALSE',
         JSON.stringify(newEvent.meditationConfig || {}),
+        JSON.stringify(newEvent.seatingConfig || {}),
       ]]);
     } catch (err) {
       console.warn('Google Sheets append failed for Events:', err);
@@ -217,6 +229,12 @@ export async function updateEvent(id: string, updates: Partial<StudentEvent>): P
         sheetRowIndex = rows.findIndex((r) => String(r[0] || '').trim() === targetId);
       }
 
+      // Ensure seatingConfig is safely backed up inside meditationConfig as well
+      const meditationConfigWithSeating = {
+        ...(updated.meditationConfig || {}),
+        seatingConfig: updated.seatingConfig || (updated.meditationConfig as any)?.seatingConfig,
+      };
+
       const rowValues = [
         updated.id,
         updated.title,
@@ -233,14 +251,15 @@ export async function updateEvent(id: string, updates: Partial<StudentEvent>): P
         updated.targetProgram,
         updated.coordinatorName,
         updated.showCoordinator ? 'TRUE' : 'FALSE',
-        JSON.stringify(updated.meditationConfig || {}),
+        JSON.stringify(meditationConfigWithSeating),
+        JSON.stringify(updated.seatingConfig || {}),
       ];
 
       if (sheetRowIndex !== -1) {
         const rowNum = sheetRowIndex + 2;
-        await gClient.updateValues(`Events!A${rowNum}:P${rowNum}`, [rowValues]);
+        await gClient.updateValues(`Events!A${rowNum}:Q${rowNum}`, [rowValues]);
       } else {
-        await gClient.appendValues('Events!A:P', [rowValues]);
+        await gClient.appendValues('Events!A:Q', [rowValues]);
       }
     } catch (err) {
       console.warn('Google Sheets update failed for Events:', err);
