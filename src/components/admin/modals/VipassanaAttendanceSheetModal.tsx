@@ -28,6 +28,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { StudentEvent, EventRegistration } from '@/types';
+import { getAuthUser } from '@/lib/auth-client';
 import { exportMultiPagePdf } from '@/lib/utils/pdf-export';
 import { formatGroupDisplay } from '@/lib/events/groupImport';
 import { VipassanaBadgesModal } from './VipassanaBadgesModal';
@@ -487,7 +488,7 @@ export function VipassanaAttendanceSheetModal({
         remark: row.remark,
       }));
 
-      const res = await fetch('/api/events', {
+      let res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -497,6 +498,34 @@ export function VipassanaAttendanceSheetModal({
           records,
         }),
       });
+
+      // Auto-recover session on mobile if 401/403
+      if (res.status === 401 || res.status === 403) {
+        const localUser = getAuthUser();
+        if (localUser && (localUser.email || localUser.id)) {
+          await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sync-session',
+              email: localUser.email,
+              gmail: localUser.gmail,
+              id: localUser.id,
+              rememberMe: true,
+            }),
+          });
+          res = await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'save_vipassana_attendance',
+              eventId: event.id,
+              dayKey,
+              records,
+            }),
+          });
+        }
+      }
 
       const data = await res.json();
       if (data.success) {

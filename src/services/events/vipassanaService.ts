@@ -7,17 +7,16 @@ import { getEventRegistrations } from './eventRegistrationService';
 // ----------------- VIPASSANA ATTENDANCE & GRADING -----------------
 
 async function loadAndHydrateRegistrations(): Promise<EventRegistration[]> {
-  let local = readLocalJson<EventRegistration[]>('event_registrations.json', []);
-  if (local.length === 0) {
-    try {
-      const fromService = await getEventRegistrations();
-      if (fromService.length > 0) {
-        local = fromService;
-        writeLocalJson('event_registrations.json', local);
-      }
-    } catch {}
+  try {
+    const fromService = await getEventRegistrations();
+    if (fromService && fromService.length > 0) {
+      writeLocalJson('event_registrations.json', fromService);
+      return fromService;
+    }
+  } catch (err) {
+    console.warn('loadAndHydrateRegistrations sheets fetch error:', err);
   }
-  return local;
+  return readLocalJson<EventRegistration[]>('event_registrations.json', []);
 }
 
 export async function syncUpdatedRegistrationsToSheets(updatedRegs: EventRegistration[]): Promise<void> {
@@ -26,19 +25,23 @@ export async function syncUpdatedRegistrationsToSheets(updatedRegs: EventRegistr
   if (!gClient) return;
 
   try {
-    const rows = await gClient.getValues('EventRegistrations!A2:A');
+    const rows = await gClient.getValues('EventRegistrations!A2:C');
     if (!rows || rows.length === 0) return;
 
     const idToRowIndex = new Map<string, number>();
+    const codeToRowIndex = new Map<string, number>();
     rows.forEach((r, idx) => {
+      const rowNum = idx + 2;
       const id = String(r[0] || '').trim();
-      if (id) {
-        idToRowIndex.set(id, idx + 2); // 1-based row number in Sheet (starts at A2)
-      }
+      const code = String(r[2] || '').trim().toLowerCase();
+      if (id) idToRowIndex.set(id, rowNum);
+      if (code) codeToRowIndex.set(code, rowNum);
     });
 
     for (const reg of updatedRegs) {
-      const rowNum = idToRowIndex.get(reg.id);
+      const rowNum =
+        idToRowIndex.get(reg.id) ||
+        (reg.studentCode ? codeToRowIndex.get(reg.studentCode.trim().toLowerCase()) : undefined);
       if (!rowNum) continue;
 
       const extraMeta = {
@@ -99,10 +102,10 @@ export async function saveVipassanaAttendance(
       if (!reg.dailyAttendance) reg.dailyAttendance = {};
       const existingDay = reg.dailyAttendance[dayKey] || {};
       reg.dailyAttendance[dayKey] = {
-        p1: rec.p1 ? { ...existingDay.p1, ...rec.p1 } : (existingDay.p1 || { status: 'PRESENT' }),
-        p2: rec.p2 ? { ...existingDay.p2, ...rec.p2 } : (existingDay.p2 || { status: 'PRESENT' }),
-        p3: rec.p3 ? { ...existingDay.p3, ...rec.p3 } : (existingDay.p3 || { status: 'PRESENT' }),
-        p4: rec.p4 ? { ...existingDay.p4, ...rec.p4 } : (existingDay.p4 || { status: 'PRESENT' }),
+        p1: rec.p1 ? { ...existingDay.p1, ...rec.p1 } : (existingDay.p1 || { status: 'UNCHECKED' }),
+        p2: rec.p2 ? { ...existingDay.p2, ...rec.p2 } : (existingDay.p2 || { status: 'UNCHECKED' }),
+        p3: rec.p3 ? { ...existingDay.p3, ...rec.p3 } : (existingDay.p3 || { status: 'UNCHECKED' }),
+        p4: rec.p4 ? { ...existingDay.p4, ...rec.p4 } : (existingDay.p4 || { status: 'UNCHECKED' }),
       };
       if (rec.remark !== undefined) reg.remarks = rec.remark;
       reg.updatedAt = new Date().toISOString();

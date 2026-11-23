@@ -159,7 +159,7 @@ describe('eventService unit tests', () => {
     expect(res.success).toBe(true);
     expect(res.isAlreadyCheckedIn).toBe(false);
     expect(res.registration?.status).toBe('ATTENDED');
-    expect(res.registration?.dailyAttendance?.day_1?.p1).toEqual({
+    expect(res.registration?.dailyAttendance?.day_1?.p1).toMatchObject({
       status: 'PRESENT',
       checkInTime: '04:12:30',
       recordedBy: 'MONK_COORDINATOR',

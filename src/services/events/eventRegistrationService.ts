@@ -57,20 +57,29 @@ export async function getEventRegistrations(
           seenInSheets.add(cleanKey);
 
           const local = localMap.get(id) || {};
-          let dailyAttendance = local.dailyAttendance || {};
+          let dailyAttendance: Record<string, any> = { ...(local.dailyAttendance || {}) };
           if (r[17]) {
             try {
               const parsed = typeof r[17] === 'string' ? JSON.parse(r[17]) : r[17];
-              dailyAttendance = { ...parsed, ...(local.dailyAttendance || {}) };
+              if (parsed && typeof parsed === 'object') {
+                Object.keys(parsed).forEach((dayK) => {
+                  dailyAttendance[dayK] = {
+                    ...(dailyAttendance[dayK] || {}),
+                    ...(parsed[dayK] || {}),
+                  };
+                });
+              }
             } catch {
               // fallback to local
             }
           }
-          let vipassanaInterviews = local.vipassanaInterviews || {};
+          let vipassanaInterviews: Record<string, any> = { ...(local.vipassanaInterviews || {}) };
           if (r[18]) {
             try {
               const parsed = typeof r[18] === 'string' ? JSON.parse(r[18]) : r[18];
-              vipassanaInterviews = { ...parsed, ...(local.vipassanaInterviews || {}) };
+              if (parsed && typeof parsed === 'object') {
+                vipassanaInterviews = { ...vipassanaInterviews, ...parsed };
+              }
             } catch {
               // fallback to local
             }

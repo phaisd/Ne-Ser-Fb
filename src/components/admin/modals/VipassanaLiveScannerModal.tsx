@@ -306,15 +306,43 @@ export function VipassanaLiveScannerModal({
       if (!Array.isArray(itemsToSync) || itemsToSync.length === 0 || isSyncingOffline) return;
 
       setIsSyncingOffline(true);
-      const res = await fetch('/api/events', {
+      let res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'vipassana_batch_offline_sync',
           eventId: event.id,
           items: itemsToSync,
+          recordedBy: scannerOfficerName.trim() || undefined,
         }),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        const localUser = getAuthUser();
+        if (localUser && (localUser.email || localUser.id)) {
+          await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sync-session',
+              email: localUser.email,
+              gmail: localUser.gmail,
+              id: localUser.id,
+              rememberMe: true,
+            }),
+          });
+          res = await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'vipassana_batch_offline_sync',
+              eventId: event.id,
+              items: itemsToSync,
+              recordedBy: scannerOfficerName.trim() || undefined,
+            }),
+          });
+        }
+      }
 
       const data = await res.json();
       if (data.success) {
@@ -406,7 +434,7 @@ export function VipassanaLiveScannerModal({
           targetStatus = statusMode;
         }
 
-        const res = await fetch('/api/events', {
+        let res = await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -420,6 +448,38 @@ export function VipassanaLiveScannerModal({
             recordedBy: scannerOfficerName.trim() || undefined,
           }),
         });
+
+        // Auto-recover session on mobile if 401/403
+        if (res.status === 401 || res.status === 403) {
+          const localUser = getAuthUser();
+          if (localUser && (localUser.email || localUser.id)) {
+            await fetch('/api/auth', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'sync-session',
+                email: localUser.email,
+                gmail: localUser.gmail,
+                id: localUser.id,
+                rememberMe: true,
+              }),
+            });
+            res = await fetch('/api/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'vipassana_scan_checkin',
+                eventId: event.id,
+                studentCodeOrId: cleanCode,
+                dayKey,
+                periodKey: selectedPeriod,
+                status: targetStatus,
+                checkInTime,
+                recordedBy: scannerOfficerName.trim() || undefined,
+              }),
+            });
+          }
+        }
 
         const data = await res.json();
 
