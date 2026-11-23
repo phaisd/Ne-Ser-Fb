@@ -39,11 +39,23 @@ interface UseAdminEventsParams {
 
 export function useAdminEvents({
   eventsList,
-  registrationsList,
+  registrationsList: rawRegistrationsList,
   onToggleStatus,
   onRefresh,
   settings,
 }: UseAdminEventsParams) {
+  // Strictly deduplicate registrationsList by eventId + studentCode
+  const registrationsList = useMemo(() => {
+    const seen = new Set<string>();
+    return (rawRegistrationsList || []).filter((r) => {
+      const sCode = (r.studentCode || r.id || '').trim().toLowerCase();
+      const key = `${r.eventId || ''}_${sCode}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [rawRegistrationsList]);
+
   // Filter States
   const [selectedEventId, setSelectedEventId] = useState<string>('ALL');
   const [search, setSearch] = useState<string>('');

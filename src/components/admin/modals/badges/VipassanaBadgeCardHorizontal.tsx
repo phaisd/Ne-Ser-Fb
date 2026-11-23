@@ -44,6 +44,13 @@ export const VipassanaBadgeCardHorizontal: React.FC<VipassanaBadgeCardHorizontal
   const gNum = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
   const cardFontClass = isEnglish ? 'badge-font-en' : 'badge-font-th';
 
+  // Strip prefix "สาขาวิชา" or "สาขา" so only the major name is shown
+  const cleanedMajor = React.useMemo(() => {
+    if (!reg.major) return isEnglish ? 'Buddhist Studies' : 'พระพุทธศาสนา';
+    const stripped = reg.major.replace(/^(?:สาขาวิชา|สาขา)\s*:?\s*/gi, '').trim();
+    return stripped || (isEnglish ? 'Buddhist Studies' : 'พระพุทธศาสนา');
+  }, [reg.major, isEnglish]);
+
   return (
     <div
       className={`${cardFontClass} border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-1.5 print:border-slate-400 print:rounded-none flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
@@ -107,10 +114,16 @@ export const VipassanaBadgeCardHorizontal: React.FC<VipassanaBadgeCardHorizontal
             {reg.studentCode}
           </div>
 
-          <div className="text-[8.5px] text-slate-500 flex flex-wrap gap-x-1.5 leading-tight">
-            <span>{reg.degreeLevel || (isEnglish ? "Bachelor's Degree" : 'ปริญญาตรี')}</span>
-            {reg.vasa && <span>({reg.vasa} พรรษา)</span>}
-            {reg.major && <span className="truncate max-w-[110px]">{reg.major}</span>}
+          <div className="flex flex-wrap items-baseline gap-x-1.5 leading-tight pt-0.5">
+            <span className={`${fontScale.degree} font-extrabold ${themeConfig.degreeText}`}>
+              {reg.degreeLevel || (isEnglish ? "Bachelor's Degree" : 'ปริญญาตรี')}
+            </span>
+            {reg.vasa && <span className="text-[8.5px] text-slate-500">({reg.vasa} พรรษา)</span>}
+            {cleanedMajor && (
+              <span className={`${fontScale.major} font-semibold ${themeConfig.majorText} truncate max-w-[130px]`} title={cleanedMajor}>
+                {cleanedMajor}
+              </span>
+            )}
           </div>
         </div>
 

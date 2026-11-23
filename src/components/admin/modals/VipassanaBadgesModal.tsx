@@ -64,8 +64,21 @@ export function VipassanaBadgesModal({
   const [qrScale, setQrScale] = useState<QrScaleMode>('2X');
   const [showScanPass, setShowScanPass] = useState(false);
   const [showStudentName, setShowStudentName] = useState(true);
+  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const [footerLocationText, setFooterLocationText] = useState<string>('');
   const [qrCodeUrls, setQrCodeUrls] = useState<Record<string, string>>({});
+
+  // Deduplicate registrations strictly by eventId & studentCode
+  const uniqueRegistrations = useMemo(() => {
+    const seen = new Set<string>();
+    return registrations.filter((r) => {
+      if (event?.id && r.eventId && r.eventId !== event.id) return false;
+      const key = `${r.eventId || event?.id || ''}_${(r.studentCode || r.id || '').trim().toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [registrations, event?.id]);
   // Admin types the footer text manually (no auto-fetch of long event location).
   // Saved per event in localStorage so it persists between sessions.
   useEffect(() => {
@@ -105,7 +118,7 @@ export function VipassanaBadgesModal({
   // Available groups
   const availableGroups = useMemo(() => {
     const groupNums = new Set<number>();
-    registrations.forEach((r) => {
+    uniqueRegistrations.forEach((r) => {
       if (r.groupNumber) groupNums.add(r.groupNumber);
       else if (r.groupName) {
         const m = r.groupName.match(/\d+/);
@@ -116,11 +129,11 @@ export function VipassanaBadgesModal({
       [1, 2, 3, 12].forEach((g) => groupNums.add(g));
     }
     return Array.from(groupNums).sort((a, b) => a - b);
-  }, [registrations]);
+  }, [uniqueRegistrations]);
 
   // Filtered registrations
   const filteredRegistrations = useMemo(() => {
-    return registrations.filter((r) => {
+    return uniqueRegistrations.filter((r) => {
       if (selectedGroup !== 'ALL') {
         const gNum = r.groupNumber || (r.groupName ? parseInt(r.groupName.replace(/\D/g, ''), 10) : 0);
         if (gNum !== selectedGroup) return false;
@@ -135,7 +148,7 @@ export function VipassanaBadgesModal({
       }
       return true;
     });
-  }, [registrations, selectedGroup, searchQuery]);
+  }, [uniqueRegistrations, selectedGroup, searchQuery]);
 
   // Stable key for registrations to prevent unnecessary triggers
   const registrationKey = useMemo(() => {
@@ -297,7 +310,7 @@ export function VipassanaBadgesModal({
     }
   }, [colorTheme]);
 
-  // Typography Scaling Configuration
+  // Typography Scaling Configuration (degree enlarged by +1.5 to +2 pt)
   const fontScale: BadgeFontScale = useMemo(() => {
     switch (fontSize) {
       case 'LARGE':
@@ -306,7 +319,7 @@ export function VipassanaBadgesModal({
           headerUniv: 'text-[8.5px] sm:text-[9.5px]',
           headerProject: 'text-[9.5px] sm:text-[10.5px]',
           groupPill: 'text-[11px] sm:text-[12px] px-2.5 py-0.5',
-          degree: 'text-[9px] sm:text-[10px]',
+          degree: 'text-[11.5px] sm:text-[12.5px] font-extrabold',
           major: 'text-[8.5px] sm:text-[9.5px]',
           code: 'text-[13px] sm:text-[14.5px]',
           name: 'text-[12px] sm:text-[13.5px]',
@@ -318,7 +331,7 @@ export function VipassanaBadgesModal({
           headerUniv: 'text-[7px] sm:text-[7.5px]',
           headerProject: 'text-[7.5px] sm:text-[8px]',
           groupPill: 'text-[9.5px] sm:text-[10px] px-2 py-0.5',
-          degree: 'text-[7.5px] sm:text-[8px]',
+          degree: 'text-[9.5px] sm:text-[10.5px] font-bold',
           major: 'text-[7px] sm:text-[7.5px]',
           code: 'text-[11px] sm:text-[12px]',
           name: 'text-[10.5px] sm:text-[11px]',
@@ -331,7 +344,7 @@ export function VipassanaBadgesModal({
           headerUniv: 'text-[8px] sm:text-[8.5px]',
           headerProject: 'text-[8.5px] sm:text-[9.2px]',
           groupPill: 'text-[10px] sm:text-[11px] px-2.5 py-0.5',
-          degree: 'text-[8.5px] sm:text-[9px]',
+          degree: 'text-[10.5px] sm:text-[11.5px] font-extrabold',
           major: 'text-[8px] sm:text-[8.5px]',
           code: 'text-[12px] sm:text-[13px]',
           name: 'text-[11.5px] sm:text-[12.5px]',
@@ -606,10 +619,12 @@ export function VipassanaBadgesModal({
 
         {/* TOOLBAR CONTROLS (Modularized Component) */}
         <VipassanaBadgeToolbar
+          isToolbarCollapsed={isToolbarCollapsed}
+          setIsToolbarCollapsed={setIsToolbarCollapsed}
           selectedGroup={selectedGroup}
           setSelectedGroup={setSelectedGroup}
           availableGroups={availableGroups}
-          registrationsCount={registrations.length}
+          registrationsCount={uniqueRegistrations.length}
           filteredCount={filteredRegistrations.length}
           pagesCount={pages.length}
           isGeneratingQr={isGeneratingQr}

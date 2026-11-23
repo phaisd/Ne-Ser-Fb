@@ -130,6 +130,9 @@ export async function recordVipassanaScanCheckin(params: {
   error?: string;
   registration?: EventRegistration;
   isAlreadyCheckedIn?: boolean;
+  scanCount?: number;
+  isOverDuplicateLimit?: boolean;
+  firstCheckInTime?: string;
 }> {
   const { eventId, studentCodeOrId, dayKey, periodKey, recordedBy } = params;
   let cleanInput = String(studentCodeOrId || '').trim();
@@ -179,6 +182,11 @@ export async function recordVipassanaScanCheckin(params: {
   const isAlreadyCheckedIn =
     existingPeriod && (existingPeriod.status === 'PRESENT' || existingPeriod.status === 'LATE');
 
+  // Track scan count within this specific period
+  const prevCount = existingPeriod?.scanCount || (isAlreadyCheckedIn ? 1 : 0);
+  const currentScanCount = prevCount + 1;
+  const isOverDuplicateLimit = currentScanCount > 2;
+
   const newStatus = params.status || (isAlreadyCheckedIn ? existingPeriod.status : 'PRESENT');
   const checkInTime = existingPeriod?.checkInTime || nowTime;
 
@@ -186,7 +194,25 @@ export async function recordVipassanaScanCheckin(params: {
     status: newStatus,
     checkInTime,
     recordedBy: recordedBy || 'LIVE_SCANNER',
+    scanCount: currentScanCount,
+    lastScanTime: nowTime,
+    duplicateFlag: isOverDuplicateLimit ? 'สแกนซ้ำ' : existingPeriod?.duplicateFlag,
   };
+
+  // If scanned > 2 times in the same session, flag and record as duplicate scan
+  if (isOverDuplicateLimit) {
+    const duplicateNote = `[สแกนซ้ำ: ${dayKey}/${periodKey} รวม ${currentScanCount} ครั้ง (ล่าสุด ${nowTime} น.)]`;
+    if (!reg.remarks) {
+      reg.remarks = duplicateNote;
+    } else if (!reg.remarks.includes(`[สแกนซ้ำ: ${dayKey}/${periodKey}`)) {
+      reg.remarks = `${reg.remarks} ${duplicateNote}`.trim();
+    } else {
+      reg.remarks = reg.remarks.replace(
+        new RegExp(`\\[สแกนซ้ำ: ${dayKey}\\/${periodKey}[^\\]]*\\]`),
+        duplicateNote
+      );
+    }
+  }
 
   reg.status = 'ATTENDED';
   reg.attendedAt = reg.attendedAt || now.toISOString();
@@ -214,6 +240,9 @@ export async function recordVipassanaScanCheckin(params: {
     success: true,
     registration: reg,
     isAlreadyCheckedIn: Boolean(isAlreadyCheckedIn),
+    scanCount: currentScanCount,
+    isOverDuplicateLimit,
+    firstCheckInTime: checkInTime,
   };
 }
 

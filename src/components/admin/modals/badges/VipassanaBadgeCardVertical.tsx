@@ -46,6 +46,13 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
   const gNum = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
   const cardFontClass = isEnglish ? 'badge-font-en' : 'badge-font-th';
 
+  // Strip prefix "สาขาวิชา" or "สาขา" so only the major name is shown
+  const cleanedMajor = React.useMemo(() => {
+    if (!reg.major) return isEnglish ? 'Buddhist Studies' : 'พระพุทธศาสนา';
+    const stripped = reg.major.replace(/^(?:สาขาวิชา|สาขา)\s*:?\s*/gi, '').trim();
+    return stripped || (isEnglish ? 'Buddhist Studies' : 'พระพุทธศาสนา');
+  }, [reg.major, isEnglish]);
+
   return (
     <div
       className={`${cardFontClass} border-2 border-dashed border-slate-300 rounded-2xl bg-white p-2.5 sm:p-3 print:p-2 print:border-slate-300 print:rounded-2xl flex flex-col justify-between shadow-2xs hover:border-purple-400 transition print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${printCardHeight}`}
@@ -82,7 +89,15 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
             <div className={`${fontScale.headerOrg} font-extrabold ${themeConfig.headerOrg} uppercase tracking-wide break-words`}>
               {isEnglish ? 'Faculty of Buddhism • MCU' : 'คณะพุทธศาสตร์ มจร'}
             </div>
-            <div className={`${fontScale.headerUniv} font-bold ${themeConfig.headerUniv} break-words leading-tight`}>
+            {/* English institution name shrunk to fit on a single line */}
+            <div
+              className={`${
+                isEnglish
+                  ? 'text-[6.2px] sm:text-[6.8px] tracking-tight whitespace-nowrap overflow-hidden text-ellipsis leading-none'
+                  : fontScale.headerUniv
+              } font-bold ${themeConfig.headerUniv} ${isEnglish ? '' : 'break-words leading-tight'}`}
+              title={isEnglish ? 'Mahachulalongkornrajavidyalaya University' : 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}
+            >
               {isEnglish ? 'Mahachulalongkornrajavidyalaya University' : 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}
             </div>
             <div className={`${fontScale.headerProject} font-black ${themeConfig.headerProject} break-words leading-tight line-clamp-2 pt-0.5`}>
@@ -92,23 +107,17 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
         </div>
       </div>
 
-      {/* 2. Subheader: Group Pill + Degree Level & Major (Removed yearLevel "(ปี ..)") */}
+      {/* 2. Subheader: Group Pill + Degree Level & Major (Prefix "สาขาวิชา" removed) */}
       <div className="flex items-center gap-1.5 pt-1 pb-0.5 shrink-0 relative z-10 flex-wrap">
         <span className={`rounded-full ${fontScale.groupPill} font-black border shrink-0 ${themeConfig.groupPill}`}>
           กลุ่ม {gNum || '-'}
         </span>
         <div className="min-w-0 text-left leading-tight flex-1">
-          <div className={`${fontScale.degree} font-bold ${themeConfig.degreeText} break-words`}>
+          <div className={`${fontScale.degree} font-extrabold ${themeConfig.degreeText} break-words`}>
             {reg.degreeLevel || (isEnglish ? "Bachelor's Degree" : "ปริญญาตรี")}
           </div>
-          <div className={`${fontScale.major} font-semibold ${themeConfig.majorText} break-words line-clamp-2`} title={reg.major}>
-            {reg.major
-              ? reg.major.startsWith('สาขา')
-                ? reg.major
-                : `สาขาวิชา ${reg.major}`
-              : isEnglish
-              ? 'Buddhism'
-              : 'สาขาวิชา พระพุทธศาสนา'}
+          <div className={`${fontScale.major} font-semibold ${themeConfig.majorText} break-words line-clamp-2`} title={cleanedMajor}>
+            {cleanedMajor}
           </div>
         </div>
       </div>

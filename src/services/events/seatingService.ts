@@ -315,18 +315,19 @@ export async function clearEventSeats(eventId: string): Promise<number> {
   const localList = readLocalJson<any[]>('event_registrations.json', []);
   let count = 0;
 
-  localList.forEach((r) => {
-    if (r.eventId === targetId) {
-      r.seatNumber = undefined;
-      r.seatZone = undefined;
-      r.seatCheckinAt = undefined;
-      r.seatCheckinBy = undefined;
-      r.updatedAt = new Date().toISOString();
-      count++;
-    }
+  const eventRegs = localList.filter((r) => r.eventId === targetId);
+  eventRegs.forEach((r) => {
+    r.seatNumber = undefined;
+    r.seatZone = undefined;
+    r.seatCheckinAt = undefined;
+    r.seatCheckinBy = undefined;
+    r.updatedAt = new Date().toISOString();
+    count++;
   });
 
   writeLocalJson('event_registrations.json', localList);
+  await syncUpdatedRegistrationsToSheets(eventRegs);
+
   return count;
 }
 
@@ -493,7 +494,10 @@ export async function batchImportSeatingFromRows(
     vasa?: string;
     seatCheckedIn?: boolean;
     seatCheckinBy?: string;
-  }>
+  }>,
+  options?: {
+    resetExistingSeats?: boolean;
+  }
 ): Promise<{
   totalProcessed: number;
   matchedCount: number;
@@ -505,6 +509,16 @@ export async function batchImportSeatingFromRows(
 
   const localList = readLocalJson<any[]>('event_registrations.json', []);
   const eventRegs = localList.filter((r) => r.eventId === targetId);
+
+  // If resetExistingSeats is enabled (recommended), clear existing seats first
+  if (options?.resetExistingSeats) {
+    eventRegs.forEach((r) => {
+      r.seatNumber = undefined;
+      r.seatZone = undefined;
+      r.seatCheckinAt = undefined;
+      r.seatCheckinBy = undefined;
+    });
+  }
 
   const regMap = new Map<string, any>();
   eventRegs.forEach((r) => {
@@ -552,6 +566,7 @@ export async function batchImportSeatingFromRows(
   });
 
   writeLocalJson('event_registrations.json', localList);
+  await syncUpdatedRegistrationsToSheets(eventRegs);
 
   return {
     totalProcessed: rows.length,

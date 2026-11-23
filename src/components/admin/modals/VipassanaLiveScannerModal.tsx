@@ -115,9 +115,42 @@ export function VipassanaLiveScannerModal({
     return defaultPol;
   });
 
+  // Deduplicate registrations to prevent inflated counts
+  const uniqueRegistrations = useMemo(() => {
+    const seen = new Set<string>();
+    const list: EventRegistration[] = [];
+    (registrations || []).forEach((r) => {
+      const key = (r.studentCode || r.id).trim().toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push(r);
+      }
+    });
+    return list;
+  }, [registrations]);
+
   // Scanner states
   const [inputCode, setInputCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [kioskState, setKioskState] = useState<'READY' | 'SAVING' | 'SUCCESS_COOLDOWN' | 'ERROR_COOLDOWN'>('READY');
+  const kioskStateRef = useRef<'READY' | 'SAVING' | 'SUCCESS_COOLDOWN' | 'ERROR_COOLDOWN'>('READY');
+  const isSubmittingRef = useRef(false);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    kioskStateRef.current = kioskState;
+  }, [kioskState]);
+
+  useEffect(() => {
+    isSubmittingRef.current = isSubmitting;
+  }, [isSubmitting]);
+
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+    };
+  }, []);
+
   const [recentScans, setRecentScans] = useState<
     Array<{
       id: string;
@@ -129,6 +162,8 @@ export function VipassanaLiveScannerModal({
       time: string;
       status: 'PRESENT' | 'LATE' | 'SICK';
       isDuplicate?: boolean;
+      scanCount?: number;
+      isOverDuplicateLimit?: boolean;
     }>
   >([]);
 
@@ -138,6 +173,9 @@ export function VipassanaLiveScannerModal({
     student?: EventRegistration;
     time?: string;
     isDuplicate?: boolean;
+    scanCount?: number;
+    isOverDuplicateLimit?: boolean;
+    firstCheckInTime?: string;
     scannedCode?: string;
     status?: 'PRESENT' | 'LATE' | 'SICK';
   } | null>(null);
@@ -159,7 +197,7 @@ export function VipassanaLiveScannerModal({
   // Available groups
   const availableGroups = useMemo(() => {
     const groupNums = new Set<number>();
-    registrations.forEach((r) => {
+    uniqueRegistrations.forEach((r) => {
       if (r.groupNumber) groupNums.add(r.groupNumber);
       else if (r.groupName) {
         const m = r.groupName.match(/\d+/);
@@ -170,13 +208,13 @@ export function VipassanaLiveScannerModal({
       [1, 2, 3, 12].forEach((g) => groupNums.add(g));
     }
     return Array.from(groupNums).sort((a, b) => a - b);
-  }, [registrations]);
+  }, [uniqueRegistrations]);
 
   const dayKey = `day_${selectedDayNumber}`;
 
   // Filtered registrations for Group Checklist view
   const groupRegistrations = useMemo(() => {
-    return registrations.filter((r) => {
+    return uniqueRegistrations.filter((r) => {
       if (selectedGroup !== 'ALL') {
         const gNum = r.groupNumber || (r.groupName ? parseInt(r.groupName.replace(/\D/g, ''), 10) : 0);
         if (gNum !== selectedGroup) return false;
@@ -191,7 +229,7 @@ export function VipassanaLiveScannerModal({
       }
       return true;
     });
-  }, [registrations, selectedGroup, checklistSearch]);
+  }, [uniqueRegistrations, selectedGroup, checklistSearch]);
 
   // Offline Cache Queue State
   const OFFLINE_QUEUE_KEY = `vipassana_scanner_offline_queue_${event.id}`;
@@ -323,14 +361,24 @@ export function VipassanaLiveScannerModal({
   const processScanCode = useCallback(
     async (codeToProcess: string) => {
       const cleanCode = codeToProcess.trim();
-      if (!cleanCode || isSubmitting) return;
+      if (
+        !cleanCode ||
+        isSubmittingRef.current ||
+        kioskStateRef.current === 'SAVING' ||
+        kioskStateRef.current === 'SUCCESS_COOLDOWN'
+      ) {
+        return;
+      }
 
       // Throttle rapid repeated triggers
       const nowTs = Date.now();
-      if (nowTs - scanThrottleRef.current < 1200) return;
+      if (nowTs - scanThrottleRef.current < 1600) return;
       scanThrottleRef.current = nowTs;
 
       setIsSubmitting(true);
+      isSubmittingRef.current = true;
+      setKioskState('SAVING');
+      kioskStateRef.current = 'SAVING';
       setInputCode('');
 
       const now = new Date();
@@ -377,29 +425,39 @@ export function VipassanaLiveScannerModal({
 
         if (data.success && data.registration) {
           const reg = data.registration;
-          const isDuplicate = data.isAlreadyCheckedIn;
+          const isDuplicate = Boolean(data.isAlreadyCheckedIn);
+          const scanCount = data.scanCount || (isDuplicate ? 2 : 1);
+          const isOverDuplicateLimit = Boolean(data.isOverDuplicateLimit) || scanCount > 2;
           const regGroup = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
           const isWrongGroup = selectedGroup !== 'ALL' && regGroup !== selectedGroup;
 
           if (soundEnabled) {
-            playBeep(isDuplicate ? 'WARN' : 'SUCCESS');
+            playBeep(isOverDuplicateLimit ? 'WARN' : isDuplicate ? 'WARN' : 'SUCCESS');
           }
-          triggerHaptic(isDuplicate ? 'WARN' : targetStatus === 'LATE' ? 'WARN' : 'SUCCESS');
+          triggerHaptic(isOverDuplicateLimit ? 'WARN' : isDuplicate ? 'WARN' : targetStatus === 'LATE' ? 'WARN' : 'SUCCESS');
 
-          let msg = isDuplicate
-            ? `เช็คชื่อซ้ำ: ${reg.studentName} ลงชื่อรอบนี้ไปแล้ว (${checkInTime} น.)`
-            : `เช็คชื่อสำเร็จ: ${reg.studentName}${lateNote}`;
+          let msg = '';
+          if (isOverDuplicateLimit) {
+            msg = `⚠️ บันทึกว่าสแกนซ้ำ: ${reg.studentName} สแกนซ้ำเกิน 2 ครั้ง (ครั้งที่ ${scanCount})`;
+          } else if (isDuplicate) {
+            msg = `ℹ️ เช็คชื่อแล้ว (ครั้งที่ ${scanCount}): ${reg.studentName} ลงชื่อเมื่อ ${data.firstCheckInTime || checkInTime} น.`;
+          } else {
+            msg = `✓ บันทึกเรียบร้อยแล้ว: ${reg.studentName}${lateNote}`;
+          }
 
           if (isWrongGroup) {
             msg += ` ⚠️ (สังเกต: นิสิตสังกัดกลุ่มที่ ${regGroup || '-'})`;
           }
 
           setLastFeedback({
-            type: isDuplicate ? 'WARN' : targetStatus === 'LATE' ? 'WARN' : 'SUCCESS',
+            type: isOverDuplicateLimit ? 'WARN' : isDuplicate ? 'WARN' : targetStatus === 'LATE' ? 'WARN' : 'SUCCESS',
             message: msg,
             student: reg,
             time: checkInTime,
             isDuplicate,
+            scanCount,
+            isOverDuplicateLimit,
+            firstCheckInTime: data.firstCheckInTime,
             status: targetStatus,
           });
 
@@ -409,12 +467,14 @@ export function VipassanaLiveScannerModal({
               id: `${reg.id}-${nowTs}`,
               studentCode: reg.studentCode,
               studentName: reg.studentName,
-              groupNumber: reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined),
+              groupNumber: regGroup,
               vasa: reg.vasa,
               period: selectedPeriod,
               time: checkInTime,
               status: targetStatus,
               isDuplicate,
+              scanCount,
+              isOverDuplicateLimit,
             },
             ...prev.slice(0, 19),
           ]);
@@ -422,6 +482,15 @@ export function VipassanaLiveScannerModal({
           if (onCheckInRecorded) {
             onCheckInRecorded();
           }
+
+          // Pacing cooldown: Show recorded notification for 1.8s then switch back to READY
+          setKioskState('SUCCESS_COOLDOWN');
+          kioskStateRef.current = 'SUCCESS_COOLDOWN';
+          if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+          cooldownTimerRef.current = setTimeout(() => {
+            setKioskState('READY');
+            kioskStateRef.current = 'READY';
+          }, 1800);
         } else {
           if (soundEnabled) playBeep('ERROR');
           triggerHaptic('ERROR');
@@ -430,10 +499,18 @@ export function VipassanaLiveScannerModal({
             message: data.error || `ไม่พบข้อมูลนิสิต (รหัส: ${cleanCode}) ในโครงการนี้`,
             scannedCode: cleanCode,
           });
+
+          setKioskState('ERROR_COOLDOWN');
+          kioskStateRef.current = 'ERROR_COOLDOWN';
+          if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+          cooldownTimerRef.current = setTimeout(() => {
+            setKioskState('READY');
+            kioskStateRef.current = 'READY';
+          }, 2200);
         }
       } catch (err: unknown) {
-        // Fallback to offline queue if practitioner is found in local registrations prop
-        const localReg = registrations.find(
+        // Fallback to offline queue if practitioner is found in local uniqueRegistrations prop
+        const localReg = uniqueRegistrations.find(
           (r) =>
             r.studentCode?.toLowerCase() === cleanCode.toLowerCase() ||
             (r.groupSpecificCode && r.groupSpecificCode.toLowerCase() === cleanCode.toLowerCase()) ||
@@ -462,7 +539,7 @@ export function VipassanaLiveScannerModal({
 
           setLastFeedback({
             type: targetStatus === 'LATE' ? 'WARN' : 'SUCCESS',
-            message: `📦 บันทึกออฟไลน์สำเร็จ: ${localReg.studentName} (${checkInTime} น. • รอซิงค์เมื่อต่อเน็ต)`,
+            message: `✓ บันทึกเรียบร้อยแล้ว (📦 ออฟไลน์): ${localReg.studentName} (${checkInTime} น. • รอซิงค์เมื่อต่อเน็ต)`,
             student: localReg,
             time: checkInTime,
             status: targetStatus,
@@ -482,6 +559,14 @@ export function VipassanaLiveScannerModal({
             },
             ...prev.slice(0, 19),
           ]);
+
+          setKioskState('SUCCESS_COOLDOWN');
+          kioskStateRef.current = 'SUCCESS_COOLDOWN';
+          if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+          cooldownTimerRef.current = setTimeout(() => {
+            setKioskState('READY');
+            kioskStateRef.current = 'READY';
+          }, 1800);
         } else {
           if (soundEnabled) playBeep('ERROR');
           triggerHaptic('ERROR');
@@ -491,9 +576,18 @@ export function VipassanaLiveScannerModal({
             message: `ไม่พบข้อมูลนิสิต (รหัส: ${cleanCode}) - ${errText}`,
             scannedCode: cleanCode,
           });
+
+          setKioskState('ERROR_COOLDOWN');
+          kioskStateRef.current = 'ERROR_COOLDOWN';
+          if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+          cooldownTimerRef.current = setTimeout(() => {
+            setKioskState('READY');
+            kioskStateRef.current = 'READY';
+          }, 2200);
         }
       } finally {
         setIsSubmitting(false);
+        isSubmittingRef.current = false;
         setTimeout(() => {
           inputRef.current?.focus();
         }, 100);
@@ -504,15 +598,16 @@ export function VipassanaLiveScannerModal({
       dayKey,
       selectedPeriod,
       statusMode,
-      isSubmitting,
       soundEnabled,
       onCheckInRecorded,
-      registrations,
+      uniqueRegistrations,
       offlineQueue,
       OFFLINE_QUEUE_KEY,
       evalMode,
       periodPolicies,
       lateGraceMinutes,
+      scannerOfficerName,
+      selectedGroup,
     ]
   );
 
@@ -622,39 +717,42 @@ export function VipassanaLiveScannerModal({
 
     const checkFrame = async () => {
       if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
-        try {
-          // 1. Try native BarcodeDetector if available
-          if (detector) {
-            const barcodes = await detector.detect(videoRef.current);
-            if (barcodes.length > 0 && barcodes[0].rawValue) {
-              processScanCode(barcodes[0].rawValue);
-            }
-          } else {
-            // 2. Fallback to jsQR via hidden canvas (iOS Safari, older tablets, etc.)
-            if (!canvasRef.current) {
-              canvasRef.current = document.createElement('canvas');
-            }
-            const canvas = canvasRef.current;
-            const video = videoRef.current;
-            if (video.videoWidth > 0 && video.videoHeight > 0) {
-              const targetWidth = Math.min(video.videoWidth, 640);
-              const targetHeight = Math.round((targetWidth / video.videoWidth) * video.videoHeight);
-              canvas.width = targetWidth;
-              canvas.height = targetHeight;
-              const ctx = canvas.getContext('2d', { willReadFrequently: true });
-              if (ctx) {
-                ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
-                const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                  inversionAttempts: 'dontInvert',
-                });
-                if (code && code.data) {
-                  processScanCode(code.data);
+        // Only detect when kiosk is ready and not currently submitting
+        if (kioskStateRef.current === 'READY' && !isSubmittingRef.current) {
+          try {
+            // 1. Try native BarcodeDetector if available
+            if (detector) {
+              const barcodes = await detector.detect(videoRef.current);
+              if (barcodes.length > 0 && barcodes[0].rawValue) {
+                processScanCode(barcodes[0].rawValue);
+              }
+            } else {
+              // 2. Fallback to jsQR via hidden canvas (iOS Safari, older tablets, etc.)
+              if (!canvasRef.current) {
+                canvasRef.current = document.createElement('canvas');
+              }
+              const canvas = canvasRef.current;
+              const video = videoRef.current;
+              if (video.videoWidth > 0 && video.videoHeight > 0) {
+                const targetWidth = Math.min(video.videoWidth, 640);
+                const targetHeight = Math.round((targetWidth / video.videoWidth) * video.videoHeight);
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                if (ctx) {
+                  ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+                  const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+                  const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: 'dontInvert',
+                  });
+                  if (code && code.data) {
+                    processScanCode(code.data);
+                  }
                 }
               }
             }
-          }
-        } catch {}
+          } catch {}
+        }
       }
       animId = requestAnimationFrame(checkFrame);
     };
@@ -670,8 +768,8 @@ export function VipassanaLiveScannerModal({
   const stats = useMemo(() => {
     const targetPool =
       selectedGroup === 'ALL'
-        ? registrations
-        : registrations.filter((r) => {
+        ? uniqueRegistrations
+        : uniqueRegistrations.filter((r) => {
             const gNum = r.groupNumber || (r.groupName ? parseInt(r.groupName.replace(/\D/g, ''), 10) : 0);
             return gNum === selectedGroup;
           });
@@ -688,7 +786,7 @@ export function VipassanaLiveScannerModal({
       checkedCount,
       percent: targetPool.length > 0 ? Math.round((checkedCount / targetPool.length) * 100) : 0,
     };
-  }, [registrations, dayKey, selectedPeriod, selectedGroup]);
+  }, [uniqueRegistrations, dayKey, selectedPeriod, selectedGroup]);
 
   if (!isOpen) return null;
 
@@ -1121,11 +1219,26 @@ export function VipassanaLiveScannerModal({
 
               {/* Camera Preview Area */}
               <div className="relative min-h-[210px] sm:min-h-[240px] max-h-[320px] flex items-center justify-center bg-black/60 overflow-hidden">
-                {/* On-Screen Heads-Up Display (HUD) Visual Notification (Silent Meditation Friendly) */}
-                {lastFeedback && (
+                {/* HUD: SAVING IN PROGRESS */}
+                {kioskState === 'SAVING' && (
+                  <div className="absolute top-2 left-2 right-2 z-30 p-2.5 sm:p-3 rounded-2xl shadow-2xl border bg-indigo-950/90 text-white border-indigo-400 backdrop-blur-md flex items-center gap-3 animate-pulse">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 font-black shadow-md">
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10.5px] font-bold text-indigo-300">กำลังประมวลผล QR Code</div>
+                      <div className="text-sm sm:text-base font-black text-white">⏳ กำลังบันทึกข้อมูล...</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* HUD: SUCCESS / DUPLICATE / ERROR VISUAL NOTIFICATION */}
+                {lastFeedback && kioskState !== 'SAVING' && (
                   <div
                     className={`absolute top-2 left-2 right-2 z-30 p-2.5 sm:p-3 rounded-2xl shadow-2xl border backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-top-3 flex items-center gap-2.5 sm:gap-3 ${
-                      lastFeedback.type === 'SUCCESS'
+                      lastFeedback.isOverDuplicateLimit
+                        ? 'bg-orange-600/95 text-white border-orange-300 shadow-orange-950/50'
+                        : lastFeedback.type === 'SUCCESS'
                         ? 'bg-emerald-600/95 text-white border-emerald-300 shadow-emerald-950/50'
                         : lastFeedback.type === 'WARN'
                         ? 'bg-amber-500/95 text-white border-amber-200 shadow-amber-950/50'
@@ -1134,14 +1247,18 @@ export function VipassanaLiveScannerModal({
                   >
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black shadow-md ${
-                        lastFeedback.type === 'SUCCESS'
+                        lastFeedback.isOverDuplicateLimit
+                          ? 'bg-white text-orange-700'
+                          : lastFeedback.type === 'SUCCESS'
                           ? 'bg-white text-emerald-700'
                           : lastFeedback.type === 'WARN'
                           ? 'bg-white text-amber-600'
                           : 'bg-white text-rose-700 animate-bounce'
                       }`}
                     >
-                      {lastFeedback.type === 'SUCCESS' ? (
+                      {lastFeedback.isOverDuplicateLimit ? (
+                        <AlertTriangle className="w-6 h-6 text-orange-600" />
+                      ) : lastFeedback.type === 'SUCCESS' ? (
                         <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                       ) : lastFeedback.type === 'WARN' ? (
                         <AlertTriangle className="w-6 h-6 text-amber-600" />
@@ -1154,19 +1271,23 @@ export function VipassanaLiveScannerModal({
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
                           className={`px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-black tracking-wide uppercase shadow-2xs ${
-                            lastFeedback.type === 'SUCCESS'
+                            lastFeedback.isOverDuplicateLimit
+                              ? 'bg-orange-950/60 text-orange-100'
+                              : lastFeedback.type === 'SUCCESS'
                               ? 'bg-emerald-900/60 text-emerald-100'
                               : lastFeedback.type === 'WARN'
                               ? 'bg-amber-900/60 text-amber-100'
                               : 'bg-rose-900/60 text-rose-100'
                           }`}
                         >
-                          {lastFeedback.type === 'SUCCESS'
-                            ? '✓ สแกนสำเร็จ (SUCCESS)'
+                          {lastFeedback.isOverDuplicateLimit
+                            ? `⚠️ บันทึกว่าสแกนซ้ำ (ครั้งที่ ${lastFeedback.scanCount})`
+                            : lastFeedback.type === 'SUCCESS'
+                            ? '✓ บันทึกเรียบร้อยแล้ว'
                             : lastFeedback.type === 'WARN'
                             ? lastFeedback.isDuplicate
-                              ? 'ℹ️ เช็คชื่อซ้ำ (ALREADY CHECKED)'
-                              : '⚠️ สแกนสำเร็จ (สาย)'
+                              ? `ℹ️ เช็คชื่อแล้ว (ครั้งที่ ${lastFeedback.scanCount || 2})`
+                              : '⚠️ บันทึกเรียบร้อยแล้ว (สาย)'
                             : '✗ ไม่พบข้อมูล (NOT FOUND)'}
                         </span>
                         {lastFeedback.time && (
@@ -1190,6 +1311,9 @@ export function VipassanaLiveScannerModal({
                           <span>{lastFeedback.student.studentCode}</span>
                           {lastFeedback.student.groupNumber && (
                             <span className="font-sans font-semibold">กลุ่ม {lastFeedback.student.groupNumber}</span>
+                          )}
+                          {lastFeedback.student.seatNumber && (
+                            <span className="font-sans font-semibold bg-white/20 px-1 rounded">ที่นั่ง {lastFeedback.student.seatNumber}</span>
                           )}
                           {lastFeedback.student.vasa && (
                             <span className="font-sans text-[11px]">({lastFeedback.student.vasa} พรรษา)</span>
@@ -1231,6 +1355,17 @@ export function VipassanaLiveScannerModal({
                         <div className="w-full h-0.5 bg-emerald-400/60 absolute top-1/2 -translate-y-1/2 animate-pulse" />
                       </div>
                     </div>
+
+                    {/* READY STATUS BADGE INSIDE RETICLE FOOTER */}
+                    {kioskState === 'READY' && (
+                      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 px-3.5 py-1.5 rounded-full bg-slate-950/85 backdrop-blur-md border border-emerald-500/70 text-emerald-300 text-xs font-black flex items-center gap-2 shadow-xl whitespace-nowrap animate-in fade-in">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <span>🟢 พร้อมสแกนคนต่อไป • นำบัตรมาแสดงที่กล้อง</span>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="p-5 sm:p-8 text-center space-y-2.5 text-slate-300">
@@ -1252,6 +1387,99 @@ export function VipassanaLiveScannerModal({
                 )}
               </div>
             </div>
+
+            {/* KIOSK LIVE READINESS & RESULT BANNER (Prominently displayed below camera) */}
+            {kioskState === 'SAVING' ? (
+              <div className="bg-blue-50 border-2 border-blue-400/90 rounded-2xl p-3 sm:p-3.5 flex items-center gap-3 shadow-xs animate-pulse">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-blue-700">กำลังประมวลผล</div>
+                  <div className="text-sm sm:text-base font-black text-blue-950">⏳ กำลังบันทึกข้อมูล... กรุณารอสักครู่</div>
+                </div>
+              </div>
+            ) : kioskState === 'SUCCESS_COOLDOWN' && lastFeedback ? (
+              <div
+                className={`border-2 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 shadow-md transition-all animate-in zoom-in-95 ${
+                  lastFeedback.isOverDuplicateLimit
+                    ? 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white border-orange-300'
+                    : lastFeedback.isDuplicate
+                    ? 'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white border-amber-200'
+                    : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white border-emerald-300'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0 font-black text-white text-xl shadow-xs">
+                    {lastFeedback.isOverDuplicateLimit ? '⚠️' : '✓'}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] sm:text-xs font-black tracking-wide uppercase opacity-95">
+                      {lastFeedback.isOverDuplicateLimit
+                        ? `⚠️ บันทึกว่าสแกนซ้ำ (สแกนเกิน 2 ครั้ง • ครั้งที่ ${lastFeedback.scanCount})`
+                        : lastFeedback.isDuplicate
+                        ? `ℹ️ เช็คชื่อแล้ว (ครั้งที่ ${lastFeedback.scanCount || 2})`
+                        : '✓ บันทึกเรียบร้อยแล้ว'}
+                    </div>
+                    <div className="text-base sm:text-lg font-black truncate">
+                      {lastFeedback.student?.studentName || lastFeedback.message}
+                    </div>
+                    <div className="text-xs opacity-90 font-mono flex items-center gap-2 flex-wrap">
+                      <span>{lastFeedback.student?.studentCode}</span>
+                      {lastFeedback.student?.groupNumber && <span>• กลุ่ม {lastFeedback.student.groupNumber}</span>}
+                      {lastFeedback.student?.seatNumber && <span>• ที่นั่ง {lastFeedback.student.seatNumber}</span>}
+                      {lastFeedback.time && <span>• เวลา {lastFeedback.time} น.</span>}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 pl-2">
+                  <span className="text-[11px] font-mono font-extrabold bg-black/25 px-2.5 py-1 rounded-lg inline-block">
+                    {lastFeedback.time} น.
+                  </span>
+                  <div className="text-[10px] opacity-85 mt-1 animate-pulse">
+                    กำลังพร้อมสแกนคนต่อไป...
+                  </div>
+                </div>
+              </div>
+            ) : kioskState === 'ERROR_COOLDOWN' ? (
+              <div className="bg-rose-50 border-2 border-rose-400 rounded-2xl p-3 flex items-center gap-3 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 font-black">
+                  <X className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-rose-700">แจ้งเตือน</div>
+                  <div className="text-sm sm:text-base font-black text-rose-950">
+                    {lastFeedback?.message || '✗ ไม่พบข้อมูลนิสิต'}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* KIOSK READY STATE */
+              <div className="bg-emerald-50 border-2 border-emerald-400/80 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-2 shadow-xs transition-all">
+                <div className="flex items-center gap-3">
+                  <span className="relative flex h-4 w-4 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-600"></span>
+                  </span>
+                  <div>
+                    <div className="text-emerald-950 font-black text-sm sm:text-base flex items-center gap-2">
+                      <span>🟢 พร้อมสแกนคนต่อไป</span>
+                      <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-200 text-emerald-900">
+                        อัตโนมัติ
+                      </span>
+                    </div>
+                    <p className="text-[11.5px] text-emerald-700 font-medium">
+                      นำ QR Code บนป้ายคล้องคอของนิสิตมาแสดงที่กล้องได้ทันที
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 hidden sm:block">
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-white border border-emerald-300 text-emerald-800 shadow-2xs">
+                    เว้นระยะ 1.8 วิ/คน
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Hardware Scanner & Fast Input Box (Compact single-line under Camera) */}
             <div className="bg-purple-50/60 border border-purple-200 rounded-2xl p-2.5 sm:p-3.5 shadow-2xs">
@@ -1282,7 +1510,9 @@ export function VipassanaLiveScannerModal({
             {lastFeedback && (
               <div
                 className={`p-4 sm:p-5 rounded-2xl border-2 transition-all animate-in fade-in slide-in-from-top-2 duration-200 shadow-md ${
-                  lastFeedback.type === 'SUCCESS'
+                  lastFeedback.isOverDuplicateLimit
+                    ? 'bg-gradient-to-r from-orange-50 via-amber-50 to-white border-orange-400 text-orange-950'
+                    : lastFeedback.type === 'SUCCESS'
                     ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-emerald-400 text-emerald-950'
                     : lastFeedback.type === 'WARN'
                     ? 'bg-gradient-to-r from-amber-50 via-orange-50 to-white border-amber-400 text-amber-950'
@@ -1292,14 +1522,18 @@ export function VipassanaLiveScannerModal({
                 <div className="flex items-start gap-3.5">
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
-                      lastFeedback.type === 'SUCCESS'
+                      lastFeedback.isOverDuplicateLimit
+                        ? 'bg-orange-600 text-white'
+                        : lastFeedback.type === 'SUCCESS'
                         ? 'bg-emerald-600 text-white'
                         : lastFeedback.type === 'WARN'
                         ? 'bg-amber-500 text-white'
                         : 'bg-rose-600 text-white'
                     }`}
                   >
-                    {lastFeedback.type === 'SUCCESS' ? (
+                    {lastFeedback.isOverDuplicateLimit ? (
+                      <AlertTriangle className="w-7 h-7" />
+                    ) : lastFeedback.type === 'SUCCESS' ? (
                       <CheckCircle2 className="w-7 h-7" />
                     ) : lastFeedback.type === 'WARN' ? (
                       <AlertTriangle className="w-7 h-7" />
@@ -1312,19 +1546,23 @@ export function VipassanaLiveScannerModal({
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-xs font-black shadow-2xs ${
-                          lastFeedback.type === 'SUCCESS'
+                          lastFeedback.isOverDuplicateLimit
+                            ? 'bg-orange-700 text-white'
+                            : lastFeedback.type === 'SUCCESS'
                             ? 'bg-emerald-700 text-white'
                             : lastFeedback.type === 'WARN'
                             ? 'bg-amber-600 text-white'
                             : 'bg-rose-700 text-white'
                         }`}
                       >
-                        {lastFeedback.type === 'SUCCESS'
-                          ? '✓ สแกนสำเร็จ (CHECK-IN SUCCESS)'
+                        {lastFeedback.isOverDuplicateLimit
+                          ? `⚠️ บันทึกว่าสแกนซ้ำ (สแกนเกิน 2 ครั้ง • ครั้งที่ ${lastFeedback.scanCount})`
+                          : lastFeedback.type === 'SUCCESS'
+                          ? '✓ บันทึกเรียบร้อยแล้ว (CHECK-IN RECORDED)'
                           : lastFeedback.type === 'WARN'
                           ? lastFeedback.isDuplicate
-                            ? 'ℹ️ เช็คชื่อซ้ำ (ALREADY CHECKED)'
-                            : '⚠️ สแกนสำเร็จแต่สาย (LATE)'
+                            ? `ℹ️ เช็คชื่อแล้ว (ครั้งที่ ${lastFeedback.scanCount || 2})`
+                            : '⚠️ บันทึกเรียบร้อยแล้วแต่สาย (LATE)'
                           : '✗ ไม่พบข้อมูลนิสิต (NOT FOUND)'}
                       </span>
                       {lastFeedback.time && (
@@ -1547,17 +1785,27 @@ export function VipassanaLiveScannerModal({
                       </div>
 
                       <div className="text-right shrink-0">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-black ${
-                            scan.status === 'PRESENT'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : scan.status === 'LATE'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-blue-100 text-blue-800'
-                          }`}
-                        >
-                          {scan.status === 'PRESENT' ? 'มา' : scan.status === 'LATE' ? 'สาย' : 'ป่วย'}
-                        </span>
+                        {scan.isOverDuplicateLimit ? (
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black bg-orange-100 text-orange-800 border border-orange-200">
+                            ⚠️ สแกนซ้ำ ({scan.scanCount} ครั้ง)
+                          </span>
+                        ) : scan.isDuplicate ? (
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200">
+                            ℹ️ ซ้ำรอบนี้
+                          </span>
+                        ) : (
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-black ${
+                              scan.status === 'PRESENT'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : scan.status === 'LATE'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
+                            {scan.status === 'PRESENT' ? 'มา' : scan.status === 'LATE' ? 'สาย' : 'ป่วย'}
+                          </span>
+                        )}
                         <div className="text-[9.5px] font-mono text-slate-400 mt-0.5">
                           {scan.time} น.
                         </div>

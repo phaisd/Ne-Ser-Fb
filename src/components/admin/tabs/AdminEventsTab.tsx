@@ -44,12 +44,23 @@ interface AdminEventsTabProps {
 
 export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
   eventsList,
-  registrationsList,
+  registrationsList: rawRegistrationsList,
   onToggleStatus,
   onRefresh,
   settings,
   currentUser,
 }) => {
+  // Strictly deduplicate registrationsList by eventId + studentCode
+  const registrationsList = React.useMemo(() => {
+    const seen = new Set<string>();
+    return (rawRegistrationsList || []).filter((r) => {
+      const sCode = (r.studentCode || r.id || '').trim().toLowerCase();
+      const key = `${r.eventId || ''}_${sCode}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [rawRegistrationsList]);
   const activeUser = currentUser || (typeof window !== 'undefined' ? getAuthUser() : null);
   const userRole = String(activeUser?.role || '').toUpperCase();
   const isSuper =

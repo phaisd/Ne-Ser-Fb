@@ -133,8 +133,13 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         isAlreadyCheckedIn: result.isAlreadyCheckedIn,
+        scanCount: result.scanCount,
+        isOverDuplicateLimit: result.isOverDuplicateLimit,
+        firstCheckInTime: result.firstCheckInTime,
         registration: result.registration,
-        message: result.isAlreadyCheckedIn
+        message: result.isOverDuplicateLimit
+          ? `นิสิต ${result.registration?.studentName} มีการสแกนซ้ำเกิน 2 ครั้ง (ครั้งที่ ${result.scanCount}) บันทึกสถานะสแกนซ้ำเรียบร้อย`
+          : result.isAlreadyCheckedIn
           ? `นิสิต ${result.registration?.studentName} เช็คชื่อรอบนี้ไปแล้ว (${result.registration?.dailyAttendance?.[dayKey]?.[periodKey]?.checkInTime || ''})`
           : `เช็คชื่อสำเร็จ: ${result.registration?.studentName} (รอบ ${periodKey})`,
       });
@@ -191,6 +196,28 @@ export async function POST(request: Request) {
         success: true,
         data: result,
         message: `ล้างรายชื่อนิสิตในกิจกรรมสำเร็จ (${result.deletedCount} คน)`,
+      });
+    }
+
+    // Deduplicate registrations for an event (รีเซ็ตล้างข้อมูลที่ซ้ำซ้อน)
+    if (action === 'deduplicate_registrations') {
+      const staffAuth = requireStaffOrInstructor(request);
+      if (staffAuth.response) return staffAuth.response;
+
+      const { eventId } = body;
+      if (!eventId) {
+        return NextResponse.json(
+          { success: false, error: 'กรุณาระบุ eventId ที่ต้องการรีเซ็ตข้อมูลซ้ำซ้อน' },
+          { status: 400 }
+        );
+      }
+
+      const { deduplicateEventRegistrations } = await import('@/services');
+      const result = await deduplicateEventRegistrations(eventId);
+      return NextResponse.json({
+        success: true,
+        data: result,
+        message: `รีเซ็ตล้างข้อมูลซ้ำซ้อนสำเร็จ คงเหลือผู้เข้าร่วม ${result.totalRemaining} คน (ลบรายการซ้ำ ${result.removedCount} รายการ)`,
       });
     }
 
@@ -358,7 +385,7 @@ export async function POST(request: Request) {
       const staffAuth = requireStaffOrInstructor(request);
       if (staffAuth.response) return staffAuth.response;
 
-      const { eventId, rows } = body;
+      const { eventId, rows, resetExistingSeats } = body;
       if (!eventId || !Array.isArray(rows) || rows.length === 0) {
         return NextResponse.json(
           { success: false, error: 'ข้อมูลไม่ครบถ้วน (ต้องการ eventId และรายการที่นั่ง rows)' },
@@ -367,7 +394,7 @@ export async function POST(request: Request) {
       }
 
       const { batchImportSeatingFromRows } = await import('@/services');
-      const result = await batchImportSeatingFromRows(eventId, rows);
+      const result = await batchImportSeatingFromRows(eventId, rows, { resetExistingSeats });
       return NextResponse.json({
         success: true,
         data: result,

@@ -6,6 +6,7 @@ import {
   Sparkles,
   Search,
   CheckCircle2,
+  CheckSquare,
   Users,
   Settings,
   Plus,
@@ -86,11 +87,23 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   isOpen,
   onClose,
   event,
-  registrations,
+  registrations: rawRegistrations,
   onRefresh,
   onOpenSeatScanner,
   onOpenEventQr,
 }) => {
+  // Strictly deduplicate registrations by eventId + studentCode
+  const registrations = useMemo(() => {
+    const seen = new Set<string>();
+    return (rawRegistrations || []).filter((r) => {
+      if (event?.id && r.eventId && r.eventId !== event.id) return false;
+      const sCode = (r.studentCode || r.id || '').trim().toLowerCase();
+      const key = `${r.eventId || event?.id || ''}_${sCode}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [rawRegistrations, event?.id]);
   // Current Seating Config
   const [config, setConfig] = useState<EventSeatingConfig>(() => {
     if (event.seatingConfig && event.seatingConfig.zones && event.seatingConfig.zones.length > 0) {
@@ -155,6 +168,16 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     }>
   >([]);
   const [isImporting, setIsImporting] = useState(false);
+  const [resetExistingSeats, setResetExistingSeats] = useState<boolean>(true);
+
+  // Batch Seat Selection State (โหมดเลือกหลายที่นั่ง / จัดการกลุ่มทางเดินและเสา)
+  const [isBatchMode, setIsBatchMode] = useState<boolean>(false);
+  const [selectedSeats, setSelectedSeats] = useState<Set<string>>(new Set());
+  const [lastClickedSeat, setLastClickedSeat] = useState<string | null>(null);
+  const [isRangeModalOpen, setIsRangeModalOpen] = useState<boolean>(false);
+  const [rangeZoneId, setRangeZoneId] = useState<string>('');
+  const [rangeStartSeat, setRangeStartSeat] = useState<string>('D-03');
+  const [rangeEndSeat, setRangeEndSeat] = useState<string>('I-03');
 
   // Daily & Period Seat Inspection State (ตรวจเช็คที่นั่งรายวัน/สุ่มรอบ)
   const totalDays = useMemo(() => {
@@ -525,6 +548,35 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     } finally {
       setIsSaving(false);
       setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  // Handle Reset / Deduplicate Registrations
+  const [isDeduplicating, setIsDeduplicating] = useState(false);
+  const handleDeduplicateRegistrations = async () => {
+    if (!confirm('ยืนยันรีเซ็ตและล้างข้อมูลผู้เข้าร่วมที่ซ้ำซ้อนในโครงการนี้? (ระบบจะรวมและเก็บข้อมูลที่นั่งและการตรวจเช็คเดิมไว้)')) return;
+    setIsDeduplicating(true);
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'deduplicate_registrations',
+          eventId: event.id,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'รีเซ็ตข้อมูลซ้ำซ้อนไม่สำเร็จ');
+      setMessage({
+        text: data.message || `รีเซ็ตข้อมูลสำเร็จ คงเหลือผู้เข้าร่วม ${data.data?.totalRemaining || 309} คน`,
+        type: 'success',
+      });
+      onRefresh();
+    } catch (err: any) {
+      setMessage({ text: err.message || 'เกิดข้อผิดพลาดในการรีเซ็ตข้อมูล', type: 'error' });
+    } finally {
+      setIsDeduplicating(false);
+      setTimeout(() => setMessage(null), 4000);
     }
   };
 
@@ -987,6 +1039,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         body: JSON.stringify({
           action: 'batch_import_seating',
           eventId: event.id,
+          resetExistingSeats,
           rows: validRows.map((r) => ({
             studentCode: r.studentCode,
             seatNumber: r.seatNumber,
@@ -1000,7 +1053,12 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'นำเข้าไม่สำเร็จ');
 
-      setMessage({ text: data.message || 'บันทึกผังที่นั่งจากไฟล์สำเร็จ!', type: 'success' });
+      setMessage({
+        text:
+          data.message ||
+          `บันทึกผังที่นั่งจากไฟล์สำเร็จ ${validRows.length} คน (ตรงตามข้อมูลนิสิตในกลุ่ม)!`,
+        type: 'success',
+      });
       setIsImportExportModalOpen(false);
       setImportPreviewRows([]);
       setImportFileName('');
@@ -1133,6 +1191,220 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       disabledSeats: Array.from(disabled),
     };
     await handleSaveConfig(newConfig);
+  };
+
+  // Helper: Parse a seat code within a zone (e.g. D-03, AD-03, G-12) to { rIdx, cIdx }
+  const parseSeatCode = (seatCode: string, zone: SeatZone): { rIdx: number; cIdx: number } | null => {
+    let code = seatCode.trim().toUpperCase();
+    const prefix = (zone.prefix ?? '').trim().toUpperCase();
+    if (prefix && code.startsWith(prefix)) {
+      code = code.slice(prefix.length);
+    }
+    const parts = code.split('-');
+    if (parts.length !== 2) return null;
+    const rowPart = parts[0];
+    const colPart = parts[1];
+
+    let rIdx = -1;
+    if (/^[A-Z]$/.test(rowPart)) {
+      rIdx = rowPart.charCodeAt(0) - 65;
+    } else {
+      rIdx = parseInt(rowPart, 10) - 1;
+    }
+
+    const cIdx = parseInt(colPart, 10) - 1;
+
+    if (rIdx >= 0 && rIdx < zone.rows && cIdx >= 0 && cIdx < zone.cols) {
+      return { rIdx, cIdx };
+    }
+    return null;
+  };
+
+  // Helper: Format { rIdx, cIdx } back to standard seatCode for a zone
+  const formatSeatCode = (zone: SeatZone, rIdx: number, cIdx: number): string => {
+    const prefix = (zone.prefix ?? '').trim().toUpperCase();
+    const rowChar = String.fromCharCode(65 + rIdx);
+    const colStr = cIdx + 1 < 10 ? `0${cIdx + 1}` : `${cIdx + 1}`;
+    return zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${rIdx + 1}-${colStr}`;
+  };
+
+  // Helper: Calculate bounding box of seats between seat1 and seat2 in a zone
+  const getSeatsInRectangle = (seat1: string, seat2: string, zone: SeatZone): string[] => {
+    const p1 = parseSeatCode(seat1, zone);
+    const p2 = parseSeatCode(seat2, zone);
+    if (!p1 || !p2) return [seat1.trim().toUpperCase(), seat2.trim().toUpperCase()];
+
+    const minR = Math.min(p1.rIdx, p2.rIdx);
+    const maxR = Math.max(p1.rIdx, p2.rIdx);
+    const minC = Math.min(p1.cIdx, p2.cIdx);
+    const maxC = Math.max(p1.cIdx, p2.cIdx);
+
+    const result: string[] = [];
+    for (let r = minR; r <= maxR; r++) {
+      for (let c = minC; c <= maxC; c++) {
+        result.push(formatSeatCode(zone, r, c).toUpperCase());
+      }
+    }
+    return result;
+  };
+
+  // Seat Click Handler supporting Single Click, Shift+Click (Range), and Batch Selection
+  const handleSeatClick = (seatCode: string, e: React.MouseEvent, zone: SeatZone) => {
+    const upperCode = seatCode.toUpperCase();
+
+    // 1. Shift + Click: Select rectangle between last clicked seat and this seat
+    if (e.shiftKey && lastClickedSeat) {
+      const box = getSeatsInRectangle(lastClickedSeat, upperCode, zone);
+      setSelectedSeats((prev) => {
+        const next = new Set(prev);
+        box.forEach((s) => next.add(s));
+        return next;
+      });
+      setLastClickedSeat(upperCode);
+      setIsBatchMode(true);
+      return;
+    }
+
+    // 2. Batch Selection Mode: Toggle this seat in/out of selection
+    if (isBatchMode) {
+      setSelectedSeats((prev) => {
+        const next = new Set(prev);
+        if (next.has(upperCode)) {
+          next.delete(upperCode);
+        } else {
+          next.add(upperCode);
+        }
+        return next;
+      });
+      setLastClickedSeat(upperCode);
+      return;
+    }
+
+    // 3. Normal Single Seat Click: Open seat details drawer
+    setSelectedSeat(upperCode);
+    setLastClickedSeat(upperCode);
+  };
+
+  // Batch Action: Disable Selected Seats (Make Aisle / Pillar)
+  const handleBatchDisableSeats = async (seatsToDisable: string[]) => {
+    if (seatsToDisable.length === 0) return;
+    setIsSaving(true);
+    try {
+      const disabled = new Set((config.disabledSeats || []).map((s) => s.trim().toUpperCase()));
+      const upperSeats = seatsToDisable.map((s) => s.trim().toUpperCase());
+      upperSeats.forEach((s) => disabled.add(s));
+
+      // Check if any of these seats currently has an occupant and unassign them so registrations stay safe
+      const occupantsToClear: string[] = [];
+      upperSeats.forEach((s) => {
+        const occ = seatOccupantMap.get(s);
+        if (occ && occ.id) {
+          occupantsToClear.push(occ.id);
+        }
+      });
+
+      if (occupantsToClear.length > 0) {
+        for (const regId of occupantsToClear) {
+          await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'update_participant_seat',
+              registrationId: regId,
+              seatNumber: null,
+            }),
+          }).catch(() => {});
+        }
+      }
+
+      const newConfig: EventSeatingConfig = {
+        ...config,
+        disabledSeats: Array.from(disabled),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await handleSaveConfig(newConfig);
+      setSelectedSeats(new Set());
+      setIsBatchMode(false);
+      setMessage({
+        text: `กำหนดที่นั่ง ${upperSeats.length} ที่ เป็นทางเดิน/เสา เรียบร้อยแล้ว`,
+        type: 'success',
+      });
+      onRefresh();
+    } catch (err: any) {
+      setMessage({ text: err.message || 'เกิดข้อผิดพลาดในการแปลงเป็นทางเดิน/เสา', type: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Batch Action: Restore Disabled Seats back to Normal Usable Seats
+  const handleBatchEnableSeats = async (seatsToEnable: string[]) => {
+    if (seatsToEnable.length === 0) return;
+    setIsSaving(true);
+    try {
+      const disabled = new Set((config.disabledSeats || []).map((s) => s.trim().toUpperCase()));
+      const upperSeats = seatsToEnable.map((s) => s.trim().toUpperCase());
+      upperSeats.forEach((s) => disabled.delete(s));
+
+      const newConfig: EventSeatingConfig = {
+        ...config,
+        disabledSeats: Array.from(disabled),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await handleSaveConfig(newConfig);
+      setSelectedSeats(new Set());
+      setIsBatchMode(false);
+      setMessage({
+        text: `คืนค่าที่นั่ง ${upperSeats.length} ที่ ให้กลับมาใช้งานได้ตามปกติเรียบร้อยแล้ว`,
+        type: 'success',
+      });
+      onRefresh();
+    } catch (err: any) {
+      setMessage({ text: err.message || 'เกิดข้อผิดพลาดในการคืนค่าที่นั่ง', type: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Batch Action: Set representative status designation (พระภิกษุ, แม่ชี, ฯลฯ) for all selected seats
+  const handleBatchDesignateStatus = async (
+    seatsToDesignate: string[],
+    status: ParticipantStatusCategory | null
+  ) => {
+    if (seatsToDesignate.length === 0) return;
+    setIsSaving(true);
+    try {
+      const designations = { ...(config.seatDesignations || {}) };
+      seatsToDesignate.forEach((s) => {
+        const upper = s.trim().toUpperCase();
+        if (!status) {
+          delete designations[upper];
+        } else {
+          designations[upper] = status;
+        }
+      });
+
+      const newConfig: EventSeatingConfig = {
+        ...config,
+        seatDesignations: designations,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await handleSaveConfig(newConfig);
+      setSelectedSeats(new Set());
+      setIsBatchMode(false);
+      setMessage({
+        text: `กำหนดสัญลักษณ์กลุ่ม ${seatsToDesignate.length} ที่นั่ง เรียบร้อยแล้ว`,
+        type: 'success',
+      });
+      onRefresh();
+    } catch (err: any) {
+      setMessage({ text: err.message || 'เกิดข้อผิดพลาดในการกำหนดกลุ่มที่นั่ง', type: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Assign or Swap seat manually
@@ -1377,6 +1649,39 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               )}
             </div>
 
+            {/* Batch Selection Mode Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const next = !isBatchMode;
+                setIsBatchMode(next);
+                if (!next) setSelectedSeats(new Set());
+              }}
+              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap shrink-0 ${
+                isBatchMode
+                  ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-black'
+                  : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
+              }`}
+              title="เปิด/ปิดโหมดเลือกหลายที่นั่งพร้อมกัน เพื่อทำทางเดิน/เสา หรือกำหนดกลุ่ม"
+            >
+              <CheckSquare className={`w-3.5 h-3.5 ${isBatchMode ? 'text-slate-950' : 'text-amber-600'}`} />
+              <span>{isBatchMode ? `โหมดเลือกกลุ่ม (${selectedSeats.size})` : 'เลือกหลายที่นั่ง'}</span>
+            </button>
+
+            {/* Range Selector Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsRangeModalOpen(true);
+              }}
+              className="px-2.5 py-1 text-xs font-bold bg-white hover:bg-indigo-50 text-slate-700 border border-slate-200 rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+              title="ระบุช่วงที่นั่งเพื่อเลือกกลุ่ม (เช่น D-03 ถึง I-03 หรือ D-10 ถึง G-12)"
+            >
+              <Layers className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="hidden sm:inline">เลือกเป็นช่วง...</span>
+              <span className="sm:hidden">ช่วง...</span>
+            </button>
+
             {/* Auto Assign Seats Button */}
             <button
               type="button"
@@ -1416,15 +1721,29 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               <span className="sm:hidden">พิมพ์ A4</span>
             </button>
 
+            {/* Reset / Deduplicate Button */}
+            <button
+              type="button"
+              onClick={handleDeduplicateRegistrations}
+              disabled={isDeduplicating || isSaving}
+              className="px-2.5 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0 disabled:opacity-50"
+              title="รีเซ็ตและลบรายชื่อผู้เข้าร่วมที่ซ้ำซ้อนให้ตรงกับจำนวนจริง (309 คน)"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 text-amber-200 ${isDeduplicating ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">รีเซ็ตจำนวน / ลบรายการซ้ำ</span>
+              <span className="sm:hidden">รีเซ็ตจำนวน</span>
+            </button>
+
             {/* Clear all seats */}
             <button
               type="button"
               onClick={handleClearAllSeats}
               disabled={isSaving || stats.assignedCount === 0}
-              className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition cursor-pointer disabled:opacity-40 shrink-0"
-              title="ล้างข้อมูลการจัดที่นั่งทั้งหมด"
+              className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition cursor-pointer disabled:opacity-40 shrink-0 flex items-center gap-1"
+              title="ล้างข้อมูลการจัดที่นั่งทั้งหมด (คืนค่าเป็น 0 ที่นั่ง)"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">ล้างผัง</span>
             </button>
 
             {/* Zoom Controls */}
@@ -1563,7 +1882,16 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar whitespace-nowrap text-slate-600 pb-0.5">
               <span className="flex items-center gap-1 font-semibold text-slate-700 shrink-0">
                 <Users className="w-3.5 h-3.5 text-slate-500" />
-                ผู้เข้าร่วม: <b className="text-slate-900">{stats.totalParticipants}</b> คน
+                <span>ผู้เข้าร่วม: <b className="text-slate-900">{stats.totalParticipants}</b> คน</span>
+                <button
+                  type="button"
+                  onClick={handleDeduplicateRegistrations}
+                  disabled={isDeduplicating}
+                  className="p-1 hover:text-amber-700 hover:bg-amber-50 rounded transition text-slate-400 cursor-pointer"
+                  title="รีเซ็ต/ล้างรายชื่อที่ซ้ำซ้อนให้ตรงกับจำนวนจริง (309 คน)"
+                >
+                  <RotateCcw className={`w-3 h-3 ${isDeduplicating ? 'animate-spin text-amber-600' : ''}`} />
+                </button>
               </span>
               <span className="flex items-center gap-1 shrink-0">
                 ความจุ: <b className="text-slate-900">{stats.totalCapacity}</b> ที่
@@ -1707,6 +2035,37 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               <div className="w-20 sm:w-32 h-1 bg-amber-400/50 rounded-full mt-1" />
             </div>
 
+            {/* Batch Mode Notice Banner */}
+            {isBatchMode && (
+              <div className="w-full max-w-3xl mb-4 py-2 px-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-950 flex flex-wrap items-center justify-between gap-2 text-xs font-medium shrink-0 animate-in fade-in duration-150 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    <b>โหมดเลือกกลุ่มเปิดอยู่:</b> คลิกที่นั่งเพื่อเลือก หรือกด <b>Shift + คลิก</b> เพื่อเลือกกรอบสี่เหลี่ยม (เช่น D-03..I-03 หรือ D-10..G-12) / สามารถคลิกหัวแถวหรือหัวคอลัมน์เพื่อเลือกทั้งแถว
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsRangeModalOpen(true)}
+                    className="px-2.5 py-1 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold transition cursor-pointer"
+                  >
+                    ระบุช่วงที่นั่ง...
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsBatchMode(false);
+                      setSelectedSeats(new Set());
+                    }}
+                    className="px-2.5 py-1 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-lg text-xs font-bold transition cursor-pointer"
+                  >
+                    ปิดโหมดนี้
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Zones Grid Container */}
             <div
               className="flex flex-col gap-8 transition-transform duration-150 origin-top"
@@ -1746,9 +2105,36 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                           <button
                             key={cIdx}
                             type="button"
-                            onClick={() => handleToggleColAisle(zone, cIdx + 1)}
-                            className="text-center text-[10px] font-bold text-slate-400 hover:text-amber-800 hover:bg-amber-100 rounded cursor-pointer transition py-0.5"
-                            title={`คลิกคอลัมน์ ${cIdx + 1 < 10 ? `0${cIdx + 1}` : cIdx + 1} เพื่อสลับเปิด/ปิดเป็นทางเดินและทางบิณฑบาตร`}
+                            onClick={() => {
+                              if (isBatchMode) {
+                                const colSeats: string[] = [];
+                                for (let r = 0; r < zone.rows; r++) {
+                                  colSeats.push(formatSeatCode(zone, r, cIdx).toUpperCase());
+                                }
+                                setSelectedSeats((prev) => {
+                                  const next = new Set(prev);
+                                  const allPresent = colSeats.every((s) => next.has(s));
+                                  if (allPresent) {
+                                    colSeats.forEach((s) => next.delete(s));
+                                  } else {
+                                    colSeats.forEach((s) => next.add(s));
+                                  }
+                                  return next;
+                                });
+                              } else {
+                                handleToggleColAisle(zone, cIdx + 1);
+                              }
+                            }}
+                            className={`text-center text-[10px] font-bold rounded cursor-pointer transition py-0.5 ${
+                              isBatchMode
+                                ? 'text-amber-900 bg-amber-100 hover:bg-amber-200 ring-1 ring-amber-300 font-black'
+                                : 'text-slate-400 hover:text-amber-800 hover:bg-amber-100'
+                            }`}
+                            title={
+                              isBatchMode
+                                ? `คลิกคอลัมน์ ${cIdx + 1 < 10 ? `0${cIdx + 1}` : cIdx + 1} เพื่อเลือกทั้งคอลัมน์`
+                                : `คลิกคอลัมน์ ${cIdx + 1 < 10 ? `0${cIdx + 1}` : cIdx + 1} เพื่อสลับเปิด/ปิดเป็นทางเดินและทางบิณฑบาตร`
+                            }
                           >
                             {cIdx + 1 < 10 ? `0${cIdx + 1}` : cIdx + 1}
                           </button>
@@ -1765,9 +2151,36 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                             {/* Row Label */}
                             <button
                               type="button"
-                              onClick={() => setSelectedSeat(`${prefix}${rowChar}-01`)}
-                              className="w-7 text-center text-xs font-black text-slate-600 hover:text-amber-900 bg-slate-100 hover:bg-amber-100 py-1 rounded cursor-pointer transition"
-                              title={`แถว ${rowChar} - คลิกเพื่อจัดการกำหนดสถานะแถวนี้`}
+                              onClick={() => {
+                                if (isBatchMode) {
+                                  const rowSeats: string[] = [];
+                                  for (let c = 0; c < zone.cols; c++) {
+                                    rowSeats.push(formatSeatCode(zone, rIdx, c).toUpperCase());
+                                  }
+                                  setSelectedSeats((prev) => {
+                                    const next = new Set(prev);
+                                    const allPresent = rowSeats.every((s) => next.has(s));
+                                    if (allPresent) {
+                                      rowSeats.forEach((s) => next.delete(s));
+                                    } else {
+                                      rowSeats.forEach((s) => next.add(s));
+                                    }
+                                    return next;
+                                  });
+                                } else {
+                                  setSelectedSeat(`${prefix}${rowChar}-01`);
+                                }
+                              }}
+                              className={`w-7 text-center text-xs font-black py-1 rounded cursor-pointer transition ${
+                                isBatchMode
+                                  ? 'text-amber-950 bg-amber-100 hover:bg-amber-200 ring-1 ring-amber-300'
+                                  : 'text-slate-600 hover:text-amber-900 bg-slate-100 hover:bg-amber-100'
+                              }`}
+                              title={
+                                isBatchMode
+                                  ? `คลิกแถว ${rowChar} เพื่อเลือกทั้งแถว`
+                                  : `แถว ${rowChar} - คลิกเพื่อจัดการกำหนดสถานะแถวนี้`
+                              }
                             >
                               {rowChar}
                             </button>
@@ -1785,6 +2198,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                 const occupant = seatOccupantMap.get(seatCode.toUpperCase());
                                 const isCheckedIn = Boolean(occupant?.seatCheckinAt);
                                 const isSelected = selectedSeat?.toUpperCase() === seatCode.toUpperCase();
+                                const isBatchSelected = selectedSeats.has(seatCode.toUpperCase());
 
                                 const designatedKey = (config.seatDesignations || {})[seatCode.toUpperCase()] as ParticipantStatusCategory;
                                 const designatedTheme = designatedKey ? STATUS_THEMES[designatedKey] : null;
@@ -1803,11 +2217,20 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                     <button
                                       key={cIdx}
                                       type="button"
-                                      onClick={() => setSelectedSeat(seatCode)}
-                                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-slate-200/90 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[9px] hover:bg-slate-300 transition cursor-pointer"
+                                      onClick={(e) => handleSeatClick(seatCode, e, zone)}
+                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-slate-200/90 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[9px] hover:bg-slate-300 transition cursor-pointer relative ${
+                                        isBatchSelected
+                                          ? 'ring-4 ring-amber-500 scale-105 z-20 shadow-md bg-amber-100/90 text-amber-950 font-black border-amber-500'
+                                          : ''
+                                      }`}
                                       title={`ที่นั่ง ${seatCode} (เว้นเป็นทางเดิน/เสา) - คลิกเพื่อจัดการ`}
                                     >
                                       —
+                                      {isBatchSelected && (
+                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-600 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-md z-30 ring-1 ring-white">
+                                          ✓
+                                        </span>
+                                      )}
                                     </button>
                                   );
                                 }
@@ -1832,31 +2255,26 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
 
                                   if (isDaily) {
                                     if (isScanned && isSeatOccupied === false) {
-                                      // 🚨 สแกนเข้าแต่ที่นั่งว่าง!
                                       dailyBgClass = 'bg-rose-600';
                                       dailyBorderClass = 'border-rose-300 ring-4 ring-rose-400';
                                       dailyTextClass = 'text-white font-black';
                                       dailyBadge = { text: '🚨 ไม่อยู่', bg: 'bg-rose-800 text-white', pulse: true };
                                     } else if (isScanned && isSeatOccupied === true) {
-                                      // 🟢 สแกนแล้ว และนั่งอยู่ปกติ
                                       dailyBgClass = 'bg-emerald-600';
                                       dailyBorderClass = 'border-emerald-300 ring-2 ring-emerald-400';
                                       dailyTextClass = 'text-white font-bold';
                                       dailyBadge = { text: '✓ อยู่', bg: 'bg-emerald-800 text-white' };
                                     } else if (isScanned && isSeatOccupied === undefined) {
-                                      // 🔵 สแกนแล้ว แต่ยังไม่ตรวจที่นั่ง
                                       dailyBgClass = theme.bgClass;
                                       dailyBorderClass = 'border-blue-400 ring-2 ring-blue-300';
                                       dailyTextClass = theme.textClass;
                                       dailyBadge = { text: '✓ สแกน', bg: 'bg-blue-600 text-white' };
                                     } else if (!isScanned && isSeatOccupied === true) {
-                                      // 🟡 นั่งอยู่แต่ยังไม่ได้สแกน
                                       dailyBgClass = 'bg-amber-400';
                                       dailyBorderClass = 'border-amber-600 ring-2 ring-amber-400';
                                       dailyTextClass = 'text-slate-950 font-black';
                                       dailyBadge = { text: '⚠️ ไม่สแกน', bg: 'bg-amber-800 text-amber-100' };
                                     } else {
-                                      // ⚪ ยังไม่สแกนในรอบนี้ (ขาด)
                                       isDimmed = true;
                                       dailyBgClass = 'bg-slate-100';
                                       dailyBorderClass = 'border-dashed border-slate-300';
@@ -1868,7 +2286,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                     <button
                                       key={cIdx}
                                       type="button"
-                                      onClick={() => setSelectedSeat(seatCode)}
+                                      onClick={(e) => handleSeatClick(seatCode, e, zone)}
                                       className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${
                                         isDaily ? dailyBgClass : theme.bgClass
                                       } ${isDaily ? '' : theme.hoverClass} ${
@@ -1876,7 +2294,11 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                       } flex flex-col items-center justify-center shadow-xs transition cursor-pointer relative border ${
                                         isDaily ? dailyBorderClass : theme.borderClass
                                       } ${isDimmed ? 'opacity-35 hover:opacity-100' : ''} ${
-                                        isSelected ? 'ring-4 ring-amber-400 scale-105 z-10' : ''
+                                        isBatchSelected
+                                          ? 'ring-4 ring-amber-500 scale-105 z-20 shadow-md bg-amber-100/90 text-amber-950 font-black border-amber-500'
+                                          : isSelected
+                                          ? 'ring-4 ring-amber-400 scale-105 z-10'
+                                          : ''
                                       } ${isSearchMatched ? 'ring-4 ring-yellow-300 animate-bounce' : ''}`}
                                       title={
                                         isDaily
@@ -1903,7 +2325,11 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                             ? `ก.${occupant.groupNumber}`
                                             : occupant.studentName.split(' ')[0])}
                                       </span>
-                                      {isDaily ? (
+                                      {isBatchSelected ? (
+                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-600 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-md z-30 ring-1 ring-white">
+                                          ✓
+                                        </span>
+                                      ) : isDaily ? (
                                         dailyBadge && (
                                           <span
                                             className={`absolute -top-1 -right-1 px-1 py-0.2 rounded-full text-[7.5px] font-black shadow-xs ${
@@ -1932,9 +2358,13 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                     <button
                                       key={cIdx}
                                       type="button"
-                                      onClick={() => setSelectedSeat(seatCode)}
-                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${designatedTheme.designatedBgClass} ${designatedTheme.designatedBorderClass} ${designatedTheme.designatedTextClass} font-bold flex flex-col items-center justify-center transition cursor-pointer hover:scale-105 ${
-                                        isSelected ? 'ring-3 ring-amber-500 scale-105 z-10' : ''
+                                      onClick={(e) => handleSeatClick(seatCode, e, zone)}
+                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${designatedTheme.designatedBgClass} ${designatedTheme.designatedBorderClass} ${designatedTheme.designatedTextClass} font-bold flex flex-col items-center justify-center transition cursor-pointer relative hover:scale-105 ${
+                                        isBatchSelected
+                                          ? 'ring-4 ring-amber-500 scale-105 z-20 shadow-md bg-amber-100/90 text-amber-950 font-black border-amber-500'
+                                          : isSelected
+                                          ? 'ring-3 ring-amber-500 scale-105 z-10'
+                                          : ''
                                       } ${isSearchMatched ? 'ring-4 ring-yellow-300 animate-bounce' : ''}`}
                                       title={`[สงวนสิทธิ์สำหรับ: ${designatedTheme.label}] ${seatCode} (ว่าง) - คลิกเพื่อจัดนิสิตลงที่นั่ง`}
                                     >
@@ -1942,6 +2372,11 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                       <span className="text-[8px] opacity-90 truncate max-w-[34px]">
                                         {designatedTheme.shortLabel}
                                       </span>
+                                      {isBatchSelected && (
+                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-600 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-md z-30 ring-1 ring-white">
+                                          ✓
+                                        </span>
+                                      )}
                                     </button>
                                   );
                                 }
@@ -1951,14 +2386,23 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                   <button
                                     key={cIdx}
                                     type="button"
-                                    onClick={() => setSelectedSeat(seatCode)}
-                                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white hover:bg-amber-50 text-slate-600 border border-slate-300 hover:border-amber-400 font-bold flex flex-col items-center justify-center transition cursor-pointer ${
-                                      isSelected ? 'ring-3 ring-amber-500 scale-105 z-10' : ''
+                                    onClick={(e) => handleSeatClick(seatCode, e, zone)}
+                                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white hover:bg-amber-50 text-slate-600 border border-slate-300 hover:border-amber-400 font-bold flex flex-col items-center justify-center transition cursor-pointer relative ${
+                                      isBatchSelected
+                                        ? 'ring-4 ring-amber-500 scale-105 z-20 shadow-md bg-amber-100/90 text-amber-950 font-black border-amber-500'
+                                        : isSelected
+                                        ? 'ring-3 ring-amber-500 scale-105 z-10'
+                                        : ''
                                     } ${isSearchMatched ? 'ring-4 ring-yellow-300 animate-bounce' : ''}`}
                                     title={`[ที่นั่งว่าง] ${seatCode} - คลิกเพื่อจัดนิสิตลงที่นั่งนี้`}
                                   >
                                     <span className="text-[10px] leading-none text-slate-500">{seatCode}</span>
                                     <span className="text-[8px] text-slate-300">ว่าง</span>
+                                    {isBatchSelected && (
+                                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-600 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-md z-30 ring-1 ring-white">
+                                        ✓
+                                      </span>
+                                    )}
                                   </button>
                                 );
                               })}
@@ -2853,6 +3297,26 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                       />
                     </div>
 
+                    {/* Reset Option Before Import */}
+                    <div className="p-3 bg-amber-50/90 border border-amber-300 rounded-xl flex items-start gap-2.5">
+                      <input
+                        type="checkbox"
+                        id="resetExistingSeatsCheck"
+                        checked={resetExistingSeats}
+                        onChange={(e) => setResetExistingSeats(e.target.checked)}
+                        className="mt-0.5 rounded text-amber-600 focus:ring-amber-500 cursor-pointer w-4 h-4 shrink-0"
+                      />
+                      <label htmlFor="resetExistingSeatsCheck" className="text-xs text-amber-950 cursor-pointer select-none">
+                        <span className="font-bold text-amber-900 flex items-center gap-1.5">
+                          <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                          <span>รีเซ็ตผังที่นั่งเดิมทั้งหมดก่อนนำเข้า (แนะนำ)</span>
+                        </span>
+                        <p className="text-[11px] text-amber-800 mt-0.5 leading-snug">
+                          ล้างผังที่นั่งเดิมในระบบออกทั้งหมดก่อนนำเข้า เพื่อป้องกันที่นั่งค้างหรือซ้ำซ้อน และอัปเดตเฉพาะนิสิตในทะเบียนกลุ่ม ({registrations.length} คน)
+                        </p>
+                      </label>
+                    </div>
+
                     {/* Preview Table */}
                     {importPreviewRows.length > 0 && (
                       <div className="space-y-2 pt-2 border-t border-slate-200">
@@ -3261,6 +3725,230 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             config={config}
             registrations={registrations}
           />
+        )}
+
+        {/* Floating Batch Action Panel (เมื่อมีการเลือกหลายที่นั่ง) */}
+        {selectedSeats.size > 0 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-700 flex flex-wrap items-center justify-center gap-2 sm:gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200 max-w-[96vw]">
+            <div className="flex items-center gap-1.5 text-xs font-black text-amber-300 pr-2 border-r border-slate-700 whitespace-nowrap">
+              <CheckSquare className="w-4 h-4 text-amber-400" />
+              <span>เลือก {selectedSeats.size} ที่นั่ง</span>
+            </div>
+
+            {/* Action: ทำเป็นทางเดิน/เสา */}
+            <button
+              type="button"
+              onClick={() => handleBatchDisableSeats(Array.from(selectedSeats))}
+              disabled={isSaving}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs border border-slate-600 whitespace-nowrap disabled:opacity-50"
+              title="แปลงที่นั่งที่เลือกทั้งหมดให้เป็นทางเดินหรือเสา (—)"
+            >
+              <span className="text-slate-400 font-mono font-black text-sm leading-none">—</span>
+              <span>ทำเป็นทางเดิน/เสา</span>
+            </button>
+
+            {/* Action: คืนค่าเป็นที่นั่งปกติ */}
+            <button
+              type="button"
+              onClick={() => handleBatchEnableSeats(Array.from(selectedSeats))}
+              disabled={isSaving}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs whitespace-nowrap disabled:opacity-50"
+              title="คืนค่าที่นั่งที่เลือกให้กลับมาเป็นที่นั่งปกติ"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+              <span>คืนค่าเป็นที่นั่งปกติ</span>
+            </button>
+
+            {/* Action: กำหนดสัญลักษณ์กลุ่ม */}
+            <select
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  handleBatchDesignateStatus(
+                    Array.from(selectedSeats),
+                    val === 'CLEAR' ? null : (val as ParticipantStatusCategory)
+                  );
+                  e.target.value = '';
+                }
+              }}
+              defaultValue=""
+              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl text-xs font-medium cursor-pointer focus:outline-hidden whitespace-nowrap"
+            >
+              <option value="" disabled>
+                กำหนดกลุ่มผู้ปฏิบัติ...
+              </option>
+              <option value="MONK">🟠 พระภิกษุ</option>
+              <option value="BHIKKHUNI">🟤 ภิกษุณี / Inter</option>
+              <option value="SAMANERA">🔴 สามเณร</option>
+              <option value="MAECHI">🟡 แม่ชี</option>
+              <option value="LAY_MALE">🔵 ฆราวาสชาย</option>
+              <option value="LAY_FEMALE">🟢 ฆราวาสหญิง</option>
+              <option value="CLEAR">⚪ ล้างสัญลักษณ์กลุ่ม</option>
+            </select>
+
+            {/* Action: ยกเลิกการเลือก */}
+            <button
+              type="button"
+              onClick={() => setSelectedSeats(new Set())}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer"
+              title="ยกเลิกการเลือกทั้งหมด"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Range Selection Modal (ระบุช่วงที่นั่งเพื่อเลือกกลุ่ม) */}
+        {isRangeModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-700 to-slate-900 text-white">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-amber-300" />
+                  <h4 className="font-bold text-sm sm:text-base">เลือกกลุ่มที่นั่งเป็นช่วง (Range Selection)</h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsRangeModalOpen(false)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-4 space-y-4">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  ระบุรหัสที่นั่งเริ่มต้นและสิ้นสุด เช่น <b>D-03</b> ถึง <b>I-03</b> (แนวเสา/ทางเดิน) หรือ <b>D-10</b> ถึง <b>G-12</b> (กลุ่มสี่เหลี่ยม) ระบบจะคำนวณและเลือกทุกที่นั่งในกรอบให้อัตโนมัติ
+                </p>
+
+                {config.zones.length > 1 && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">โซนที่ต้องการเลือก:</label>
+                    <select
+                      value={rangeZoneId || config.zones[0]?.id}
+                      onChange={(e) => setRangeZoneId(e.target.value)}
+                      className="w-full p-2 border border-slate-200 rounded-xl text-xs bg-slate-50 font-semibold"
+                    >
+                      {config.zones.map((z) => (
+                        <option key={z.id} value={z.id}>
+                          {z.name} ({z.rows} แถว × {z.cols} คอลัมน์)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">จากที่นั่ง (Start):</label>
+                    <input
+                      type="text"
+                      placeholder="เช่น D-03 หรือ D-10"
+                      value={rangeStartSeat}
+                      onChange={(e) => setRangeStartSeat(e.target.value.toUpperCase())}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">ถึงที่นั่ง (End):</label>
+                    <input
+                      type="text"
+                      placeholder="เช่น I-03 หรือ G-12"
+                      value={rangeEndSeat}
+                      onChange={(e) => setRangeEndSeat(e.target.value.toUpperCase())}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 uppercase"
+                    />
+                  </div>
+                </div>
+
+                {/* Range Preview */}
+                {(() => {
+                  const targetZone =
+                    config.zones.find((z) => z.id === (rangeZoneId || activeZoneId)) || config.zones[0];
+                  const seats =
+                    rangeStartSeat && rangeEndSeat && targetZone
+                      ? getSeatsInRectangle(rangeStartSeat, rangeEndSeat, targetZone)
+                      : [];
+
+                  return (
+                    <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200/80 text-xs text-amber-900 space-y-1">
+                      <div className="font-bold flex items-center justify-between">
+                        <span>จำนวนที่นั่งที่ครอบคลุม:</span>
+                        <span className="px-2 py-0.5 bg-amber-200 text-amber-950 rounded-full font-black">
+                          {seats.length} ที่นั่ง
+                        </span>
+                      </div>
+                      {seats.length > 0 && (
+                        <p className="text-[11px] text-amber-800 line-clamp-2 font-mono">
+                          {seats.slice(0, 10).join(', ')}
+                          {seats.length > 10 ? ` และอีก ${seats.length - 10} ที่นั่ง` : ''}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const targetZone =
+                        config.zones.find((z) => z.id === (rangeZoneId || activeZoneId)) || config.zones[0];
+                      if (!targetZone || !rangeStartSeat || !rangeEndSeat) return;
+                      const seats = getSeatsInRectangle(rangeStartSeat, rangeEndSeat, targetZone);
+                      if (seats.length === 0) return;
+                      handleBatchDisableSeats(seats);
+                      setIsRangeModalOpen(false);
+                    }}
+                    disabled={!rangeStartSeat || !rangeEndSeat}
+                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    <span className="font-mono text-sm leading-none">—</span>
+                    <span>แปลงเป็นทางเดิน/เสาทันที (—)</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetZone =
+                          config.zones.find((z) => z.id === (rangeZoneId || activeZoneId)) || config.zones[0];
+                        if (!targetZone || !rangeStartSeat || !rangeEndSeat) return;
+                        const seats = getSeatsInRectangle(rangeStartSeat, rangeEndSeat, targetZone);
+                        if (seats.length === 0) return;
+                        setSelectedSeats(new Set(seats));
+                        setIsBatchMode(true);
+                        setIsRangeModalOpen(false);
+                      }}
+                      disabled={!rangeStartSeat || !rangeEndSeat}
+                      className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      <CheckSquare className="w-3.5 h-3.5" />
+                      <span>เลือกกลุ่มนี้บนผัง</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetZone =
+                          config.zones.find((z) => z.id === (rangeZoneId || activeZoneId)) || config.zones[0];
+                        if (!targetZone || !rangeStartSeat || !rangeEndSeat) return;
+                        const seats = getSeatsInRectangle(rangeStartSeat, rangeEndSeat, targetZone);
+                        if (seats.length === 0) return;
+                        handleBatchEnableSeats(seats);
+                        setIsRangeModalOpen(false);
+                      }}
+                      disabled={!rangeStartSeat || !rangeEndSeat}
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>คืนค่าเป็นที่นั่ง</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

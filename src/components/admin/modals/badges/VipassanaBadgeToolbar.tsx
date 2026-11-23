@@ -13,6 +13,8 @@ import {
   Type,
   QrCode as QrCodeIcon,
   Search,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import type {
   BadgeLayoutMode,
@@ -25,6 +27,8 @@ import type { WatermarkMode } from '@/hooks/useWatermarkSettings';
 import { formatGroupDisplay } from '@/lib/events/groupImport';
 
 interface VipassanaBadgeToolbarProps {
+  isToolbarCollapsed?: boolean;
+  setIsToolbarCollapsed?: (c: boolean | ((prev: boolean) => boolean)) => void;
   selectedGroup: number | 'ALL';
   setSelectedGroup: (g: number | 'ALL') => void;
   availableGroups: number[];
@@ -61,6 +65,8 @@ interface VipassanaBadgeToolbarProps {
 }
 
 export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
+  isToolbarCollapsed = false,
+  setIsToolbarCollapsed,
   selectedGroup,
   setSelectedGroup,
   availableGroups,
@@ -96,8 +102,8 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
   setSearchQuery,
 }) => {
   return (
-    <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 print:hidden">
-      <div className="flex flex-wrap items-center gap-2.5">
+    <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 print:hidden transition-all duration-200">
+      <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
         {/* Group Selector */}
         <div className="flex items-center gap-1.5">
           <span className="font-bold text-slate-700 flex items-center gap-1">
@@ -155,179 +161,184 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
           <select
             value={orientation}
             onChange={(e) => setOrientation(e.target.value as BadgeOrientation)}
-            className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-semibold text-slate-800 focus:outline-none"
+            className="px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 font-semibold text-slate-800 focus:outline-none cursor-pointer"
           >
             <option value="VERTICAL">📱 การ์ดแนวตั้ง (แนะนำ - ซองคล้องคอ QR ใหญ่)</option>
             <option value="HORIZONTAL">💳 การ์ดแนวนอน (รูปแบบดั้งเดิม)</option>
           </select>
         </div>
 
-        {/* Watermark Controls */}
-        <div className="flex items-center gap-1.5 bg-purple-50/70 px-2 py-1 rounded-xl border border-purple-200/80">
-          <span className="font-bold text-purple-900 flex items-center gap-1">
-            <ImageIcon className="w-3.5 h-3.5 text-purple-700" />
-            ลายน้ำ:
-          </span>
-          <select
-            value={watermarkMode}
-            onChange={(e) => {
-              const mode = e.target.value as WatermarkMode;
-              setWatermarkMode(mode);
-              if (mode === 'CUSTOM' && !customWatermarkUrl) {
-                fileInputRef.current?.click();
-              }
-            }}
-            className="px-2 py-1 bg-white rounded-lg border border-purple-200 text-xs font-bold text-purple-950 focus:outline-none cursor-pointer"
-          >
-            <option value="MCU_LOGO">☸️ ตราสัญลักษณ์ มจร</option>
-            <option value="CUSTOM">🖼️ อัปโหลดภาพพื้นหลังเอง</option>
-            <option value="NONE">🚫 ไม่ใส่ลายน้ำ</option>
-          </select>
-
-          {watermarkMode !== 'NONE' && (
-            <select
-              value={watermarkOpacity}
-              onChange={(e) => setWatermarkOpacity(parseFloat(e.target.value))}
-              className="px-1.5 py-1 bg-white rounded-lg border border-purple-200 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-              title="ระดับความโปร่งแสงของลายน้ำ"
-            >
-              <option value={0.06}>จาง 6%</option>
-              <option value={0.10}>พอดี 10% (แนะนำ)</option>
-              <option value={0.15}>ชัด 15%</option>
-              <option value={0.20}>เข้ม 20%</option>
-            </select>
-          )}
-
-          {watermarkMode === 'CUSTOM' && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="px-2 py-1 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer"
-                title="เลือกรูปภาพพื้นหลังลายน้ำจากเครื่อง"
+        {/* Collapsible Secondary Customization Options */}
+        {!isToolbarCollapsed && (
+          <>
+            {/* Watermark Controls */}
+            <div className="flex items-center gap-1.5 bg-purple-50/70 px-2 py-1 rounded-xl border border-purple-200/80">
+              <span className="font-bold text-purple-900 flex items-center gap-1">
+                <ImageIcon className="w-3.5 h-3.5 text-purple-700" />
+                ลายน้ำ:
+              </span>
+              <select
+                value={watermarkMode}
+                onChange={(e) => {
+                  const mode = e.target.value as WatermarkMode;
+                  setWatermarkMode(mode);
+                  if (mode === 'CUSTOM' && !customWatermarkUrl) {
+                    fileInputRef.current?.click();
+                  }
+                }}
+                className="px-2 py-1 bg-white rounded-lg border border-purple-200 text-xs font-bold text-purple-950 focus:outline-none cursor-pointer"
               >
-                <Upload className="w-3 h-3" />
-                <span>{customWatermarkUrl ? 'เปลี่ยนรูป' : 'เลือกรูป'}</span>
-              </button>
-              {customWatermarkUrl && (
-                <button
-                  type="button"
-                  onClick={clearCustomWatermark}
-                  className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                  title="ยกเลิกภาพพื้นหลังที่อัปโหลด กลับไปใช้ตรา มจร"
+                <option value="MCU_LOGO">☸️ ตราสัญลักษณ์ มจร</option>
+                <option value="CUSTOM">🖼️ อัปโหลดภาพพื้นหลังเอง</option>
+                <option value="NONE">🚫 ไม่ใส่ลายน้ำ</option>
+              </select>
+
+              {watermarkMode !== 'NONE' && (
+                <select
+                  value={watermarkOpacity}
+                  onChange={(e) => setWatermarkOpacity(parseFloat(e.target.value))}
+                  className="px-1.5 py-1 bg-white rounded-lg border border-purple-200 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+                  title="ระดับความโปร่งแสงของลายน้ำ"
                 >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                  <option value={0.06}>จาง 6%</option>
+                  <option value={0.10}>พอดี 10% (แนะนำ)</option>
+                  <option value={0.15}>ชัด 15%</option>
+                  <option value={0.20}>เข้ม 20%</option>
+                </select>
               )}
+
+              {watermarkMode === 'CUSTOM' && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-2 py-1 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                    title="เลือกรูปภาพพื้นหลังลายน้ำจากเครื่อง"
+                  >
+                    <Upload className="w-3 h-3" />
+                    <span>{customWatermarkUrl ? 'เปลี่ยนรูป' : 'เลือกรูป'}</span>
+                  </button>
+                  {customWatermarkUrl && (
+                    <button
+                      type="button"
+                      onClick={clearCustomWatermark}
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                      title="ยกเลิกภาพพื้นหลังที่อัปโหลด กลับไปใช้ตรา มจร"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
             </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileUpload}
-          />
-        </div>
 
-        {/* QR Code Scale Selector */}
-        <div className="flex items-center gap-1.5 bg-emerald-50/80 px-2 py-1 rounded-xl border border-emerald-200">
-          <span className="font-bold text-emerald-950 flex items-center gap-1">
-            <QrCodeIcon className="w-3.5 h-3.5 text-emerald-700" />
-            ขนาด QR:
-          </span>
-          <select
-            value={qrScale}
-            onChange={(e) => setQrScale(e.target.value as QrScaleMode)}
-            className="px-2 py-1 bg-white rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 focus:outline-none cursor-pointer"
-          >
-            <option value="2.5X">🔥 ใหญ่ 2.5 เท่า (เต็มพื้นที่การ์ด)</option>
-            <option value="2X">⚡ ใหญ่ 2.0 เท่า (แนะนำ - คมชัด)</option>
-            <option value="1.5X">✨ ใหญ่ 1.5 เท่า</option>
-            <option value="1X">📐 ปกติ 1.0 เท่า</option>
-          </select>
-        </div>
+            {/* QR Code Scale Selector */}
+            <div className="flex items-center gap-1.5 bg-emerald-50/80 px-2 py-1 rounded-xl border border-emerald-200">
+              <span className="font-bold text-emerald-950 flex items-center gap-1">
+                <QrCodeIcon className="w-3.5 h-3.5 text-emerald-700" />
+                ขนาด QR:
+              </span>
+              <select
+                value={qrScale}
+                onChange={(e) => setQrScale(e.target.value as QrScaleMode)}
+                className="px-2 py-1 bg-white rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 focus:outline-none cursor-pointer"
+              >
+                <option value="2.5X">🔥 ใหญ่ 2.5 เท่า (เต็มพื้นที่การ์ด)</option>
+                <option value="2X">⚡ ใหญ่ 2.0 เท่า (แนะนำ - คมชัด)</option>
+                <option value="1.5X">✨ ใหญ่ 1.5 เท่า</option>
+                <option value="1X">📐 ปกติ 1.0 เท่า</option>
+              </select>
+            </div>
 
-        {/* Color Theme Selector */}
-        <div className="flex items-center gap-1.5 bg-amber-50/80 px-2 py-1 rounded-xl border border-amber-200">
-          <span className="font-bold text-amber-950 flex items-center gap-1">
-            <Palette className="w-3.5 h-3.5 text-amber-600" />
-            สีข้อความ:
-          </span>
-          <select
-            value={colorTheme}
-            onChange={(e) => setColorTheme(e.target.value as BadgeColorTheme)}
-            className="px-2 py-1 bg-white rounded-lg border border-amber-300 text-xs font-bold text-amber-950 focus:outline-none cursor-pointer"
-          >
-            <option value="GOLD">🟡 เหลืองทองสง่างาม (แนะนำ - สวยงาม อ่านง่าย)</option>
-            <option value="PURPLE">🟣 ม่วงมหาจุฬาฯ (ดั้งเดิม)</option>
-            <option value="NAVY">🔵 น้ำเงินกรมท่าภูมิฐาน</option>
-            <option value="CRIMSON">🔴 แดงเลือดหมูมงคล</option>
-            <option value="CLASSIC_BLACK">⚫ ดำ-เทาเข้มทางการ (คมชัดสูงสุด)</option>
-          </select>
-        </div>
+            {/* Color Theme Selector */}
+            <div className="flex items-center gap-1.5 bg-amber-50/80 px-2 py-1 rounded-xl border border-amber-200">
+              <span className="font-bold text-amber-950 flex items-center gap-1">
+                <Palette className="w-3.5 h-3.5 text-amber-600" />
+                สีข้อความ:
+              </span>
+              <select
+                value={colorTheme}
+                onChange={(e) => setColorTheme(e.target.value as BadgeColorTheme)}
+                className="px-2 py-1 bg-white rounded-lg border border-amber-300 text-xs font-bold text-amber-950 focus:outline-none cursor-pointer"
+              >
+                <option value="GOLD">🟡 เหลืองทองสง่างาม (แนะนำ - สวยงาม อ่านง่าย)</option>
+                <option value="PURPLE">🟣 ม่วงมหาจุฬาฯ (ดั้งเดิม)</option>
+                <option value="NAVY">🔵 น้ำเงินกรมท่าภูมิฐาน</option>
+                <option value="CRIMSON">🔴 แดงเลือดหมูมงคล</option>
+                <option value="CLASSIC_BLACK">⚫ ดำ-เทาเข้มทางการ (คมชัดสูงสุด)</option>
+              </select>
+            </div>
 
-        {/* Font Size Selector */}
-        <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-xl border border-slate-300">
-          <span className="font-bold text-slate-700 flex items-center gap-1">
-            <Type className="w-3.5 h-3.5 text-slate-600" />
-            ขนาดฟอนต์:
-          </span>
-          <select
-            value={fontSize}
-            onChange={(e) => setFontSize(e.target.value as BadgeFontSize)}
-            className="px-2 py-1 bg-white rounded-lg border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
-          >
-            <option value="MEDIUM">ปกติ (พอดีสัดส่วน)</option>
-            <option value="LARGE">ใหญ่ (เห็นชัดจากระยะไกล)</option>
-            <option value="SMALL">กะทัดรัด (สำหรับชื่อยาว)</option>
-          </select>
-        </div>
+            {/* Font Size Selector */}
+            <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-xl border border-slate-300">
+              <span className="font-bold text-slate-700 flex items-center gap-1">
+                <Type className="w-3.5 h-3.5 text-slate-600" />
+                ขนาดฟอนต์:
+              </span>
+              <select
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value as BadgeFontSize)}
+                className="px-2 py-1 bg-white rounded-lg border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+              >
+                <option value="MEDIUM">ปกติ (พอดีสัดส่วน)</option>
+                <option value="LARGE">ใหญ่ (เห็นชัดจากระยะไกล)</option>
+                <option value="SMALL">กะทัดรัด (สำหรับชื่อยาว)</option>
+              </select>
+            </div>
 
-        {/* Toggle Student Name On/Off */}
-        <button
-          type="button"
-          onClick={() => setShowStudentName(!showStudentName)}
-          className={`flex items-center gap-1.5 text-xs font-bold cursor-pointer px-2.5 py-1.5 rounded-lg border shadow-2xs transition ${
-            showStudentName
-              ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-              : 'bg-slate-100 border-slate-300 text-slate-600'
-          }`}
-          title="เปิดหรือปิดการแสดงชื่อนิสิตบนป้ายคล้องคอ"
-        >
-          <span>ชื่อนิสิต:</span>
-          <span
-            className={`px-1.5 py-0.2 rounded text-[10px] font-extrabold ${
-              showStudentName ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'
-            }`}
-          >
-            {showStudentName ? 'เปิดแสดง' : 'ปิดซ่อน'}
-          </span>
-        </button>
+            {/* Toggle Student Name On/Off */}
+            <button
+              type="button"
+              onClick={() => setShowStudentName(!showStudentName)}
+              className={`flex items-center gap-1.5 text-xs font-bold cursor-pointer px-2.5 py-1.5 rounded-lg border shadow-2xs transition ${
+                showStudentName
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                  : 'bg-slate-100 border-slate-300 text-slate-600'
+              }`}
+              title="เปิดหรือปิดการแสดงชื่อนิสิตบนป้ายคล้องคอ"
+            >
+              <span>ชื่อนิสิต:</span>
+              <span
+                className={`px-1.5 py-0.2 rounded text-[10px] font-extrabold ${
+                  showStudentName ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'
+                }`}
+              >
+                {showStudentName ? 'เปิดแสดง' : 'ปิดซ่อน'}
+              </span>
+            </button>
 
-        {/* Toggle SCAN PASS */}
-        <label className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer bg-white px-2 py-1.5 rounded-lg border border-slate-300 shadow-2xs" title="แสดงหรือซ่อนข้อความ SCAN PASS ใต้ QR code เพื่อเพิ่มพื้นที่ให้ QR Code ขยายใหญ่เต็มที่">
-          <input
-            type="checkbox"
-            checked={showScanPass}
-            onChange={(e) => setShowScanPass(e.target.checked)}
-            className="rounded text-purple-600 focus:ring-purple-500"
-          />
-          <span>แสดงคำว่า SCAN PASS</span>
-        </label>
+            {/* Toggle SCAN PASS */}
+            <label className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer bg-white px-2 py-1.5 rounded-lg border border-slate-300 shadow-2xs" title="แสดงหรือซ่อนข้อความ SCAN PASS ใต้ QR code เพื่อเพิ่มพื้นที่ให้ QR Code ขยายใหญ่เต็มที่">
+              <input
+                type="checkbox"
+                checked={showScanPass}
+                onChange={(e) => setShowScanPass(e.target.checked)}
+                className="rounded text-purple-600 focus:ring-purple-500"
+              />
+              <span>แสดงคำว่า SCAN PASS</span>
+            </label>
 
-        {/* Footer Practice Location Text Input */}
-        <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
-          <span className="font-bold text-slate-700 whitespace-nowrap">ข้อความท้ายป้าย (พิมพ์เอง):</span>
-          <input
-            type="text"
-            value={footerLocationText}
-            maxLength={60}
-            onChange={(e) => setFooterLocationText(e.target.value)}
-            placeholder="เช่น ศาลาปฏิบัติธรรม / ห้อง 101"
-            className="w-44 sm:w-56 text-xs font-semibold text-amber-900 focus:outline-none"
-          />
-        </div>
+            {/* Footer Practice Location Text Input */}
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
+              <span className="font-bold text-slate-700 whitespace-nowrap">ข้อความท้ายป้าย (พิมพ์เอง):</span>
+              <input
+                type="text"
+                value={footerLocationText}
+                maxLength={60}
+                onChange={(e) => setFooterLocationText(e.target.value)}
+                placeholder="เช่น ศาลาปฏิบัติธรรม / ห้อง 101"
+                className="w-44 sm:w-56 text-xs font-semibold text-amber-900 focus:outline-none"
+              />
+            </div>
+          </>
+        )}
 
         {/* Search */}
         <div className="relative min-w-[170px]">
@@ -342,9 +353,37 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
         </div>
       </div>
 
-      <div className="text-[11px] text-slate-500 font-medium">
-        แสดงผล <strong className="text-purple-700 font-bold">{filteredCount}</strong> ใบ
-        {isGeneratingQr ? ' (กำลังสร้าง QR...)' : ` (${pagesCount} หน้า A4)`}
+      <div className="flex items-center gap-3 shrink-0 self-center">
+        <div className="text-[11px] text-slate-500 font-medium whitespace-nowrap">
+          แสดงผล <strong className="text-purple-700 font-bold">{filteredCount}</strong> ใบ
+          {isGeneratingQr ? ' (กำลังสร้าง QR...)' : ` (${pagesCount} หน้า A4)`}
+        </div>
+
+        {/* Collapsible / Expand Button (Red Arrow in screenshot) */}
+        {setIsToolbarCollapsed && (
+          <button
+            type="button"
+            onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer border shadow-2xs ${
+              isToolbarCollapsed
+                ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600'
+                : 'bg-white hover:bg-purple-50 text-purple-700 border-purple-300'
+            }`}
+            title={isToolbarCollapsed ? 'คลี่ขยายแถบตัวเลือกปรับแต่งป้าย' : 'ยุบแถบตัวเลือกเพื่อขยายพื้นที่ดูตัวอย่างป้าย'}
+          >
+            {isToolbarCollapsed ? (
+              <>
+                <ChevronDown className="w-4 h-4" />
+                <span>คลี่ขยายตัวเลือก</span>
+              </>
+            ) : (
+              <>
+                <ChevronUp className="w-4 h-4" />
+                <span>ยุบตัวเลือก</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

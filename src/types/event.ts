@@ -142,11 +142,11 @@ export interface EventRegistration {
   age?: number | string; // อายุ
   vasa?: string | number; // พรรษา (สำหรับพระภิกษุ/สามเณร)
   dailyAttendance?: Record<string, {
-    p1?: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string }; // ภาคเช้ามืด 04.00-04.30
-    p2?: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string }; // ภาคเช้า 08.00-08.30
-    p3?: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string }; // ภาคบ่าย 12.30-13.00
-    p4?: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string }; // ภาคค่ำ 17.30-18.00
-    [periodKey: string]: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string } | undefined;
+    p1?: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string; scanCount?: number; lastScanTime?: string; duplicateFlag?: string }; // ภาคเช้ามืด 04.00-04.30
+    p2?: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string; scanCount?: number; lastScanTime?: string; duplicateFlag?: string }; // ภาคเช้า 08.00-08.30
+    p3?: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string; scanCount?: number; lastScanTime?: string; duplicateFlag?: string }; // ภาคบ่าย 12.30-13.00
+    p4?: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string; scanCount?: number; lastScanTime?: string; duplicateFlag?: string }; // ภาคค่ำ 17.30-18.00
+    [periodKey: string]: { status: string; checkInTime?: string; recordedBy?: string; seatOccupied?: boolean; seatCheckedAt?: string; seatCheckedBy?: string; scanCount?: number; lastScanTime?: string; duplicateFlag?: string } | undefined;
   }>;
   vipassanaInterviews?: Record<string, VipassanaInterviewEntry>; // key: "s1", "s2", "s3"
   finalMeditationResult?: 'PASS' | 'NOT_PASS' | 'PENDING' | 'COMMITTEE_REVIEW'; // ผลการประเมินวิปัสสนารอบสุดท้าย

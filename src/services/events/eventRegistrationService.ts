@@ -29,6 +29,8 @@ export async function getEventRegistrations(
   });
 
   let list: EventRegistration[] = [];
+  const getStudentKey = (evId: string, sCode: string) =>
+    `${String(evId || '').trim()}:::${String(sCode || '').trim().toLowerCase()}`;
 
   const gClient = getSheetsClient();
   if (gClient) {
@@ -36,12 +38,23 @@ export async function getEventRegistrations(
       const rows = await gClient.getValues('EventRegistrations!A2:AJ');
       if (rows && rows.length > 0) {
         const loaded: EventRegistration[] = [];
+        const seenInSheets = new Set<string>();
+
         for (const rawR of rows) {
           const isShifted = !rawR[0] && rawR[17] && String(rawR[17]).startsWith('reg-');
           const r = isShifted ? rawR.slice(17) : rawR;
           const id = r[0] || '';
           const evId = r[1] || localMap.get(id)?.eventId || '';
           if (!id || !evId) continue;
+
+          const sCode = r[2] || localMap.get(id)?.studentCode || '';
+          const cleanKey = sCode ? getStudentKey(evId, sCode) : `id:::${id}`;
+
+          // Avoid duplicate rows within Google Sheets itself
+          if (seenInSheets.has(cleanKey)) {
+            continue;
+          }
+          seenInSheets.add(cleanKey);
 
           const local = localMap.get(id) || {};
           let dailyAttendance = local.dailyAttendance || {};
@@ -74,7 +87,6 @@ export async function getEventRegistrations(
               extraMeta = typeof r[20] === 'string' ? JSON.parse(r[20]) : r[20];
             } catch {}
           }
-          const sCode = r[2] || local.studentCode || '';
           const sInfo = studentMap.get(sCode.trim().toLowerCase()) || {};
           const groupNum = r[11]
             ? Number(r[11])
@@ -127,58 +139,210 @@ export async function getEventRegistrations(
     }
   }
 
-  // Merge any local records that are not in Google Sheets so imported data is never lost
+  // Merge any local records that are not in Google Sheets so imported data is never lost,
+  // while strictly preventing double-counting if IDs differ between Sheets and local JSON.
   const loadedIds = new Set(list.map((l) => l.id));
+  const loadedStudentKeys = new Set(
+    list
+      .filter((l) => Boolean(l.eventId && l.studentCode))
+      .map((l) => getStudentKey(l.eventId, l.studentCode))
+  );
+
   if (raw.length > 0) {
     raw.forEach((r) => {
-      if (r.id && !loadedIds.has(r.id)) {
-        const sInfo = studentMap.get((r.studentCode || '').trim().toLowerCase()) || {};
-        const degree = r.degreeLevel || sInfo.degree || 'ปริญญาตรี';
-        const prog = r.programType || r.program || sInfo.programType || 'THAI';
-        list.push({
-          id: r.id,
-          eventId: r.eventId,
-          eventTitle: eventTitleMap.get(r.eventId) || 'กิจกรรมนิสิต',
-          studentCode: r.studentCode || '',
-          studentName: r.studentName || sInfo.fullName || '',
-          status: r.status || 'REGISTERED',
-          role: r.role || 'STUDENT',
-          degreeLevel: degree,
-          programType: prog,
-          major: r.major || sInfo.major || 'พระพุทธศาสนา',
-          yearLevel: r.yearLevel || sInfo.yearLevel || 1,
-          department: r.department || sInfo.department || '',
-          groupName: r.groupName || (r.groupNumber ? `กลุ่มที่ ${r.groupNumber}` : 'ทั่วไป'),
-          groupNumber: r.groupNumber !== undefined ? Number(r.groupNumber) : undefined,
-          groupSpecificCode: r.groupSpecificCode || undefined,
-          age: r.age ?? sInfo.age,
-          vasa: r.vasa || sInfo.vasa || '',
-          dailyAttendance: r.dailyAttendance || {},
-          vipassanaInterviews: r.vipassanaInterviews || {},
-          attendedDays: Array.isArray(r.attendedDays) ? r.attendedDays : undefined,
-          passedMeditation: r.passedMeditation,
-          finalMeditationResult: r.finalMeditationResult,
-          certificateIssued: r.certificateIssued,
-          certificateDocNo: r.certificateDocNo,
-          certificateIssuedAt: r.certificateIssuedAt,
-          seatZone: r.seatZone,
-          seatNumber: r.seatNumber,
-          seatCheckinAt: r.seatCheckinAt,
-          seatCheckinBy: r.seatCheckinBy,
-          remarks: r.remarks || '',
-          attendedAt: r.attendedAt || '',
-          createdAt: r.createdAt ? String(r.createdAt) : new Date().toISOString(),
-          updatedAt: r.updatedAt,
-        });
-        loadedIds.add(r.id);
+      const sCode = (r.studentCode || '').trim().toLowerCase();
+      const sKey = r.eventId && sCode ? getStudentKey(r.eventId, sCode) : '';
+
+      // If already loaded (by ID or by eventId + studentCode):
+      if (loadedIds.has(r.id) || (sKey && loadedStudentKeys.has(sKey))) {
+        // Enrich existing item with local details (such as seat assignments or local interviews)
+        if (sKey) {
+          const existing = list.find((item) => getStudentKey(item.eventId, item.studentCode) === sKey);
+          if (existing) {
+            if (!existing.seatNumber && r.seatNumber) {
+              existing.seatNumber = r.seatNumber;
+              existing.seatZone = r.seatZone;
+            }
+            if (!existing.seatCheckinAt && r.seatCheckinAt) {
+              existing.seatCheckinAt = r.seatCheckinAt;
+              existing.seatCheckinBy = r.seatCheckinBy;
+            }
+            if (r.dailyAttendance && Object.keys(r.dailyAttendance).length > 0) {
+              existing.dailyAttendance = { ...r.dailyAttendance, ...(existing.dailyAttendance || {}) };
+            }
+            if (r.vipassanaInterviews && Object.keys(r.vipassanaInterviews).length > 0) {
+              existing.vipassanaInterviews = { ...r.vipassanaInterviews, ...(existing.vipassanaInterviews || {}) };
+            }
+          }
+        }
+        return;
       }
+
+      const sInfo = studentMap.get(sCode) || {};
+      const degree = r.degreeLevel || sInfo.degree || 'ปริญญาตรี';
+      const prog = r.programType || r.program || sInfo.programType || 'THAI';
+      list.push({
+        id: r.id,
+        eventId: r.eventId,
+        eventTitle: eventTitleMap.get(r.eventId) || 'กิจกรรมนิสิต',
+        studentCode: r.studentCode || '',
+        studentName: r.studentName || sInfo.fullName || '',
+        status: r.status || 'REGISTERED',
+        role: r.role || 'STUDENT',
+        degreeLevel: degree,
+        programType: prog,
+        major: r.major || sInfo.major || 'พระพุทธศาสนา',
+        yearLevel: r.yearLevel || sInfo.yearLevel || 1,
+        department: r.department || sInfo.department || '',
+        groupName: r.groupName || (r.groupNumber ? `กลุ่มที่ ${r.groupNumber}` : 'ทั่วไป'),
+        groupNumber: r.groupNumber !== undefined ? Number(r.groupNumber) : undefined,
+        groupSpecificCode: r.groupSpecificCode || undefined,
+        age: r.age ?? sInfo.age,
+        vasa: r.vasa || sInfo.vasa || '',
+        dailyAttendance: r.dailyAttendance || {},
+        vipassanaInterviews: r.vipassanaInterviews || {},
+        attendedDays: Array.isArray(r.attendedDays) ? r.attendedDays : undefined,
+        passedMeditation: r.passedMeditation,
+        finalMeditationResult: r.finalMeditationResult,
+        certificateIssued: r.certificateIssued,
+        certificateDocNo: r.certificateDocNo,
+        certificateIssuedAt: r.certificateIssuedAt,
+        seatZone: r.seatZone,
+        seatNumber: r.seatNumber,
+        seatCheckinAt: r.seatCheckinAt,
+        seatCheckinBy: r.seatCheckinBy,
+        remarks: r.remarks || '',
+        attendedAt: r.attendedAt || '',
+        createdAt: r.createdAt ? String(r.createdAt) : new Date().toISOString(),
+        updatedAt: r.updatedAt,
+      });
+      loadedIds.add(r.id);
+      if (sKey) loadedStudentKeys.add(sKey);
     });
   }
+
+  // Safety deduplication: ensure each studentCode is unique per event
+  const finalUniqueMap = new Map<string, EventRegistration>();
+  for (const item of list) {
+    const sCode = (item.studentCode || '').trim().toLowerCase();
+    const key = item.eventId && sCode ? getStudentKey(item.eventId, sCode) : item.id;
+    if (!finalUniqueMap.has(key)) {
+      finalUniqueMap.set(key, item);
+    } else {
+      const prev = finalUniqueMap.get(key)!;
+      if (!prev.seatNumber && item.seatNumber) {
+        prev.seatNumber = item.seatNumber;
+        prev.seatZone = item.seatZone;
+      }
+      if (!prev.seatCheckinAt && item.seatCheckinAt) {
+        prev.seatCheckinAt = item.seatCheckinAt;
+      }
+    }
+  }
+  list = Array.from(finalUniqueMap.values());
 
   if (eventId && eventId !== 'ALL') list = list.filter((r) => r.eventId === eventId);
   if (studentCode) list = list.filter((r) => r.studentCode.toLowerCase().includes(studentCode.toLowerCase()));
 
   return list;
+}
+
+/**
+ * Deduplicate event registrations for a given event,
+ * merging seats and attendance data and syncing back to storage & Google Sheets.
+ */
+export async function deduplicateEventRegistrations(
+  eventId: string
+): Promise<{ totalRemaining: number; removedCount: number }> {
+  const targetId = String(eventId || '').trim();
+  if (!targetId) throw new Error('กรุณาระบุ eventId');
+
+  let local = readLocalJson<EventRegistration[]>('event_registrations.json', []);
+  const eventRegs = local.filter((r) => String(r.eventId || '').trim() === targetId);
+  const otherRegs = local.filter((r) => String(r.eventId || '').trim() !== targetId);
+
+  const seen = new Map<string, EventRegistration>();
+  let removedCount = 0;
+
+  for (const r of eventRegs) {
+    const code = String(r.studentCode || '').trim().toLowerCase();
+    const key = code || String(r.id || '').trim();
+    if (!seen.has(key)) {
+      seen.set(key, { ...r });
+    } else {
+      removedCount++;
+      const existing = seen.get(key)!;
+      if (!existing.seatNumber && r.seatNumber) {
+        existing.seatNumber = r.seatNumber;
+        existing.seatZone = r.seatZone;
+      }
+      if (!existing.seatCheckinAt && r.seatCheckinAt) {
+        existing.seatCheckinAt = r.seatCheckinAt;
+      }
+      if (r.dailyAttendance && Object.keys(r.dailyAttendance).length > 0) {
+        existing.dailyAttendance = { ...r.dailyAttendance, ...(existing.dailyAttendance || {}) };
+      }
+    }
+  }
+
+  const dedupedEventRegs = Array.from(seen.values());
+  local = [...otherRegs, ...dedupedEventRegs];
+  writeLocalJson('event_registrations.json', local);
+
+  // Sync deduplicated state with Google Sheets if configured
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const allRows = await gClient.getValues('EventRegistrations!A1:AJ');
+      if (allRows && allRows.length > 0) {
+        const header = allRows[0];
+        const isTargetEvent = (r: unknown[]) => {
+          const cell1 = String(r[1] || '').trim();
+          const cell18 = String(r[18] || '').trim();
+          return cell1 === targetId || cell18 === targetId || r.some((c) => String(c || '').trim() === targetId);
+        };
+        const remainingRows = allRows.slice(1).filter((r) => !isTargetEvent(r));
+
+        const newRows = dedupedEventRegs.map((reg) => [
+          reg.id,
+          reg.eventId,
+          reg.studentCode,
+          reg.studentName,
+          reg.status,
+          reg.role,
+          reg.major,
+          reg.yearLevel,
+          reg.department,
+          reg.groupName,
+          reg.createdAt,
+          reg.groupNumber || '',
+          reg.groupSpecificCode || '',
+          reg.degreeLevel || '',
+          reg.programType || '',
+          reg.remarks || '',
+          reg.attendedAt || '',
+          reg.dailyAttendance ? JSON.stringify(reg.dailyAttendance) : '',
+        ]);
+
+        const combinedRows = [...remainingRows, ...newRows];
+        await gClient.clearValues(`EventRegistrations!A1:AJ${Math.max(allRows.length + 500, 2000)}`);
+        await gClient.updateValues('EventRegistrations!A1:R1', [header.slice(0, 18)]);
+        if (combinedRows.length > 0) {
+          const CHUNK_SIZE = 500;
+          for (let i = 0; i < combinedRows.length; i += CHUNK_SIZE) {
+            const chunk = combinedRows.slice(i, i + CHUNK_SIZE);
+            const startRow = i + 2;
+            const endRow = startRow + chunk.length - 1;
+            await gClient.updateValues(`EventRegistrations!A${startRow}:R${endRow}`, chunk.map((r) => r.slice(0, 18)));
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets deduplication sync failed:', err);
+    }
+  }
+
+  return { totalRemaining: dedupedEventRegs.length, removedCount };
 }
 
 export async function registerStudentForEvent(

@@ -162,10 +162,23 @@ export function VipassanaAttendanceSheetModal({
     }
   };
 
+  // Strictly deduplicate registrations by eventId and studentCode
+  const uniqueRegistrations = useMemo(() => {
+    const seen = new Set<string>();
+    return registrations.filter((r) => {
+      if (event?.id && r.eventId && r.eventId !== event.id) return false;
+      const sCode = (r.studentCode || r.id || '').trim().toLowerCase();
+      const key = `${r.eventId || event?.id || ''}_${sCode}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [registrations, event?.id]);
+
   // Available groups for this event
   const availableGroups = useMemo(() => {
     const groupNums = new Set<number>();
-    registrations.forEach((r) => {
+    uniqueRegistrations.forEach((r) => {
       if (r.groupNumber) groupNums.add(r.groupNumber);
       else if (r.groupName) {
         const m = r.groupName.match(/\d+/);
@@ -177,7 +190,7 @@ export function VipassanaAttendanceSheetModal({
       [1, 2, 3, 12].forEach((g) => groupNums.add(g));
     }
     return Array.from(groupNums).sort((a, b) => a - b);
-  }, [registrations]);
+  }, [uniqueRegistrations]);
 
   // Determine current active language/program
   const activeProgram = useMemo<'THAI' | 'ENGLISH'>(() => {
@@ -185,15 +198,15 @@ export function VipassanaAttendanceSheetModal({
     // Group 12 is explicitly Thai program (แม่ชี/ฆราวาส ภาคไทย)
     if (selectedGroup === 12) return 'THAI';
     // Check registrations in this group
-    const inGroup = registrations.filter((r) => r.groupNumber === selectedGroup);
+    const inGroup = uniqueRegistrations.filter((r) => r.groupNumber === selectedGroup);
     const engCount = inGroup.filter((r) => r.programType === 'ENGLISH' || r.programType === 'INTER').length;
     if (inGroup.length > 0 && engCount > inGroup.length / 2) return 'ENGLISH';
     return 'THAI';
-  }, [programMode, selectedGroup, registrations]);
+  }, [programMode, selectedGroup, uniqueRegistrations]);
 
   // Filtered registrations for selected group & search
   const groupRegistrations = useMemo(() => {
-    return registrations.filter((r) => {
+    return uniqueRegistrations.filter((r) => {
       // Group filter
       if (selectedGroup !== 'ALL') {
         const gNum = r.groupNumber || (r.groupName ? parseInt(r.groupName.replace(/\D/g, ''), 10) : 0);
@@ -208,7 +221,7 @@ export function VipassanaAttendanceSheetModal({
       }
       return true;
     });
-  }, [registrations, selectedGroup, searchQuery]);
+  }, [uniqueRegistrations, selectedGroup, searchQuery]);
 
   // Current Group Assignment (Advisors & Vipassana Masters)
   const currentGroupAssignment = useMemo(() => {
@@ -220,7 +233,7 @@ export function VipassanaAttendanceSheetModal({
   // Detected Scanner / Staff names from recordedBy or group advisors
   const detectedScanners = useMemo(() => {
     const setNames = new Set<string>();
-    registrations.forEach((r) => {
+    uniqueRegistrations.forEach((r) => {
       const savedForDay = r.dailyAttendance?.[dayKey];
       if (!savedForDay) return;
       ['p1', 'p2', 'p3', 'p4'].forEach((pk) => {
@@ -234,18 +247,18 @@ export function VipassanaAttendanceSheetModal({
       currentGroupAssignment.advisors.forEach((a) => setNames.add(a));
     }
     return Array.from(setNames);
-  }, [registrations, dayKey, currentGroupAssignment]);
+  }, [uniqueRegistrations, dayKey, currentGroupAssignment]);
 
-  // Sync / Initialize attendanceState when group or day changes
+  // Sync / Initialize attendanceState when group or day changes (Default: UNCHECKED)
   const attendanceRows: StudentAttendanceRow[] = useMemo(() => {
     return groupRegistrations.map((r) => {
       const savedForDay = r.dailyAttendance?.[dayKey];
       const localState = attendanceState[r.id];
 
-      const p1 = (localState?.p1 || (savedForDay?.p1?.status as PeriodStatus) || 'PRESENT');
-      const p2 = (localState?.p2 || (savedForDay?.p2?.status as PeriodStatus) || 'PRESENT');
-      const p3 = (localState?.p3 || (savedForDay?.p3?.status as PeriodStatus) || 'PRESENT');
-      const p4 = (localState?.p4 || (savedForDay?.p4?.status as PeriodStatus) || 'PRESENT');
+      const p1 = (localState?.p1 || (savedForDay?.p1?.status as PeriodStatus) || 'UNCHECKED');
+      const p2 = (localState?.p2 || (savedForDay?.p2?.status as PeriodStatus) || 'UNCHECKED');
+      const p3 = (localState?.p3 || (savedForDay?.p3?.status as PeriodStatus) || 'UNCHECKED');
+      const p4 = (localState?.p4 || (savedForDay?.p4?.status as PeriodStatus) || 'UNCHECKED');
       const p1Time = timeState[r.id]?.p1 !== undefined ? timeState[r.id]?.p1 : (savedForDay?.p1?.checkInTime || '');
       const p2Time = timeState[r.id]?.p2 !== undefined ? timeState[r.id]?.p2 : (savedForDay?.p2?.checkInTime || '');
       const p3Time = timeState[r.id]?.p3 !== undefined ? timeState[r.id]?.p3 : (savedForDay?.p3?.checkInTime || '');
@@ -275,20 +288,21 @@ export function VipassanaAttendanceSheetModal({
     });
   }, [groupRegistrations, dayKey, attendanceState]);
 
-  // Handler to toggle / set a period status
+  // Handler to toggle / set a period status (clicking the same active status toggles back to UNCHECKED)
   const handleSetPeriodStatus = (regId: string, period: 'p1' | 'p2' | 'p3' | 'p4', status: PeriodStatus) => {
     setAttendanceState((prev) => {
       const current = prev[regId] || {
-        p1: 'PRESENT',
-        p2: 'PRESENT',
-        p3: 'PRESENT',
-        p4: 'PRESENT',
+        p1: 'UNCHECKED',
+        p2: 'UNCHECKED',
+        p3: 'UNCHECKED',
+        p4: 'UNCHECKED',
       };
+      const newStatus = current[period] === status ? 'UNCHECKED' : status;
       return {
         ...prev,
         [regId]: {
           ...current,
-          [period]: status,
+          [period]: newStatus,
         },
       };
     });
@@ -298,10 +312,10 @@ export function VipassanaAttendanceSheetModal({
   const handleSetRemark = (regId: string, remark: string) => {
     setAttendanceState((prev) => {
       const current = prev[regId] || {
-        p1: 'PRESENT',
-        p2: 'PRESENT',
-        p3: 'PRESENT',
-        p4: 'PRESENT',
+        p1: 'UNCHECKED',
+        p2: 'UNCHECKED',
+        p3: 'UNCHECKED',
+        p4: 'UNCHECKED',
       };
       return {
         ...prev,
@@ -319,10 +333,10 @@ export function VipassanaAttendanceSheetModal({
       const updated = { ...prev };
       groupRegistrations.forEach((r) => {
         const current = updated[r.id] || {
-          p1: 'PRESENT',
-          p2: 'PRESENT',
-          p3: 'PRESENT',
-          p4: 'PRESENT',
+          p1: 'UNCHECKED',
+          p2: 'UNCHECKED',
+          p3: 'UNCHECKED',
+          p4: 'UNCHECKED',
         };
         updated[r.id] = {
           ...current,
@@ -332,6 +346,73 @@ export function VipassanaAttendanceSheetModal({
       return updated;
     });
   };
+
+  // Mark all students present for all 4 periods today
+  const handleMarkAllTodayPresent = () => {
+    setAttendanceState((prev) => {
+      const updated = { ...prev };
+      groupRegistrations.forEach((r) => {
+        const current = updated[r.id] || {
+          p1: 'UNCHECKED',
+          p2: 'UNCHECKED',
+          p3: 'UNCHECKED',
+          p4: 'UNCHECKED',
+        };
+        updated[r.id] = {
+          ...current,
+          p1: 'PRESENT',
+          p2: 'PRESENT',
+          p3: 'PRESENT',
+          p4: 'PRESENT',
+        };
+      });
+      return updated;
+    });
+  };
+
+  // Reset all students in group to UNCHECKED (รอเช็ค)
+  const handleResetAllTodayUnchecked = () => {
+    setAttendanceState((prev) => {
+      const updated = { ...prev };
+      groupRegistrations.forEach((r) => {
+        const current = updated[r.id] || {
+          p1: 'UNCHECKED',
+          p2: 'UNCHECKED',
+          p3: 'UNCHECKED',
+          p4: 'UNCHECKED',
+        };
+        updated[r.id] = {
+          ...current,
+          p1: 'UNCHECKED',
+          p2: 'UNCHECKED',
+          p3: 'UNCHECKED',
+          p4: 'UNCHECKED',
+        };
+      });
+      return updated;
+    });
+  };
+
+  // Live status summary counters for the current group
+  const liveStatusCounts = useMemo(() => {
+    let present = 0;
+    let late = 0;
+    let sick = 0;
+    let absent = 0;
+    let unchecked = 0;
+
+    attendanceRows.forEach((r) => {
+      [r.p1, r.p2, r.p3, r.p4].forEach((st) => {
+        if (st === 'PRESENT') present++;
+        else if (st === 'LATE') late++;
+        else if (st === 'SICK') sick++;
+        else if (st === 'ABSENT') absent++;
+        else unchecked++;
+      });
+    });
+
+    return { present, late, sick, absent, unchecked, total: attendanceRows.length * 4 };
+  }, [attendanceRows]);
 
   // Handler to set individual period time
   const handleSetPeriodTime = (regId: string, period: 'p1' | 'p2' | 'p3' | 'p4', timeStr: string) => {
@@ -632,9 +713,9 @@ export function VipassanaAttendanceSheetModal({
             </div>
           </div>
 
-          {/* Collapsible Section: Search & Quick Actions */}
+          {/* Collapsible Section: Search & Quick Actions (Red Rectangle area from user screenshot) */}
           {!isToolbarCollapsed && (
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-200/70">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1.5 border-t border-slate-200/70">
               {/* Search Box in interactive mode */}
               {viewMode === 'INTERACTIVE' && (
                 <div className="relative flex-1 sm:flex-initial min-w-[160px]">
@@ -644,8 +725,46 @@ export function VipassanaAttendanceSheetModal({
                     placeholder="ค้นหารหัส หรือชื่อนิสิต..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full sm:w-52 pl-8 pr-2.5 py-1 bg-white rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                    className="w-full sm:w-48 pl-8 pr-2.5 py-1 bg-white rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                   />
+                </div>
+              )}
+
+              {/* Red rectangle area: Quick Batch Actions & Live Status Badges */}
+              {viewMode === 'INTERACTIVE' && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Status Badges */}
+                  <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-xl text-[11px] font-bold text-slate-600 border border-slate-200">
+                    <span className="text-emerald-700">🟢 มา: {liveStatusCounts.present}</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-amber-700">🟡 สาย: {liveStatusCounts.late}</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-blue-700">🔵 ป่วย: {liveStatusCounts.sick}</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-rose-700">🔴 ขาด: {liveStatusCounts.absent}</span>
+                    <span className="text-slate-300">|</span>
+                    <span className="text-slate-500">⚪ รอเช็ค: {liveStatusCounts.unchecked}</span>
+                  </div>
+
+                  {/* Batch Action Buttons */}
+                  <button
+                    type="button"
+                    onClick={handleMarkAllTodayPresent}
+                    className="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                    title="ทำเครื่องหมายว่านิสิตทั้งกลุ่มนี้ มาครบทุกรอบ"
+                  >
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>เช็คมาทั้งหมด</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleResetAllTodayUnchecked}
+                    className="px-2.5 py-1 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                    title="รีเซ็ตสถานะทุกคนในกลุ่มนี้กลับเป็น รอเช็ค ทั้งหมด"
+                  >
+                    <span>⚪ รีเซ็ตเป็นรอเช็ค</span>
+                  </button>
                 </div>
               )}
 
@@ -1026,10 +1145,10 @@ export function VipassanaAttendanceSheetModal({
                                           onClick={() => handleSetPeriodStatus(row.registrationId, key, 'PRESENT')}
                                           className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
                                             val === 'PRESENT'
-                                              ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-700'
-                                              : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-700'
+                                              ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-700 font-extrabold'
+                                              : 'bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200/60'
                                           }`}
-                                          title="มา (Present)"
+                                          title={val === 'PRESENT' ? 'คลิกซ้ำเพื่อสลับกลับเป็น "รอเช็ค"' : 'มา (Present)'}
                                         >
                                           มา
                                         </button>
@@ -1038,10 +1157,10 @@ export function VipassanaAttendanceSheetModal({
                                           onClick={() => handleSetPeriodStatus(row.registrationId, key, 'LATE')}
                                           className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
                                             val === 'LATE'
-                                              ? 'bg-amber-500 text-white shadow-2xs ring-1 ring-amber-600'
-                                              : 'bg-slate-100 text-slate-400 hover:bg-amber-50 hover:text-amber-700'
+                                              ? 'bg-amber-500 text-white shadow-2xs ring-1 ring-amber-600 font-extrabold'
+                                              : 'bg-slate-100 text-slate-500 hover:bg-amber-50 hover:text-amber-700 border border-slate-200/60'
                                           }`}
-                                          title="สาย (Late)"
+                                          title={val === 'LATE' ? 'คลิกซ้ำเพื่อสลับกลับเป็น "รอเช็ค"' : 'สาย (Late)'}
                                         >
                                           สาย
                                         </button>
@@ -1050,10 +1169,10 @@ export function VipassanaAttendanceSheetModal({
                                           onClick={() => handleSetPeriodStatus(row.registrationId, key, 'SICK')}
                                           className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
                                             val === 'SICK'
-                                              ? 'bg-blue-600 text-white shadow-2xs ring-1 ring-blue-700'
-                                              : 'bg-slate-100 text-slate-400 hover:bg-blue-50 hover:text-blue-700'
+                                              ? 'bg-blue-600 text-white shadow-2xs ring-1 ring-blue-700 font-extrabold'
+                                              : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-700 border border-slate-200/60'
                                           }`}
-                                          title="ป่วย (Sick)"
+                                          title={val === 'SICK' ? 'คลิกซ้ำเพื่อสลับกลับเป็น "รอเช็ค"' : 'ป่วย (Sick)'}
                                         >
                                           ป่วย
                                         </button>
@@ -1062,10 +1181,10 @@ export function VipassanaAttendanceSheetModal({
                                           onClick={() => handleSetPeriodStatus(row.registrationId, key, 'ABSENT')}
                                           className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
                                             val === 'ABSENT'
-                                              ? 'bg-rose-600 text-white shadow-2xs ring-1 ring-rose-700'
-                                              : 'bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-700'
+                                              ? 'bg-rose-600 text-white shadow-2xs ring-1 ring-rose-700 font-extrabold'
+                                              : 'bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-700 border border-slate-200/60'
                                           }`}
-                                          title="ขาด (Absent)"
+                                          title={val === 'ABSENT' ? 'คลิกซ้ำเพื่อสลับกลับเป็น "รอเช็ค"' : 'ขาด (Absent)'}
                                         >
                                           ขาด
                                         </button>
@@ -1076,7 +1195,11 @@ export function VipassanaAttendanceSheetModal({
                                           value={timeVal || ''}
                                           onChange={(e) => handleSetPeriodTime(row.registrationId, key, e.target.value)}
                                           placeholder="--:--"
-                                          className="w-14 text-center text-[9.5px] font-mono border border-slate-200 rounded px-1 py-0.2 bg-white text-slate-800 hover:border-purple-400 focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-500/20"
+                                          className={`w-14 text-center text-[9.5px] font-mono border rounded px-1 py-0.2 focus:outline-none focus:ring-1 focus:ring-purple-500/20 ${
+                                            val === 'UNCHECKED'
+                                              ? 'border-slate-200 bg-slate-50/50 text-slate-400'
+                                              : 'border-slate-300 bg-white text-slate-800'
+                                          }`}
                                           title="คลิกเพื่อแก้ไขเวลาเข้าจริง (เช่น 04:15 หรือ 04:15:00)"
                                         />
                                       </div>
