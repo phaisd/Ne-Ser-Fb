@@ -1590,17 +1590,17 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           </div>
         )}
 
-        {/* Toolbar & Stats Bar */}
-        <div className="bg-slate-50 border-b border-slate-200 px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
+        {/* Toolbar Row 1: Zone Navigation & View / Search Controls */}
+        <div className="bg-slate-100 border-b border-slate-200/90 px-3 sm:px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
           {/* Left: Zone Switcher Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap pb-1 sm:pb-0 shrink-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <button
               type="button"
               onClick={() => setActiveZoneId('ALL')}
               className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer whitespace-nowrap shrink-0 ${
                 activeZoneId === 'ALL'
                   ? 'bg-slate-800 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-300'
               }`}
             >
               ทุกโซน ({config.zones.length})
@@ -1616,7 +1616,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                   className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 border whitespace-nowrap shrink-0 ${
                     isActive
                       ? `${zoneColor.bg} text-white ${zoneColor.border} shadow-xs`
-                      : `bg-white ${zoneColor.text} hover:${zoneColor.lightBg} border-slate-200`
+                      : `bg-white ${zoneColor.text} hover:${zoneColor.lightBg} border-slate-300`
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-white' : zoneColor.bg}`} />
@@ -1627,8 +1627,8 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             })}
           </div>
 
-          {/* Right: Actions, Search & Zoom */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap">
+          {/* Right: Search Participant & Zoom Controls */}
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Search participant */}
             <div className="relative shrink-0">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1637,7 +1637,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                 placeholder="ค้นหาชื่อ/รหัส/ที่นั่ง..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-amber-500 bg-white w-36 sm:w-48"
+                className="pl-8 pr-3 py-1 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-amber-500 bg-white w-44 sm:w-60 shadow-2xs"
               />
               {searchQuery && (
                 <button
@@ -1649,6 +1649,46 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               )}
             </div>
 
+            {/* Zoom Controls */}
+            <div className="flex items-center bg-white border border-slate-300 rounded-lg p-0.5 shadow-2xs shrink-0">
+              <button
+                type="button"
+                onClick={() => setZoomLevel((z) => Math.max(0.6, z - 0.1))}
+                className="p-1 text-slate-600 hover:bg-slate-100 rounded transition cursor-pointer"
+                title="ย่อขนาดผัง"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-[10px] font-bold px-1.5 text-slate-700 min-w-8 text-center">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={() => setZoomLevel((z) => Math.min(1.6, z + 0.1))}
+                className="p-1 text-slate-600 hover:bg-slate-100 rounded transition cursor-pointer"
+                title="ขยายขนาดผัง"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomLevel(1)}
+                className="p-1 text-slate-500 hover:text-slate-800 text-[10px] font-semibold border-l border-slate-200 pl-1.5 pr-1 cursor-pointer"
+                title="รีเซ็ตขนาด 100%"
+              >
+                1x
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Toolbar Row 2: Action & Management Tools (2 แถว ชัดเจน ไม่ต้องเลื่อนสกอร์ซ้ายขวา) */}
+        <div className="bg-slate-50 border-b border-slate-200 px-3 sm:px-4 py-1.5 flex flex-wrap items-center justify-between gap-1.5 shrink-0">
+          {/* Left: Seat Selection & Grouping Tools */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-500 hidden lg:inline-flex items-center mr-0.5">
+              เครื่องมือเลือก:
+            </span>
             {/* Batch Selection Mode Button */}
             <button
               type="button"
@@ -1660,7 +1700,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               className={`px-2.5 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap shrink-0 ${
                 isBatchMode
                   ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-black'
-                  : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
+                  : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-300'
               }`}
               title="เปิด/ปิดโหมดเลือกหลายที่นั่งพร้อมกัน เพื่อทำทางเดิน/เสา หรือกำหนดกลุ่ม"
             >
@@ -1671,17 +1711,17 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             {/* Range Selector Button */}
             <button
               type="button"
-              onClick={() => {
-                setIsRangeModalOpen(true);
-              }}
-              className="px-2.5 py-1 text-xs font-bold bg-white hover:bg-indigo-50 text-slate-700 border border-slate-200 rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+              onClick={() => setIsRangeModalOpen(true)}
+              className="px-2.5 py-1 text-xs font-bold bg-white hover:bg-indigo-50 text-slate-700 border border-slate-300 rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
               title="ระบุช่วงที่นั่งเพื่อเลือกกลุ่ม (เช่น D-03 ถึง I-03 หรือ D-10 ถึง G-12)"
             >
               <Layers className="w-3.5 h-3.5 text-indigo-600" />
-              <span className="hidden sm:inline">เลือกเป็นช่วง...</span>
-              <span className="sm:hidden">ช่วง...</span>
+              <span>เลือกเป็นช่วง...</span>
             </button>
+          </div>
 
+          {/* Right: Actions, Import/Export, Print & Reset */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             {/* Auto Assign Seats Button */}
             <button
               type="button"
@@ -1705,8 +1745,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               title="นำเข้าหรือส่งออกข้อมูลผังที่นั่งด้วยไฟล์ Excel / CSV"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-200" />
-              <span className="hidden sm:inline">นำเข้า/ส่งออก Excel</span>
-              <span className="sm:hidden">Excel</span>
+              <span>นำเข้า/ส่งออก Excel</span>
             </button>
 
             {/* Print A4 Seating Chart Button */}
@@ -1717,8 +1756,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               title="พิมพ์ตารางที่นั่ง A4 (ทั้งแบบรวมทุกโซนใน 1 หน้า หรือแยกตามโซน)"
             >
               <Printer className="w-3.5 h-3.5 text-blue-200" />
-              <span className="hidden sm:inline">พิมพ์ตารางที่นั่ง A4</span>
-              <span className="sm:hidden">พิมพ์ A4</span>
+              <span>พิมพ์ตารางที่นั่ง A4</span>
             </button>
 
             {/* Reset / Deduplicate Button */}
@@ -1730,8 +1768,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               title="รีเซ็ตและลบรายชื่อผู้เข้าร่วมที่ซ้ำซ้อนให้ตรงกับจำนวนจริง (309 คน)"
             >
               <RotateCcw className={`w-3.5 h-3.5 text-amber-200 ${isDeduplicating ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">รีเซ็ตจำนวน / ลบรายการซ้ำ</span>
-              <span className="sm:hidden">รีเซ็ตจำนวน</span>
+              <span>รีเซ็ตจำนวน / ลบรายการซ้ำ</span>
             </button>
 
             {/* Clear all seats */}
@@ -1743,39 +1780,8 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
               title="ล้างข้อมูลการจัดที่นั่งทั้งหมด (คืนค่าเป็น 0 ที่นั่ง)"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">ล้างผัง</span>
+              <span className="hidden sm:inline">ล้างผัง</span>
             </button>
-
-            {/* Zoom Controls */}
-            <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setZoomLevel((z) => Math.max(0.6, z - 0.1))}
-                className="p-1 text-slate-600 hover:bg-slate-100 rounded transition cursor-pointer"
-                title="ย่อขนาดผัง"
-              >
-                <ZoomOut className="w-3.5 h-3.5" />
-              </button>
-              <span className="text-[10px] font-bold px-1.5 text-slate-600 min-w-8 text-center">
-                {Math.round(zoomLevel * 100)}%
-              </span>
-              <button
-                type="button"
-                onClick={() => setZoomLevel((z) => Math.min(1.6, z + 0.1))}
-                className="p-1 text-slate-600 hover:bg-slate-100 rounded transition cursor-pointer"
-                title="ขยายขนาดผัง"
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setZoomLevel(1)}
-                className="p-1 text-slate-400 hover:text-slate-700 text-[10px] font-medium border-l border-slate-200 pl-1.5 pr-1 cursor-pointer"
-                title="รีเซ็ตขนาด 100%"
-              >
-                1x
-              </button>
-            </div>
           </div>
         </div>
 
