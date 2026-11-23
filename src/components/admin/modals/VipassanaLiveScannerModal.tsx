@@ -427,17 +427,20 @@ export function VipassanaLiveScannerModal({
           const reg = data.registration;
           const isDuplicate = Boolean(data.isAlreadyCheckedIn);
           const scanCount = data.scanCount || (isDuplicate ? 2 : 1);
+          const isExcessive = Boolean(data.isExcessiveScan) || scanCount > 3;
           const isOverDuplicateLimit = Boolean(data.isOverDuplicateLimit) || scanCount > 2;
           const regGroup = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
           const isWrongGroup = selectedGroup !== 'ALL' && regGroup !== selectedGroup;
 
           if (soundEnabled) {
-            playBeep(isOverDuplicateLimit ? 'WARN' : isDuplicate ? 'WARN' : 'SUCCESS');
+            playBeep(isExcessive ? 'ERROR' : isOverDuplicateLimit ? 'WARN' : isDuplicate ? 'WARN' : 'SUCCESS');
           }
-          triggerHaptic(isOverDuplicateLimit ? 'WARN' : isDuplicate ? 'WARN' : targetStatus === 'LATE' ? 'WARN' : 'SUCCESS');
+          triggerHaptic(isExcessive ? 'ERROR' : isOverDuplicateLimit ? 'WARN' : isDuplicate ? 'WARN' : targetStatus === 'LATE' ? 'WARN' : 'SUCCESS');
 
           let msg = '';
-          if (isOverDuplicateLimit) {
+          if (isExcessive) {
+            msg = `🚨 บันทึก: ไม่ตั้งใจปฏิบัติ! ${reg.studentName} สแกนซ้ำผิดปกติเกิน 3 ครั้ง (ครั้งที่ ${scanCount})`;
+          } else if (isOverDuplicateLimit) {
             msg = `⚠️ บันทึกว่าสแกนซ้ำ: ${reg.studentName} สแกนซ้ำเกิน 2 ครั้ง (ครั้งที่ ${scanCount})`;
           } else if (isDuplicate) {
             msg = `ℹ️ เช็คชื่อแล้ว (ครั้งที่ ${scanCount}): ${reg.studentName} ลงชื่อเมื่อ ${data.firstCheckInTime || checkInTime} น.`;

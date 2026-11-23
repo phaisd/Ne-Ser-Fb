@@ -132,6 +132,7 @@ export async function recordVipassanaScanCheckin(params: {
   isAlreadyCheckedIn?: boolean;
   scanCount?: number;
   isOverDuplicateLimit?: boolean;
+  isExcessiveScan?: boolean;
   firstCheckInTime?: string;
 }> {
   const { eventId, studentCodeOrId, dayKey, periodKey, recordedBy } = params;
@@ -186,6 +187,7 @@ export async function recordVipassanaScanCheckin(params: {
   const prevCount = existingPeriod?.scanCount || (isAlreadyCheckedIn ? 1 : 0);
   const currentScanCount = prevCount + 1;
   const isOverDuplicateLimit = currentScanCount > 2;
+  const isExcessiveScan = currentScanCount > 3;
 
   const newStatus = params.status || (isAlreadyCheckedIn ? existingPeriod.status : 'PRESENT');
   const checkInTime = existingPeriod?.checkInTime || nowTime;
@@ -196,11 +198,27 @@ export async function recordVipassanaScanCheckin(params: {
     recordedBy: recordedBy || 'LIVE_SCANNER',
     scanCount: currentScanCount,
     lastScanTime: nowTime,
-    duplicateFlag: isOverDuplicateLimit ? 'สแกนซ้ำ' : existingPeriod?.duplicateFlag,
+    duplicateFlag: isExcessiveScan
+      ? 'ไม่ตั้งใจปฏิบัติ'
+      : isOverDuplicateLimit
+      ? 'สแกนซ้ำ'
+      : existingPeriod?.duplicateFlag,
   };
 
-  // If scanned > 2 times in the same session, flag and record as duplicate scan
-  if (isOverDuplicateLimit) {
+  // If scanned > 3 times in the same session, auto-record "ไม่ตั้งใจปฏิบัติ" in remarks
+  if (isExcessiveScan) {
+    const unmindfulNote = `[ไม่ตั้งใจปฏิบัติ: สแกนซ้ำเกิน 3 ครั้ง (${currentScanCount} ครั้ง ในรอบ ${periodKey})]`;
+    if (!reg.remarks) {
+      reg.remarks = unmindfulNote;
+    } else if (!reg.remarks.includes(`[ไม่ตั้งใจปฏิบัติ:`)) {
+      reg.remarks = `${reg.remarks} ${unmindfulNote}`.trim();
+    } else {
+      reg.remarks = reg.remarks.replace(
+        new RegExp(`\\[ไม่ตั้งใจปฏิบัติ:[^\\]]*\\]`),
+        unmindfulNote
+      );
+    }
+  } else if (isOverDuplicateLimit) {
     const duplicateNote = `[สแกนซ้ำ: ${dayKey}/${periodKey} รวม ${currentScanCount} ครั้ง (ล่าสุด ${nowTime} น.)]`;
     if (!reg.remarks) {
       reg.remarks = duplicateNote;
@@ -242,6 +260,7 @@ export async function recordVipassanaScanCheckin(params: {
     isAlreadyCheckedIn: Boolean(isAlreadyCheckedIn),
     scanCount: currentScanCount,
     isOverDuplicateLimit,
+    isExcessiveScan,
     firstCheckInTime: checkInTime,
   };
 }

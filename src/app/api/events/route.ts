@@ -135,9 +135,12 @@ export async function POST(request: Request) {
         isAlreadyCheckedIn: result.isAlreadyCheckedIn,
         scanCount: result.scanCount,
         isOverDuplicateLimit: result.isOverDuplicateLimit,
+        isExcessiveScan: result.isExcessiveScan,
         firstCheckInTime: result.firstCheckInTime,
         registration: result.registration,
-        message: result.isOverDuplicateLimit
+        message: result.isExcessiveScan
+          ? `🚨 นิสิต ${result.registration?.studentName} สแกนซ้ำผิดปกติเกิน 3 ครั้ง (ครั้งที่ ${result.scanCount}) ระบบบันทึกในหมายเหตุว่า 'ไม่ตั้งใจปฏิบัติ' เรียบร้อย`
+          : result.isOverDuplicateLimit
           ? `นิสิต ${result.registration?.studentName} มีการสแกนซ้ำเกิน 2 ครั้ง (ครั้งที่ ${result.scanCount}) บันทึกสถานะสแกนซ้ำเรียบร้อย`
           : result.isAlreadyCheckedIn
           ? `นิสิต ${result.registration?.studentName} เช็คชื่อรอบนี้ไปแล้ว (${result.registration?.dailyAttendance?.[dayKey]?.[periodKey]?.checkInTime || ''})`
