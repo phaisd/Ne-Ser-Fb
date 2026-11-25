@@ -17,6 +17,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, SystemSettings } from '@/types';
+import dynamic from 'next/dynamic';
 import { useAdminEvents } from '@/hooks/admin';
 import { getAuthUser } from '@/lib/auth-client';
 import { hasProjectDuty } from '@/lib/events/projectDuty';
@@ -25,14 +26,22 @@ import {
   EventGroupImportModal,
   VipassanaAttendanceSheetModal,
   VipassanaBadgesModal,
-  VipassanaLiveScannerModal,
   VipassanaInterviewSheetModal,
   VipassanaCombinedEvaluationModal,
   VipassanaEventQrModal,
-  VipassanaSeatMapModal,
   VipassanaSeatScannerModal,
 } from '../modals';
 import { EventCardGrid, EventParticipantsTable } from './events';
+
+const VipassanaSeatMapModal = dynamic(
+  () => import('../modals/vipassana/VipassanaSeatMapModal').then((m) => m.VipassanaSeatMapModal),
+  { ssr: false }
+);
+
+const VipassanaLiveScannerModal = dynamic(
+  () => import('../modals/VipassanaLiveScannerModal').then((m) => m.VipassanaLiveScannerModal),
+  { ssr: false }
+);
 
 interface AdminEventsTabProps {
   eventsList: StudentEvent[];
@@ -651,8 +660,8 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           event={vipassanaSeatingEvent}
           registrations={registrationsList.filter((r) => r.eventId === vipassanaSeatingEvent.id)}
           onRefresh={onRefresh}
-          onOpenSeatScanner={(e) => setVipassanaSeatScannerEvent(e)}
-          onOpenEventQr={(e) => setVipassanaQrEvent(e)}
+          onOpenSeatScanner={(e: StudentEvent) => setVipassanaSeatScannerEvent(e)}
+          onOpenEventQr={(e: StudentEvent) => setVipassanaQrEvent(e)}
         />
       )}
 

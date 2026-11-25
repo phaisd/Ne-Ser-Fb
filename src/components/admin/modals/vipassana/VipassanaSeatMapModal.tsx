@@ -51,37 +51,24 @@ import {
   STATUS_THEMES,
   type ParticipantStatusCategory,
 } from '@/services/events/seatingUtils';
-import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
 import { parseXlsxBuffer } from '@/lib/utils/xlsx-import';
 import { VipassanaSeatMapPrintModal } from './VipassanaSeatMapPrintModal';
-
-interface VipassanaSeatMapModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  event: StudentEvent;
-  registrations: EventRegistration[];
-  onRefresh: () => void;
-  onOpenSeatScanner?: (event: StudentEvent) => void;
-  onOpenEventQr?: (event: StudentEvent) => void;
-}
-
-const INSPECTION_PERIODS = [
-  { id: 'p1', nameTh: 'ภาคเช้ามืด', time: '04.00 - 04.30 น.', icon: '🌅' },
-  { id: 'p2', nameTh: 'ภาคเช้า', time: '08.00 - 08.30 น.', icon: '☀️' },
-  { id: 'p3', nameTh: 'ภาคบ่าย', time: '12.30 - 13.00 น.', icon: '🌤️' },
-  { id: 'p4', nameTh: 'ภาคค่ำ', time: '17.30 - 18.00 น.', icon: '🌙' },
-] as const;
-type InspectionPeriodKey = 'p1' | 'p2' | 'p3' | 'p4';
-
-const ZONE_COLORS: Record<string, { bg: string; border: string; text: string; lightBg: string; ring: string }> = {
-  amber: { bg: 'bg-amber-500', border: 'border-amber-400', text: 'text-amber-900', lightBg: 'bg-amber-50', ring: 'ring-amber-500' },
-  blue: { bg: 'bg-blue-600', border: 'border-blue-400', text: 'text-blue-900', lightBg: 'bg-blue-50', ring: 'ring-blue-500' },
-  emerald: { bg: 'bg-emerald-600', border: 'border-emerald-400', text: 'text-emerald-900', lightBg: 'bg-emerald-50', ring: 'ring-emerald-500' },
-  purple: { bg: 'bg-purple-600', border: 'border-purple-400', text: 'text-purple-900', lightBg: 'bg-purple-50', ring: 'ring-purple-500' },
-  rose: { bg: 'bg-rose-600', border: 'border-rose-400', text: 'text-rose-900', lightBg: 'bg-rose-50', ring: 'ring-rose-500' },
-  teal: { bg: 'bg-teal-600', border: 'border-teal-400', text: 'text-teal-900', lightBg: 'bg-teal-50', ring: 'ring-teal-500' },
-  indigo: { bg: 'bg-indigo-600', border: 'border-indigo-400', text: 'text-indigo-900', lightBg: 'bg-indigo-50', ring: 'ring-indigo-500' },
-};
+import {
+  type VipassanaSeatMapModalProps,
+  INSPECTION_PERIODS,
+  type InspectionPeriodKey,
+  ZONE_COLORS,
+  parseSeatCode,
+  formatSeatCode,
+  getSeatsInRectangle,
+  exportSeatingXlsx,
+  exportSeatingCsv,
+  downloadBlankTemplate,
+  SeatMapZoneConfigModal,
+  SeatMapQrShareModal,
+  SeatMapBatchActionsBar,
+  SeatMapRangeModal,
+} from './seat-map';
 
 export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   isOpen,
@@ -93,9 +80,9 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   onOpenEventQr,
 }) => {
   // Strictly deduplicate registrations by eventId + studentCode
-  const registrations = useMemo(() => {
+  const registrations: EventRegistration[] = useMemo(() => {
     const seen = new Set<string>();
-    return (rawRegistrations || []).filter((r) => {
+    return (rawRegistrations || []).filter((r: EventRegistration) => {
       if (event?.id && r.eventId && r.eventId !== event.id) return false;
       const sCode = (r.studentCode || r.id || '').trim().toLowerCase();
       const key = `${r.eventId || event?.id || ''}_${sCode}`;
@@ -175,9 +162,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   const [selectedSeats, setSelectedSeats] = useState<Set<string>>(new Set());
   const [lastClickedSeat, setLastClickedSeat] = useState<string | null>(null);
   const [isRangeModalOpen, setIsRangeModalOpen] = useState<boolean>(false);
-  const [rangeZoneId, setRangeZoneId] = useState<string>('');
-  const [rangeStartSeat, setRangeStartSeat] = useState<string>('D-03');
-  const [rangeEndSeat, setRangeEndSeat] = useState<string>('I-03');
+
 
   // Daily & Period Seat Inspection State (ตรวจเช็คที่นั่งรายวัน/สุ่มรอบ)
   const totalDays = useMemo(() => {
@@ -582,197 +567,19 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
 
   // ==================== EXCEL & CSV EXPORT / IMPORT ====================
 
-  // พรรษา: แสดงเฉพาะเมื่อมีค่า (พระภิกษุ) — สามเณร/แม่ชี/ฆราวาส เว้นว่าง
-  const formatVasaCell = (v?: string | number): string => {
-    if (v === undefined || v === null) return '';
-    const s = String(v).replace(/\s*พรรษา$/g, '').trim();
-    if (!s || s === '-' || s === '0') return '';
-    return s;
-  };
-
   // Export Seating to Excel (.xlsx)
   const handleExportSeatingXlsx = () => {
-    const isStudentId = (v?: string) => !!v && /^\d{8,12}$/.test(v.replace(/[\s\u00A0]+/g, ''));
-    const isShortGroupCode = (v?: string) =>
-      !!v && /^[A-Za-z0-9_-]{2,10}$/.test(v.trim()) && !isStudentId(v);
-
-    const rows = registrations.map((r, idx) => {
-      const st = detectParticipantStatus(r.studentName, r.role);
-      const isCheckedIn = !!r.seatCheckinAt;
-
-      let expStudentCode = r.studentCode || '';
-      let expGroupCode = r.groupSpecificCode || '';
-
-      // Auto-correct if studentCode was historically stored as group code (e.g. T122, B1T01)
-      if (isShortGroupCode(expStudentCode) && !expGroupCode) {
-        expGroupCode = expStudentCode;
-        expStudentCode = '';
-      } else if (isShortGroupCode(expStudentCode) && isStudentId(expGroupCode)) {
-        const tmp = expStudentCode;
-        expStudentCode = expGroupCode;
-        expGroupCode = tmp;
-      }
-
-      return [
-        idx + 1,
-        expStudentCode,
-        expGroupCode,
-        r.studentName,
-        st.label,
-        r.programType || 'THAI',
-        r.degreeLevel || 'ปริญญาตรี',
-        r.major || '',
-        r.groupNumber || '',
-        formatVasaCell(r.vasa),
-        r.seatNumber || '',
-        r.seatZone || '',
-        isCheckedIn ? 'เช็คอินแล้ว' : 'ยังไม่เข้าที่นั่ง',
-        r.seatCheckinAt ? new Date(r.seatCheckinAt).toLocaleString('th-TH') : '-',
-        r.seatCheckinBy || '-',
-      ];
-    });
-
-    const sheet: XlsxSheet = {
-      name: 'ผังที่นั่งและตรวจเช็ค',
-      title: `ผังที่นั่ง & รายงานตรวจเช็คผู้เข้าที่นั่ง: ${event.title}`,
-      subtitle: `สถานที่: ${config.venueName || event.location || 'คณะพุทธศาสตร์'} • วันที่ส่งออก: ${new Date().toLocaleDateString('th-TH')} • พรรษาระบุเฉพาะพระภิกษุ (สามเณร/แม่ชี/ฆราวาสเว้นว่าง)`,
-      headers: [
-        'ลำดับ',
-        'รหัสนิสิต',
-        'เลขเฉพาะกลุ่ม',
-        'ชื่อ-ฉายา/สกุล',
-        'สถานภาพ/เพศ',
-        'หลักสูตรภาษา',
-        'ระดับการศึกษา',
-        'สาขาวิชา',
-        'กลุ่มที่',
-        'พรรษา',
-        'หมายเลขที่นั่ง (Seat No.)',
-        'โซนที่นั่ง (Zone)',
-        'สถานะตรวจเช็คเข้าที่นั่ง',
-        'วันเวลาที่เช็คอิน',
-        'ผู้ตรวจเช็ค',
-      ],
-      rows,
-      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 12, 22, 20, 22, 22, 20],
-    };
-
-    downloadXlsx(
-      `ผังที่นั่งและตรวจเช็ค_${event.title.replace(/[\/\\:*?"<>|]/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`,
-      [sheet]
-    );
+    exportSeatingXlsx(event, config, registrations);
   };
 
   // Export Seating to CSV (.csv)
   const handleExportSeatingCsv = () => {
-    const isStudentId = (v?: string) => !!v && /^\d{8,12}$/.test(v.replace(/[\s\u00A0]+/g, ''));
-    const isShortGroupCode = (v?: string) =>
-      !!v && /^[A-Za-z0-9_-]{2,10}$/.test(v.trim()) && !isStudentId(v);
-
-    const headers = [
-      'ลำดับ',
-      'รหัสนิสิต',
-      'เลขเฉพาะกลุ่ม',
-      'ชื่อ-ฉายา/สกุล',
-      'สถานภาพ/เพศ',
-      'หลักสูตรภาษา',
-      'ระดับการศึกษา',
-      'สาขาวิชา',
-      'กลุ่มที่',
-      'พรรษา',
-      'หมายเลขที่นั่ง (Seat No.)',
-      'โซนที่นั่ง (Zone)',
-      'สถานะตรวจเช็คเข้าที่นั่ง',
-      'วันเวลาที่เช็คอิน',
-      'ผู้ตรวจเช็ค',
-    ];
-
-    const lines = [headers.join(',')];
-    registrations.forEach((r, idx) => {
-      const st = detectParticipantStatus(r.studentName, r.role);
-      const isCheckedIn = !!r.seatCheckinAt;
-
-      let expStudentCode = r.studentCode || '';
-      let expGroupCode = r.groupSpecificCode || '';
-
-      if (isShortGroupCode(expStudentCode) && !expGroupCode) {
-        expGroupCode = expStudentCode;
-        expStudentCode = '';
-      } else if (isShortGroupCode(expStudentCode) && isStudentId(expGroupCode)) {
-        const tmp = expStudentCode;
-        expStudentCode = expGroupCode;
-        expGroupCode = tmp;
-      }
-
-      const row = [
-        idx + 1,
-        `"${expStudentCode}"`,
-        `"${expGroupCode}"`,
-        `"${r.studentName}"`,
-        `"${st.label}"`,
-        `"${r.programType || 'THAI'}"`,
-        `"${r.degreeLevel || 'ปริญญาตรี'}"`,
-        `"${r.major || ''}"`,
-        `"${r.groupNumber || ''}"`,
-        `"${formatVasaCell(r.vasa)}"`,
-        `"${r.seatNumber || ''}"`,
-        `"${r.seatZone || ''}"`,
-        `"${isCheckedIn ? 'เช็คอินแล้ว' : 'ยังไม่เข้าที่นั่ง'}"`,
-        `"${r.seatCheckinAt ? new Date(r.seatCheckinAt).toLocaleString('th-TH') : '-'}"`,
-        `"${r.seatCheckinBy || '-'}"`,
-      ];
-      lines.push(row.join(','));
-    });
-
-    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ผังที่นั่งและตรวจเช็ค_${event.title.replace(/[\/\\:*?"<>|]/g, '_')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportSeatingCsv(event, registrations);
   };
 
   // Download Blank Excel Template
   const handleDownloadBlankTemplate = () => {
-    const sampleRows = [
-      [1, '6701501001', 'T101', 'พระมหาสมชาย กิตฺติโสภโณ', 'พระภิกษุ', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, 25, 'A-01', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:30:00', 'จนท.สมชาย'],
-      [2, '6701501002', 'T102', 'สามเณรธีรภัทร สุขใจ', 'สามเณร', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 1, '', 'A-02', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
-      [3, '6701501003', 'T103', 'แม่ชีวิมล บุญประเสริฐ', 'แม่ชี', 'THAI', 'ปริญญาตรี', 'พระพุทธศาสนา', 2, '', 'B-01', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
-      [4, '6701501004', 'T104', 'นายก้องภพ ใจดี', 'คฤหัสถ์ชาย', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 2, '', 'B-02', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:32:15', 'จนท.สมชาย'],
-      [5, '6701501005', 'T105', 'นางสาวพรทิพย์ สดใส', 'คฤหัสถ์หญิง', 'THAI', 'ปริญญาตรี', 'ปรัชญา', 3, '', 'C-01', 'โซน 1', 'ยังไม่เข้าที่นั่ง', '-', '-'],
-      [6, '6701501006', 'I301', 'Ven. Dhammapalo', 'พระภิกษุ', 'ENGLISH', 'ปริญญาตรี', 'Buddhism', 12, 10, 'A-03', 'โซน 1', 'เช็คอินแล้ว', '20/11/2569 08:35:00', 'จนท.สมชาย'],
-    ];
-
-    const sheet: XlsxSheet = {
-      name: 'แม่แบบจัดผังที่นั่งและเช็คอิน',
-      title: 'แม่แบบไฟล์ Excel กำหนดหมายเลขที่นั่ง & ตรวจเช็ค (Seating & Checkin Template)',
-      subtitle: 'คำแนะนำ: ระบุรหัสนิสิต, หมายเลขที่นั่ง (เช่น A-01) และสามารถระบุสถานะตรวจเช็ค (เช็คอินแล้ว/ยังไม่เข้าที่นั่ง) ได้',
-      headers: [
-        'ลำดับ',
-        'รหัสนิสิต',
-        'เลขเฉพาะกลุ่ม',
-        'ชื่อ-ฉายา/สกุล',
-        'สถานภาพ/เพศ',
-        'หลักสูตรภาษา',
-        'ระดับการศึกษา',
-        'สาขาวิชา',
-        'กลุ่มที่',
-        'พรรษา',
-        'หมายเลขที่นั่ง (Seat No.)',
-        'โซนที่นั่ง (Zone)',
-        'สถานะตรวจเช็คเข้าที่นั่ง',
-        'วันเวลาที่เช็คอิน',
-        'ผู้ตรวจเช็ค',
-      ],
-      rows: sampleRows,
-      columnWidths: [8, 16, 14, 28, 16, 14, 16, 24, 10, 12, 22, 20, 22, 22, 20],
-    };
-
-    downloadXlsx(
-      `แม่แบบผังที่นั่ง_Seating_Template.xlsx`,
-      [sheet]
-    );
+    downloadBlankTemplate();
   };
 
   // Parse Matrix to Preview Rows
@@ -1193,60 +1000,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     await handleSaveConfig(newConfig);
   };
 
-  // Helper: Parse a seat code within a zone (e.g. D-03, AD-03, G-12) to { rIdx, cIdx }
-  const parseSeatCode = (seatCode: string, zone: SeatZone): { rIdx: number; cIdx: number } | null => {
-    let code = seatCode.trim().toUpperCase();
-    const prefix = (zone.prefix ?? '').trim().toUpperCase();
-    if (prefix && code.startsWith(prefix)) {
-      code = code.slice(prefix.length);
-    }
-    const parts = code.split('-');
-    if (parts.length !== 2) return null;
-    const rowPart = parts[0];
-    const colPart = parts[1];
 
-    let rIdx = -1;
-    if (/^[A-Z]$/.test(rowPart)) {
-      rIdx = rowPart.charCodeAt(0) - 65;
-    } else {
-      rIdx = parseInt(rowPart, 10) - 1;
-    }
-
-    const cIdx = parseInt(colPart, 10) - 1;
-
-    if (rIdx >= 0 && rIdx < zone.rows && cIdx >= 0 && cIdx < zone.cols) {
-      return { rIdx, cIdx };
-    }
-    return null;
-  };
-
-  // Helper: Format { rIdx, cIdx } back to standard seatCode for a zone
-  const formatSeatCode = (zone: SeatZone, rIdx: number, cIdx: number): string => {
-    const prefix = (zone.prefix ?? '').trim().toUpperCase();
-    const rowChar = String.fromCharCode(65 + rIdx);
-    const colStr = cIdx + 1 < 10 ? `0${cIdx + 1}` : `${cIdx + 1}`;
-    return zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${rIdx + 1}-${colStr}`;
-  };
-
-  // Helper: Calculate bounding box of seats between seat1 and seat2 in a zone
-  const getSeatsInRectangle = (seat1: string, seat2: string, zone: SeatZone): string[] => {
-    const p1 = parseSeatCode(seat1, zone);
-    const p2 = parseSeatCode(seat2, zone);
-    if (!p1 || !p2) return [seat1.trim().toUpperCase(), seat2.trim().toUpperCase()];
-
-    const minR = Math.min(p1.rIdx, p2.rIdx);
-    const maxR = Math.max(p1.rIdx, p2.rIdx);
-    const minC = Math.min(p1.cIdx, p2.cIdx);
-    const maxC = Math.max(p1.cIdx, p2.cIdx);
-
-    const result: string[] = [];
-    for (let r = minR; r <= maxR; r++) {
-      for (let c = minC; c <= maxC; c++) {
-        result.push(formatSeatCode(zone, r, c).toUpperCase());
-      }
-    }
-    return result;
-  };
 
   // Seat Click Handler supporting Single Click, Shift+Click (Range), and Batch Selection
   const handleSeatClick = (seatCode: string, e: React.MouseEvent, zone: SeatZone) => {
@@ -2793,159 +2547,17 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           )}
 
           {/* Config Drawer (Zone Settings) */}
-          {isConfigDrawerOpen && (
-            <div className="w-80 sm:w-96 bg-white border-l border-slate-200 shadow-2xl flex flex-col shrink-0 animate-in slide-in-from-right duration-200 z-30">
-              <div className="p-4 bg-amber-800 text-white flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-amber-300" />
-                  <h4 className="font-bold text-base">ตั้งค่าผังและขนาดโซน</h4>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsConfigDrawerOpen(false)}
-                  className="p-1 text-slate-300 hover:text-white rounded-lg transition"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="p-4 flex-1 overflow-y-auto space-y-5 text-xs">
-                {/* Venue & Room Info */}
-                <div className="space-y-2">
-                  <label className="font-bold text-slate-700 block">สถานที่ / อาคาร:</label>
-                  <input
-                    type="text"
-                    value={config.venueName || ''}
-                    onChange={(e) => setConfig({ ...config, venueName: e.target.value })}
-                    className="w-full p-2 border border-slate-300 rounded-lg text-xs"
-                    placeholder="เช่น อาคาร มวก. 48 พรรษา"
-                  />
-                  <label className="font-bold text-slate-700 block">ห้อง / หอประชุม:</label>
-                  <input
-                    type="text"
-                    value={config.roomName || ''}
-                    onChange={(e) => setConfig({ ...config, roomName: e.target.value })}
-                    className="w-full p-2 border border-slate-300 rounded-lg text-xs"
-                    placeholder="เช่น หอประชุมใหญ่ ชั้น 3"
-                  />
-                </div>
-
-                {/* Zones List */}
-                <div className="space-y-3 pt-3 border-t border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">รายการโซน ({config.zones.length}):</span>
-                    <button
-                      type="button"
-                      onClick={handleAddZone}
-                      className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded font-bold flex items-center gap-1 cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>เพิ่มโซน</span>
-                    </button>
-                  </div>
-
-                  {config.zones.map((zone, zIdx) => (
-                    <div key={zone.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900">โซนที่ {zIdx + 1}</span>
-                        {config.zones.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveZone(zone.id)}
-                            className="text-rose-500 hover:text-rose-700 p-1"
-                            title="ลบโซนนี้"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] text-slate-600 font-medium">ชื่อโซน:</label>
-                        <input
-                          type="text"
-                          value={zone.name}
-                          onChange={(e) => handleUpdateZone(zone.id, { name: e.target.value })}
-                          className="w-full p-1.5 border border-slate-300 rounded bg-white text-xs"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <label className="text-[10px] text-slate-600">แถว (Rows):</label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={50}
-                            value={zone.rows}
-                            onChange={(e) => handleUpdateZone(zone.id, { rows: parseInt(e.target.value, 10) || 1 })}
-                            className="w-full p-1.5 border border-slate-300 rounded bg-white text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-slate-600">คอลัมน์ (Cols):</label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={50}
-                            value={zone.cols}
-                            onChange={(e) => handleUpdateZone(zone.id, { cols: parseInt(e.target.value, 10) || 1 })}
-                            className="w-full p-1.5 border border-slate-300 rounded bg-white text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-slate-600 font-bold">รหัสนำ (Prefix):</label>
-                          <input
-                            type="text"
-                            maxLength={5}
-                            placeholder="เว้นว่างได้ (เช่น A-01)"
-                            value={zone.prefix || ''}
-                            onChange={(e) => handleUpdateZone(zone.id, { prefix: e.target.value.toUpperCase() })}
-                            className="w-full p-1.5 border border-slate-300 rounded bg-white text-xs uppercase placeholder:text-slate-400 placeholder:normal-case"
-                            title="สามารถเว้นว่างได้เพื่อให้แสดงเป็น A-01, B-01 หรือใส่ 0 เพื่อให้เป็น 0A-01"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 pt-1">
-                        <span className="text-[10px] text-slate-600">สีโซน:</span>
-                        {Object.keys(ZONE_COLORS).map((cKey) => (
-                          <button
-                            key={cKey}
-                            type="button"
-                            onClick={() => handleUpdateZone(zone.id, { color: cKey })}
-                            className={`w-5 h-5 rounded-full ${ZONE_COLORS[cKey].bg} ${
-                              zone.color === cKey ? 'ring-2 ring-slate-800 scale-110' : 'opacity-70'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Save Footer */}
-              <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsConfigDrawerOpen(false)}
-                  className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200 rounded-lg transition"
-                >
-                  ปิด
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSaveConfig(config)}
-                  disabled={isSaving}
-                  className="px-4 py-1.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>บันทึกการตั้งค่าผัง</span>
-                </button>
-              </div>
-            </div>
-          )}
+          <SeatMapZoneConfigModal
+            isOpen={isConfigDrawerOpen}
+            onClose={() => setIsConfigDrawerOpen(false)}
+            config={config}
+            setConfig={setConfig}
+            onSave={handleSaveConfig}
+            isSaving={isSaving}
+            onAddZone={handleAddZone}
+            onRemoveZone={handleRemoveZone}
+            onUpdateZone={handleUpdateZone}
+          />
         </div>
 
         {/* Auto Assign Modal Popup */}
@@ -3445,196 +3057,20 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         )}
 
         {/* Mobile QR & Deep-link Modal */}
-        {isMobileQrOpen && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
-            <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
-              {/* Header */}
-              <div className="p-4 bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-amber-300">
-                    <Smartphone className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm sm:text-base text-white">
-                      QR Code & ลิงก์เข้าใช้งานบนมือถือ (ผังที่นั่ง & สแกนเนอร์)
-                    </h3>
-                    <p className="text-xs text-purple-200 truncate">{event.title}</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsMobileQrOpen(false)}
-                  className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Card 1: Staff Rapid Seat Scanner */}
-                  <div className="rounded-2xl border-2 border-emerald-400 bg-gradient-to-b from-emerald-50/70 via-white to-emerald-50/30 p-4 flex flex-col justify-between space-y-3">
-                    <div className="text-center space-y-1">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-emerald-600 text-white">
-                        <Camera className="w-3 h-3 text-emerald-100" />
-                        <span>สำหรับเจ้าหน้าที่จุดเข้าห้อง</span>
-                      </span>
-                      <h4 className="font-bold text-slate-900 text-sm">
-                        สแกนตรวจเช็คผู้เข้าที่นั่ง
-                      </h4>
-                      <p className="text-[11px] text-slate-600 leading-snug">
-                        ใช้กล้องมือถือส่องป้ายชื่อเพื่อเช็คอินและบอกเลขที่นั่งทันที
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col items-center justify-center py-1">
-                      {mobileScannerQrDataUrl ? (
-                        <img
-                          src={mobileScannerQrDataUrl}
-                          alt="Mobile Scanner QR"
-                          className="w-40 h-40 rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-xs object-contain"
-                        />
-                      ) : (
-                        <div className="w-40 h-40 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400">
-                          กำลังสร้าง QR...
-                        </div>
-                      )}
-                      <span className="text-[10px] font-bold text-emerald-800 mt-1">
-                        สแกนเพื่อเปิดจุดสแกนบนมือถือ
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyMobileUrl(mobileSeatScanUrl, 'SCANNER')}
-                        className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
-                      >
-                        {copiedMobileUrl === 'SCANNER' ? (
-                          <>
-                            <CheckCircle2 className="w-3.5 h-3.5 text-amber-200" />
-                            <span>คัดลอกลิงก์แล้ว!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>คัดลอกลิงก์สแกนเนอร์</span>
-                          </>
-                        )}
-                      </button>
-
-                      {onOpenSeatScanner && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsMobileQrOpen(false);
-                            onClose();
-                            onOpenSeatScanner(event);
-                          }}
-                          className="w-full py-1.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[11px] flex items-center justify-center gap-1 transition cursor-pointer border border-emerald-200"
-                        >
-                          <Camera className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>เปิดสแกนเนอร์บนอุปกรณ์นี้ทันที</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Card 2: Public Self-Service Seat Finder */}
-                  <div className="rounded-2xl border-2 border-slate-400 bg-gradient-to-b from-slate-50/70 via-white to-slate-50/30 p-4 flex flex-col justify-between space-y-3">
-                    <div className="text-center space-y-1">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-slate-900 text-amber-300">
-                        <MapPin className="w-3 h-3 text-amber-400" />
-                        <span>สำหรับผู้เข้าร่วม • ไม่ต้องล็อกอิน</span>
-                      </span>
-                      <h4 className="font-bold text-slate-900 text-sm">
-                        จุดค้นหาผังที่นั่งตนเอง
-                      </h4>
-                      <p className="text-[11px] text-slate-600 leading-snug">
-                        พิมพ์ติดหน้าห้องประชุม ให้ผู้เข้าร่วมสแกนหาที่นั่งและดูผังห้อง
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col items-center justify-center py-1">
-                      {mobileSeatingQrDataUrl ? (
-                        <img
-                          src={mobileSeatingQrDataUrl}
-                          alt="Mobile Seating Lookup QR"
-                          className="w-40 h-40 rounded-2xl border-2 border-slate-200 bg-white p-2 shadow-xs object-contain"
-                        />
-                      ) : (
-                        <div className="w-40 h-40 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-400">
-                          กำลังสร้าง QR...
-                        </div>
-                      )}
-                      <span className="text-[10px] font-bold text-slate-700 mt-1">
-                        สแกนเพื่อค้นหาที่นั่งตนเอง
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyMobileUrl(mobilePublicSeatingUrl, 'PUBLIC')}
-                        className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
-                      >
-                        {copiedMobileUrl === 'PUBLIC' ? (
-                          <>
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-                            <span>คัดลอกลิงก์ผังที่นั่งแล้ว!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>คัดลอกลิงก์ค้นหาที่นั่ง</span>
-                          </>
-                        )}
-                      </button>
-
-                      <a
-                        href={mobilePublicSeatingUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-full py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] flex items-center justify-center gap-1 transition cursor-pointer border border-slate-300"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5 text-slate-600" />
-                        <span>เปิดทดสอบหน้าค้นหาที่นั่ง</span>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-
-                {onOpenEventQr && (
-                  <div className="pt-2 border-t border-slate-200 text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMobileQrOpen(false);
-                        onOpenEventQr(event);
-                      }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-extrabold text-xs transition border border-indigo-200 cursor-pointer"
-                    >
-                      <QrCode className="w-4 h-4 text-indigo-600" />
-                      <span>เปิดดู QR Code & ลิงก์ด่วนทั้งหมดของโครงการ (เช็คชื่อ 4 รอบ / สอบอารมณ์ / ผังที่นั่ง)</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsMobileQrOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 rounded-xl transition cursor-pointer"
-                >
-                  ปิด
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <SeatMapQrShareModal
+          isOpen={isMobileQrOpen}
+          onClose={() => setIsMobileQrOpen(false)}
+          event={event}
+          mobileScannerQrDataUrl={mobileScannerQrDataUrl}
+          mobileSeatingQrDataUrl={mobileSeatingQrDataUrl}
+          mobileSeatScanUrl={mobileSeatScanUrl}
+          mobilePublicSeatingUrl={mobilePublicSeatingUrl}
+          copiedMobileUrl={copiedMobileUrl}
+          onCopyMobileUrl={handleCopyMobileUrl}
+          onOpenSeatScanner={onOpenSeatScanner}
+          onOpenEventQr={onOpenEventQr}
+          onParentClose={onClose}
+        />
 
         {/* Absent From Seat Report Modal */}
         {isAbsentReportOpen && dailyStats && (
@@ -3733,229 +3169,29 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           />
         )}
 
-        {/* Floating Batch Action Panel (เมื่อมีการเลือกหลายที่นั่ง) */}
-        {selectedSeats.size > 0 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-700 flex flex-wrap items-center justify-center gap-2 sm:gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200 max-w-[96vw]">
-            <div className="flex items-center gap-1.5 text-xs font-black text-amber-300 pr-2 border-r border-slate-700 whitespace-nowrap">
-              <CheckSquare className="w-4 h-4 text-amber-400" />
-              <span>เลือก {selectedSeats.size} ที่นั่ง</span>
-            </div>
+        {/* Floating Batch Action Panel */}
+        <SeatMapBatchActionsBar
+          selectedSeats={selectedSeats}
+          onClearSelection={() => setSelectedSeats(new Set())}
+          onBatchDisable={handleBatchDisableSeats}
+          onBatchEnable={handleBatchEnableSeats}
+          onBatchDesignateStatus={handleBatchDesignateStatus}
+          isSaving={isSaving}
+        />
 
-            {/* Action: ทำเป็นทางเดิน/เสา */}
-            <button
-              type="button"
-              onClick={() => handleBatchDisableSeats(Array.from(selectedSeats))}
-              disabled={isSaving}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs border border-slate-600 whitespace-nowrap disabled:opacity-50"
-              title="แปลงที่นั่งที่เลือกทั้งหมดให้เป็นทางเดินหรือเสา (—)"
-            >
-              <span className="text-slate-400 font-mono font-black text-sm leading-none">—</span>
-              <span>ทำเป็นทางเดิน/เสา</span>
-            </button>
-
-            {/* Action: คืนค่าเป็นที่นั่งปกติ */}
-            <button
-              type="button"
-              onClick={() => handleBatchEnableSeats(Array.from(selectedSeats))}
-              disabled={isSaving}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs whitespace-nowrap disabled:opacity-50"
-              title="คืนค่าที่นั่งที่เลือกให้กลับมาเป็นที่นั่งปกติ"
-            >
-              <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-              <span>คืนค่าเป็นที่นั่งปกติ</span>
-            </button>
-
-            {/* Action: กำหนดสัญลักษณ์กลุ่ม */}
-            <select
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val) {
-                  handleBatchDesignateStatus(
-                    Array.from(selectedSeats),
-                    val === 'CLEAR' ? null : (val as ParticipantStatusCategory)
-                  );
-                  e.target.value = '';
-                }
-              }}
-              defaultValue=""
-              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-xl text-xs font-medium cursor-pointer focus:outline-hidden whitespace-nowrap"
-            >
-              <option value="" disabled>
-                กำหนดกลุ่มผู้ปฏิบัติ...
-              </option>
-              <option value="MONK">🟠 พระภิกษุ</option>
-              <option value="BHIKKHUNI">🟤 ภิกษุณี / Inter</option>
-              <option value="SAMANERA">🔴 สามเณร</option>
-              <option value="MAECHI">🟡 แม่ชี</option>
-              <option value="LAY_MALE">🔵 ฆราวาสชาย</option>
-              <option value="LAY_FEMALE">🟢 ฆราวาสหญิง</option>
-              <option value="CLEAR">⚪ ล้างสัญลักษณ์กลุ่ม</option>
-            </select>
-
-            {/* Action: ยกเลิกการเลือก */}
-            <button
-              type="button"
-              onClick={() => setSelectedSeats(new Set())}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer"
-              title="ยกเลิกการเลือกทั้งหมด"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Range Selection Modal (ระบุช่วงที่นั่งเพื่อเลือกกลุ่ม) */}
-        {isRangeModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150">
-            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-700 to-slate-900 text-white">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-amber-300" />
-                  <h4 className="font-bold text-sm sm:text-base">เลือกกลุ่มที่นั่งเป็นช่วง (Range Selection)</h4>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsRangeModalOpen(false)}
-                  className="p-1 hover:bg-white/20 rounded-lg transition cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="p-4 space-y-4">
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  ระบุรหัสที่นั่งเริ่มต้นและสิ้นสุด เช่น <b>D-03</b> ถึง <b>I-03</b> (แนวเสา/ทางเดิน) หรือ <b>D-10</b> ถึง <b>G-12</b> (กลุ่มสี่เหลี่ยม) ระบบจะคำนวณและเลือกทุกที่นั่งในกรอบให้อัตโนมัติ
-                </p>
-
-                {config.zones.length > 1 && (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">โซนที่ต้องการเลือก:</label>
-                    <select
-                      value={rangeZoneId || config.zones[0]?.id}
-                      onChange={(e) => setRangeZoneId(e.target.value)}
-                      className="w-full p-2 border border-slate-200 rounded-xl text-xs bg-slate-50 font-semibold"
-                    >
-                      {config.zones.map((z) => (
-                        <option key={z.id} value={z.id}>
-                          {z.name} ({z.rows} แถว × {z.cols} คอลัมน์)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">จากที่นั่ง (Start):</label>
-                    <input
-                      type="text"
-                      placeholder="เช่น D-03 หรือ D-10"
-                      value={rangeStartSeat}
-                      onChange={(e) => setRangeStartSeat(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 uppercase"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">ถึงที่นั่ง (End):</label>
-                    <input
-                      type="text"
-                      placeholder="เช่น I-03 หรือ G-12"
-                      value={rangeEndSeat}
-                      onChange={(e) => setRangeEndSeat(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-amber-500 uppercase"
-                    />
-                  </div>
-                </div>
-
-                {/* Range Preview */}
-                {(() => {
-                  const targetZone =
-                    config.zones.find((z) => z.id === (rangeZoneId || activeZoneId)) || config.zones[0];
-                  const seats =
-                    rangeStartSeat && rangeEndSeat && targetZone
-                      ? getSeatsInRectangle(rangeStartSeat, rangeEndSeat, targetZone)
-                      : [];
-
-                  return (
-                    <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200/80 text-xs text-amber-900 space-y-1">
-                      <div className="font-bold flex items-center justify-between">
-                        <span>จำนวนที่นั่งที่ครอบคลุม:</span>
-                        <span className="px-2 py-0.5 bg-amber-200 text-amber-950 rounded-full font-black">
-                          {seats.length} ที่นั่ง
-                        </span>
-                      </div>
-                      {seats.length > 0 && (
-                        <p className="text-[11px] text-amber-800 line-clamp-2 font-mono">
-                          {seats.slice(0, 10).join(', ')}
-                          {seats.length > 10 ? ` และอีก ${seats.length - 10} ที่นั่ง` : ''}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const targetZone =
-                        config.zones.find((z) => z.id === (rangeZoneId || activeZoneId)) || config.zones[0];
-                      if (!targetZone || !rangeStartSeat || !rangeEndSeat) return;
-                      const seats = getSeatsInRectangle(rangeStartSeat, rangeEndSeat, targetZone);
-                      if (seats.length === 0) return;
-                      handleBatchDisableSeats(seats);
-                      setIsRangeModalOpen(false);
-                    }}
-                    disabled={!rangeStartSeat || !rangeEndSeat}
-                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                  >
-                    <span className="font-mono text-sm leading-none">—</span>
-                    <span>แปลงเป็นทางเดิน/เสาทันที (—)</span>
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const targetZone =
-                          config.zones.find((z) => z.id === (rangeZoneId || activeZoneId)) || config.zones[0];
-                        if (!targetZone || !rangeStartSeat || !rangeEndSeat) return;
-                        const seats = getSeatsInRectangle(rangeStartSeat, rangeEndSeat, targetZone);
-                        if (seats.length === 0) return;
-                        setSelectedSeats(new Set(seats));
-                        setIsBatchMode(true);
-                        setIsRangeModalOpen(false);
-                      }}
-                      disabled={!rangeStartSeat || !rangeEndSeat}
-                      className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                    >
-                      <CheckSquare className="w-3.5 h-3.5" />
-                      <span>เลือกกลุ่มนี้บนผัง</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const targetZone =
-                          config.zones.find((z) => z.id === (rangeZoneId || activeZoneId)) || config.zones[0];
-                        if (!targetZone || !rangeStartSeat || !rangeEndSeat) return;
-                        const seats = getSeatsInRectangle(rangeStartSeat, rangeEndSeat, targetZone);
-                        if (seats.length === 0) return;
-                        handleBatchEnableSeats(seats);
-                        setIsRangeModalOpen(false);
-                      }}
-                      disabled={!rangeStartSeat || !rangeEndSeat}
-                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>คืนค่าเป็นที่นั่ง</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Range Selection Modal */}
+        <SeatMapRangeModal
+          isOpen={isRangeModalOpen}
+          onClose={() => setIsRangeModalOpen(false)}
+          config={config}
+          activeZoneId={activeZoneId}
+          onBatchDisable={handleBatchDisableSeats}
+          onBatchEnable={handleBatchEnableSeats}
+          onSelectRangeOnMap={(seats) => {
+            setSelectedSeats(new Set(seats));
+            setIsBatchMode(true);
+          }}
+        />
       </div>
     </div>
   );

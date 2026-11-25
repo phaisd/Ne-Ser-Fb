@@ -35,6 +35,12 @@ import { getAuthUser, isAdminOrOfficer, canAccessAdminConsole, clearAuthSession 
 import { hasProjectDuty } from '@/lib/events/projectDuty';
 import UserProfileModal from '@/components/UserProfileModal';
 import ThemeModeToggle from './ThemeModeToggle';
+import {
+  NavbarSessionConflictModal,
+  NavbarVipassanaBanner,
+  NavbarMobileDrawer,
+  NavbarUserMenu,
+} from './navigation';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -527,170 +533,22 @@ export default function Navbar() {
             </div>
 
             {currentUser ? (
-              <div className="flex items-center gap-2">
-                {/* Auto-Logout / Personal Mode Toggle Pill */}
-                {autoLogoutMins === 0 ? (
-                  <button
-                    onClick={toggleAutoLogout}
-                    title="โหมดเครื่องส่วนตัว (ปิด Auto-Logout ไม่เตือน) — คลิกเพื่อเปิดระบบป้องกัน 15 นาที"
-                    className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/30 hover:bg-amber-500/20 transition cursor-pointer"
-                  >
-                    <Laptop className="w-3.5 h-3.5 text-amber-500" />
-                    <span>เครื่องส่วนตัว</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={toggleAutoLogout}
-                    title={`ระบบป้องกัน Auto-Logout ${autoLogoutMins} นาที — คลิกเพื่อสลับเป็นโหมดเครื่องส่วนตัว`}
-                    className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/20 transition cursor-pointer"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Auto-Logout {autoLogoutMins}น.</span>
-                  </button>
-                )}
-
-                {/* User Profile & Actions Dropdown */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    title="คลิกเพื่อเปิดเมนูบัญชีผู้ใช้"
-                    className={`group flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer hover:shadow-md ${
-                      isAdminRoute
-                        ? 'bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 hover:border-emerald-500/50'
-                        : 'bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-200 hover:border-orange-300'
-                    }`}
-                  >
-                    <UserCheck className="w-4 h-4 text-emerald-500 shrink-0 group-hover:scale-110 transition-transform" />
-                    <span className="hidden sm:inline truncate max-w-[130px]">{currentUser.name}</span>
-                    {suspiciousAlertsCount > 0 && (
-                      <span
-                        title={`พบประวัติความปลอดภัยที่ควรตรวจสอบ ${suspiciousAlertsCount} รายการ`}
-                        className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0"
-                      />
-                    )}
-                    <span className="text-[10px] opacity-70 font-normal hidden md:inline ml-0.5 underline">
-                      (แก้ไข)
-                    </span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform opacity-70 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {isUserMenuOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      />
-                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-slate-800 animate-in fade-in zoom-in-95 duration-100">
-                        {/* User Header */}
-                        <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/70 -mt-2 mb-1.5 rounded-t-2xl">
-                          <div className="text-[10px] font-bold text-orange-600 uppercase flex items-center gap-1">
-                            <span>
-                              {currentUser.role === 'SUPER_ADMIN' || currentUser.isSuperAdmin
-                                ? '👑 ผู้ดูแลระบบสูงสุด'
-                                : currentUser.role === 'ADMIN'
-                                ? '🛡️ ผู้ดูแลระบบ'
-                                : currentUser.role === 'OFFICER'
-                                ? '👮 เจ้าหน้าที่'
-                                : isStudent
-                                ? currentUser.isActingOfficer
-                                  ? '🎓 นิสิต (☑️ ช่วยงานเจ้าหน้าที่)'
-                                  : '🎓 นิสิต'
-                                : currentUser.isActingOfficer
-                                ? '🔒 อาจารย์ผู้สอน (☑️ ช่วยงานเจ้าหน้าที่)'
-                                : '🔒 อาจารย์ผู้สอน'}
-                            </span>
-                          </div>
-                          <div className="text-xs font-bold text-slate-900 truncate mt-0.5">
-                            {currentUser.name}
-                          </div>
-                          <div className="text-[10px] text-slate-500 font-mono truncate">
-                            {currentUser.email}
-                          </div>
-                        </div>
-
-                        {/* Dropdown Items */}
-                        <div className="p-1 space-y-0.5 text-xs font-semibold">
-                          {isStaffOrInstructor && (
-                            <Link
-                              href="/workload"
-                              onClick={() => setIsUserMenuOpen(false)}
-                              className="w-full px-3 py-2 text-left rounded-xl hover:bg-indigo-50 hover:text-indigo-900 flex items-center gap-2.5 transition cursor-pointer"
-                            >
-                              <Briefcase className="w-4 h-4 text-indigo-600" />
-                              <span>ภาระงานสอนของฉัน</span>
-                            </Link>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              setProfileModalTab('PROFILE');
-                              setIsProfileModalOpen(true);
-                            }}
-                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-orange-50 hover:text-orange-900 flex items-center gap-2.5 transition cursor-pointer"
-                          >
-                            <User className="w-4 h-4 text-orange-600" />
-                            <span>{isStudent ? 'แก้ไขโปรไฟล์นิสิต' : 'แก้ไขโปรไฟล์อาจารย์'}</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              setProfileModalTab('PASSWORD');
-                              setIsProfileModalOpen(true);
-                            }}
-                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-orange-50 hover:text-orange-900 flex items-center gap-2.5 transition cursor-pointer"
-                          >
-                            <KeyRound className="w-4 h-4 text-amber-600" />
-                            <span>รีเซ็ตรหัสผ่านใหม่</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              setProfileModalTab('HISTORY');
-                              setIsProfileModalOpen(true);
-                            }}
-                            className="w-full px-3 py-2 text-left rounded-xl hover:bg-orange-50 hover:text-orange-900 flex items-center justify-between gap-2 transition cursor-pointer"
-                          >
-                            <span className="flex items-center gap-2.5">
-                              <History className="w-4 h-4 text-indigo-600" />
-                              <span>ประวัติการเข้าใช้งาน</span>
-                            </span>
-                            {suspiciousAlertsCount > 0 && (
-                              <span className="px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
-                                {suspiciousAlertsCount}
-                              </span>
-                            )}
-                          </button>
-                        </div>
-
-                        <div className="border-t border-slate-100 my-1" />
-
-                        {/* Logout Option */}
-                        <div className="p-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsUserMenuOpen(false);
-                              handleLogout();
-                            }}
-                            className="w-full px-3 py-2 text-left rounded-xl text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition font-bold text-xs cursor-pointer"
-                          >
-                            <LogOut className="w-4 h-4 text-rose-500" />
-                            <span>ออกจากระบบ</span>
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
+              <NavbarUserMenu
+                currentUser={currentUser}
+                isAdminRoute={isAdminRoute}
+                isStaffOrInstructor={isStaffOrInstructor}
+                isStudent={isStudent}
+                autoLogoutMins={autoLogoutMins}
+                suspiciousAlertsCount={suspiciousAlertsCount}
+                isUserMenuOpen={isUserMenuOpen}
+                setIsUserMenuOpen={setIsUserMenuOpen}
+                onToggleAutoLogout={toggleAutoLogout}
+                onOpenProfile={(tab: 'PROFILE' | 'PASSWORD' | 'HISTORY') => {
+                  setProfileModalTab(tab);
+                  setIsProfileModalOpen(true);
+                }}
+                onLogout={handleLogout}
+              />
             ) : (
               <Link
                 href="/login"
@@ -840,234 +698,32 @@ export default function Navbar() {
         </div>
       </div>
       {/* Persistent Floating Return Banner if user accidentally navigated to Public Pages while having an Active Vipassana Station */}
-      {!pathname.startsWith('/admin') &&
-        currentUser &&
-        userHasProjectDuty &&
-        canAccessAdminConsole(currentUser) &&
-        (activeVipassanaStation || currentUser.role === 'VIPASSANA_MASTER') && (
-          <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-indigo-700 text-white px-3 sm:px-6 py-2.5 shadow-lg border-b border-amber-400/50 print:hidden">
-            <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-2 min-w-0">
-                <Award className="w-4 h-4 text-amber-200 shrink-0 animate-bounce" />
-                <span className="font-bold truncate">
-                  {activeVipassanaStation?.eventTitle
-                    ? `ค้างงานโครงการ: ${activeVipassanaStation.eventTitle}`
-                    : 'ท่านกำลังอยู่ในระบบปฏิบัติธรรมวิปัสสนา'}
-                </span>
-              </div>
-              <Link
-                href={activeVipassanaStation?.url || '/admin?tab=EVENTS'}
-                className="px-3 py-1.5 rounded-xl bg-white text-slate-950 hover:bg-amber-50 font-black text-xs flex items-center gap-1.5 shrink-0 shadow-md transition"
-              >
-                <span>
-                  {activeVipassanaStation?.action === 'INTERVIEW' ||
-                  currentUser.role === 'VIPASSANA_MASTER'
-                    ? '🧘 กลับไปหน้าสอบอารมณ์ทันที'
-                    : '📷 กลับไปหน้าสแกนตรวจเช็คชื่อทันที'}
-                </span>
-                <ArrowRight className="w-3.5 h-3.5 text-orange-600" />
-              </Link>
-            </div>
-          </div>
-        )}
+      <NavbarVipassanaBanner
+        pathname={pathname}
+        currentUser={currentUser}
+        userHasProjectDuty={userHasProjectDuty}
+        activeVipassanaStation={activeVipassanaStation}
+      />
     </header>
 
       {/* Mobile & Tablet Drawer Menu */}
-      {isMobileMenuOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden animate-in fade-in duration-200"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-
-          {/* Slide-Down or Drawer Container */}
-          <div className={`fixed inset-x-0 top-16 z-50 lg:hidden border-b shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto animate-in slide-in-from-top-3 duration-200 ${
-            isAdminRoute ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
-          }`}>
-            <div className="p-4 sm:p-6 space-y-4 max-w-lg mx-auto">
-              {/* User summary card in drawer */}
-              {currentUser ? (
-                <div className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
-                  isAdminRoute ? 'bg-slate-800/80 border-slate-700 text-slate-200' : 'bg-orange-50/70 border-orange-200 text-orange-950'
-                }`}>
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0">
-                      <UserCheck className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-extrabold text-xs truncate">{currentUser.name}</div>
-                      <div className="text-[10px] opacity-70 truncate">{currentUser.email || currentUser.role}</div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      setIsProfileModalOpen(true);
-                    }}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-800 shadow-xs border border-slate-200 shrink-0"
-                  >
-                    โปรไฟล์
-                  </button>
-                </div>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-sm shadow-md transition"
-                >
-                  <KeyRound className="w-4 h-4" />
-                  <span>เข้าสู่ระบบอาจารย์ / เจ้าหน้าที่</span>
-                </Link>
-              )}
-
-              {/* Quick Portal Switcher Pills in Drawer */}
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  href="/"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
-                    !isAdminRoute ? 'bg-orange-500 text-white border-orange-600' : 'bg-slate-800 text-slate-200 border-slate-700'
-                  }`}
-                >
-                  <GraduationCap className="w-4 h-4" />
-                  <span>หน้านิสิต (หน้าบ้าน)</span>
-                </Link>
-
-                {canAccessAdminConsole(currentUser) ? (
-                  <Link
-                    href={
-                      userHasProjectDuty
-                        ? (activeVipassanaStation?.url || '/admin?tab=EVENTS')
-                        : isInstructorOnly
-                        ? '/admin?tab=ATTENDANCE'
-                        : '/admin'
-                    }
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
-                      isAdminRoute && pathname.startsWith('/admin') ? 'bg-purple-600 text-white border-purple-700' : 'bg-slate-800 text-slate-200 border-slate-700'
-                    }`}
-                  >
-                    <Lock className="w-4 h-4" />
-                    <span>
-                      {currentUser?.role === 'VIPASSANA_MASTER'
-                        ? 'หน้าสอบอารมณ์'
-                        : userHasProjectDuty && activeVipassanaStation
-                        ? 'หน้าสแกน/สอบอารมณ์'
-                        : isInstructorOnly
-                        ? 'ระบบเวลาเรียน'
-                        : 'ระบบ Admin'}
-                    </span>
-                  </Link>
-                ) : isStaffOrInstructor ? (
-                  <Link
-                    href="/attendance"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
-                      pathname === '/attendance' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-800 text-slate-200 border-slate-700'
-                    }`}
-                  >
-                    <CheckSquare className="w-4 h-4" />
-                    <span>บันทึกเวลาเรียน</span>
-                  </Link>
-                ) : null}
-              </div>
-
-              {/* Navigation Links list */}
-              <div className="space-y-1">
-                <div className="text-[11px] font-extrabold text-slate-400 px-2 py-1 uppercase tracking-wider">
-                  เมนูหลัก (Navigation)
-                </div>
-                {(isAdminRoute ? adminNavItems : publicNavItems).map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-bold transition min-h-[44px] ${
-                        isAdminRoute
-                          ? isActive
-                            ? 'bg-emerald-600 text-white shadow-xs'
-                            : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                          : isActive
-                            ? 'bg-orange-100 text-orange-900 shadow-xs'
-                            : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 shrink-0 ${isActive ? (isAdminRoute ? 'text-white' : 'text-orange-600') : 'opacity-70'}`} />
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {/* Display Mode (โหมดกลางวัน / โหมดกลางคืน) */}
-              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 space-y-1.5">
-                <div className="text-[11px] font-extrabold text-slate-400 px-2 uppercase tracking-wider">
-                  โหมดการแสดงผล (Display Mode)
-                </div>
-                <ThemeModeToggle variant="full" />
-              </div>
-
-              {/* Language Selector in Drawer */}
-              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 space-y-2">
-                <div className="text-[11px] font-extrabold text-slate-400 px-2 uppercase tracking-wider">
-                  แปลภาษา (Languages)
-                </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {[
-                    { code: 'th', flag: '🇹🇭', label: 'ไทย (Thai)' },
-                    { code: 'en', flag: '🇬🇧', label: 'English' },
-                    { code: 'my', flag: '🇲🇲', label: 'မြန်မာ (Burmese)' },
-                    { code: 'vi', flag: '🇻🇳', label: 'Tiếng Việt' },
-                    { code: 'km', flag: '🇰🇭', label: 'ភាសាខ្มែរ' },
-                    { code: 'zh-CN', flag: '🇨🇳', label: '中文' },
-                  ].map((item) => (
-                    <button
-                      key={item.code}
-                      type="button"
-                      onClick={() => {
-                        handleSelectLanguage(item.code);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition text-left cursor-pointer min-h-[40px] ${
-                        selectedLanguageCode === item.code
-                          ? 'bg-orange-500 text-white border-orange-600'
-                          : isAdminRoute
-                            ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-                            : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-                      }`}
-                    >
-                      <span>{item.flag}</span>
-                      <span className="truncate">{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Logout button if logged in */}
-              {currentUser && (
-                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition min-h-[44px] cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4 text-rose-500" />
-                    <span>ออกจากระบบ</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
+      <NavbarMobileDrawer
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        isAdminRoute={isAdminRoute}
+        pathname={pathname}
+        currentUser={currentUser}
+        userHasProjectDuty={userHasProjectDuty}
+        isInstructorOnly={isInstructorOnly}
+        isStaffOrInstructor={isStaffOrInstructor}
+        activeVipassanaStation={activeVipassanaStation}
+        adminNavItems={adminNavItems}
+        publicNavItems={publicNavItems}
+        selectedLanguageCode={selectedLanguageCode}
+        onSelectLanguage={handleSelectLanguage}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onLogout={handleLogout}
+      />
 
       {/* User Profile & Password Modal */}
       <UserProfileModal
@@ -1079,39 +735,11 @@ export default function Navbar() {
       />
 
       {/* Session Conflict Modal (Terminated by New Device Login) */}
-      {sessionConflictInfo.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in">
-          <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 text-center space-y-4 animate-in zoom-in-95">
-            <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
-              <ShieldAlert className="w-8 h-8" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-extrabold text-slate-900">
-                เซสชันสิ้นสุดลง: มีการเข้าสู่ระบบจากเครื่องอื่น
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                {sessionConflictInfo.message || 'บัญชีนี้ได้รับการเข้าสู่ระบบจากอุปกรณ์อื่นล่าสุด ระบบได้ทำการออกจากระบบเครื่องนี้โดยอัตโนมัติเพื่อความปลอดภัย'}
-              </p>
-              {sessionConflictInfo.activeDevice && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 text-slate-800 text-xs font-mono font-bold border border-slate-200">
-                  <span>อุปกรณ์ล่าสุด: {sessionConflictInfo.activeDevice}</span>
-                </div>
-              )}
-            </div>
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = '/login';
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
-              >
-                เข้าสู่ระบบใหม่อีกครั้ง
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NavbarSessionConflictModal
+        isOpen={sessionConflictInfo.isOpen}
+        message={sessionConflictInfo.message}
+        activeDevice={sessionConflictInfo.activeDevice}
+      />
     </>
   );
 }
