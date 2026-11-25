@@ -40,6 +40,8 @@ export interface InstructorAccount {
   suspendReason?: string;
   isSuperAdmin?: boolean;
   isActingOfficer?: boolean;
+  isProjectCoordinator?: boolean;
+  isMeditationStaff?: boolean;
   aliases?: string[];
   previousIds?: string[];
   hasChangedPassword?: boolean;
@@ -70,6 +72,8 @@ export interface AuthUser {
   phone?: string;
   isSuperAdmin?: boolean;
   isActingOfficer?: boolean;
+  isProjectCoordinator?: boolean;
+  isMeditationStaff?: boolean;
   department?: string;
   ecclesiasticalTitle?: string;
   contactAddress?: string;

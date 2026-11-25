@@ -301,6 +301,7 @@ export async function updateUserProfile(
       instructorType: updates.instructorType?.trim() || 'เจ้าหน้าที่',
       role: updates.role || 'OFFICER',
       isActingOfficer: Boolean(updates.isActingOfficer),
+      isProjectCoordinator: Boolean((updates as any).isProjectCoordinator),
       isActive: true,
       isSuspended: false,
       password: 'Fb8323mcu',
@@ -425,6 +426,10 @@ export async function updateUserProfile(
       updates.isActingOfficer !== undefined
         ? Boolean(updates.isActingOfficer)
         : Boolean(current.isActingOfficer),
+    isProjectCoordinator:
+      (updates as any).isProjectCoordinator !== undefined
+        ? Boolean((updates as any).isProjectCoordinator)
+        : Boolean((current as any).isProjectCoordinator),
     updatedAt: new Date().toISOString(),
   };
 
@@ -656,4 +661,162 @@ export async function createUserAccount(accountData: Partial<InstructorAccount>)
   writeLocalJson('instructors.json', list);
   await syncInstructorToSheet(newAccount);
   return newAccount;
+}
+
+/**
+ * Permanently deletes an instructor account from instructors.json and clears its row in Google Sheets.
+ */
+export async function deleteInstructorAccount(
+  userId: string
+): Promise<{ success: boolean; message: string; deleted?: InstructorAccount }> {
+  const cleanId = String(userId).trim().toLowerCase();
+  const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
+  const idx = list.findIndex(
+    (i) =>
+      (i.id || '').trim().toLowerCase() === cleanId ||
+      (i.email || '').trim().toLowerCase() === cleanId ||
+      (i.gmail || '').trim().toLowerCase() === cleanId
+  );
+
+  if (idx === -1) {
+    return { success: false, message: 'ไม่พบบัญชีผู้ใช้งานที่ต้องการลบ' };
+  }
+
+  const target = list[idx];
+  // Security check: cannot delete super admin or main admin email
+  if (
+    target.isSuperAdmin ||
+    target.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th' ||
+    target.role === 'SUPER_ADMIN'
+  ) {
+    return { success: false, message: 'ไม่อนุญาตให้ลบบัญชีผู้ดูแลระบบสูงสุด (Super Admin)' };
+  }
+
+  // Remove from local JSON
+  list.splice(idx, 1);
+  writeLocalJson('instructors.json', list);
+
+  // Remove / clear row from Google Sheets Instructors tab
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const rows = await gClient.getValues('Instructors!A2:E');
+      if (rows && rows.length > 0) {
+        for (let i = 0; i < rows.length; i++) {
+          const rId = (rows[i][0] || '').trim().toLowerCase();
+          const rEmail = (rows[i][2] || '').includes('@')
+            ? (rows[i][2] || '').trim().toLowerCase()
+            : (rows[i][3] || '').trim().toLowerCase();
+          const targetEmail = (target.email || '').trim().toLowerCase();
+          if (rId === cleanId || (targetEmail && rEmail === targetEmail)) {
+            const rowNum = i + 2;
+            const emptyRow = Array(17).fill('');
+            await gClient.updateValues(`Instructors!A${rowNum}:Q${rowNum}`, [emptyRow]);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets deleteInstructorAccount warning:', err);
+    }
+  }
+
+  return { success: true, message: `ลบบัญชีผู้ใช้ ${target.name} เรียบร้อยแล้ว`, deleted: target };
+}
+
+/**
+ * Merges a duplicate instructor account into a primary account.
+ * Keeps the primary account, combines all aliases and previousIds, and removes the duplicate account.
+ */
+export async function mergeDuplicateInstructors(
+  primaryId: string,
+  duplicateId: string
+): Promise<{ success: boolean; message: string; primary?: InstructorAccount }> {
+  const cleanPrimary = String(primaryId).trim().toLowerCase();
+  const cleanDuplicate = String(duplicateId).trim().toLowerCase();
+
+  if (cleanPrimary === cleanDuplicate) {
+    return { success: false, message: 'รหัสบัญชีหลักและรหัสบัญชีซ้ำต้องไม่ตรงกัน' };
+  }
+
+  const list = readLocalJson<InstructorAccount[]>('instructors.json', []);
+  const pIdx = list.findIndex((i) => (i.id || '').trim().toLowerCase() === cleanPrimary);
+  const dIdx = list.findIndex((i) => (i.id || '').trim().toLowerCase() === cleanDuplicate);
+
+  if (pIdx === -1) {
+    return { success: false, message: `ไม่พบบัญชีหลัก (${primaryId}) ในระบบ` };
+  }
+  if (dIdx === -1) {
+    return { success: false, message: `ไม่พบบัญชีซ้ำ (${duplicateId}) ในระบบ` };
+  }
+
+  const primary = list[pIdx];
+  const duplicate = list[dIdx];
+
+  // Merge aliases
+  const combinedAliases = Array.from(
+    new Set([
+      ...(primary.aliases || []),
+      ...(duplicate.aliases || []),
+      duplicate.name,
+      duplicate.nameEn,
+      duplicate.email,
+      duplicate.gmail,
+    ].filter(Boolean) as string[])
+  );
+  primary.aliases = combinedAliases;
+
+  // Merge previousIds
+  const combinedPreviousIds = Array.from(
+    new Set([
+      ...(primary.previousIds || []),
+      ...(duplicate.previousIds || []),
+      duplicate.id,
+      primary.id,
+    ].filter(Boolean) as string[])
+  );
+  primary.previousIds = combinedPreviousIds;
+
+  // Merge contact / department if primary is missing
+  if (!primary.nameEn && duplicate.nameEn) primary.nameEn = duplicate.nameEn;
+  if (!primary.gmail && duplicate.gmail) primary.gmail = duplicate.gmail;
+  if (!primary.ecclesiasticalTitle && duplicate.ecclesiasticalTitle)
+    primary.ecclesiasticalTitle = duplicate.ecclesiasticalTitle;
+  if (!primary.phoneNumber && duplicate.phoneNumber) primary.phoneNumber = duplicate.phoneNumber;
+  if (duplicate.isActingOfficer && !primary.isActingOfficer) primary.isActingOfficer = true;
+  if ((duplicate as any).isProjectCoordinator && !(primary as any).isProjectCoordinator) {
+    (primary as any).isProjectCoordinator = true;
+  }
+  primary.updatedAt = new Date().toISOString();
+
+  // Remove duplicate from local list
+  list.splice(dIdx, 1);
+  writeLocalJson('instructors.json', list);
+
+  // Sync primary and clear duplicate in Google Sheets
+  await syncInstructorToSheet(primary);
+
+  const gClient = getSheetsClient();
+  if (gClient) {
+    try {
+      const rows = await gClient.getValues('Instructors!A2:E');
+      if (rows && rows.length > 0) {
+        for (let i = 0; i < rows.length; i++) {
+          const rId = (rows[i][0] || '').trim().toLowerCase();
+          if (rId === cleanDuplicate) {
+            const rowNum = i + 2;
+            const emptyRow = Array(17).fill('');
+            await gClient.updateValues(`Instructors!A${rowNum}:Q${rowNum}`, [emptyRow]);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sheets mergeDuplicateInstructors warning:', err);
+    }
+  }
+
+  return {
+    success: true,
+    message: `รวมบัญชี ${duplicate.name} (${duplicate.id}) เข้ากับ ${primary.name} (${primary.id}) สำเร็จ`,
+    primary,
+  };
 }

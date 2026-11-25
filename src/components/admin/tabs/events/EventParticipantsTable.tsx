@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
 import { getAuthUser } from '@/lib/auth-client';
+import { hasProjectDuty } from '@/lib/events/projectDuty';
 
 interface EventParticipantsTableProps {
   eventsList: StudentEvent[];
@@ -99,8 +100,8 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
     !isVipassanaMaster &&
     (userRole === 'OFFICER' ||
       userRole === 'STAFF' ||
-      userRole === 'INSTRUCTOR' ||
-      Boolean(activeUser?.isActingOfficer));
+      Boolean(activeUser?.isActingOfficer) ||
+      (userRole === 'INSTRUCTOR' && hasProjectDuty(activeUser, eventsList, filteredRegistrations)));
 
   // Role permissions based on user requirements:
   // - Advisor & Officer: only Attendance 4 rounds
@@ -392,108 +393,182 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
             ไม่พบข้อมูลผู้เข้าร่วมตามเงื่อนไขการค้นหาที่เลือก
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-50/50 uppercase font-semibold text-slate-400 border-b">
-                <tr>
-                  <th className="px-4 py-3.5 w-12 text-center">ลำดับ</th>
-                  <th className="px-4 py-3.5 w-28">รหัสนิสิต</th>
-                  <th className="px-4 py-3.5">ชื่อ - นามสกุล</th>
-                  <th className="px-4 py-3.5">โครงการ / กิจกรรม</th>
-                  <th className="px-4 py-3.5">หลักสูตร / ภาษา</th>
-                  <th className="px-4 py-3.5">สาขาวิชา / ชั้นปี</th>
-                  <th className="px-4 py-3.5">กลุ่ม</th>
-                  <th className="px-4 py-3.5">วันที่เข้าร่วม</th>
-                  <th className="px-4 py-3.5 text-center">สถานะการเข้าร่วม</th>
-                  <th className="px-4 py-3.5 text-right">การจัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredRegistrations.slice(0, 150).map((r, i) => (
-                  <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-3.5 font-mono text-slate-400 text-center">{i + 1}</td>
-                    <td className="px-4 py-3.5 font-mono font-bold text-amber-800">{r.studentCode}</td>
-                    <td className="px-4 py-3.5 font-medium text-slate-900">{r.studentName}</td>
-                    <td className="px-4 py-3.5 text-slate-600 max-w-[200px] truncate" title={r.eventTitle}>
-                      {r.eventTitle || '-'}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex flex-wrap items-center gap-1">
-                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
-                          {r.degreeLevel || 'ปริญญาตรี'}
+          <>
+            {/* 1. Mobile Cards View (< lg) */}
+            <div className="block lg:hidden divide-y divide-slate-100">
+              {filteredRegistrations.slice(0, 150).map((r, i) => (
+                <div key={`m-reg-${r.id}`} className="p-4 space-y-2.5 hover:bg-slate-50/70 transition-colors">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-mono text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        {r.studentCode}
+                      </span>
+                      {r.seatNumber && (
+                        <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                          🪑 {r.seatNumber}
                         </span>
-                        <span
-                          className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
-                            r.programType === 'ENGLISH' || r.programType === 'INTER'
-                              ? 'bg-purple-50 text-purple-800 border-purple-200'
-                              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      )}
+                    </div>
+                    {r.status === 'ATTENDED' ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                        <CheckCircle2 className="w-3 h-3" /> ผ่านแล้ว
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                        <Clock className="w-3 h-3 text-slate-400" /> รอเช็คชื่อ
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-[13.5px] font-bold text-slate-900 leading-snug">{r.studentName}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">{r.eventTitle || '-'}</p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10.5px]">
+                    <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-bold border border-blue-200">
+                      {r.degreeLevel || 'ปริญญาตรี'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+                      {r.major || 'พระพุทธศาสนา'} ปี {r.yearLevel || 1}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-900 font-semibold border border-amber-200">
+                      {r.groupNumber
+                        ? r.groupNumber === 12
+                          ? 'กลุ่ม 12 (ไทย)'
+                          : `กลุ่ม ${r.groupNumber}`
+                        : r.groupName || 'ทั่วไป'}
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-[11px] text-slate-400">
+                      {r.attendedAt ? `เข้าร่วม: ${new Date(r.attendedAt).toLocaleDateString('th-TH')}` : 'ยังไม่ระบุเวลา'}
+                    </span>
+                    <button
+                      onClick={() => onToggle(r.id, r.status)}
+                      disabled={updatingId === r.id}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs ${
+                        r.status === 'ATTENDED'
+                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      }`}
+                    >
+                      {updatingId === r.id
+                        ? 'กำลังบันทึก...'
+                        : r.status === 'ATTENDED'
+                        ? 'ยกเลิกผ่าน'
+                        : '✓ อนุมัติผ่าน'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 2. Desktop Table View (>= lg) */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50/50 uppercase font-semibold text-slate-400 border-b">
+                  <tr>
+                    <th className="px-4 py-3.5 w-12 text-center">ลำดับ</th>
+                    <th className="px-4 py-3.5 w-28">รหัสนิสิต</th>
+                    <th className="px-4 py-3.5">ชื่อ - นามสกุล</th>
+                    <th className="px-4 py-3.5">โครงการ / กิจกรรม</th>
+                    <th className="px-4 py-3.5">หลักสูตร / ภาษา</th>
+                    <th className="px-4 py-3.5">สาขาวิชา / ชั้นปี</th>
+                    <th className="px-4 py-3.5">กลุ่ม</th>
+                    <th className="px-4 py-3.5">วันที่เข้าร่วม</th>
+                    <th className="px-4 py-3.5 text-center">สถานะการเข้าร่วม</th>
+                    <th className="px-4 py-3.5 text-right">การจัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredRegistrations.slice(0, 150).map((r, i) => (
+                    <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-4 py-3.5 font-mono text-slate-400 text-center">{i + 1}</td>
+                      <td className="px-4 py-3.5 font-mono font-bold text-amber-800">{r.studentCode}</td>
+                      <td className="px-4 py-3.5 font-medium text-slate-900">{r.studentName}</td>
+                      <td className="px-4 py-3.5 text-slate-600 max-w-[200px] truncate" title={r.eventTitle}>
+                        {r.eventTitle || '-'}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                            {r.degreeLevel || 'ปริญญาตรี'}
+                          </span>
+                          <span
+                            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                              r.programType === 'ENGLISH' || r.programType === 'INTER'
+                                ? 'bg-purple-50 text-purple-800 border-purple-200'
+                                : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            }`}
+                          >
+                            {r.programType === 'ENGLISH' || r.programType === 'INTER' ? '🌐 Inter' : '🇹🇭 ภาคไทย'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-600">
+                        <div>{r.major || 'พระพุทธศาสนา'}</div>
+                        <div className="text-[11px] text-slate-400">ชั้นปีที่ {r.yearLevel || 1}</div>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-600 font-medium">
+                        <div>
+                          {r.groupNumber
+                            ? r.groupNumber === 12
+                              ? `กลุ่ม 12 (ไทย)`
+                              : r.programType === 'ENGLISH' || r.programType === 'INTER'
+                              ? `Group ${r.groupNumber} (English)`
+                              : `กลุ่ม ${r.groupNumber} (ไทย)`
+                            : r.groupName || 'ทั่วไป'}
+                        </div>
+                        {r.seatNumber ? (
+                          <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200" title={`ที่นั่ง: ${r.seatNumber} (${r.seatZone || 'โซนมาตรฐาน'})${r.seatCheckinAt ? ' - เช็คอินเข้าที่นั่งแล้ว' : ''}`}>
+                            <span>🪑 {r.seatNumber}</span>
+                            {r.seatCheckinAt && <span className="text-emerald-600 font-black">✓</span>}
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-slate-400 font-normal">ยังไม่มีที่นั่ง</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-500 whitespace-nowrap text-[11px]">
+                        {r.attendedAt ? new Date(r.attendedAt).toLocaleDateString('th-TH') : '-'}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        {r.status === 'ATTENDED' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                            <CheckCircle2 className="w-3 h-3" />
+                            ผ่านเข้าร่วมแล้ว
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            รอเช็คชื่อ
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <button
+                          onClick={() => onToggle(r.id, r.status)}
+                          disabled={updatingId === r.id}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition shadow-xs cursor-pointer ${
+                            r.status === 'ATTENDED'
+                              ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                           }`}
                         >
-                          {r.programType === 'ENGLISH' || r.programType === 'INTER' ? '🌐 Inter' : '🇹🇭 ภาคไทย'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-600">
-                      <div>{r.major || 'พระพุทธศาสนา'}</div>
-                      <div className="text-[11px] text-slate-400">ชั้นปีที่ {r.yearLevel || 1}</div>
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-600 font-medium">
-                      <div>
-                        {r.groupNumber
-                          ? r.groupNumber === 12
-                            ? `กลุ่ม 12 (ไทย)`
-                            : r.programType === 'ENGLISH' || r.programType === 'INTER'
-                            ? `Group ${r.groupNumber} (English)`
-                            : `กลุ่ม ${r.groupNumber} (ไทย)`
-                          : r.groupName || 'ทั่วไป'}
-                      </div>
-                      {r.seatNumber ? (
-                        <div className="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200" title={`ที่นั่ง: ${r.seatNumber} (${r.seatZone || 'โซนมาตรฐาน'})${r.seatCheckinAt ? ' - เช็คอินเข้าที่นั่งแล้ว' : ''}`}>
-                          <span>🪑 {r.seatNumber}</span>
-                          {r.seatCheckinAt && <span className="text-emerald-600 font-black">✓</span>}
-                        </div>
-                      ) : (
-                        <div className="text-[10px] text-slate-400 font-normal">ยังไม่มีที่นั่ง</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-500 whitespace-nowrap text-[11px]">
-                      {r.attendedAt ? new Date(r.attendedAt).toLocaleDateString('th-TH') : '-'}
-                    </td>
-                    <td className="px-4 py-3.5 text-center">
-                      {r.status === 'ATTENDED' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                          <CheckCircle2 className="w-3 h-3" />
-                          ผ่านเข้าร่วมแล้ว
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">
-                          <Clock className="w-3 h-3 text-slate-400" />
-                          รอเช็คชื่อ
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-right">
-                      <button
-                        onClick={() => onToggle(r.id, r.status)}
-                        disabled={updatingId === r.id}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition shadow-xs cursor-pointer ${
-                          r.status === 'ATTENDED'
-                            ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                            : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                        }`}
-                      >
-                        {updatingId === r.id
-                          ? 'กำลังบันทึก...'
-                          : r.status === 'ATTENDED'
-                          ? 'ยกเลิกผ่าน'
-                          : '✓ อนุมัติผ่าน'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                          {updatingId === r.id
+                            ? 'กำลังบันทึก...'
+                            : r.status === 'ATTENDED'
+                            ? 'ยกเลิกผ่าน'
+                            : '✓ อนุมัติผ่าน'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </>

@@ -15,6 +15,7 @@ import {
   Key,
   Shield,
   Archive,
+  Trash2,
 } from 'lucide-react';
 import { UserAccount } from '@/types';
 import type { AdminUserFilterItem } from '@/hooks/admin/useAdminUsers';
@@ -36,6 +37,7 @@ interface UserTableRowProps {
   handleUpdateRole: (id: string, newRole: any) => void;
   handleToggleSuspend: (id: string, isSuspended: boolean, name: string) => void;
   handleArchiveInstructor: (u: UserAccount) => void;
+  handleDeleteUser?: (u: UserAccount | AdminUserFilterItem) => Promise<void>;
   handleToggleActingOfficer?: (
     id: string,
     isActingOfficer: boolean,
@@ -62,6 +64,7 @@ export function UserTableRow({
   handleUpdateRole,
   handleToggleSuspend,
   handleArchiveInstructor,
+  handleDeleteUser,
   handleToggleActingOfficer,
   setActiveTab,
   setStudentSearch,
@@ -432,6 +435,20 @@ export function UserTableRow({
                           <Archive className="w-3.5 h-3.5 text-rose-500" />
                           <span>{archivingId === u.id ? 'กำลังย้าย...' : 'ย้ายเก็บเข้าแฟ้มประวัติ (Archive)'}</span>
                         </button>
+
+                        {handleDeleteUser && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveActionDropdownId(null);
+                              handleDeleteUser(u);
+                            }}
+                            className="w-full px-3 py-1.5 text-left hover:bg-rose-50 text-rose-600 hover:text-rose-800 flex items-center gap-2 transition cursor-pointer font-medium"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                            <span>ลบบัญชีผู้ใช้งานนี้</span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

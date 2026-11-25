@@ -4,7 +4,7 @@ import {
   Student,
   TimetableItem,
 } from '@/types';
-import { matchInstructorStrict, toBuddhistYear } from '@/lib/utils';
+import { matchInstructorStrict, getSubstantiveTokens, toBuddhistYear } from '@/lib/utils';
 import { AuthUser } from '@/lib/auth-client';
 import { calculateMaxAllowedAbsences } from '@/lib/attendance/attendanceEvaluator';
 import { groupAndSortByMajor, GroupedMajorSection } from '@/components/attendance';
@@ -125,17 +125,35 @@ export function buildAvailableCourses(
     isTeacher: boolean;
     currentUser: AuthUser | null;
     selectedInstructor: string;
+    showAllFallback?: boolean;
   }
 ): AttendanceTimetableOption[] {
-  const { isTeacher, currentUser, selectedInstructor } = options;
+  const { isTeacher, currentUser, selectedInstructor, showAllFallback } = options;
 
-  const rawMatched = isTeacher
-    ? timetables.filter((t) => matchInstructorStrict(currentUser, t.instructor))
-    : selectedInstructor === 'ALL'
-    ? timetables
-    : timetables.filter((t) =>
-        t.instructor?.toLowerCase().includes(selectedInstructor.toLowerCase())
-      );
+  let rawMatched: TimetableItem[] = [];
+
+  if (showAllFallback) {
+    rawMatched = timetables;
+  } else if (isTeacher) {
+    rawMatched = timetables.filter((t) => matchInstructorStrict(currentUser, t.instructor));
+
+    // Fallback: If strict match returned 0, try matching with tokens or substantive name
+    if (rawMatched.length === 0 && currentUser) {
+      const tokens = getSubstantiveTokens(currentUser);
+      if (tokens.length > 0) {
+        rawMatched = timetables.filter((t) => {
+          const instLower = (t.instructor || '').toLowerCase();
+          return tokens.some((tok: string) => tok.length >= 4 && instLower.includes(tok));
+        });
+      }
+    }
+  } else if (selectedInstructor === 'ALL') {
+    rawMatched = timetables;
+  } else {
+    rawMatched = timetables.filter((t) =>
+      t.instructor?.toLowerCase().includes(selectedInstructor.toLowerCase())
+    );
+  }
 
   const groupedMap = new Map<string, AttendanceTimetableOption>();
 

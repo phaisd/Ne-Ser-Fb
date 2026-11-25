@@ -88,12 +88,13 @@ export async function POST(request: Request) {
             }
           }
 
+          const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://ne-ser-fb.vercel.app').replace(/\/+$/, '');
           const flexMsg = buildAcknowledgeFlexMessage({
             staffName,
             studentName,
             studentCode,
             timeBkk: nowBkk,
-            adminUrl: 'https://ne-ser-fb.vercel.app/admin',
+            adminUrl: `${baseUrl}/admin`,
           });
 
           try {

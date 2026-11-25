@@ -46,6 +46,7 @@ export interface AdminSidebarProps {
   isSuperAdmin: boolean;
   isVipassanaMaster?: boolean;
   isInstructorOnly?: boolean;
+  hasProjectDuty?: boolean;
   currentUser?: AuthUser | null;
   handleLogout: () => void;
 }
@@ -62,6 +63,7 @@ export function AdminSidebar({
   isSuperAdmin,
   isVipassanaMaster,
   isInstructorOnly,
+  hasProjectDuty,
   currentUser,
   handleLogout,
 }: AdminSidebarProps) {
@@ -129,7 +131,9 @@ export function AdminSidebar({
             {isVipassanaMaster
               ? 'ระบบสอบอารมณ์วิปัสสนา'
               : isInstructorOnly
-              ? 'ระบบการสอน & ปฏิบัติธรรม'
+              ? hasProjectDuty
+                ? 'ระบบการสอน & ปฏิบัติธรรม'
+                : 'ระบบภาระงานสอน & วัดผล'
               : 'ระบบหลัก (Operations)'}
           </div>
           <nav className="space-y-1">
@@ -267,26 +271,28 @@ export function AdminSidebar({
               </button>
             )}
 
-            <button
-              onClick={() => {
-                setActiveTab('EVENTS');
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'EVENTS'
-                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 font-bold'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <Award className="w-4 h-4 text-amber-400" />
-              <span>
-                {isVipassanaMaster
-                  ? '🧘 สอบอารมณ์วิปัสสนา'
-                  : isInstructorOnly
-                  ? '📋 บันทึกเวลาปฏิบัติธรรม 4 รอบ'
-                  : 'งานกิจกรรมนิสิต'}
-              </span>
-            </button>
+            {(!isInstructorOnly || hasProjectDuty) && (
+              <button
+                onClick={() => {
+                  setActiveTab('EVENTS');
+                  setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  activeTab === 'EVENTS'
+                    ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 font-bold'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <Award className="w-4 h-4 text-amber-400" />
+                <span>
+                  {isVipassanaMaster
+                    ? '🧘 สอบอารมณ์วิปัสสนา'
+                    : isInstructorOnly
+                    ? '📋 บันทึกเวลาปฏิบัติธรรม 4 รอบ'
+                    : 'งานกิจกรรมนิสิต'}
+                </span>
+              </button>
+            )}
           </nav>
         </div>
 

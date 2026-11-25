@@ -27,6 +27,7 @@ export * from './VipassanaCombinedEvaluationModal';
 export * from './VipassanaEventQrModal';
 export * from './VipassanaMasterImportExportModal';
 export * from './OfficerImportExportModal';
+export * from './DuplicateAccountsModal';
 export * from './vipassana';
 
 

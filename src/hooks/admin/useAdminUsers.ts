@@ -72,6 +72,7 @@ export function useAdminUsers({
     contactAddress: '',
     role: 'INSTRUCTOR' as UserRole,
     isActingOfficer: false,
+    isProjectCoordinator: false,
   });
   const [editUserSaving, setEditUserSaving] = useState(false);
 
@@ -80,6 +81,7 @@ export function useAdminUsers({
   const [teachingSlipQr, setTeachingSlipQr] = useState<string | null>(null);
   const [copiedLineUserId, setCopiedLineUserId] = useState<string | null>(null);
   const [isBatchTeachingSlipOpen, setIsBatchTeachingSlipOpen] = useState(false);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
 
   const [newUserForm, setNewUserForm] = useState<NewUserFormData>({
     name: '',
@@ -259,6 +261,7 @@ export function useAdminUsers({
       contactAddress: user.contactAddress || '',
       role: user.role || 'INSTRUCTOR',
       isActingOfficer: Boolean(user.isActingOfficer),
+      isProjectCoordinator: Boolean((user as any).isProjectCoordinator),
     });
   };
 
@@ -554,6 +557,70 @@ ${coursesText}
     }
   };
 
+  const handleDeleteUser = async (user: UserAccount | AdminUserFilterItem) => {
+    const isSuper =
+      user.role === 'SUPER_ADMIN' ||
+      user.isSuperAdmin ||
+      user.email === 'phaisal.dis@mcu.ac.th';
+    if (isSuper) {
+      alert('ไม่อนุญาตให้ลบบัญชีผู้ดูแลระบบสูงสุด (Super Admin)');
+      return;
+    }
+    const confirmed = window.confirm(
+      `⚠️ ยืนยันการลบบัญชี "${user.name}" (${user.email || user.id}) ออกจากระบบหรือไม่?\n\nข้อมูลบัญชีนี้จะถูกลบออกจากฐานข้อมูลและ Google Sheets อย่างถาวร (หากต้องการเก็บประวัติแนะนำให้ใช้ "ย้ายเก็บเข้าแฟ้มประวัติ" แทน)`
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete-user',
+          userId: user.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionSuccess(`ลบบัญชี ${user.name} เรียบร้อยแล้ว`);
+        await loadData();
+      } else {
+        alert(data.error || 'ไม่สามารถลบบัญชีได้');
+      }
+    } catch (e: unknown) {
+      alert(getErrorMessage(e));
+    }
+  };
+
+  const handleMergeDuplicateUsers = async (
+    primaryId: string,
+    duplicateId: string
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'merge-duplicate-users',
+          primaryId,
+          duplicateId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionSuccess(data.message || 'รวมบัญชีเรียบร้อยแล้ว');
+        await loadData();
+        return true;
+      } else {
+        alert(data.error || 'ไม่สามารถรวมบัญชีได้');
+        return false;
+      }
+    } catch (e: unknown) {
+      alert(getErrorMessage(e));
+      return false;
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     const primaryEmail = (newUserForm.email || newUserForm.gmail || '').trim();
@@ -741,6 +808,10 @@ ${coursesText}
     generateInstructorLineMessage,
     handleCopyLineTeachingMessage,
     handleResetPassword,
+    handleDeleteUser,
+    handleMergeDuplicateUsers,
+    isDuplicateModalOpen,
+    setIsDuplicateModalOpen,
     handleCreateUser,
   };
 }

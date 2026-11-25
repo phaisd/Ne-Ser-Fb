@@ -92,57 +92,6 @@
     "createdAt": "2026-11-19T04:11:21.545Z"
   },
   {
-    "id": "inst-1794033514854-2717",
-    "name": "Phramaha Khunpon Samacitto  Ph.D.",
-    "email": "khunpon.sam@mcu.ac.th",
-    "gmail": "khunpon.sam@gmail.com",
-    "password": "mcu123456",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์ มจร",
-    "instructorType": "อาจารย์พิเศษ",
-    "role": "INSTRUCTOR",
-    "coursesCount": 2,
-    "isActive": true,
-    "aliases": [
-      "Phramaha Khunpon Samacitto  Ph.D."
-    ],
-    "createdAt": "2026-11-07T06:38:34.854Z"
-  },
-  {
-    "id": "inst-1794033514854-5525",
-    "name": "Asst. Prof.(Specail) Dr. Supapan Permpool",
-    "email": "supapan.per@mcu.ac.th",
-    "gmail": "supapan.per@gmail.com",
-    "password": "mcu123456",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์ มจร",
-    "instructorType": "อาจารย์พิเศษ",
-    "role": "INSTRUCTOR",
-    "coursesCount": 5,
-    "isActive": true,
-    "aliases": [
-      "Asst. Prof.(Specail) Dr. Supapan Permpool"
-    ],
-    "createdAt": "2026-11-07T06:38:34.854Z"
-  },
-  {
-    "id": "inst-1794033514854-191",
-    "name": "Assoc. Prof. Pha Dhammavajirapanyacarya  Ph.D.",
-    "email": "dhammavajira.pan@mcu.ac.th",
-    "gmail": "dhammavajira.pan@gmail.com",
-    "password": "mcu123456",
-    "defaultPassword": "mcu123456",
-    "department": "คณะพุทธศาสตร์ มจร",
-    "instructorType": "อาจารย์พิเศษ",
-    "role": "INSTRUCTOR",
-    "coursesCount": 4,
-    "isActive": true,
-    "aliases": [
-      "Assoc. Prof. Pha Dhammavajirapanyacarya  Ph.D."
-    ],
-    "createdAt": "2026-11-07T06:38:34.854Z"
-  },
-  {
     "id": "user-1793862082551",
     "name": "พระมหาไพศาล ดิษฐพันธ์",
     "nameEn": "",
@@ -1631,8 +1580,8 @@
   {
     "id": "inst-90",
     "name": "พระมหาขุนพล สมจิตฺโต, ดร.",
-    "email": "phramahakhun@mcu.ac.th",
-    "gmail": "phramahakhun.mcu@gmail.com",
+    "email": "khunpon.sam@mcu.ac.th",
+    "gmail": "khunpon.sam@gmail.com",
     "password": "mcu1049",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
@@ -1647,10 +1596,18 @@
       "พระมหาขุนพล สมจิตฺโต",
       "Phramaha Khunpon Samacitto",
       "phramahakhun@mcu.ac.th",
-      "phramahakhun.mcu@gmail.com"
+      "phramahakhun.mcu@gmail.com",
+      "ขุนพล",
+      "สมจิตฺโต",
+      "พระมหาขุนพล สมจิตฺโต, ดร.",
+      "Phramaha Khunpon Samacitto, Ph.D.",
+      "Phramaha Khunpon Samacitto  Ph.D.",
+      "khunpon.sam@mcu.ac.th",
+      "khunpon.sam@gmail.com"
     ],
     "previousIds": [
-      "inst-90"
+      "inst-90",
+      "inst-1794033514854-2717"
     ],
     "isSuperAdmin": false,
     "nameEn": "Phramaha Khunpon Samacitto, Ph.D.",
@@ -1744,8 +1701,8 @@
   {
     "id": "inst-35",
     "name": "ผศ.พิเศษ ดร.สุภาพรรณ เพิ่มพูน",
-    "email": "teacher66@mcu.ac.th",
-    "gmail": "teacher66.mcu@gmail.com",
+    "email": "supapan.per@mcu.ac.th",
+    "gmail": "supapan.per@gmail.com",
     "password": "mcu1065",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
@@ -1761,14 +1718,19 @@
       "Permpool",
       "ผศ.พิเศษ ดร.สุภาพรรณ เพิ่มพูน",
       "teacher66@mcu.ac.th",
-      "teacher66.mcu@gmail.com"
+      "teacher66.mcu@gmail.com",
+      "Asst. Prof.(Specail) Dr. Supapan Permpool",
+      "Asst. Prof. (Specail) Dr. Supapan Permpool",
+      "supapan.per@mcu.ac.th",
+      "supapan.per@gmail.com"
     ],
     "previousIds": [
       "inst-35",
-      "inst-36"
+      "inst-36",
+      "inst-1794033514854-5525"
     ],
     "isSuperAdmin": false,
-    "nameEn": "Asst. Prof. (Specail) Dr. Supapan Permpool",
+    "nameEn": "Asst. Prof. Dr. Supapan Permpool",
     "instructorType": "อาจารย์พิเศษ",
     "updatedAt": "2026-11-05T08:48:26.259Z"
   },
@@ -2464,8 +2426,8 @@
   {
     "id": "inst-113",
     "name": "พระธรรมวัชรปัญญาจารย์, รศ.ดร.",
-    "email": "dhammavajirapanya@mcu.ac.th",
-    "gmail": "dhammavajirapanya.mcu@gmail.com",
+    "email": "dhammavajira.pan@mcu.ac.th",
+    "gmail": "dhammavajira.pan@gmail.com",
     "password": "mcu1102",
     "defaultPassword": "mcu123456",
     "department": "ภาควิชาบาลีและสันสกฤต",
@@ -2481,12 +2443,20 @@
       "พระธรรมวัชรปัญญาจารย์",
       "Assoc. Prof. Phra Dhammavajirapanyacarya",
       "dhammavajirapanya@mcu.ac.th",
-      "dhammavajirapanya.mcu@gmail.com"
+      "dhammavajirapanya.mcu@gmail.com",
+      "ธรรมวชิรปัญญาจารย์",
+      "พระธรรมวัชรปัญญาจารย์, รศ.ดร.",
+      "พระธรรมวชิรปัญญาจารย์, รศ.ดร.",
+      "Assoc. Prof. Phra Dhammavajirapanyacarya, Ph.D.",
+      "Assoc. Prof. Pha Dhammavajirapanyacarya  Ph.D.",
+      "dhammavajira.pan@mcu.ac.th",
+      "dhammavajira.pan@gmail.com"
     ],
     "previousIds": [
       "inst-113",
       "inst-8",
-      "inst-64"
+      "inst-64",
+      "inst-1794033514854-191"
     ],
     "isSuperAdmin": false,
     "nameEn": "Assoc. Prof. Phra Dhammavajirapanyacarya, Ph.D.",

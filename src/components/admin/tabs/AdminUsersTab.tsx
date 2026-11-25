@@ -11,6 +11,7 @@ import {
   Archive,
   FileSpreadsheet,
   Award,
+  GitMerge,
 } from 'lucide-react';
 import { UserAccount } from '@/types';
 import {
@@ -18,6 +19,7 @@ import {
   InstructorImportModal,
   VipassanaMasterImportExportModal,
   OfficerImportExportModal,
+  DuplicateAccountsModal,
 } from '../modals';
 import { RolePermissionsMatrixView } from './RolePermissionsMatrixView';
 import { AdminUsersTabProps } from './users/types';
@@ -49,6 +51,10 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
   handleUpdateRole,
   handleToggleActingOfficer,
   handleResetPassword,
+  handleDeleteUser,
+  handleMergeDuplicateUsers,
+  isDuplicateModalOpen,
+  setIsDuplicateModalOpen,
   forcePasswordChangeOnFirstLogin = true,
   onToggleForcePasswordChange,
   onOpenNewYearWorkflow,
@@ -67,6 +73,9 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
   const [isBatchImportOpen, setIsBatchImportOpen] = useState(false);
   const [isVipassanaMasterModalOpen, setIsVipassanaMasterModalOpen] = useState(false);
   const [isOfficerModalOpen, setIsOfficerModalOpen] = useState(false);
+  const [localDuplicateModalOpen, setLocalDuplicateModalOpen] = useState(false);
+  const isDupModalOpen = isDuplicateModalOpen !== undefined ? isDuplicateModalOpen : localDuplicateModalOpen;
+  const setDupModalOpen = setIsDuplicateModalOpen || setLocalDuplicateModalOpen;
   const [activeActionDropdownId, setActiveActionDropdownId] = useState<string | null>(null);
   const [archivingId, setArchivingId] = useState<string | null>(null);
 
@@ -216,6 +225,16 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
           >
             <UserCog className="w-3.5 h-3.5 text-teal-200" />
             <span>📋 เจ้าหน้าที่ & ผู้ช่วย (Excel & รหัสผ่าน)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDupModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-500/20 transition cursor-pointer"
+            title="ตรวจหาอาจารย์ที่มีชื่อซ้ำซ้อนในระบบ เพื่อรวมข้อมูล (Merge) หรือลบบัญชีซ้ำ"
+          >
+            <GitMerge className="w-3.5 h-3.5 text-amber-200" />
+            <span>🔍 ตรวจหาและลบบัญชีซ้ำ</span>
           </button>
 
           <button
@@ -401,6 +420,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
                         handleUpdateRole={handleUpdateRole}
                         handleToggleSuspend={handleToggleSuspend}
                         handleArchiveInstructor={handleArchiveInstructor}
+                        handleDeleteUser={handleDeleteUser}
                         handleToggleActingOfficer={handleToggleActingOfficer}
                         setActiveTab={setActiveTab}
                         setStudentSearch={setStudentSearch}
@@ -466,6 +486,43 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
             if (onRefresh) onRefresh();
             else if (typeof window !== 'undefined') window.location.reload();
           }}
+        />
+      )}
+
+      {isDupModalOpen && (
+        <DuplicateAccountsModal
+          isOpen={isDupModalOpen}
+          onClose={() => setDupModalOpen(false)}
+          users={users}
+          onMerge={
+            handleMergeDuplicateUsers ||
+            (async (pId, dId) => {
+              const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'merge-duplicate-users', primaryId: pId, duplicateId: dId }),
+              });
+              const data = await res.json();
+              if (data.success) {
+                if (onRefresh) await onRefresh();
+                return true;
+              }
+              alert(data.error || 'ไม่สามารถรวมบัญชีได้');
+              return false;
+            })
+          }
+          onDelete={
+            handleDeleteUser ||
+            (async (u) => {
+              await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete-user', userId: u.id }),
+              });
+              if (onRefresh) await onRefresh();
+            })
+          }
+          onRefresh={onRefresh}
         />
       )}
     </div>

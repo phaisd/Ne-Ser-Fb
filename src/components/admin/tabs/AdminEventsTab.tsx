@@ -19,6 +19,7 @@ import {
 import type { StudentEvent, EventRegistration, SystemSettings } from '@/types';
 import { useAdminEvents } from '@/hooks/admin';
 import { getAuthUser } from '@/lib/auth-client';
+import { hasProjectDuty } from '@/lib/events/projectDuty';
 import {
   EventFormModal,
   EventGroupImportModal,
@@ -155,6 +156,17 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
     if (deepLinkHandledRef.current || typeof window === 'undefined' || eventsList.length === 0) {
       return;
     }
+
+    // If an instructor does not have project duty, do not auto-open scan station
+    const userHasDuty = hasProjectDuty(activeUser, eventsList, registrationsList);
+    if (activeUser && activeUser.role === 'INSTRUCTOR' && !activeUser.isActingOfficer && !userHasDuty) {
+      try {
+        sessionStorage.removeItem('mcu_active_vipassana_station');
+        localStorage.removeItem('mcu_active_vipassana_station');
+      } catch {}
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const qEventId = params.get('eventId');
     const qAction = (params.get('action') || '').toUpperCase();

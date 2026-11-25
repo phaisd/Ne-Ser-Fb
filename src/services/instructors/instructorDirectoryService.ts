@@ -218,13 +218,59 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
           }
         });
 
-        return merged;
+        // Final deduplication pass to ensure strictly 1 account per instructor name/email
+        const deduped: InstructorAccount[] = [];
+        const seenCleanNames = new Map<string, number>();
+
+        merged.forEach((acc) => {
+          const rawName = (acc.name || '').trim();
+          const cleanName = stripLeadingTitles(rawName).toLowerCase().replace(/[\s,.*\/()\[\]{}:;]/g, '');
+          const existingIdx = cleanName.length > 2 ? seenCleanNames.get(cleanName) : undefined;
+
+          if (existingIdx !== undefined) {
+            const existing = deduped[existingIdx];
+            existing.aliases = Array.from(new Set([...(existing.aliases || []), ...(acc.aliases || [])]));
+            existing.previousIds = Array.from(new Set([...(existing.previousIds || []), ...(acc.previousIds || []), acc.id]));
+            if (!existing.email && acc.email) existing.email = acc.email;
+            if (!existing.gmail && acc.gmail) existing.gmail = acc.gmail;
+            if (acc.id && !acc.id.startsWith('inst-17') && existing.id.startsWith('inst-17')) {
+              existing.id = acc.id;
+            }
+          } else {
+            if (cleanName.length > 2) {
+              seenCleanNames.set(cleanName, deduped.length);
+            }
+            deduped.push(acc);
+          }
+        });
+
+        return deduped;
       }
     } catch (err) {
       // Fallback silently to local file
     }
   }
-  return localAccounts;
+
+  // Deduplication pass for local accounts
+  const dedupedLocal: InstructorAccount[] = [];
+  const seenLocalNames = new Map<string, number>();
+  localAccounts.forEach((acc) => {
+    const rawName = (acc.name || '').trim();
+    const cleanName = stripLeadingTitles(rawName).toLowerCase().replace(/[\s,.*\/()\[\]{}:;]/g, '');
+    const existingIdx = cleanName.length > 2 ? seenLocalNames.get(cleanName) : undefined;
+    if (existingIdx !== undefined) {
+      const existing = dedupedLocal[existingIdx];
+      existing.aliases = Array.from(new Set([...(existing.aliases || []), ...(acc.aliases || [])]));
+      existing.previousIds = Array.from(new Set([...(existing.previousIds || []), ...(acc.previousIds || []), acc.id]));
+    } else {
+      if (cleanName.length > 2) {
+        seenLocalNames.set(cleanName, dedupedLocal.length);
+      }
+      dedupedLocal.push(acc);
+    }
+  });
+
+  return dedupedLocal;
 }
 
 

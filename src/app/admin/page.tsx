@@ -42,6 +42,7 @@ import {
 } from '@/components/admin/modals';
 import { NewAcademicYearWorkflowModal } from '@/components/admin/NewAcademicYearWorkflowModal';
 import { AdminSidebar, AdminTab } from '@/components/admin/AdminSidebar';
+import { hasProjectDuty } from '@/lib/events/projectDuty';
 import ThemeModeToggle from '@/components/ThemeModeToggle';
 import {
   useAdminSettings,
@@ -126,6 +127,10 @@ export default function AdminConsolePage() {
       !currentUser?.isActingOfficer
     );
   }, [currentUser, isOfficer, isSuperAdmin]);
+
+  const isProjectDutyHolder = useMemo(() => {
+    return hasProjectDuty(currentUser, eventsList, eventRegistrationsList);
+  }, [currentUser, eventsList, eventRegistrationsList]);
 
   // Load Data function definition (hoisted for hooks)
   const loadData = () => {
@@ -212,6 +217,7 @@ export default function AdminConsolePage() {
                 ...prev,
                 name: formattedName,
                 isActingOfficer: Boolean(fullNameAccount.isActingOfficer),
+                isProjectCoordinator: Boolean((fullNameAccount as any).isProjectCoordinator),
               };
               saveAuthSession(updatedUser, true);
               return updatedUser;
@@ -372,10 +378,14 @@ export default function AdminConsolePage() {
     if (isVipassanaMaster && (activeTab === 'BRANDING' || activeTab === 'SHEETS' || activeTab === 'USERS')) {
       setActiveTab('EVENTS');
     }
-    if (isInstructorOnly && (activeTab !== 'EVENTS' && activeTab !== 'ATTENDANCE')) {
-      setActiveTab('EVENTS');
+    if (isInstructorOnly) {
+      if (!isProjectDutyHolder && activeTab !== 'ATTENDANCE') {
+        setActiveTab('ATTENDANCE');
+      } else if (isProjectDutyHolder && activeTab !== 'EVENTS' && activeTab !== 'ATTENDANCE') {
+        setActiveTab('ATTENDANCE');
+      }
     }
-  }, [isOfficer, isVipassanaMaster, isInstructorOnly, activeTab]);
+  }, [isOfficer, isVipassanaMaster, isInstructorOnly, isProjectDutyHolder, activeTab]);
 
   const handleArchiveYear = async () => {
     if (!confirm(`ยืนยันการสรุปปิดยอดและจัดเก็บประวัติปีการศึกษา ${archivingYear} หรือไม่?`)) return;
@@ -574,6 +584,7 @@ export default function AdminConsolePage() {
         isSuperAdmin={isSuperAdmin}
         isVipassanaMaster={isVipassanaMaster}
         isInstructorOnly={isInstructorOnly}
+        hasProjectDuty={isProjectDutyHolder}
         currentUser={currentUser}
         handleLogout={handleLogout}
       />
@@ -768,6 +779,10 @@ export default function AdminConsolePage() {
               handleUpdateRole={adminUsers.handleUpdateRole}
               handleToggleActingOfficer={adminUsers.handleToggleActingOfficer}
               handleResetPassword={adminUsers.handleResetPassword}
+              handleDeleteUser={adminUsers.handleDeleteUser}
+              handleMergeDuplicateUsers={adminUsers.handleMergeDuplicateUsers}
+              isDuplicateModalOpen={adminUsers.isDuplicateModalOpen}
+              setIsDuplicateModalOpen={adminUsers.setIsDuplicateModalOpen}
               forcePasswordChangeOnFirstLogin={adminSettings.settings?.forcePasswordChangeOnFirstLogin !== false}
               onToggleForcePasswordChange={adminSettings.handleToggleForcePasswordChange}
               onOpenNewYearWorkflow={() => setIsNewYearWorkflowModalOpen(true)}

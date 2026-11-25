@@ -16,6 +16,7 @@ interface EditUserFormState {
   role: UserRole;
   aliasesText?: string;
   isActingOfficer?: boolean;
+  isProjectCoordinator?: boolean;
 }
 
 interface EditUserModalProps {
@@ -329,24 +330,48 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                   )}
 
                   {!isOfficer && !isSuper && editUserForm.role === 'INSTRUCTOR' && (
-                    <label className="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl border border-sky-200 bg-sky-50/70 hover:bg-sky-50 cursor-pointer transition">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(editUserForm.isActingOfficer)}
-                        onChange={(e) =>
-                          setEditUserForm({ ...editUserForm, isActingOfficer: e.target.checked })
-                        }
-                        className="mt-0.5 w-4 h-4 rounded border-sky-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
-                      />
-                      <div className="text-xs leading-relaxed">
-                        <div className="font-bold text-sky-900">
-                          ☑️ ช่วยงานเจ้าหน้าที่ (เสริมสิทธิ์เจ้าหน้าที่โดยไม่เปลี่ยนบทบาทอาจารย์)
+                    <>
+                      <label className="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-50 cursor-pointer transition">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(editUserForm.isProjectCoordinator)}
+                          onChange={(e) =>
+                            setEditUserForm({
+                              ...editUserForm,
+                              isProjectCoordinator: e.target.checked,
+                            })
+                          }
+                          className="mt-0.5 w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                        />
+                        <div className="text-xs leading-relaxed">
+                          <div className="font-bold text-amber-900">
+                            🎖️ ได้รับมอบหมายดูแลโครงการปฏิบัติธรรม 4 รอบ (Project Duty)
+                          </div>
+                          <div className="text-[11px] text-amber-700">
+                            เมื่อติ๊กเลือก อาจารย์ท่านนี้จะมองเห็นเมนู &quot;📋 บันทึกเวลาปฏิบัติธรรม 4 รอบ&quot; ในหน้าเข้าระบบอาจารย์ เพื่อช่วยดูแลและบันทึกเวลาปฏิบัติธรรมของนิสิต (หากไม่ติ๊ก เมนูนี้จะซ่อนไว้เพื่อแสดงเฉพาะอาจารย์ผู้รับผิดชอบโครงการ)
+                          </div>
                         </div>
-                        <div className="text-[11px] text-sky-700">
-                          เมื่อติ๊กเลือก อาจารย์ท่านนี้จะยังคงมีชื่อในตารางสอนและใบภาระงานสอนตามปกติทุกประการ แต่จะมีปุ่มเข้าหลังบ้าน (Admin Console) เพื่อช่วยตรวจเอกสารคำร้องและงานทะเบียนได้จนกว่าแอดมินจะติ๊กออก
+                      </label>
+
+                      <label className="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl border border-sky-200 bg-sky-50/70 hover:bg-sky-50 cursor-pointer transition">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(editUserForm.isActingOfficer)}
+                          onChange={(e) =>
+                            setEditUserForm({ ...editUserForm, isActingOfficer: e.target.checked })
+                          }
+                          className="mt-0.5 w-4 h-4 rounded border-sky-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                        />
+                        <div className="text-xs leading-relaxed">
+                          <div className="font-bold text-sky-900">
+                            ☑️ ช่วยงานเจ้าหน้าที่ (เสริมสิทธิ์เจ้าหน้าที่โดยไม่เปลี่ยนบทบาทอาจารย์)
+                          </div>
+                          <div className="text-[11px] text-sky-700">
+                            เมื่อติ๊กเลือก อาจารย์ท่านนี้จะยังคงมีชื่อในตารางสอนและใบภาระงานสอนตามปกติทุกประการ แต่จะมีปุ่มเข้าหลังบ้าน (Admin Console) เพื่อช่วยตรวจเอกสารคำร้องและงานทะเบียนได้จนกว่าแอดมินจะติ๊กออก
+                          </div>
                         </div>
-                      </div>
-                    </label>
+                      </label>
+                    </>
                   )}
                 </>
               );

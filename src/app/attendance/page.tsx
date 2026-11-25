@@ -206,11 +206,12 @@ export default function AttendancePage() {
   // Role Checks
   const isAdmin = isAdminOrOfficer(currentUser);
   const isTeacher = Boolean(currentUser && !isAdmin);
+  const [showAllFallback, setShowAllFallback] = useState<boolean>(false);
 
   // Available courses strictly filtered for teacher & deduplicated across shared major timetables
   const availableCourses = useMemo(
-    () => buildAvailableCourses(timetables, { isTeacher, currentUser, selectedInstructor }),
-    [timetables, currentUser, isTeacher, selectedInstructor]
+    () => buildAvailableCourses(timetables, { isTeacher, currentUser, selectedInstructor, showAllFallback }),
+    [timetables, currentUser, isTeacher, selectedInstructor, showAllFallback]
   );
 
   // Current selected course details (matches by unique sectionKey first, then falls back to courseCode)
@@ -700,6 +701,45 @@ export default function AttendancePage() {
           </div>
         )}
       </div>
+
+      {/* Fallback Banner when an Instructor has 0 auto-matched courses */}
+      {currentUser && isTeacher && availableCourses.length === 0 && !showAllFallback && (
+        <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm print:hidden">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+            <div>
+              <p className="font-bold text-slate-900">
+                ยังไม่พบรายวิชาที่ตรงกับชื่อบัญชีของท่านโดยอัตโนมัติ ({currentUser.name})
+              </p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                อาจเกิดจากชื่อในตารางสอนสะกดต่างจากชื่อบัญชีผู้ใช้ ท่านสามารถคลิกเพื่อเปิดดูรายวิชาทั้งหมดของคณะและเลือกวิชาที่สอนได้ทันที
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAllFallback(true)}
+            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold rounded-xl text-xs transition cursor-pointer shrink-0 shadow-sm"
+          >
+            📖 แสดงรายวิชาทั้งหมดของคณะ ({timetables.length} วิชา)
+          </button>
+        </div>
+      )}
+
+      {showAllFallback && isTeacher && (
+        <div className="px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center justify-between shadow-2xs print:hidden">
+          <span className="font-medium">
+            ℹ️ กำลังแสดงรายวิชาทั้งหมดของคณะ ({availableCourses.length} วิชา) — ท่านสามารถเลือกรายวิชาที่ท่านสอนในแถบเลือกวิชาด้านล่างได้ทันที
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowAllFallback(false)}
+            className="text-blue-700 hover:text-blue-900 font-bold underline cursor-pointer ml-3 shrink-0"
+          >
+            กลับไปกรองเฉพาะวิชาของฉัน
+          </button>
+        </div>
+      )}
 
       {/* Page Header (Hidden on Print) */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 sm:gap-4 print:hidden">

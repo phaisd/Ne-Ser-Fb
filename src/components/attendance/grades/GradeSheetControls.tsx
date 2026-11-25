@@ -205,15 +205,24 @@ export function GradeSheetControls({
             onChange={(e) => handleCourseChange(e.target.value)}
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
           >
-            {availableCourses.map((c, idx) => {
-              const sKey = (c as any).sectionKey || c.courseCode;
-              return (
-                <option key={`opt-grade-${sKey}-${idx}`} value={sKey}>
-                  {c.courseCode} — {c.courseName} (ปี {c.yearLevel || 1})
-                </option>
-              );
-            })}
+            {availableCourses.length === 0 ? (
+              <option value="">-- ยังไม่พบรายวิชาที่ผูกกับบัญชีผู้สอน --</option>
+            ) : (
+              availableCourses.map((c, idx) => {
+                const sKey = (c as any).sectionKey || c.courseCode;
+                return (
+                  <option key={`opt-grade-${sKey}-${idx}`} value={sKey}>
+                    {c.courseCode} — {c.courseName} (ปี {c.yearLevel || 1})
+                  </option>
+                );
+              })
+            )}
           </select>
+          {availableCourses.length === 0 && (
+            <p className="text-[11.5px] text-amber-700 mt-1.5 font-medium flex items-center gap-1">
+              <span>⚠️ ยังไม่พบรายวิชาที่ตรงกับชื่อบัญชีของท่านในตารางสอนภาคเรียนนี้</span>
+            </p>
+          )}
         </div>
 
         {/* Summary Bar + Bottom-Right Red Chevron Toggle */}

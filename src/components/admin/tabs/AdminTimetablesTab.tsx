@@ -78,6 +78,26 @@ export const AdminTimetablesTab: React.FC<AdminTimetablesTabProps> = ({
 }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+
+  // Check if any filter is active
+  const hasActiveFilters = Boolean(
+    timetableSearch ||
+    timetableYearFilter !== 'ALL' ||
+    timetableSemesterFilter !== 'ALL' ||
+    timetableDayFilter !== 'ALL' ||
+    timetableMajorFilter !== 'ALL' ||
+    timetableProgramFilter !== 'ALL'
+  );
+
+  const handleClearFilters = () => {
+    setTimetableSearch('');
+    setTimetableYearFilter('ALL');
+    setTimetableSemesterFilter('ALL');
+    setTimetableDayFilter('ALL');
+    setTimetableMajorFilter?.('ALL');
+    setTimetableProgramFilter?.('ALL');
+  };
 
   // Export Timetables to CSV with UTF-8 BOM for Thai Excel compatibility
   const exportTimetablesToCSV = (items: TimetableItem[], filename: string) => {
@@ -219,146 +239,323 @@ export const AdminTimetablesTab: React.FC<AdminTimetablesTabProps> = ({
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={handleScanTimetables}
-              disabled={isScanningInstructors}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
-              title="สแกนตารางสอนและตรวจสอบไอดีอาจารย์ผู้สอน"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isScanningInstructors ? 'animate-spin' : ''}`} />
-              <span>🔄 ซิงค์ไอดีอาจารย์</span>
-            </button>
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span className="truncate">นำเข้า Excel / CSV</span>
+              </button>
 
-            <Link
-              href="/courses"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition cursor-pointer"
-            >
-              <span>ดูหน้าตารางสอน</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  <span>ส่งออกข้อมูล</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+
+                {isExportMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs animate-in fade-in slide-in-from-top-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        exportTimetablesToCSV(
+                          filteredTimetables,
+                          `timetables_filtered_${new Date().toISOString().slice(0, 10)}.csv`
+                        )
+                      }
+                      className="w-full text-left px-4 py-2 hover:bg-slate-100 flex items-center justify-between text-slate-700 cursor-pointer"
+                    >
+                      <span>ส่งออกตารางที่กรองอยู่ ({filteredTimetables.length} คาบ)</span>
+                      <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-mono">.csv</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        exportTimetablesToCSV(
+                          timetablesList,
+                          `timetables_all_${new Date().toISOString().slice(0, 10)}.csv`
+                        )
+                      }
+                      className="w-full text-left px-4 py-2 hover:bg-slate-100 flex items-center justify-between text-slate-700 border-t border-slate-100 cursor-pointer"
+                    >
+                      <span>ส่งออกตารางเรียนทั้งหมด ({timetablesList.length} คาบ)</span>
+                      <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-mono">.csv</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePrintPdf}
+                      className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 text-indigo-700 font-bold flex items-center justify-between border-t border-slate-100 cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Printer className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>พิมพ์ตารางสอน / ส่งออก PDF</span>
+                      </span>
+                      <span className="text-[10px] bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-800 font-mono">Print / PDF</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleScanTimetables}
+                disabled={isScanningInstructors}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+                title="สแกนตารางสอนและตรวจสอบไอดีอาจารย์ผู้สอน"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isScanningInstructors ? 'animate-spin' : ''}`} />
+                <span className="truncate">ซิงค์ไอดีอาจารย์</span>
+              </button>
+
+              <Link
+                href="/courses"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                <span className="truncate">ดูหน้าตารางสอน</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* Guide Banner for Adding Schedules for Next Term/Year */}
-        <div className="bg-gradient-to-r from-amber-50/80 via-indigo-50/50 to-blue-50/80 p-4 rounded-2xl border border-amber-200/70 shadow-xs">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-300/60 flex items-center justify-center shrink-0 text-amber-700">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div className="text-xs space-y-1.5 flex-1">
-              <h3 className="font-bold text-slate-800 text-[13px] flex items-center gap-1.5">
-                <span>💡 คำแนะนำ: วิธีเพิ่มตารางเรียนในภาคการศึกษาหรือปีการศึกษาถัดไป (เช่น 2/2569 หรือ 1/2570)</span>
-              </h3>
-              <p className="text-slate-600 leading-relaxed">
-                ท่านสามารถเพิ่มและอัปเดตตารางเรียนล่วงหน้าได้ <strong className="text-indigo-700">2 วิธีหลัก</strong>:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
-                <div className="bg-white/80 p-2.5 rounded-xl border border-indigo-100">
-                  <span className="font-bold text-indigo-900 block mb-1">
-                    1. นำเข้าเป็นไฟล์ Excel / CSV (รวดเร็วและแม่นยำที่สุด)
-                  </span>
-                  <p className="text-slate-600 text-[11px] leading-normal">
-                    กดปุ่ม <span className="font-semibold text-indigo-700">"📥 นำเข้า Excel / CSV"</span> ด้านบน แล้วคลิก <span className="font-semibold text-emerald-700">"ดาวน์โหลดไฟล์ต้นแบบ (.CSV)"</span> จากนั้นกรอกข้อมูลปีการศึกษาถัดไป (เช่น <code className="bg-slate-100 px-1 rounded">2570</code>), ภาคเรียน (<code className="bg-slate-100 px-1 rounded">1</code>), วัน-เวลาเรียน แล้วอัปโหลดไฟล์เข้ามา ระบบจะตรวจสอบและเพิ่มเข้าสู่ตารางทันที
-                  </p>
-                </div>
-                <div className="bg-white/80 p-2.5 rounded-xl border border-amber-100">
-                  <span className="font-bold text-amber-900 block mb-1">
-                    2. เพิ่มรายวิชาทีละรายการผ่านหน้าเว็บ
-                  </span>
-                  <p className="text-slate-600 text-[11px] leading-normal">
-                    คลิกปุ่ม <Link href="/courses" className="font-semibold text-indigo-600 underline">"ดูหน้าตารางสอน (/courses)"</Link> แล้วกดปุ่ม <span className="font-semibold text-emerald-700">+ เพิ่มรายวิชา</span> ระบุปีการศึกษา (2570), ภาคเรียน, วันเรียน, และเวลาคาบสอนได้ทันที โดยสามารถสลับตัวเลือกปีกรองดูตารางของแต่ละปีการศึกษาได้อิสระ
-                  </p>
-                </div>
+        {/* Guide Banner for Adding Schedules for Next Term/Year (Collapsible on Mobile) */}
+        <div className="bg-gradient-to-r from-amber-50/80 via-indigo-50/50 to-blue-50/80 p-3 sm:p-4 rounded-2xl border border-amber-200/70 shadow-xs">
+          <div className="flex items-start justify-between gap-2.5">
+            <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/10 border border-amber-300/60 flex items-center justify-center shrink-0 text-amber-700 mt-0.5">
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+              <div className="text-xs space-y-1 flex-1 min-w-0">
+                <h3 className="font-bold text-slate-800 text-xs sm:text-[13px] leading-tight">
+                  💡 คำแนะนำ: วิธีเพิ่มตารางเรียนในภาคการศึกษาหรือปีการศึกษาถัดไป (เช่น 2/2569 หรือ 1/2570)
+                </h3>
+                <p className="text-slate-600 text-[11px] sm:text-xs leading-normal hidden sm:block">
+                  ท่านสามารถเพิ่มและอัปเดตตารางเรียนล่วงหน้าได้ 2 วิธีหลัก (นำเข้าไฟล์ Excel/CSV หรือเพิ่มรายวิชาทีละรายการ)
+                </p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsGuideOpen(!isGuideOpen)}
+              className="px-2.5 py-1.5 rounded-xl bg-white/90 border border-amber-200 text-amber-800 text-[11px] font-bold hover:bg-white shadow-2xs transition cursor-pointer shrink-0"
+            >
+              {isGuideOpen ? 'ซ่อน ✕' : 'ดูวิธี ▾'}
+            </button>
+          </div>
+
+          {isGuideOpen && (
+            <div className="mt-3 pt-3 border-t border-amber-200/60 grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs animate-in fade-in duration-150">
+              <div className="bg-white/85 p-3 rounded-xl border border-indigo-100 space-y-1">
+                <span className="font-bold text-indigo-900 block">
+                  1. นำเข้าเป็นไฟล์ Excel / CSV (รวดเร็วที่สุด)
+                </span>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  กดปุ่ม <span className="font-semibold text-indigo-700">"นำเข้า Excel / CSV"</span> ด้านบน แล้วคลิกดาวน์โหลดไฟล์ต้นแบบ กรอกข้อมูลปีการศึกษาถัดไป (เช่น <code className="bg-slate-100 px-1 rounded">2570</code>), ภาคเรียน (<code className="bg-slate-100 px-1 rounded">1</code>), วัน-เวลาเรียน แล้วอัปโหลดไฟล์เข้ามา
+                </p>
+              </div>
+              <div className="bg-white/85 p-3 rounded-xl border border-amber-100 space-y-1">
+                <span className="font-bold text-amber-900 block">
+                  2. เพิ่มรายวิชาทีละรายการผ่านหน้าเว็บ
+                </span>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  คลิกปุ่ม <Link href="/courses" className="font-semibold text-indigo-600 underline">"ดูหน้าตารางสอน"</Link> แล้วกดปุ่ม <span className="font-semibold text-emerald-700">+ เพิ่มรายวิชา</span> ระบุปีการศึกษา (2570), ภาคเรียน, วันเรียน, และเวลาคาบสอนได้ทันที
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Filters Toolbar (Responsive Grid for Mobile & Desktop) */}
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-2.5 text-xs">
+          {/* Row 1: Search Input + Clear Button */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="ค้นหาด้วยรหัสวิชา, ชื่อวิชา, สาขาวิชา, ห้องเรียน หรือผู้สอน..."
+                value={timetableSearch}
+                onChange={(e) => setTimetableSearch(e.target.value)}
+                className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-slate-50/50"
+              />
+              {timetableSearch && (
+                <button
+                  type="button"
+                  onClick={() => setTimetableSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 font-bold p-1"
+                  aria-label="ล้างการค้นหา"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="px-3 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold border border-rose-200 text-xs transition cursor-pointer shrink-0 shadow-2xs"
+                title="ล้างการค้นหาและตัวกรองทั้งหมด"
+              >
+                ล้างตัวกรอง ✕
+              </button>
+            )}
+          </div>
+
+          {/* Row 2: Responsive Filter Dropdowns (2 columns on mobile, 5 on desktop) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {setTimetableProgramFilter && (
+              <select
+                value={timetableProgramFilter}
+                onChange={(e) => setTimetableProgramFilter(e.target.value)}
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer text-xs truncate"
+              >
+                <option value="ALL">หลักสูตร: ทั้งหมด</option>
+                <option value="THAI">🇹🇭 หลักสูตรภาษาไทย</option>
+                <option value="ENGLISH">🌐 หลักสูตรภาษาอังกฤษ (Inter)</option>
+              </select>
+            )}
+
+            {setTimetableMajorFilter && (
+              <select
+                value={timetableMajorFilter}
+                onChange={(e) => setTimetableMajorFilter(e.target.value)}
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer text-xs truncate"
+              >
+                <option value="ALL">สาขาวิชา: ทั้งหมด</option>
+                <option value="พระพุทธศาสนา">สาขาวิชาพระพุทธศาสนา</option>
+                <option value="ศาสนาและปรัชญา">สาขาวิชาศาสนาและปรัชญา</option>
+                <option value="วิปัสสนาภาวนา">สาขาวิชาวิปัสสนาภาวนา</option>
+                <option value="บาลีสันสกฤต">สาขาวิชาบาลีสันสกฤต</option>
+              </select>
+            )}
+
+            <select
+              value={timetableYearFilter}
+              onChange={(e) => setTimetableYearFilter(e.target.value)}
+              className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer text-xs"
+            >
+              <option value="ALL">ปีการศึกษา: ทั้งหมด</option>
+              <option value="2569">ปีการศึกษา 2569</option>
+              <option value="2570">ปีการศึกษา 2570</option>
+            </select>
+
+            <select
+              value={timetableSemesterFilter}
+              onChange={(e) => setTimetableSemesterFilter(e.target.value)}
+              className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer text-xs"
+            >
+              <option value="ALL">ภาคเรียน: ทั้งหมด</option>
+              <option value="1">ภาคเรียนที่ 1</option>
+              <option value="2">ภาคเรียนที่ 2</option>
+            </select>
+
+            <select
+              value={timetableDayFilter}
+              onChange={(e) => setTimetableDayFilter(e.target.value)}
+              className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer text-xs col-span-2 sm:col-span-1"
+            >
+              <option value="ALL">วัน: ทุกวัน</option>
+              <option value="1">วันจันทร์</option>
+              <option value="2">วันอังคาร</option>
+              <option value="3">วันพุธ</option>
+              <option value="4">วันพฤหัสบดี</option>
+              <option value="5">วันศุกร์</option>
+              <option value="6">วันเสาร์</option>
+              <option value="0">วันอาทิตย์</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px] text-slate-500">
+            <span>ตารางเรียนและตารางสอน</span>
+            <span className="font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full">
+              พบ {filteredTimetables.length} รายการ
+            </span>
           </div>
         </div>
 
-        {/* Filters Toolbar */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-wrap items-center gap-2 text-xs">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="ค้นหาด้วยรหัสวิชา, ชื่อวิชา, สาขาวิชา, ห้องเรียน หรือผู้สอน..."
-              value={timetableSearch}
-              onChange={(e) => setTimetableSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            />
-          </div>
-
-          {/* Program Filter */}
-          {setTimetableProgramFilter && (
-            <select
-              value={timetableProgramFilter}
-              onChange={(e) => setTimetableProgramFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer"
-            >
-              <option value="ALL">หลักสูตร: ทั้งหมด</option>
-              <option value="THAI">🇹🇭 หลักสูตรภาษาไทย</option>
-              <option value="ENGLISH">🌐 หลักสูตรภาษาอังกฤษ (Inter)</option>
-            </select>
-          )}
-
-          {/* Major Filter */}
-          {setTimetableMajorFilter && (
-            <select
-              value={timetableMajorFilter}
-              onChange={(e) => setTimetableMajorFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer"
-            >
-              <option value="ALL">สาขาวิชา: ทั้งหมด</option>
-              <option value="พระพุทธศาสนา">สาขาวิชาพระพุทธศาสนา</option>
-              <option value="ศาสนาและปรัชญา">สาขาวิชาศาสนาและปรัชญา</option>
-              <option value="วิปัสสนาภาวนา">สาขาวิชาวิปัสสนาภาวนา</option>
-              <option value="บาลีสันสกฤต">สาขาวิชาบาลีสันสกฤต</option>
-            </select>
-          )}
-
-          <select
-            value={timetableYearFilter}
-            onChange={(e) => setTimetableYearFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer"
-          >
-            <option value="ALL">ปีการศึกษา: ทั้งหมด</option>
-            <option value="2569">ปีการศึกษา 2569</option>
-            <option value="2570">ปีการศึกษา 2570</option>
-          </select>
-
-          <select
-            value={timetableSemesterFilter}
-            onChange={(e) => setTimetableSemesterFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer"
-          >
-            <option value="ALL">ภาคเรียน: ทั้งหมด</option>
-            <option value="1">ภาคเรียนที่ 1</option>
-            <option value="2">ภาคเรียนที่ 2</option>
-          </select>
-
-          <select
-            value={timetableDayFilter}
-            onChange={(e) => setTimetableDayFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium cursor-pointer"
-          >
-            <option value="ALL">วัน: ทุกวัน</option>
-            <option value="1">วันจันทร์</option>
-            <option value="2">วันอังคาร</option>
-            <option value="3">วันพุธ</option>
-            <option value="4">วันพฤหัสบดี</option>
-            <option value="5">วันศุกร์</option>
-            <option value="6">วันเสาร์</option>
-            <option value="0">วันอาทิตย์</option>
-          </select>
-
-          <span className="text-slate-400 font-medium ml-auto">
-            พบ {filteredTimetables.length} รายการ
-          </span>
-        </div>
-
-        {/* Timetables Data Table */}
+        {/* Timetables Display: Responsive Mobile Cards (md:hidden) & Desktop Table (hidden md:block) */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* 1. Mobile Cards View (< md) */}
+          <div className="block md:hidden divide-y divide-slate-100">
+            {filteredTimetables.length === 0 ? (
+              <div className="py-12 px-4 text-center text-slate-400 text-xs">
+                ไม่พบตารางสอนตามเงื่อนไขที่เลือก
+              </div>
+            ) : (
+              filteredTimetables.slice(0, 50).map((t, idx) => {
+                const dayColor = DAY_COLORS[t.dayOfWeek] || 'bg-slate-50 text-slate-700 border-slate-200';
+                const dayLabel = DAY_NAMES[t.dayOfWeek] || `วัน ${t.dayOfWeek}`;
+                const isEn = t.programType === 'ENGLISH';
+
+                return (
+                  <div key={`m-card-${t.courseCode}-${t.dayOfWeek}-${idx}`} className="p-4 space-y-2.5 hover:bg-slate-50/70 transition-colors">
+                    {/* Row 1: Day Badge + Time + Room */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border shadow-2xs ${dayColor}`}>
+                        {dayLabel}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/70">
+                          ⏰ {t.startTime} - {t.endTime} น.
+                        </span>
+                        <span className="font-mono text-xs font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                          📍 {t.room || 'อาคารเรียน'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Course Code & Name */}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-indigo-700 text-sm">{t.courseCode}</span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-xs font-bold text-slate-600">ชั้นปี {t.yearLevel} (เทอม {t.semester}/{t.academicYear})</span>
+                      </div>
+                      <h4 className="text-[13.5px] font-bold text-slate-900 mt-0.5 leading-snug">
+                        {t.courseName}
+                      </h4>
+                    </div>
+
+                    {/* Row 3: Degree & Major Badges */}
+                    <div className="flex flex-wrap items-center gap-1.5 text-[10.5px]">
+                      {isEn ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                          <Globe className="w-2.5 h-2.5" /> Inter/EN
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          🇹🇭 ภาคไทย
+                        </span>
+                      )}
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
+                        {t.degreeLevel || 'ปริญญาตรี'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100">
+                        {t.major || 'ทั่วไป'}
+                      </span>
+                    </div>
+
+                    {/* Row 4: Instructor */}
+                    <div className="pt-2 border-t border-slate-100/90 text-xs flex items-start gap-1.5">
+                      <span className="font-bold text-slate-500 shrink-0">ผู้สอน:</span>
+                      <span className="font-semibold text-slate-800 break-words">{t.instructor || '-'}</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* 2. Desktop Table View (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b">
                 <tr>

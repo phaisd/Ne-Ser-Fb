@@ -28,6 +28,10 @@ export interface AdminUsersTabProps {
     userType?: 'STUDENT' | 'INSTRUCTOR'
   ) => void;
   handleResetPassword: (id: string, name: string) => void;
+  handleDeleteUser?: (u: UserAccount | AdminUserFilterItem) => Promise<void>;
+  handleMergeDuplicateUsers?: (primaryId: string, duplicateId: string) => Promise<boolean>;
+  isDuplicateModalOpen?: boolean;
+  setIsDuplicateModalOpen?: (val: boolean) => void;
   forcePasswordChangeOnFirstLogin?: boolean;
   onToggleForcePasswordChange?: (enabled: boolean) => void;
   onOpenNewYearWorkflow?: () => void;

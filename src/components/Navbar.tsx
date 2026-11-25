@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { translations, Language } from '@/lib/translations';
 import { getAuthUser, isAdminOrOfficer, canAccessAdminConsole, clearAuthSession } from '@/lib/auth-client';
+import { hasProjectDuty } from '@/lib/events/projectDuty';
 import UserProfileModal from '@/components/UserProfileModal';
 import ThemeModeToggle from './ThemeModeToggle';
 
@@ -285,6 +286,30 @@ export default function Navbar() {
     };
   }, []);
 
+  const isAdmin = isAdminOrOfficer(currentUser);
+  const isInstructorOnly = Boolean(
+    currentUser &&
+      currentUser.role === 'INSTRUCTOR' &&
+      !currentUser.isSuperAdmin &&
+      !currentUser.isActingOfficer &&
+      currentUser.email?.toLowerCase() !== 'phaisal.dis@mcu.ac.th'
+  );
+  const userHasProjectDuty = Boolean(
+    currentUser &&
+      (isAdminOrOfficer(currentUser) ||
+        currentUser.role === 'VIPASSANA_MASTER' ||
+        (currentUser as any).isProjectCoordinator ||
+        hasProjectDuty(currentUser))
+  );
+
+  const isStudent = Boolean(
+    currentUser &&
+      (currentUser.role === 'STUDENT' ||
+        currentUser.studentCode ||
+        /^\d{5,12}(@mcu\.ac\.th)?$/i.test((currentUser.email || '').trim()))
+  );
+  const isStaffOrInstructor = Boolean(currentUser && !isStudent);
+
   useEffect(() => {
     try {
       const user = getAuthUser();
@@ -313,15 +338,21 @@ export default function Navbar() {
         sessionStorage.getItem('mcu_active_vipassana_station') ||
         localStorage.getItem('mcu_active_vipassana_station');
       if (savedStation) {
-        const parsed = JSON.parse(savedStation);
-        if (parsed && parsed.url) {
-          setActiveVipassanaStation(parsed);
+        if (isInstructorOnly && !userHasProjectDuty) {
+          sessionStorage.removeItem('mcu_active_vipassana_station');
+          localStorage.removeItem('mcu_active_vipassana_station');
+          setActiveVipassanaStation(null);
+        } else {
+          const parsed = JSON.parse(savedStation);
+          if (parsed && parsed.url) {
+            setActiveVipassanaStation(parsed);
+          }
         }
       } else {
         setActiveVipassanaStation(null);
       }
     } catch {}
-  }, [pathname]);
+  }, [pathname, isInstructorOnly, userHasProjectDuty]);
 
   const handleLogout = async () => {
     try {
@@ -331,15 +362,6 @@ export default function Navbar() {
     setCurrentUser(null);
     window.location.href = '/';
   };
-
-  const isAdmin = isAdminOrOfficer(currentUser);
-  const isStudent = Boolean(
-    currentUser &&
-      (currentUser.role === 'STUDENT' ||
-        currentUser.studentCode ||
-        /^\d{5,12}(@mcu\.ac\.th)?$/i.test((currentUser.email || '').trim()))
-  );
-  const isStaffOrInstructor = Boolean(currentUser && !isStudent);
 
   const publicNavItems = [
     { href: '/', label: t.navHome, icon: LayoutDashboard },
@@ -691,16 +713,24 @@ export default function Navbar() {
               </Link>
             ) : canAccessAdminConsole(currentUser) ? (
               <Link
-                href={activeVipassanaStation?.url || '/admin?tab=EVENTS'}
+                href={
+                  userHasProjectDuty
+                    ? (activeVipassanaStation?.url || '/admin?tab=EVENTS')
+                    : isInstructorOnly
+                    ? '/admin?tab=ATTENDANCE'
+                    : '/admin'
+                }
                 className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-md transition"
-                title="กลับไปยังหน้าตรวจเช็คชื่อ / สอบอารมณ์โครงการวิปัสสนา"
+                title={userHasProjectDuty ? 'กลับไปยังหน้าตรวจเช็คชื่อ / สอบอารมณ์โครงการวิปัสสนา' : 'ระบบบันทึกเวลาเรียนและวัดผล'}
               >
                 <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>
                   {currentUser?.role === 'VIPASSANA_MASTER'
                     ? 'หน้าสอบอารมณ์'
-                    : activeVipassanaStation
+                    : userHasProjectDuty && activeVipassanaStation
                     ? 'กลับหน้าสแกน/สอบอารมณ์'
+                    : isInstructorOnly
+                    ? 'ระบบเวลาเรียน'
                     : 'หลังบ้าน'}
                 </span>
               </Link>
@@ -799,11 +829,11 @@ export default function Navbar() {
               </Link>
             ) : canAccessAdminConsole(currentUser) ? (
               <Link
-                href="/admin"
+                href={isInstructorOnly && !userHasProjectDuty ? '/admin?tab=ATTENDANCE' : '/admin'}
                 className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-900 text-white whitespace-nowrap shrink-0"
               >
                 <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>ระบบหลังบ้าน</span>
+                <span>{isInstructorOnly && !userHasProjectDuty ? 'ระบบเวลาเรียน' : 'ระบบหลังบ้าน'}</span>
               </Link>
             ) : null}
           </nav>
@@ -812,6 +842,7 @@ export default function Navbar() {
       {/* Persistent Floating Return Banner if user accidentally navigated to Public Pages while having an Active Vipassana Station */}
       {!pathname.startsWith('/admin') &&
         currentUser &&
+        userHasProjectDuty &&
         canAccessAdminConsole(currentUser) &&
         (activeVipassanaStation || currentUser.role === 'VIPASSANA_MASTER') && (
           <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-indigo-700 text-white px-3 sm:px-6 py-2.5 shadow-lg border-b border-amber-400/50 print:hidden">
@@ -906,7 +937,13 @@ export default function Navbar() {
 
                 {canAccessAdminConsole(currentUser) ? (
                   <Link
-                    href={activeVipassanaStation?.url || '/admin?tab=EVENTS'}
+                    href={
+                      userHasProjectDuty
+                        ? (activeVipassanaStation?.url || '/admin?tab=EVENTS')
+                        : isInstructorOnly
+                        ? '/admin?tab=ATTENDANCE'
+                        : '/admin'
+                    }
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
                       isAdminRoute && pathname.startsWith('/admin') ? 'bg-purple-600 text-white border-purple-700' : 'bg-slate-800 text-slate-200 border-slate-700'
@@ -916,8 +953,10 @@ export default function Navbar() {
                     <span>
                       {currentUser?.role === 'VIPASSANA_MASTER'
                         ? 'หน้าสอบอารมณ์'
-                        : activeVipassanaStation
+                        : userHasProjectDuty && activeVipassanaStation
                         ? 'หน้าสแกน/สอบอารมณ์'
+                        : isInstructorOnly
+                        ? 'ระบบเวลาเรียน'
                         : 'ระบบ Admin'}
                     </span>
                   </Link>

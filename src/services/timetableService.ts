@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { Course, TimetableItem } from '@/types';
 import { readLocalJson, getSheetsClient } from './storageHelper';
 import { getCourses } from './courseService';
@@ -159,6 +161,74 @@ export async function getTimetables(): Promise<TimetableItem[]> {
     }
   }
 
+  // Also supplement from data/timetables.csv to guarantee all semesters (including Semester 2) are present locally
+  try {
+    const csvPath = path.join(process.cwd(), 'data', 'timetables.csv');
+    if (fs.existsSync(csvPath)) {
+      const csvContent = fs.readFileSync(csvPath, 'utf8').replace(/^\uFEFF/, '');
+      const csvLines = csvContent.split('\n').map((l) => l.trim()).filter(Boolean);
+      for (const line of csvLines.slice(1)) {
+        const row: string[] = [];
+        let inQuotes = false;
+        let curr = '';
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            inQuotes = !inQuotes;
+          } else if (ch === ',' && !inQuotes) {
+            row.push(curr.trim());
+            curr = '';
+          } else {
+            curr += ch;
+          }
+        }
+        row.push(curr.trim());
+        const cleanRow = row.map((c) => c.replace(/^"|"$/g, '').trim());
+        const tYear = cleanRow[0] || '2569';
+        const tSem = parseInt(cleanRow[1] || '1', 10);
+        const yLevel = parseInt(cleanRow[2] || '1', 10);
+        const title = cleanRow[3] || '';
+        const code = cleanRow[4] || '';
+        if (!code) continue;
+        const name = cleanRow[5] || '';
+        const dayNum = parseInt(cleanRow[6] || '1', 10);
+        const startNorm = formatTimeSlotString(cleanRow[7] || '');
+        const endNorm = formatTimeSlotString(cleanRow[8] || '');
+        const room = cleanRow[9] || '';
+        const instructor = cleanRow[10] || '';
+        const periodLabel = cleanRow[11] || '';
+        const meta = parseTimetableMetadata(title);
+
+        const dedupKey = `${title}_${code}_${dayNum}_${startNorm}_${room}`;
+        if (!seenLocal.has(dedupKey)) {
+          seenLocal.add(dedupKey);
+          const item: TimetableItem = {
+            academicYear: tYear,
+            semester: tSem,
+            yearLevel: yLevel,
+            timetableTitle: title,
+            courseCode: code,
+            courseName: name,
+            dayOfWeek: dayNum,
+            startTime: startNorm,
+            endTime: endNorm,
+            room,
+            instructor,
+            periodLabel,
+            degreeLevel: meta.degreeLevel,
+            programType: meta.programType,
+            major: meta.major,
+          };
+          flattenedLocal.push(item);
+          localSlotMap.set(`${title}_${code}_${dayNum}_${startNorm}`, item);
+          localSlotMap.set(`${title}_${code}_${dayNum}`, item);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Could not read timetables.csv for fallback:', err);
+  }
+
   const gClient = getSheetsClient();
   if (gClient) {
     try {
@@ -222,7 +292,9 @@ export async function getTimetables(): Promise<TimetableItem[]> {
             }
           }
 
-          if (courseInstructorMap.has(codeNorm) && courseInstructorMap.get(codeNorm)) {
+          if (!instructor && courseInstructorMap.has(`${codeNorm}__${r[0] || '2569'}__${r[1] || 1}`)) {
+            instructor = courseInstructorMap.get(`${codeNorm}__${r[0] || '2569'}__${r[1] || 1}`)!;
+          } else if (!instructor && courseInstructorMap.has(codeNorm)) {
             instructor = courseInstructorMap.get(codeNorm)!;
           }
 

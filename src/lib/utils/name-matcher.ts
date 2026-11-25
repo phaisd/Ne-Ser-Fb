@@ -8,6 +8,7 @@ export const INSTRUCTOR_THAI_TITLE_PREFIX = /^(ดร\.|ผศ\.|รศ\.|ศ\.|
 export const STOP_WORDS = new Set([
   'phra', 'พระ', 'ดร', 'dr', 'ven', 'asst', 'assoc', 'prof', 'ผศ', 'รศ', 'ศ', 'อาจารย์', 'อ', 'mr', 'mrs', 'ms',
   'phd', 'ph.d', 'ph.d.', 'ดร.', 'ผศ.', 'รศ.', 'ศ.', 'อ.', 'อ.ดร.', 'อ.ดร', 'พิเศษ', 'specail', 'special',
+  '(specail)', '(special)',
   'ผศ.ดร', 'ผศ.ดร.', 'ผศดร', 'ผศ. ดร.', 'ผศ. ดร', 'ผศ ดร',
   'รศ.ดร', 'รศ.ดร.', 'รศดร', 'รศ. ดร.', 'รศ. ดร', 'รศ ดร',
   'ศ.ดร', 'ศ.ดร.', 'ศดร', 'ศ. ดร.', 'ศ. ดร', 'ศ ดร',
@@ -20,9 +21,9 @@ export const STOP_WORDS = new Set([
 
 export function isTitleOrStopWord(str: string): boolean {
   if (!str) return true;
-  const clean = str.trim().toLowerCase().replace(/^[.\s]+|[.\s]+$/g, '');
-  const bare = clean.replace(/[\.\s]/g, '');
-  return STOP_WORDS.has(clean) || STOP_WORDS.has(bare);
+  const clean = str.trim().toLowerCase().replace(/^[.\s()\[\]{}:;]+|[.\s()\[\]{}:;]+$/g, '');
+  const bare = clean.replace(/[\.\s()\[\]{}:;]/g, '');
+  return STOP_WORDS.has(clean) || STOP_WORDS.has(bare) || STOP_WORDS.has(str.trim().toLowerCase());
 }
 
 /**
@@ -44,35 +45,37 @@ export function stripLeadingTitles(raw: string): string {
 /**
  * Extracts substantive, searchable name tokens from a user or instructor account.
  */
-export function getSubstantiveTokens(user?: { name?: string; nameEn?: string; aliases?: string[] } | null): string[] {
-  if (!user) return [];
+export function getSubstantiveTokens(
+  userOrName?: string | { name?: string; nameEn?: string; aliases?: string[]; email?: string; gmail?: string } | null
+): string[] {
+  if (!userOrName) return [];
   const substantive = new Set<string>();
 
   const processText = (text?: string) => {
     if (!text) return;
     if (isTitleOrStopWord(text)) return;
 
-    const clean = text.trim().toLowerCase().replace(/^[.\s]+|[.\s]+$/g, '');
-    const bare = clean.replace(/[\.\s]/g, '');
+    const clean = text.trim().toLowerCase().replace(/^[.\s()\[\]{}:;]+|[.\s()\[\]{}:;]+$/g, '');
+    const bare = clean.replace(/[\.\s()\[\]{}:;]/g, '');
     if (isTitleOrStopWord(clean) || isTitleOrStopWord(bare)) return;
 
-    // Split words
-    const cleanStr = text.replace(/[,*\/]/g, ' ');
+    // Split words, stripping brackets, slashes, asterisks, etc.
+    const cleanStr = text.replace(/[,*\/()\[\]{}:;]/g, ' ');
     cleanStr.split(/\s+/).forEach((part: string) => {
       let token = part.trim().toLowerCase();
-      token = token.replace(/^[.\s]+|[.\s]+$/g, '');
+      token = token.replace(/^[.\s()\[\]{}:;]+|[.\s()\[\]{}:;]+$/g, '');
       token = stripLeadingTitles(token);
       token = token.replace(INSTRUCTOR_TITLE_REGEX, '').trim();
-      const bareToken = token.replace(/[\.\s]/g, '');
+      const bareToken = token.replace(/[\.\s()\[\]{}:;]/g, '');
       if (token.length >= 3 && !isTitleOrStopWord(token) && !isTitleOrStopWord(bareToken)) {
         substantive.add(token);
       }
     });
 
     let strippedFull = stripLeadingTitles(clean);
-    strippedFull = strippedFull.replace(INSTRUCTOR_TITLE_REGEX, '').replace(/^[.\s,*\/]+|[.\s,*\/]+$/g, '').trim();
-    strippedFull = strippedFull.replace(/[\.,*\/]/g, ' ').replace(/\s+/g, ' ').trim();
-    const bareFull = strippedFull.replace(/[\.\s]/g, '');
+    strippedFull = strippedFull.replace(INSTRUCTOR_TITLE_REGEX, '').replace(/^[.\s,*\/()\[\]{}:;]+|[.\s,*\/()\[\]{}:;]+$/g, '').trim();
+    strippedFull = strippedFull.replace(/[\.,*\/()\[\]{}:;]/g, ' ').replace(/\s+/g, ' ').trim();
+    const bareFull = strippedFull.replace(/[\.\s()\[\]{}:;]/g, '');
     if (
       strippedFull.length >= 4 &&
       !isTitleOrStopWord(strippedFull) &&
@@ -83,39 +86,69 @@ export function getSubstantiveTokens(user?: { name?: string; nameEn?: string; al
     }
   };
 
+  if (typeof userOrName === 'string') {
+    processText(userOrName);
+    return Array.from(substantive);
+  }
+
+  const user = userOrName;
   if (Array.isArray(user.aliases)) {
     user.aliases.forEach(processText);
   }
   processText(user.name);
   processText(user.nameEn);
 
+  // Extract substantive tokens from email prefixes (e.g. supapan.per@mcu.ac.th -> supapan, permpool)
+  const emailCandidates = [user.email, user.gmail].filter(Boolean) as string[];
+  for (const em of emailCandidates) {
+    if (em.includes('@')) {
+      const prefix = em.split('@')[0].toLowerCase();
+      prefix.split(/[._-]/).forEach((part) => {
+        const cleanPart = part.trim();
+        if (cleanPart.length >= 4 && !isTitleOrStopWord(cleanPart)) {
+          substantive.add(cleanPart);
+        }
+      });
+    }
+  }
+
   return Array.from(substantive);
 }
 
 /**
  * Checks if a given instructor name string matches an instructor user account strictly.
+ * Supports co-instructors (separated by '/'), trailing asterisks, and multi-alias matching.
  */
 export function matchInstructorStrict(
-  user?: { name?: string; nameEn?: string; aliases?: string[] } | null,
+  user?: { name?: string; nameEn?: string; aliases?: string[]; email?: string; gmail?: string } | null,
   instString?: string
 ): boolean {
   if (!user || !instString) return false;
-  const targetLower = instString.toLowerCase();
   const tokens = getSubstantiveTokens(user);
   if (tokens.length === 0) return false;
 
-  return tokens.some((token) => {
-    if (/[\u0E00-\u0E7F]/.test(token)) {
-      // Thai text matching
-      return targetLower.includes(token);
-    }
-    // Latin / English token: match word boundary
-    try {
-      const reg = new RegExp('\\b' + token + '\\b', 'i');
-      return reg.test(targetLower);
-    } catch {
-      return targetLower.includes(token);
-    }
+  // Split co-instructors by '/' and strip asterisks
+  const parts = instString
+    .split('/')
+    .map((s) => s.replace(/[\*]/g, '').trim().toLowerCase())
+    .filter(Boolean);
+
+  if (parts.length === 0) return false;
+
+  return parts.some((targetLower) => {
+    return tokens.some((token) => {
+      if (/[\u0E00-\u0E7F]/.test(token)) {
+        // Thai text matching
+        return targetLower.includes(token);
+      }
+      // Latin / English token: match word boundary
+      try {
+        const reg = new RegExp('\\b' + token + '\\b', 'i');
+        return reg.test(targetLower);
+      } catch {
+        return targetLower.includes(token);
+      }
+    });
   });
 }
 

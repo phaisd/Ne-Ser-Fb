@@ -14,6 +14,8 @@ import {
   updateInstructorPassword,
   createUserAccount,
   updateUserProfile,
+  deleteInstructorAccount,
+  mergeDuplicateInstructors,
   toggleUserSuspension,
   archiveInstructors,
   getArchivedInstructors,
@@ -323,8 +325,31 @@ export async function POST(request: Request) {
       });
     }
 
-    // 8. Archive Instructor (ย้ายเข้าแฟ้มประวัติ เกษียณ/ลาออก/จำหน่าย)
-    if (action === 'archive-user' || action === 'delete-user') {
+    // 8. Delete / Remove User (ลบบัญชีผู้ใช้งานหรือบัญชีที่ซ้ำซ้อน)
+    if (action === 'delete-user') {
+      const targetId = userId || body.id;
+      if (!targetId) {
+        return NextResponse.json({ success: false, error: 'กรุณาระบุรหัสผู้ใช้งานที่ต้องการลบ' }, { status: 400 });
+      }
+      const result = await deleteInstructorAccount(targetId);
+      return NextResponse.json(result, { status: result.success ? 200 : 400 });
+    }
+
+    // 8.1 Merge Duplicate Users (รวมบัญชีผู้ใช้ที่ซ้ำซ้อนเข้าด้วยกัน)
+    if (action === 'merge-duplicate-users') {
+      const { primaryId, duplicateId } = body;
+      if (!primaryId || !duplicateId) {
+        return NextResponse.json(
+          { success: false, error: 'กรุณาระบุ primaryId และ duplicateId ที่ต้องการรวม' },
+          { status: 400 }
+        );
+      }
+      const result = await mergeDuplicateInstructors(primaryId, duplicateId);
+      return NextResponse.json(result, { status: result.success ? 200 : 400 });
+    }
+
+    // 8.2 Archive Instructor (ย้ายเข้าแฟ้มประวัติ เกษียณ/ลาออก/จำหน่าย)
+    if (action === 'archive-user') {
       const ids: string[] = Array.isArray(body.userIds)
         ? body.userIds
         : userId

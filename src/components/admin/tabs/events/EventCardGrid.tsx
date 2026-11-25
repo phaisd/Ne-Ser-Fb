@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration } from '@/types';
 import { getAuthUser } from '@/lib/auth-client';
+import { hasProjectDuty } from '@/lib/events/projectDuty';
 
 interface EventCardGridProps {
   eventsList: StudentEvent[];
@@ -69,8 +70,8 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
     !isVipassanaMaster &&
     (userRole === 'OFFICER' ||
       userRole === 'STAFF' ||
-      userRole === 'INSTRUCTOR' ||
-      Boolean(activeUser?.isActingOfficer));
+      Boolean(activeUser?.isActingOfficer) ||
+      (userRole === 'INSTRUCTOR' && hasProjectDuty(activeUser, eventsList, registrationsList)));
 
   // Role permissions based on user requirements:
   // - Advisor & Officer (ผู้ดูแลช่วงเวลาปฏิบัติ): only red-circled buttons (Scanner, Attendance 4 rounds)
