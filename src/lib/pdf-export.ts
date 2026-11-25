@@ -1,8 +1,6 @@
-import html2canvas from 'html2canvas-pro';
-import jsPDF from 'jspdf';
-
 /**
  * Exports an HTML element directly to a standard A4 PDF file.
+ * Loads html2canvas-pro and jsPDF dynamically on demand to minimize initial bundle size.
  */
 export async function exportElementToPdf(
   elementId: string,
@@ -15,6 +13,11 @@ export async function exportElementToPdf(
   }
 
   try {
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas-pro'),
+      import('jspdf'),
+    ]);
+
     // Generate high resolution canvas
     const canvas = await html2canvas(element, {
       scale: 2,
