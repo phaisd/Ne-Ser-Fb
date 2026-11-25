@@ -304,8 +304,9 @@ export default function Navbar() {
     currentUser &&
       (isAdminOrOfficer(currentUser) ||
         currentUser.role === 'VIPASSANA_MASTER' ||
-        (currentUser as any).isProjectCoordinator ||
-        hasProjectDuty(currentUser))
+        (currentUser as any).isProjectCoordinator === true ||
+        (currentUser as any).isMeditationStaff === true ||
+        (!isInstructorOnly && hasProjectDuty(currentUser)))
   );
 
   const isStudent = Boolean(

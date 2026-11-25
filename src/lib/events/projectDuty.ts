@@ -69,7 +69,7 @@ export function hasProjectDuty(
     const localPart = email.split('@')[0] || '';
     localPart
       .split(/[._-]+/)
-      .filter((p) => p.length >= 3)
+      .filter((p) => p.length >= 4)
       .forEach((tok) => userTokens.add(tok.toLowerCase()));
   });
 

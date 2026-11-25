@@ -131,7 +131,7 @@ export function AdminSidebar({
             {isVipassanaMaster
               ? 'ระบบสอบอารมณ์วิปัสสนา'
               : isInstructorOnly
-              ? hasProjectDuty
+              ? Boolean(currentUser?.isProjectCoordinator || currentUser?.isMeditationStaff)
                 ? 'ระบบการสอน & ปฏิบัติธรรม'
                 : 'ระบบภาระงานสอน & วัดผล'
               : 'ระบบหลัก (Operations)'}
@@ -271,7 +271,7 @@ export function AdminSidebar({
               </button>
             )}
 
-            {(!isInstructorOnly || hasProjectDuty) && (
+            {(!isInstructorOnly || Boolean(currentUser?.isProjectCoordinator || currentUser?.isMeditationStaff)) && (
               <button
                 onClick={() => {
                   setActiveTab('EVENTS');

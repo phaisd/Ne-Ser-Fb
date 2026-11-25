@@ -1701,8 +1701,8 @@
   {
     "id": "inst-35",
     "name": "ผศ.พิเศษ ดร.สุภาพรรณ เพิ่มพูน",
-    "email": "supapan.per@mcu.ac.th",
-    "gmail": "supapan.per@gmail.com",
+    "email": "suppapan.per@mcu.ac.th",
+    "gmail": "suppapan.per@gmail.com",
     "password": "mcu1065",
     "defaultPassword": "mcu123456",
     "department": "คณะพุทธศาสตร์",
@@ -1715,6 +1715,7 @@
       "เพิ่มพูน",
       "Asst. Prof. Dr. Supapan Permpool",
       "Supapan",
+      "Suppapan",
       "Permpool",
       "ผศ.พิเศษ ดร.สุภาพรรณ เพิ่มพูน",
       "teacher66@mcu.ac.th",
@@ -1722,7 +1723,11 @@
       "Asst. Prof.(Specail) Dr. Supapan Permpool",
       "Asst. Prof. (Specail) Dr. Supapan Permpool",
       "supapan.per@mcu.ac.th",
-      "supapan.per@gmail.com"
+      "supapan.per@gmail.com",
+      "suppapan.per@mcu.ac.th",
+      "suppapan.per@gmail.com",
+      "suppapan.per",
+      "supapan.per"
     ],
     "previousIds": [
       "inst-35",

@@ -70,6 +70,15 @@ export function getSubstantiveTokens(
       if (token.length >= 3 && !isTitleOrStopWord(token) && !isTitleOrStopWord(bareToken)) {
         substantive.add(token);
       }
+      // Also split on internal dots (e.g. suppapan.per -> suppapan, per)
+      if (token.includes('.')) {
+        token.split('.').forEach((sub) => {
+          const subClean = sub.trim();
+          if (subClean.length >= 3 && !isTitleOrStopWord(subClean)) {
+            substantive.add(subClean);
+          }
+        });
+      }
     });
 
     let strippedFull = stripLeadingTitles(clean);
@@ -105,11 +114,26 @@ export function getSubstantiveTokens(
       const prefix = em.split('@')[0].toLowerCase();
       prefix.split(/[._-]/).forEach((part) => {
         const cleanPart = part.trim();
-        if (cleanPart.length >= 4 && !isTitleOrStopWord(cleanPart)) {
+        if (cleanPart.length >= 3 && !isTitleOrStopWord(cleanPart)) {
           substantive.add(cleanPart);
         }
       });
     }
+  }
+
+  // Handle common name / transliteration pairings for known faculty
+  if (
+    substantive.has('suppapan') ||
+    substantive.has('supapan') ||
+    substantive.has('สุภาพรรณ') ||
+    substantive.has('permpool') ||
+    substantive.has('เพิ่มพูน')
+  ) {
+    substantive.add('supapan');
+    substantive.add('suppapan');
+    substantive.add('permpool');
+    substantive.add('สุภาพรรณ');
+    substantive.add('เพิ่มพูน');
   }
 
   return Array.from(substantive);

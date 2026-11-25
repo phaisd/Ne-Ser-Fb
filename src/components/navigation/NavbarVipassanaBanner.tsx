@@ -23,9 +23,19 @@ export const NavbarVipassanaBanner: React.FC<NavbarVipassanaBannerProps> = ({
   userHasProjectDuty,
   activeVipassanaStation,
 }) => {
+  const isRegularInstructor = Boolean(
+    currentUser &&
+      currentUser.role === 'INSTRUCTOR' &&
+      !currentUser.isProjectCoordinator &&
+      !currentUser.isMeditationStaff &&
+      !currentUser.isActingOfficer &&
+      !currentUser.isSuperAdmin
+  );
+
   if (
     pathname.startsWith('/admin') ||
     !currentUser ||
+    isRegularInstructor ||
     !userHasProjectDuty ||
     !canAccessAdminConsole(currentUser) ||
     (!activeVipassanaStation && currentUser?.role !== 'VIPASSANA_MASTER')

@@ -61,6 +61,7 @@ export interface AuthUser {
   name: string;
   nameEn?: string;
   fullName?: string;
+  aliases?: string[];
   email: string;
   gmail?: string;
   role: string;

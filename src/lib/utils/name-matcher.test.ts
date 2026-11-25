@@ -84,6 +84,38 @@ describe('name-matcher utility', () => {
     expect(matchInstructorStrict(user, 'พระมหาสมโภช')).toBe(false);
   });
 
+  it('correctly matches Dr. Supapan Permpool with suppapan.per / supapan.per across English and Thai courses', () => {
+    const user1 = {
+      name: 'ผศ.พิเศษ ดร.สุภาพรรณ เพิ่มพูน',
+      email: 'suppapan.per@mcu.ac.th',
+    };
+    const user2 = {
+      name: 'อาจารย์ (suppapan.per)',
+      email: 'suppapan.per@mcu.ac.th',
+    };
+    const user3 = {
+      name: 'อาจารย์ (suppapan.per)',
+      email: 'teacher66@mcu.ac.th',
+      aliases: ['สุภาพรรณ', 'เพิ่มพูน', 'Supapan', 'Suppapan'],
+    };
+
+    const courseThai = 'พระมหาจีรวัฒน์ กนฺตวณฺโณ, รศ.ดร.*/ผศ.พิเศษ ดร.สุภาพรรณ เพิ่มพูน';
+    const courseEng1 = 'Asst. Prof. Dr. Supapan Permpool*';
+    const courseEng2 = 'Asst. Prof. Dr. Supapan Permpool';
+
+    expect(matchInstructorStrict(user1, courseThai)).toBe(true);
+    expect(matchInstructorStrict(user1, courseEng1)).toBe(true);
+    expect(matchInstructorStrict(user1, courseEng2)).toBe(true);
+
+    expect(matchInstructorStrict(user2, courseThai)).toBe(true);
+    expect(matchInstructorStrict(user2, courseEng1)).toBe(true);
+    expect(matchInstructorStrict(user2, courseEng2)).toBe(true);
+
+    expect(matchInstructorStrict(user3, courseThai)).toBe(true);
+    expect(matchInstructorStrict(user3, courseEng1)).toBe(true);
+    expect(matchInstructorStrict(user3, courseEng2)).toBe(true);
+  });
+
   it('cleans Thai and English titles uniformly', () => {
     expect(cleanInstructorName('ผศ.ดร.สมชาย')).toBe('สมชาย');
     expect(cleanInstructorName('พระมหาไพศาล')).toBe('ไพศาล');

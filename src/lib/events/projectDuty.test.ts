@@ -102,4 +102,20 @@ describe('hasProjectDuty', () => {
     ];
     expect(hasProjectDuty(committeeTeacher, dummyEvents, registrations)).toBe(true);
   });
+
+  it('ensures regular instructor suppapan.per has false for project duty without explicit coordinator flag', () => {
+    const supapan: AuthUser = {
+      name: 'ผศ.พิเศษ ดร.สุภาพรรณ เพิ่มพูน',
+      email: 'suppapan.per@mcu.ac.th',
+      role: 'INSTRUCTOR',
+    };
+    expect(hasProjectDuty(supapan, dummyEvents)).toBe(false);
+
+    const supapanFallback: AuthUser = {
+      name: 'อาจารย์ (suppapan.per)',
+      email: 'suppapan.per@mcu.ac.th',
+      role: 'INSTRUCTOR',
+    };
+    expect(hasProjectDuty(supapanFallback, dummyEvents)).toBe(false);
+  });
 });

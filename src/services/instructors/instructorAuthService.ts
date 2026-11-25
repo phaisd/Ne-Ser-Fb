@@ -11,16 +11,28 @@ export async function authenticateInstructor(
 ): Promise<Omit<InstructorAccount, 'password'> | null> {
   const accounts = await getInstructorAccounts();
   const cleanInput = (emailOrUsername || '').trim().toLowerCase();
+  const cleanInputVariants = [
+    cleanInput,
+    cleanInput.replace(/suppapan/g, 'supapan'),
+    cleanInput.replace(/supapan/g, 'suppapan'),
+  ];
 
   const found = accounts.find((a) => {
-    const matchEmail = a.email?.toLowerCase() === cleanInput;
-    const matchGmail = a.gmail?.toLowerCase() === cleanInput;
-    const matchName = a.name?.toLowerCase() === cleanInput;
-    const matchNameEn = a.nameEn?.toLowerCase() === cleanInput;
-    const matchId = a.id?.toLowerCase() === cleanInput;
-    const matchPrevId = a.previousIds?.some((p) => p.toLowerCase() === cleanInput);
-    const matchAlias = a.aliases?.some((al) => al.toLowerCase() === cleanInput);
-    return matchEmail || matchGmail || matchName || matchNameEn || matchId || matchPrevId || matchAlias;
+    const aEmail = a.email?.toLowerCase();
+    const aGmail = a.gmail?.toLowerCase();
+    const aName = a.name?.toLowerCase();
+    const aNameEn = a.nameEn?.toLowerCase();
+    const aId = a.id?.toLowerCase();
+    return cleanInputVariants.some(
+      (v) =>
+        aEmail === v ||
+        aGmail === v ||
+        aName === v ||
+        aNameEn === v ||
+        aId === v ||
+        a.previousIds?.some((p) => p.toLowerCase() === v) ||
+        a.aliases?.some((al) => al.toLowerCase() === v)
+    );
   });
 
   if (!found) {

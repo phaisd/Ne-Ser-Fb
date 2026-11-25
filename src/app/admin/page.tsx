@@ -187,12 +187,23 @@ export default function AdminConsolePage() {
           // Sync currentUser name with the real account in database
           setCurrentUser((prev: AuthUser | null) => {
             if (!prev) return prev;
-            const prevEmail = (prev.email || '').toLowerCase();
-            const prevGmail = (prev.gmail || '').toLowerCase();
-            const matched = (usrRes.data as UserAccount[]).find(
+            const prevEmail = (prev.email || '').toLowerCase().trim();
+            const prevGmail = (prev.gmail || '').toLowerCase().trim();
+            const prevEmailVariants = [
+              prevEmail,
+              prevEmail.replace(/suppapan/g, 'supapan'),
+              prevEmail.replace(/supapan/g, 'suppapan'),
+            ].filter(Boolean);
+
+            const matched = (usrRes.data as any[]).find(
               (u) =>
                 (prev.id && u.id === prev.id) ||
-                (prevEmail && (u.email?.toLowerCase() === prevEmail || u.gmail?.toLowerCase() === prevEmail)) ||
+                prevEmailVariants.some(
+                  (v) =>
+                    u.email?.toLowerCase() === v ||
+                    u.gmail?.toLowerCase() === v ||
+                    (Array.isArray(u.aliases) && u.aliases.some((al: string) => al.toLowerCase() === v))
+                ) ||
                 (prevGmail && (u.email?.toLowerCase() === prevGmail || u.gmail?.toLowerCase() === prevGmail))
             );
             const fullNameAccount =
@@ -216,6 +227,8 @@ export default function AdminConsolePage() {
               const updatedUser = {
                 ...prev,
                 name: formattedName,
+                nameEn: fullNameAccount.nameEn || prev.nameEn,
+                aliases: fullNameAccount.aliases || prev.aliases,
                 isActingOfficer: Boolean(fullNameAccount.isActingOfficer),
                 isProjectCoordinator: Boolean((fullNameAccount as any).isProjectCoordinator),
               };
@@ -379,9 +392,12 @@ export default function AdminConsolePage() {
       setActiveTab('EVENTS');
     }
     if (isInstructorOnly) {
-      if (!isProjectDutyHolder && activeTab !== 'ATTENDANCE') {
+      const hasExplicitDuty = Boolean(
+        currentUser?.isProjectCoordinator || currentUser?.isMeditationStaff
+      );
+      if (!hasExplicitDuty && activeTab !== 'ATTENDANCE') {
         setActiveTab('ATTENDANCE');
-      } else if (isProjectDutyHolder && activeTab !== 'EVENTS' && activeTab !== 'ATTENDANCE') {
+      } else if (hasExplicitDuty && activeTab !== 'EVENTS' && activeTab !== 'ATTENDANCE') {
         setActiveTab('ATTENDANCE');
       }
     }
