@@ -8,6 +8,8 @@ import {
   recordVipassanaScanCheckin,
   batchVipassanaOfflineSync,
   batchApproveAndIssueVipassanaCertificates,
+  getEvents,
+  updateEvent,
 } from './eventService';
 import * as storageHelper from './storageHelper';
 
@@ -282,5 +284,60 @@ describe('eventService unit tests', () => {
 
     expect(mockDeleteRows).toHaveBeenCalledWith('Events', [1]);
     expect(mockDeleteRows).toHaveBeenCalledWith('EventRegistrations', [1]);
+  });
+
+  it('merges meditationConfig.groupAssignments seamlessly between Google Sheets and local storage without data loss', async () => {
+    const mockGetValues = vi.fn(async () => [
+      [
+        'evt-100',
+        'โครงการปฏิบัติวิปัสสนา 2569',
+        'MEDITATION',
+        '2026-11-12',
+        '2026-11-21',
+        '04:00 - 21:00 น.',
+        'ศาลายา',
+        '2569',
+        '1',
+        '150',
+        'ACTIVE',
+        'ALL',
+        'ALL',
+        'คณะพุทธศาสตร์',
+        'TRUE',
+        JSON.stringify({
+          groupAssignments: {
+            '1': { groupNumber: 1, advisors: ['พระอาจารย์สมคิด'], vipassanaMasters: ['พระอาจารย์สุพจน์'] },
+          },
+        }),
+      ],
+    ]);
+
+    vi.mocked(storageHelper.getSheetsClient).mockReturnValue({
+      getValues: mockGetValues,
+      appendValues: vi.fn(),
+    } as any);
+
+    vi.mocked(storageHelper.readLocalJson).mockImplementation((file) => {
+      if (file === 'events.json') {
+        return [
+          {
+            id: 'evt-100',
+            title: 'โครงการปฏิบัติวิปัสสนา 2569',
+            meditationConfig: {
+              groupAssignments: {
+                '2': { groupNumber: 2, advisors: ['พระมหาดำรง'], vipassanaMasters: [] },
+              },
+            },
+          },
+        ];
+      }
+      return [];
+    });
+
+    const events = await getEvents();
+    expect(events.length).toBe(1);
+    const ev = events[0];
+    expect(ev.meditationConfig?.groupAssignments?.['1']?.advisors).toContain('พระอาจารย์สมคิด');
+    expect(ev.meditationConfig?.groupAssignments?.['2']?.advisors).toContain('พระมหาดำรง');
   });
 });

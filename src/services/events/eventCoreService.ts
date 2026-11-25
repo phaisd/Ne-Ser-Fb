@@ -11,19 +11,46 @@ export async function getEvents(): Promise<StudentEvent[]> {
   const gClient = getSheetsClient();
   if (gClient) {
     try {
-      const rows = await gClient.getValues('Events!A2:P');
+      const rows = await gClient.getValues('Events!A2:Z');
       if (rows && rows.length > 0) {
-        return rows.map((r) => {
+        const seenInSheets = new Set<string>();
+        const sheetEvents: StudentEvent[] = [];
+
+        for (const r of rows) {
           const id = r[0] || '';
+          if (!id) continue;
+          seenInSheets.add(id);
+
           const local = localMap.get(id) || {};
-          let meditationConfig = local.meditationConfig || {};
+          let sheetMeditationConfig: any = null;
           if (r[15]) {
             try {
-              meditationConfig = typeof r[15] === 'string' ? JSON.parse(r[15]) : r[15];
+              sheetMeditationConfig = typeof r[15] === 'string' ? JSON.parse(r[15]) : r[15];
             } catch {
-              // fallback to local
+              // ignore parse error
             }
           }
+
+          // Safely merge meditationConfig so groupAssignments is preserved from whichever source has it
+          const localMed = local.meditationConfig || {};
+          const remoteMed = sheetMeditationConfig || {};
+          const localAssignments = localMed.groupAssignments || {};
+          const remoteAssignments = remoteMed.groupAssignments || {};
+
+          const mergedAssignments = {
+            ...localAssignments,
+            ...remoteAssignments,
+          };
+
+          const meditationConfig = {
+            ...localMed,
+            ...remoteMed,
+            groupAssignments:
+              Object.keys(mergedAssignments).length > 0
+                ? mergedAssignments
+                : remoteMed.groupAssignments || localMed.groupAssignments || {},
+          };
+
           let seatingConfig = local.seatingConfig || (meditationConfig as any)?.seatingConfig;
           if (r[16]) {
             try {
@@ -35,7 +62,8 @@ export async function getEvents(): Promise<StudentEvent[]> {
               // fallback
             }
           }
-          return {
+
+          sheetEvents.push({
             ...local,
             id,
             title: r[1] || local.title || '',
@@ -51,11 +79,50 @@ export async function getEvents(): Promise<StudentEvent[]> {
             targetDegree: r[11] || local.targetDegree || 'ALL',
             targetProgram: r[12] || local.targetProgram || 'ALL',
             coordinatorName: r[13] || local.coordinatorName || '',
-            showCoordinator: r[14] !== undefined ? (r[14] === 'TRUE' || r[14] === true) : (local.showCoordinator !== false),
+            showCoordinator:
+              r[14] !== undefined
+                ? r[14] === 'TRUE' || r[14] === true
+                : local.showCoordinator !== false,
             meditationConfig,
             seatingConfig,
-          };
-        });
+          });
+        }
+
+        // Include any local events that are NOT present in Google Sheets yet (e.g. newly created events)
+        for (const localEvent of raw) {
+          if (localEvent.id && !seenInSheets.has(localEvent.id)) {
+            sheetEvents.push(localEvent);
+            // Auto-append missing event to Google Sheets to ensure persistence
+            try {
+              const rowValues = [
+                localEvent.id,
+                localEvent.title || '',
+                localEvent.eventType || 'SPECIAL',
+                localEvent.startDate || '',
+                localEvent.endDate || '',
+                localEvent.eventTime || '08:30 - 16:30 น.',
+                localEvent.location || '',
+                localEvent.academicYear || '2569',
+                localEvent.semester || 1,
+                localEvent.maxParticipants || 100,
+                localEvent.status || 'ACTIVE',
+                localEvent.targetDegree || 'ALL',
+                localEvent.targetProgram || 'ALL',
+                localEvent.coordinatorName || '',
+                localEvent.showCoordinator !== false ? 'TRUE' : 'FALSE',
+                JSON.stringify(localEvent.meditationConfig || {}),
+                JSON.stringify(localEvent.seatingConfig || {}),
+              ];
+              await gClient.appendValues('Events!A:Q', [rowValues]);
+            } catch (appendErr) {
+              console.warn('Failed to auto-append missing event to Google Sheets:', appendErr);
+            }
+          }
+        }
+
+        // Cache merged list locally
+        writeLocalJson('events.json', sheetEvents);
+        return sheetEvents;
       }
     } catch (err) {
       console.warn('Google Sheets read error for Events, falling back to local file:', err);

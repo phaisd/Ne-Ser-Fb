@@ -4,6 +4,8 @@ import { getSheetsClient } from '@/lib/google-sheets';
 import { getSystemSettings, updateSystemSettings, convertGoogleDriveUrl } from '@/lib/data-store';
 import { readLocalJson } from '@/services/storageHelper';
 import { requireAdminOrOfficer } from '@/lib/server-auth-guard';
+import { getEvents } from '@/services/eventService';
+import { getEventRegistrations } from '@/services/events/eventRegistrationService';
 import fs from 'fs';
 import path from 'path';
 
@@ -59,7 +61,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    let body: { action?: string } = {};
+    let body: { action?: string; sheetName?: string } = {};
     try {
       body = (await request.json()) as { action?: string };
     } catch {
@@ -125,6 +127,115 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         message: 'สร้างและตั้งค่าหัวตารางแท็บ Students_Archive บน Google Sheets เรียบร้อยแล้ว!',
+      });
+    }
+
+    // Action 1.6: Specific Sync for Events & Vipassana Meditation Groups (Non-destructive)
+    if (body.sheetName === 'Events') {
+      await client.ensureSheetsExist(['Events', 'EventRegistrations']);
+      const localEvents = await getEvents();
+      if (localEvents.length > 0) {
+        const eventHeader = [
+          'id',
+          'title',
+          'eventType',
+          'startDate',
+          'endDate',
+          'eventTime',
+          'location',
+          'academicYear',
+          'semester',
+          'maxParticipants',
+          'status',
+          'targetDegree',
+          'targetProgram',
+          'coordinatorName',
+          'showCoordinator',
+          'meditationConfig',
+          'seatingConfig',
+        ];
+        const eventRows = [
+          eventHeader,
+          ...localEvents.map((evt) => {
+            const meditationConfigWithSeating = {
+              ...(evt.meditationConfig || {}),
+              seatingConfig: evt.seatingConfig || (evt.meditationConfig as any)?.seatingConfig,
+            };
+            return [
+              evt.id || '',
+              evt.title || '',
+              evt.eventType || 'SPECIAL',
+              evt.startDate || '',
+              evt.endDate || '',
+              evt.eventTime || '',
+              evt.location || '',
+              evt.academicYear || '2569',
+              String(evt.semester || 1),
+              String(evt.maxParticipants || 100),
+              evt.status || 'ACTIVE',
+              evt.targetDegree || 'ALL',
+              evt.targetProgram || 'ALL',
+              evt.coordinatorName || '',
+              evt.showCoordinator !== false ? 'TRUE' : 'FALSE',
+              JSON.stringify(meditationConfigWithSeating),
+              JSON.stringify(evt.seatingConfig || {}),
+            ];
+          }),
+        ];
+        await client.updateValues('Events!A1', eventRows);
+      }
+
+      const localRegs = await getEventRegistrations();
+      if (localRegs.length > 0) {
+        const regHeader = [
+          'id',
+          'eventId',
+          'studentCode',
+          'studentName',
+          'major',
+          'yearLevel',
+          'department',
+          'status',
+          'groupName',
+          'groupNumber',
+          'groupSpecificCode',
+          'degreeLevel',
+          'programType',
+          'dailyAttendance',
+          'vipassanaInterviews',
+          'attendedDays',
+          'role',
+          'registeredAt',
+        ];
+        const regRows = [
+          regHeader,
+          ...localRegs.map((r) => [
+            r.id || '',
+            r.eventId || '',
+            r.studentCode || '',
+            r.studentName || '',
+            r.major || '',
+            String(r.yearLevel || 1),
+            r.department || '',
+            r.status || 'REGISTERED',
+            r.groupName || '',
+            String(r.groupNumber || ''),
+            r.groupSpecificCode || '',
+            r.degreeLevel || '',
+            r.programType || '',
+            typeof r.dailyAttendance === 'object' ? JSON.stringify(r.dailyAttendance) : (r.dailyAttendance || '{}'),
+            typeof r.vipassanaInterviews === 'object' ? JSON.stringify(r.vipassanaInterviews) : (r.vipassanaInterviews || '{}'),
+            typeof r.attendedDays === 'object' ? JSON.stringify(r.attendedDays) : (r.attendedDays || '[]'),
+            r.role || 'STUDENT',
+            r.createdAt || new Date().toISOString(),
+          ]),
+        ];
+        await client.updateValues('EventRegistrations!A1', regRows);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'ซิงค์ข้อมูลกิจกรรม โครงการวิปัสสนา และการมอบหมายกลุ่มกับ Google Sheets สำเร็จเรียบร้อยแล้ว (ไม่สูญหาย)',
       });
     }
 
@@ -221,14 +332,104 @@ export async function POST(request: Request) {
       await client.updateValues('Instructors!A1', instRows);
     }
 
-    const eventsRows = readCsvRows('events.csv');
-    if (eventsRows.length > 0) {
-      await client.updateValues('Events!A1', eventsRows);
+    const localEvents = await getEvents();
+    if (localEvents.length > 0) {
+      const eventHeader = [
+        'id',
+        'title',
+        'eventType',
+        'startDate',
+        'endDate',
+        'eventTime',
+        'location',
+        'academicYear',
+        'semester',
+        'maxParticipants',
+        'status',
+        'targetDegree',
+        'targetProgram',
+        'coordinatorName',
+        'showCoordinator',
+        'meditationConfig',
+        'seatingConfig',
+      ];
+      const eventRows = [
+        eventHeader,
+        ...localEvents.map((evt) => {
+          const meditationConfigWithSeating = {
+            ...(evt.meditationConfig || {}),
+            seatingConfig: evt.seatingConfig || (evt.meditationConfig as any)?.seatingConfig,
+          };
+          return [
+            evt.id || '',
+            evt.title || '',
+            evt.eventType || 'SPECIAL',
+            evt.startDate || '',
+            evt.endDate || '',
+            evt.eventTime || '',
+            evt.location || '',
+            evt.academicYear || '2569',
+            String(evt.semester || 1),
+            String(evt.maxParticipants || 100),
+            evt.status || 'ACTIVE',
+            evt.targetDegree || 'ALL',
+            evt.targetProgram || 'ALL',
+            evt.coordinatorName || '',
+            evt.showCoordinator !== false ? 'TRUE' : 'FALSE',
+            JSON.stringify(meditationConfigWithSeating),
+            JSON.stringify(evt.seatingConfig || {}),
+          ];
+        }),
+      ];
+      await client.updateValues('Events!A1', eventRows);
     }
 
-    const eventRegRows = readCsvRows('event_registrations.csv');
-    if (eventRegRows.length > 0) {
-      await client.updateValues('EventRegistrations!A1', eventRegRows);
+    const localRegs = await getEventRegistrations();
+    if (localRegs.length > 0) {
+      const regHeader = [
+        'id',
+        'eventId',
+        'studentCode',
+        'studentName',
+        'major',
+        'yearLevel',
+        'department',
+        'status',
+        'groupName',
+        'groupNumber',
+        'groupSpecificCode',
+        'degreeLevel',
+        'programType',
+        'dailyAttendance',
+        'vipassanaInterviews',
+        'attendedDays',
+        'role',
+        'registeredAt',
+      ];
+      const regRows = [
+        regHeader,
+        ...localRegs.map((r) => [
+          r.id || '',
+          r.eventId || '',
+          r.studentCode || '',
+          r.studentName || '',
+          r.major || '',
+          String(r.yearLevel || 1),
+          r.department || '',
+          r.status || 'REGISTERED',
+          r.groupName || '',
+          String(r.groupNumber || ''),
+          r.groupSpecificCode || '',
+          r.degreeLevel || '',
+          r.programType || '',
+          typeof r.dailyAttendance === 'object' ? JSON.stringify(r.dailyAttendance) : (r.dailyAttendance || '{}'),
+          typeof r.vipassanaInterviews === 'object' ? JSON.stringify(r.vipassanaInterviews) : (r.vipassanaInterviews || '{}'),
+          typeof r.attendedDays === 'object' ? JSON.stringify(r.attendedDays) : (r.attendedDays || '[]'),
+          r.role || 'STUDENT',
+          r.createdAt || new Date().toISOString(),
+        ]),
+      ];
+      await client.updateValues('EventRegistrations!A1', regRows);
     }
 
     // Export System Settings & Logo to 'Settings' tab

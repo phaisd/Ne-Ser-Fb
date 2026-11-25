@@ -141,7 +141,25 @@
           "nameEn": "Group 16",
           "program": "THAI"
         }
-      ]
+      ],
+      "groupAssignments": {
+        "1": { "groupNumber": 1, "groupName": "กลุ่มที่ 1", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "2": { "groupNumber": 2, "groupName": "กลุ่มที่ 2", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "3": { "groupNumber": 3, "groupName": "กลุ่มที่ 3", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "4": { "groupNumber": 4, "groupName": "กลุ่มที่ 4", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "5": { "groupNumber": 5, "groupName": "กลุ่มที่ 5", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "6": { "groupNumber": 6, "groupName": "กลุ่มที่ 6", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "7": { "groupNumber": 7, "groupName": "กลุ่มที่ 7", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "8": { "groupNumber": 8, "groupName": "กลุ่มที่ 8", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "9": { "groupNumber": 9, "groupName": "กลุ่มที่ 9", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "10": { "groupNumber": 10, "groupName": "กลุ่มที่ 10", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "11": { "groupNumber": 11, "groupName": "กลุ่มที่ 11", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "12": { "groupNumber": 12, "groupName": "กลุ่มที่ 12 (English)", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "13": { "groupNumber": 13, "groupName": "กลุ่มที่ 13", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "14": { "groupNumber": 14, "groupName": "กลุ่มที่ 14", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "15": { "groupNumber": 15, "groupName": "กลุ่มที่ 15", "advisors": [], "vipassanaMasters": [], "notes": "" },
+        "16": { "groupNumber": 16, "groupName": "กลุ่มที่ 16", "advisors": [], "vipassanaMasters": [], "notes": "" }
+      }
     },
     "createdAt": "2026-11-20T09:57:01.983Z",
     "updatedAt": "2026-11-21T07:09:15.088Z",
