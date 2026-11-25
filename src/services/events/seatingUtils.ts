@@ -10,12 +10,31 @@ export type ParticipantStatusCategory =
   | 'UNKNOWN';
 
 /**
+ * Normalizes seat code to standard format (e.g. "Q-3" -> "Q-03", "N-013" -> "N-13", "R-1" -> "R-01", "a-1" -> "A-01")
+ */
+export function normalizeSeatCode(raw: string): string {
+  if (!raw) return '';
+  const clean = raw.trim().toUpperCase();
+  const match = clean.match(/^([A-Z0-9]+(?:-[A-Z]+)?)[-_](\d+)$/i);
+  if (match) {
+    const prefixAndRow = match[1].toUpperCase();
+    const colNum = parseInt(match[2], 10);
+    const colStr = colNum < 10 ? `0${colNum}` : String(colNum);
+    return `${prefixAndRow}-${colStr}`;
+  }
+  return clean;
+}
+
+/**
  * Helper to generate seat codes for a zone
- * Example: zone prefix "A", row 1, col 5 -> "A-05" or "A-1-05"
+ * Example: zone prefix "", row 1, col 5 -> "A-05" or with prefix "B-", row 1, col 5 -> "B-A-05"
  */
 export function generateZoneSeatCodes(zone: SeatZone, disabledSeats: string[] = []): string[] {
   const disabledSet = new Set(disabledSeats.map((s) => s.trim().toUpperCase()));
-  const prefix = (zone.prefix || zone.name.substring(0, 1) || 'Z').trim().toUpperCase();
+  let prefix = (zone.prefix ?? '').trim().toUpperCase();
+  if (prefix === 'A' && zone.rows <= 26) {
+    prefix = '';
+  }
   const seats: string[] = [];
 
   for (let r = 1; r <= zone.rows; r++) {

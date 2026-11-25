@@ -6,6 +6,7 @@ import { syncUpdatedRegistrationsToSheets } from './vipassanaService';
 import {
   generateZoneSeatCodes,
   detectParticipantStatus,
+  normalizeSeatCode,
   type ParticipantStatusCategory,
 } from './seatingUtils';
 
@@ -66,7 +67,7 @@ export async function assignSeatsAuto(
       color: 'amber',
       rows: 15,
       cols: 20,
-      prefix: 'A',
+      prefix: '',
       description: 'ผังแถว-คอลัมน์มาตรฐาน',
     };
     seatingConfig = {
@@ -538,7 +539,7 @@ export async function batchImportSeatingFromRows(
     const target = regMap.get(cleanCode);
     if (target) {
       if (row.seatNumber !== undefined) {
-        target.seatNumber = row.seatNumber ? row.seatNumber.trim().toUpperCase() : undefined;
+        target.seatNumber = row.seatNumber ? normalizeSeatCode(row.seatNumber) : undefined;
       }
       if (row.seatZone !== undefined) {
         target.seatZone = row.seatZone ? row.seatZone.trim() : target.seatZone;

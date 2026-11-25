@@ -22,9 +22,11 @@ import {
 import type { StudentEvent, EventRegistration, EventSeatingConfig, SeatZone } from '@/types/event';
 import {
   detectParticipantStatus,
+  normalizeSeatCode,
   STATUS_THEMES,
   type ParticipantStatusCategory,
 } from '@/services/events/seatingUtils';
+import { formatSeatCode } from './seat-map';
 
 interface VipassanaSeatMapPrintModalProps {
   isOpen: boolean;
@@ -74,7 +76,12 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
     const map = new Map<string, EventRegistration>();
     registrations.forEach((r) => {
       if (r.seatNumber) {
-        map.set(r.seatNumber.trim().toUpperCase(), r);
+        const raw = r.seatNumber.trim().toUpperCase();
+        map.set(raw, r);
+        const norm = normalizeSeatCode(raw);
+        if (norm) {
+          map.set(norm, r);
+        }
       }
     });
     return map;
@@ -646,11 +653,7 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
                                   style={{ gridTemplateColumns: `repeat(${zone.cols}, minmax(0, 1fr))` }}
                                 >
                                   {Array.from({ length: zone.cols }, (_, c) => {
-                                    const colStr = c + 1 < 10 ? `0${c + 1}` : `${c + 1}`;
-                                    const seatCode =
-                                      zone.rows <= 26
-                                        ? `${prefix}${rowChar}-${colStr}`
-                                        : `${prefix}${r + 1}-${colStr}`;
+                                    const seatCode = formatSeatCode(zone, r, c);
                                     const isDisabled = disabledSet.has(seatCode.toUpperCase());
                                     const occupant = seatOccupantMap.get(seatCode.toUpperCase());
                                     const isCheckedIn = Boolean(occupant?.seatCheckinAt);
@@ -781,11 +784,8 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
                   let zoneCheckedIn = 0;
 
                   for (let r = 0; r < zone.rows; r++) {
-                    const rowChar = String.fromCharCode(65 + r);
                     for (let c = 0; c < zone.cols; c++) {
-                      const colStr = c + 1 < 10 ? `0${c + 1}` : `${c + 1}`;
-                      const code =
-                        zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${r + 1}-${colStr}`;
+                      const code = formatSeatCode(zone, r, c);
                       if (disabledSet.has(code.toUpperCase())) {
                         zoneCapacity--;
                       } else {
@@ -892,11 +892,7 @@ export const VipassanaSeatMapPrintModal: React.FC<VipassanaSeatMapPrintModalProp
                                   style={{ gridTemplateColumns: `repeat(${zone.cols}, minmax(0, 1fr))` }}
                                 >
                                   {Array.from({ length: zone.cols }, (_, c) => {
-                                    const colStr = c + 1 < 10 ? `0${c + 1}` : `${c + 1}`;
-                                    const seatCode =
-                                      zone.rows <= 26
-                                        ? `${prefix}${rowChar}-${colStr}`
-                                        : `${prefix}${r + 1}-${colStr}`;
+                                    const seatCode = formatSeatCode(zone, r, c);
                                     const isDisabled = disabledSet.has(seatCode.toUpperCase());
                                     const occupant = seatOccupantMap.get(seatCode.toUpperCase());
                                     const isCheckedIn = Boolean(occupant?.seatCheckinAt);

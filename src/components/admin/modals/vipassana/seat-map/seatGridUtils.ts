@@ -1,13 +1,23 @@
 import type { SeatZone } from '@/types/event';
+import { normalizeSeatCode } from '@/services/events/seatingUtils';
+
+export { normalizeSeatCode };
 
 /**
- * Helper: Parse a seat code within a zone (e.g. D-03, AD-03, G-12) to { rIdx, cIdx }
+ * Helper: Parse a seat code within a zone (e.g. D-03, AD-03, G-12, Q-3) to { rIdx, cIdx }
  */
 export function parseSeatCode(seatCode: string, zone: SeatZone): { rIdx: number; cIdx: number } | null {
-  let code = seatCode.trim().toUpperCase();
-  const prefix = (zone.prefix ?? '').trim().toUpperCase();
+  let code = normalizeSeatCode(seatCode);
+  let prefix = (zone.prefix ?? '').trim().toUpperCase();
+  if (prefix === 'A' && zone.rows <= 26) {
+    prefix = '';
+  }
+
   if (prefix && code.startsWith(prefix)) {
-    code = code.slice(prefix.length);
+    const withoutPrefix = code.slice(prefix.length).replace(/^-+/, '');
+    if (/^[A-Z0-9]+-\d+$/.test(withoutPrefix)) {
+      code = withoutPrefix;
+    }
   }
   const parts = code.split('-');
   if (parts.length !== 2) return null;
@@ -33,7 +43,10 @@ export function parseSeatCode(seatCode: string, zone: SeatZone): { rIdx: number;
  * Helper: Format { rIdx, cIdx } back to standard seatCode for a zone
  */
 export function formatSeatCode(zone: SeatZone, rIdx: number, cIdx: number): string {
-  const prefix = (zone.prefix ?? '').trim().toUpperCase();
+  let prefix = (zone.prefix ?? '').trim().toUpperCase();
+  if (prefix === 'A' && zone.rows <= 26) {
+    prefix = '';
+  }
   const rowChar = String.fromCharCode(65 + rIdx);
   const colStr = cIdx + 1 < 10 ? `0${cIdx + 1}` : `${cIdx + 1}`;
   return zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${rIdx + 1}-${colStr}`;

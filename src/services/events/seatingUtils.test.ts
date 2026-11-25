@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { detectParticipantStatus } from './seatingUtils';
+import { detectParticipantStatus, normalizeSeatCode, generateZoneSeatCodes } from './seatingUtils';
+import { formatSeatCode, parseSeatCode } from '@/components/admin/modals/vipassana/seat-map/seatGridUtils';
+import type { SeatZone } from '@/types/event';
 
 describe('detectParticipantStatus', () => {
   it('detects Thai monk names without explicit role', () => {
@@ -48,5 +50,75 @@ describe('detectParticipantStatus', () => {
     expect(detectParticipantStatus('Khun Maung Chan Aung', 'คฤหัสถ์ชาย').category).toBe('LAY_MALE');
     expect(detectParticipantStatus('Miss Jesy Chakma', 'คฤหัสถ์หญิง').category).toBe('LAY_FEMALE');
     expect(detectParticipantStatus('Jesy Chakma', 'คฤหัสถ์หญิง').category).toBe('LAY_FEMALE');
+  });
+});
+
+describe('normalizeSeatCode', () => {
+  it('normalizes single-digit columns to two-digit format', () => {
+    expect(normalizeSeatCode('Q-3')).toBe('Q-03');
+    expect(normalizeSeatCode('R-1')).toBe('R-01');
+    expect(normalizeSeatCode('S-4')).toBe('S-04');
+    expect(normalizeSeatCode('A-1')).toBe('A-01');
+  });
+
+  it('normalizes multi-digit/zero-padded numbers correctly', () => {
+    expect(normalizeSeatCode('N-013')).toBe('N-13');
+    expect(normalizeSeatCode('N-014')).toBe('N-14');
+    expect(normalizeSeatCode('A-01')).toBe('A-01');
+    expect(normalizeSeatCode('B-14')).toBe('B-14');
+  });
+
+  it('supports underscore delimiter and prefixes', () => {
+    expect(normalizeSeatCode('A_05')).toBe('A-05');
+    expect(normalizeSeatCode('B-A-1')).toBe('B-A-01');
+    expect(normalizeSeatCode('z1-a-2')).toBe('Z1-A-02');
+  });
+
+  it('handles empty or blank values safely', () => {
+    expect(normalizeSeatCode('')).toBe('');
+    expect(normalizeSeatCode('   ')).toBe('');
+  });
+});
+
+describe('generateZoneSeatCodes and formatSeatCode', () => {
+  const standardZone: SeatZone = {
+    id: 'zone-1',
+    name: 'โซน A (พระภิกษุ)',
+    color: 'amber',
+    rows: 19,
+    cols: 14,
+    prefix: '',
+  };
+
+  it('generates rows A through S without legacy duplicated prefix', () => {
+    const codes = generateZoneSeatCodes(standardZone);
+    expect(codes[0]).toBe('A-01');
+    expect(codes[13]).toBe('A-14');
+    expect(codes[14]).toBe('B-01');
+    // Row 19 is 'S'
+    expect(codes).toContain('S-01');
+    expect(codes).toContain('S-14');
+    expect(codes).not.toContain('AA-01');
+  });
+
+  it('handles legacy prefix "A" by formatting standard single-letter rows', () => {
+    const legacyZone: SeatZone = {
+      id: 'zone-legacy',
+      name: 'โซน A',
+      color: 'amber',
+      rows: 10,
+      cols: 10,
+      prefix: 'A',
+    };
+    expect(formatSeatCode(legacyZone, 0, 0)).toBe('A-01');
+    expect(formatSeatCode(legacyZone, 1, 0)).toBe('B-01');
+    expect(parseSeatCode('A-01', legacyZone)).toEqual({ rIdx: 0, cIdx: 0 });
+    expect(parseSeatCode('B-01', legacyZone)).toEqual({ rIdx: 1, cIdx: 0 });
+  });
+
+  it('parses seat codes correctly including single-digit unnormalized codes', () => {
+    expect(parseSeatCode('Q-3', standardZone)).toEqual({ rIdx: 16, cIdx: 2 });
+    expect(parseSeatCode('S-06', standardZone)).toEqual({ rIdx: 18, cIdx: 5 });
+    expect(parseSeatCode('N-013', standardZone)).toEqual({ rIdx: 13, cIdx: 12 });
   });
 });

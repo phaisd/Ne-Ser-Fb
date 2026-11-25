@@ -48,6 +48,7 @@ import type { StudentEvent, EventRegistration, EventSeatingConfig, SeatZone } fr
 import {
   generateZoneSeatCodes,
   detectParticipantStatus,
+  normalizeSeatCode,
   STATUS_THEMES,
   type ParticipantStatusCategory,
 } from '@/services/events/seatingUtils';
@@ -109,7 +110,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           color: 'amber',
           rows: 10,
           cols: 15,
-          prefix: 'A',
+          prefix: '',
           description: 'ฝั่งด้านหน้า / ทิศตะวันออก',
         },
       ],
@@ -252,7 +253,12 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     const map = new Map<string, EventRegistration>();
     registrations.forEach((r) => {
       if (r.seatNumber) {
-        map.set(r.seatNumber.trim().toUpperCase(), r);
+        const raw = r.seatNumber.trim().toUpperCase();
+        map.set(raw, r);
+        const norm = normalizeSeatCode(raw);
+        if (norm) {
+          map.set(norm, r);
+        }
       }
     });
     return map;
@@ -676,7 +682,10 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       const rawCode = codeCol !== -1 ? String(row[codeCol] || '').trim() : '';
       const rawGroupCode = groupCodeCol !== -1 ? String(row[groupCodeCol] || '').trim() : '';
       const rawName = nameCol !== -1 ? String(row[nameCol] || '').trim() : '';
-      const rawSeat = String(row[seatCol] || '').trim().toUpperCase();
+      let rawSeat = seatCol !== -1 && row[seatCol] ? String(row[seatCol] || '').trim().toUpperCase() : '';
+      if (rawSeat) {
+        rawSeat = normalizeSeatCode(rawSeat);
+      }
       const rawZone = zoneCol !== -1 && row[zoneCol] ? String(row[zoneCol]).trim() : '';
       // พรรษา: undefined = ไม่มีคอลัมน์ (ไม่แตะข้อมูลเดิม), '' = เว้นว่าง (ล้างค่า)
       let rawVasa: string | undefined = undefined;
@@ -840,6 +849,76 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
 
     setIsImporting(true);
     try {
+      // 1. Calculate required rows and columns from imported seat codes
+      let maxRowIdx = 0;
+      let maxColIdx = 0;
+      let hasPrefixedZone = false;
+
+      validRows.forEach((r) => {
+        if (!r.seatNumber) return;
+        const norm = normalizeSeatCode(r.seatNumber);
+        // Single letter row: e.g. "A-01", "S-14"
+        const singleMatch = norm.match(/^([A-Z])[-_](\d+)$/i);
+        if (singleMatch) {
+          const rowChar = singleMatch[1].toUpperCase();
+          const rNum = rowChar.charCodeAt(0) - 64; // A=1, B=2, ..., S=19
+          const cNum = parseInt(singleMatch[2], 10);
+          if (rNum > maxRowIdx) maxRowIdx = rNum;
+          if (cNum > maxColIdx) maxColIdx = cNum;
+        } else {
+          // Prefixed zone like "B-A-01" or numbered row like "1-01"
+          const multiMatch = norm.match(/^([A-Z0-9]+)[-_]([A-Z]|\d+)[-_](\d+)$/i);
+          if (multiMatch) {
+            hasPrefixedZone = true;
+            const rPart = multiMatch[2].toUpperCase();
+            const rNum = /^[A-Z]$/.test(rPart) ? rPart.charCodeAt(0) - 64 : parseInt(rPart, 10);
+            const cNum = parseInt(multiMatch[3], 10);
+            if (rNum > maxRowIdx) maxRowIdx = rNum;
+            if (cNum > maxColIdx) maxColIdx = cNum;
+          }
+        }
+      });
+
+      // 2. If imported seats require more rows/cols than current config, auto-expand and save seatingConfig
+      if (maxRowIdx > 0 && config.zones.length > 0) {
+        const firstZone = config.zones[0];
+        const needMoreRows = maxRowIdx > firstZone.rows;
+        const needMoreCols = maxColIdx > firstZone.cols;
+        const needPrefixFix = !hasPrefixedZone && firstZone.prefix === 'A';
+
+        if (needMoreRows || needMoreCols || needPrefixFix) {
+          const updatedZones = config.zones.map((z, idx) => {
+            if (idx === 0) {
+              return {
+                ...z,
+                rows: Math.max(z.rows, maxRowIdx),
+                cols: Math.max(z.cols, maxColIdx),
+                prefix: needPrefixFix ? '' : (z.prefix || ''),
+              };
+            }
+            return z;
+          });
+
+          const updatedConfig: EventSeatingConfig = {
+            ...config,
+            zones: updatedZones,
+            updatedAt: new Date().toISOString(),
+          };
+
+          await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'save_seating_config',
+              eventId: event.id,
+              config: updatedConfig,
+            }),
+          });
+          setConfig(updatedConfig);
+        }
+      }
+
+      // 3. Save student seating assignments
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -849,7 +928,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
           resetExistingSeats,
           rows: validRows.map((r) => ({
             studentCode: r.studentCode,
-            seatNumber: r.seatNumber,
+            seatNumber: r.seatNumber ? normalizeSeatCode(r.seatNumber) : undefined,
             seatZone: r.seatZone,
             vasa: r.vasa,
             seatCheckedIn: r.seatCheckedIn,
@@ -860,10 +939,15 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'นำเข้าไม่สำเร็จ');
 
+      const assignedInFile = validRows.filter((r) => Boolean(r.seatNumber)).length;
+      const unassignedInFile = validRows.length - assignedInFile;
+
       setMessage({
         text:
           data.message ||
-          `บันทึกผังที่นั่งจากไฟล์สำเร็จ ${validRows.length} คน (ตรงตามข้อมูลนิสิตในกลุ่ม)!`,
+          `บันทึกผังที่นั่งจากไฟล์สำเร็จ ${validRows.length} คน (มีที่นั่ง ${assignedInFile} คน${
+            unassignedInFile > 0 ? `, ยังไม่มีที่นั่งในไฟล์ ${unassignedInFile} คน สามารถกด "จัดที่นั่งอัตโนมัติ" เพิ่มเติมได้` : ''
+          })!`,
         type: 'success',
       });
       setIsImportExportModalOpen(false);
@@ -912,18 +996,14 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   // Set representative status designation for an entire row
   const handleDesignateRowStatus = async (
     zone: SeatZone,
-    rowChar: string,
+    _rowChar: string,
     rIdx: number,
     status: ParticipantStatusCategory | null
   ) => {
     const designations = { ...(config.seatDesignations || {}) };
-    const prefix = (zone.prefix ?? '').trim().toUpperCase();
 
-    for (let c = 1; c <= zone.cols; c++) {
-      const colStr = c < 10 ? `0${c}` : `${c}`;
-      const seatCode =
-        zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${rIdx + 1}-${colStr}`;
-      const upperCode = seatCode.toUpperCase();
+    for (let c = 0; c < zone.cols; c++) {
+      const upperCode = formatSeatCode(zone, rIdx, c).toUpperCase();
       if (!status) {
         delete designations[upperCode];
       } else {
@@ -945,14 +1025,9 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     status: ParticipantStatusCategory | null
   ) => {
     const designations = { ...(config.seatDesignations || {}) };
-    const prefix = (zone.prefix ?? '').trim().toUpperCase();
-    const colStr = cIdx < 10 ? `0${cIdx}` : `${cIdx}`;
 
-    for (let r = 1; r <= zone.rows; r++) {
-      const rowChar = String.fromCharCode(64 + r);
-      const seatCode =
-        zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${r}-${colStr}`;
-      const upperCode = seatCode.toUpperCase();
+    for (let r = 0; r < zone.rows; r++) {
+      const upperCode = formatSeatCode(zone, r, cIdx - 1).toUpperCase();
       if (!status) {
         delete designations[upperCode];
       } else {
@@ -970,22 +1045,18 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
   // Toggle an entire column as Aisle / Walkway (ทางเดินและทางบิณฑบาตร)
   const handleToggleColAisle = async (zone: SeatZone, cIdx: number) => {
     const disabled = new Set(config.disabledSeats || []);
-    const prefix = (zone.prefix ?? '').trim().toUpperCase();
-    const colStr = cIdx < 10 ? `0${cIdx}` : `${cIdx}`;
 
     let allDisabled = true;
-    for (let r = 1; r <= zone.rows; r++) {
-      const rowChar = String.fromCharCode(64 + r);
-      const seatCode = (zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${r}-${colStr}`).toUpperCase();
+    for (let r = 0; r < zone.rows; r++) {
+      const seatCode = formatSeatCode(zone, r, cIdx - 1).toUpperCase();
       if (!disabled.has(seatCode)) {
         allDisabled = false;
         break;
       }
     }
 
-    for (let r = 1; r <= zone.rows; r++) {
-      const rowChar = String.fromCharCode(64 + r);
-      const seatCode = (zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${r}-${colStr}`).toUpperCase();
+    for (let r = 0; r < zone.rows; r++) {
+      const seatCode = formatSeatCode(zone, r, cIdx - 1).toUpperCase();
       if (allDisabled) {
         disabled.delete(seatCode);
       } else {
@@ -1928,7 +1999,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                                     return next;
                                   });
                                 } else {
-                                  setSelectedSeat(`${prefix}${rowChar}-01`);
+                                  setSelectedSeat(formatSeatCode(zone, rIdx, 0));
                                 }
                               }}
                               className={`w-7 text-center text-xs font-black py-1 rounded cursor-pointer transition ${
@@ -1951,9 +2022,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                               style={{ gridTemplateColumns: `repeat(${zone.cols}, minmax(36px, 1fr))` }}
                             >
                               {Array.from({ length: zone.cols }, (_, cIdx) => {
-                                const colStr = cIdx + 1 < 10 ? `0${cIdx + 1}` : `${cIdx + 1}`;
-                                const seatCode =
-                                  zone.rows <= 26 ? `${prefix}${rowChar}-${colStr}` : `${prefix}${rIdx + 1}-${colStr}`;
+                                const seatCode = formatSeatCode(zone, rIdx, cIdx);
                                 const isDisabled = disabledSet.has(seatCode.toUpperCase());
                                 const occupant = seatOccupantMap.get(seatCode.toUpperCase());
                                 const isCheckedIn = Boolean(occupant?.seatCheckinAt);
@@ -2500,10 +2569,11 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                         <select
                           onChange={(e) => {
                             if (!e.target.value) return;
-                            const zone = config.zones.find((z) => selectedSeat.toUpperCase().startsWith((z.prefix || 'Z').toUpperCase())) || config.zones[0];
-                            const parts = selectedSeat.split('-');
-                            const rowChar = parts[0]?.replace(/^[A-Za-z]+/, '') || 'A';
-                            handleDesignateRowStatus(zone, rowChar, 0, e.target.value === 'CLEAR' ? null : (e.target.value as ParticipantStatusCategory));
+                            const zone = config.zones.find((z) => z.prefix && selectedSeat.toUpperCase().startsWith(z.prefix.toUpperCase())) || config.zones[0];
+                            const parsed = parseSeatCode(selectedSeat, zone);
+                            const rIdx = parsed ? parsed.rIdx : 0;
+                            const rowChar = String.fromCharCode(65 + rIdx);
+                            handleDesignateRowStatus(zone, rowChar, rIdx, e.target.value === 'CLEAR' ? null : (e.target.value as ParticipantStatusCategory));
                             e.target.value = '';
                           }}
                           className="w-full text-[10.5px] p-1.5 bg-white border border-slate-300 rounded-lg font-bold text-slate-700 cursor-pointer"
@@ -2521,9 +2591,9 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
                         <select
                           onChange={(e) => {
                             if (!e.target.value) return;
-                            const zone = config.zones.find((z) => selectedSeat.toUpperCase().startsWith((z.prefix || 'Z').toUpperCase())) || config.zones[0];
-                            const parts = selectedSeat.split('-');
-                            const colNum = parseInt(parts[1] || '1', 10);
+                            const zone = config.zones.find((z) => z.prefix && selectedSeat.toUpperCase().startsWith(z.prefix.toUpperCase())) || config.zones[0];
+                            const parsed = parseSeatCode(selectedSeat, zone);
+                            const colNum = parsed ? parsed.cIdx + 1 : 1;
                             handleDesignateColStatus(zone, colNum, e.target.value === 'CLEAR' ? null : (e.target.value as ParticipantStatusCategory));
                             e.target.value = '';
                           }}
