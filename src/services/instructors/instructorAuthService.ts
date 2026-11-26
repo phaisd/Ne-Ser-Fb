@@ -145,10 +145,10 @@ export async function authenticateStudent(
   }
 
   // Password check: Default password for students is 'mcu123456' or studentCode, or 'mcu' + last 4 digits
-  let hasChangedPassword = Boolean((found as any).hasChangedPassword);
+  let hasChangedPassword = Boolean(found.hasChangedPassword);
   if (passwordInput) {
     const last4 = (found.studentCode || '').slice(-4);
-    const customPass = (found as any).password;
+    const customPass = found.password;
     const isCustomMatch = customPass ? await verifyPassword(passwordInput, customPass) : false;
     const isDefaultMatch =
       passwordInput === 'mcu123456' ||
@@ -313,7 +313,7 @@ export async function updateUserProfile(
       instructorType: updates.instructorType?.trim() || 'เจ้าหน้าที่',
       role: updates.role || 'OFFICER',
       isActingOfficer: Boolean(updates.isActingOfficer),
-      isProjectCoordinator: Boolean((updates as any).isProjectCoordinator),
+      isProjectCoordinator: Boolean(updates.isProjectCoordinator),
       isActive: true,
       isSuspended: false,
       password: 'Fb8323mcu',
@@ -439,9 +439,9 @@ export async function updateUserProfile(
         ? Boolean(updates.isActingOfficer)
         : Boolean(current.isActingOfficer),
     isProjectCoordinator:
-      (updates as any).isProjectCoordinator !== undefined
-        ? Boolean((updates as any).isProjectCoordinator)
-        : Boolean((current as any).isProjectCoordinator),
+      updates.isProjectCoordinator !== undefined
+        ? Boolean(updates.isProjectCoordinator)
+        : Boolean(current.isProjectCoordinator),
     updatedAt: new Date().toISOString(),
   };
 
@@ -795,8 +795,8 @@ export async function mergeDuplicateInstructors(
     primary.ecclesiasticalTitle = duplicate.ecclesiasticalTitle;
   if (!primary.phoneNumber && duplicate.phoneNumber) primary.phoneNumber = duplicate.phoneNumber;
   if (duplicate.isActingOfficer && !primary.isActingOfficer) primary.isActingOfficer = true;
-  if ((duplicate as any).isProjectCoordinator && !(primary as any).isProjectCoordinator) {
-    (primary as any).isProjectCoordinator = true;
+  if (duplicate.isProjectCoordinator && !primary.isProjectCoordinator) {
+    primary.isProjectCoordinator = true;
   }
   primary.updatedAt = new Date().toISOString();
 

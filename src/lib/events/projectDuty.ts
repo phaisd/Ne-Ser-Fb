@@ -1,4 +1,4 @@
-import type { AuthUser } from '@/types';
+import type { AuthUser, StudentEvent, EventRegistration, MeditationGroupAssignment } from '@/types';
 import { isAdminOrOfficer } from '@/lib/auth-client';
 import { getSubstantiveTokens } from '@/lib/utils/name-matcher';
 
@@ -20,8 +20,8 @@ import { getSubstantiveTokens } from '@/lib/utils/name-matcher';
  */
 export function hasProjectDuty(
   user?: AuthUser | null,
-  eventsList?: any[],
-  registrationsList?: any[]
+  eventsList?: StudentEvent[],
+  registrationsList?: Array<Partial<EventRegistration>>
 ): boolean {
   if (!user) return false;
 
@@ -33,12 +33,12 @@ export function hasProjectDuty(
   if (Boolean(user.isActingOfficer)) return true;
 
   // 2. Explicit project assignment flags on user profile
-  if ((user as any).isProjectCoordinator === true || (user as any).isMeditationStaff === true) {
+  if (user.isProjectCoordinator === true || user.isMeditationStaff === true) {
     return true;
   }
 
   // 3. Instructor type indicator
-  const instType = String((user as any).instructorType || '');
+  const instType = String(user.instructorType || '');
   if (
     instType.includes('วิปัสสนา') ||
     instType.includes('โครงการ') ||
@@ -55,8 +55,8 @@ export function hasProjectDuty(
   const userNames = [
     user.name,
     user.nameEn,
-    (user as any).fullName,
-    ...((user as any).aliases || []),
+    user.fullName,
+    ...(user.aliases || []),
   ]
     .filter(Boolean)
     .map((n) => String(n).trim());
@@ -115,7 +115,7 @@ export function hasProjectDuty(
       // b) Meditation Group Assignments (advisors or vipassanaMasters)
       const groupAssignments = evt.meditationConfig?.groupAssignments;
       if (groupAssignments && typeof groupAssignments === 'object') {
-        for (const g of Object.values(groupAssignments) as any[]) {
+        for (const g of Object.values(groupAssignments) as (MeditationGroupAssignment | undefined)[]) {
           if (!g) continue;
           if (
             Array.isArray(g.advisors) &&

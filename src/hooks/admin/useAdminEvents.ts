@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from 'react';
 import type { StudentEvent, EventRegistration, SystemSettings } from '@/types';
-import { downloadCsvFile } from '@/lib/utils';
+import { downloadCsvFile, getEventAcademicYear } from '@/lib/utils';
 import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
 import { getAuthUser } from '@/lib/auth-client';
+
+export { getEventAcademicYear };
 
 export const DEFAULT_EVENT_FORM: Partial<StudentEvent> = {
   title: '',
@@ -28,17 +30,6 @@ export const DEFAULT_EVENT_FORM: Partial<StudentEvent> = {
   coordinatorTitle: 'ผู้รับผิดชอบโครงการ',
   coordinatorPhone: '',
   coordinatorEmail: '',
-};
-
-export const getEventAcademicYear = (e: StudentEvent): string => {
-  if (e.academicYear && e.academicYear.trim()) return e.academicYear.trim();
-  if (e.startDate) {
-    const yr = parseInt(e.startDate.slice(0, 4), 10);
-    if (!isNaN(yr)) {
-      return String(yr < 2500 ? yr + 543 : yr);
-    }
-  }
-  return '2569';
 };
 
 interface UseAdminEventsParams {

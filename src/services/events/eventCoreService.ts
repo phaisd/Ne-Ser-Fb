@@ -51,7 +51,7 @@ export async function getEvents(): Promise<StudentEvent[]> {
                 : remoteMed.groupAssignments || localMed.groupAssignments || {},
           };
 
-          let seatingConfig = local.seatingConfig || (meditationConfig as any)?.seatingConfig;
+          let seatingConfig = local.seatingConfig || meditationConfig?.seatingConfig;
           if (r[16]) {
             try {
               const parsed = typeof r[16] === 'string' ? JSON.parse(r[16]) : r[16];
@@ -299,7 +299,7 @@ export async function updateEvent(id: string, updates: Partial<StudentEvent>): P
       // Ensure seatingConfig is safely backed up inside meditationConfig as well
       const meditationConfigWithSeating = {
         ...(updated.meditationConfig || {}),
-        seatingConfig: updated.seatingConfig || (updated.meditationConfig as any)?.seatingConfig,
+        seatingConfig: updated.seatingConfig || updated.meditationConfig?.seatingConfig,
       };
 
       const rowValues = [

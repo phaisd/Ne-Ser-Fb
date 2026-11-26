@@ -22,6 +22,7 @@ import type { StudentEvent, EventRegistration } from '@/types';
 import { getAuthUser } from '@/lib/auth-client';
 import { hasProjectDuty } from '@/lib/events/projectDuty';
 import { getEventAcademicYear } from '@/hooks/admin/useAdminEvents';
+import { formatThaiDate } from '@/lib/utils';
 
 interface EventCardGridProps {
   eventsList: StudentEvent[];
@@ -181,10 +182,8 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                   <div className="flex items-center gap-1.5 font-medium text-slate-700">
                     <Calendar className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     <span>
-                      {e.startDate ? new Date(e.startDate).toLocaleDateString('th-TH') : '-'}
-                      {e.endDate &&
-                        e.endDate !== e.startDate &&
-                        ` - ${new Date(e.endDate).toLocaleDateString('th-TH')}`}
+                      {formatThaiDate(e.startDate)}
+                      {e.endDate && e.endDate !== e.startDate && ` - ${formatThaiDate(e.endDate)}`}
                     </span>
                     {e.eventTime && (
                       <span className="font-mono text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200 text-[10px]">

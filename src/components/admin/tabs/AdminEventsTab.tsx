@@ -24,6 +24,7 @@ import dynamic from 'next/dynamic';
 import { useAdminEvents, getEventAcademicYear } from '@/hooks/admin';
 import { getAuthUser } from '@/lib/auth-client';
 import { hasProjectDuty } from '@/lib/events/projectDuty';
+import { formatThaiDate } from '@/lib/utils';
 import {
   EventFormModal,
   EventGroupImportModal,
@@ -636,8 +637,8 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
               <div className="flex items-center gap-3 text-xs text-amber-200/90 flex-wrap">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-amber-300" />
-                  {selectedEvent.startDate ? new Date(selectedEvent.startDate).toLocaleDateString('th-TH') : '-'}
-                  {selectedEvent.endDate && selectedEvent.endDate !== selectedEvent.startDate && ` - ${new Date(selectedEvent.endDate).toLocaleDateString('th-TH')}`}
+                  {formatThaiDate(selectedEvent.startDate)}
+                  {selectedEvent.endDate && selectedEvent.endDate !== selectedEvent.startDate && ` - ${formatThaiDate(selectedEvent.endDate)}`}
                 </span>
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-rose-300" />

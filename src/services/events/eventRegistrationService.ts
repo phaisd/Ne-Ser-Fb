@@ -111,8 +111,8 @@ export async function getEventRegistrations(
             eventTitle: eventTitleMap.get(evId) || 'กิจกรรมนิสิต',
             studentCode: sCode,
             studentName: r[3] || local.studentName || sInfo.fullName || '',
-            status: (local.status || r[4] || 'REGISTERED') as any,
-            role: (r[5] || local.role || 'STUDENT') as any,
+            status: (local.status || r[4] || 'REGISTERED') as EventRegistration['status'],
+            role: r[5] || local.role || 'STUDENT',
             major: r[6] || local.major || sInfo.major || 'พระพุทธศาสนา',
             yearLevel: r[7] ? Number(r[7]) : (local.yearLevel || sInfo.yearLevel || 1),
             department: r[8] || local.department || sInfo.department || '',
@@ -472,8 +472,8 @@ export async function batchImportEventRegistrations(
               eventId: evId,
               studentCode: String(r[2] || '').trim(),
               studentName: String(r[3] || '').trim(),
-              status: (r[4] || 'REGISTERED') as any,
-              role: (r[5] || 'STUDENT') as any,
+              status: (r[4] || 'REGISTERED') as EventRegistration['status'],
+              role: r[5] || 'STUDENT',
               major: String(r[6] || '').trim(),
               yearLevel: Number(r[7]) || 1,
               department: String(r[8] || '').trim(),
@@ -482,7 +482,7 @@ export async function batchImportEventRegistrations(
               groupNumber: r[11] ? Number(r[11]) : undefined,
               groupSpecificCode: String(r[12] || '').trim(),
               degreeLevel: String(r[13] || '').trim(),
-              programType: (r[14] || 'THAI') as any,
+              programType: r[14] || 'THAI',
               remarks: String(r[15] || '').trim(),
               attendedAt: String(r[16] || '').trim(),
               dailyAttendance: {},
@@ -608,10 +608,10 @@ export async function batchImportEventRegistrations(
         if (finalStudentCode && isStudentId(finalStudentCode)) existing.studentCode = finalStudentCode;
         if (row.studentName) existing.studentName = row.studentName;
         if (row.degreeLevel) existing.degreeLevel = row.degreeLevel;
-        if (row.programType) existing.programType = row.programType as any;
+        if (row.programType) existing.programType = row.programType;
         if (row.major) existing.major = row.major;
         if (row.yearLevel) existing.yearLevel = Number(row.yearLevel);
-        if (row.role) existing.role = row.role as any;
+        if (row.role) existing.role = row.role;
         if (row.vasa !== undefined) existing.vasa = row.vasa;
         existing.updatedAt = nowIso;
         updatedItems.push(existing);
@@ -631,9 +631,9 @@ export async function batchImportEventRegistrations(
       groupName: gName,
       groupSpecificCode: finalGroupCode || undefined,
       status: 'REGISTERED',
-      role: (row.role || (sInfo.role ? sInfo.role : 'STUDENT')) as any,
+      role: row.role || (sInfo.role ? sInfo.role : 'STUDENT'),
       degreeLevel: row.degreeLevel || sInfo.degree || 'ปริญญาตรี',
-      programType: (row.programType as any) || sInfo.programType || 'THAI',
+      programType: row.programType || sInfo.programType || 'THAI',
       major: row.major || sInfo.major || 'พระพุทธศาสนา',
       yearLevel: row.yearLevel !== undefined ? Number(row.yearLevel) : (sInfo.yearLevel || 1),
       vasa: row.vasa !== undefined ? row.vasa : (sInfo.vasa || ''),

@@ -50,3 +50,19 @@ export function extractThaiYear(academicYear?: string | number, title?: string):
 
   return '๒๕๖๙';
 }
+
+/**
+ * Extracts the 4-digit Buddhist Era academic year (e.g. "2569", "2570")
+ * from an event object or start date.
+ */
+export function getEventAcademicYear(event?: { academicYear?: string; startDate?: string } | null): string {
+  if (!event) return '2569';
+  if (event.academicYear && event.academicYear.trim()) return event.academicYear.trim();
+  if (event.startDate) {
+    const yr = parseInt(event.startDate.slice(0, 4), 10);
+    if (!isNaN(yr)) {
+      return String(yr < 2500 ? yr + 543 : yr);
+    }
+  }
+  return '2569';
+}

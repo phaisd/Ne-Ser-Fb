@@ -29,6 +29,17 @@ export function formatThaiDate(
 }
 
 /**
+ * Formats an ISO date or Date object into a short Thai date string (e.g. 26 พ.ย. 2569)
+ */
+export function formatThaiDateShort(dateInput?: string | Date | null): string {
+  return formatThaiDate(dateInput, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+/**
  * Formats an ISO date or Date object into standard English format
  */
 export function formatEnglishDate(

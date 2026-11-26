@@ -488,8 +488,8 @@ export async function updateCertificateRequest(id: string, updates: Partial<Cert
     rejectReason:
       updates.rejectReason !== undefined
         ? updates.rejectReason
-        : (updates as any).note !== undefined && updates.status === 'REJECTED'
-        ? String((updates as any).note)
+        : updates.note !== undefined && updates.status === 'REJECTED'
+        ? String(updates.note)
         : baseRecord.rejectReason,
   };
 

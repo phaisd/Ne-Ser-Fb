@@ -76,6 +76,14 @@ export interface MeditationGroupAssignment {
   notes?: string;
 }
 
+export interface MeditationLegacyGroup {
+  advisorName?: string;
+  advisor?: string;
+  advisors?: string[];
+  vipassanaMasters?: string[];
+  [key: string]: unknown;
+}
+
 export interface MeditationConfig {
   isMeditationEvent?: boolean;
   periods?: MeditationPeriodConfig[];
@@ -83,6 +91,8 @@ export interface MeditationConfig {
   totalInterviewSessions?: number;
   minAttendedDaysRequired?: number;
   groupAssignments?: Record<string, MeditationGroupAssignment>;
+  groups?: MeditationLegacyGroup[];
+  seatingConfig?: EventSeatingConfig;
 }
 
 export interface SatipatthanaChecklist {
