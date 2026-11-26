@@ -16,6 +16,24 @@ export interface ScannerRecentItem {
   period?: PeriodKey;
 }
 
+export interface ScannerFeedback {
+  type: 'SUCCESS' | 'WARN' | 'ERROR';
+  message: string;
+  student?: EventRegistration;
+  time?: string;
+  isDuplicate?: boolean;
+  scanCount?: number;
+  isOverDuplicateLimit?: boolean;
+  firstCheckInTime?: string;
+  scannedCode?: string;
+  status?: 'PRESENT' | 'LATE' | 'SICK';
+  badgeTitle?: string;
+  badgeTitleEn?: string;
+  subNote?: string;
+  subNoteEn?: string;
+  isEnglish?: boolean;
+}
+
 export interface BarcodeDetectorInstance {
   detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>>;
 }
