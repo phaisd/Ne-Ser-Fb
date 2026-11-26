@@ -43,7 +43,7 @@ export async function getAttendanceRecords(courseCode?: string, date?: string): 
           date: r[2] || '',
           studentCode: r[3] || '',
           studentName: r[4] || '',
-          status: (r[5] as any) === 'EXCUSED' ? 'LEAVE' : ((r[5] as any) || 'PRESENT'),
+          status: (r[5] === 'EXCUSED' ? 'LEAVE' : (r[5] || 'PRESENT')) as AttendanceRecord['status'],
           recordedBy: r[6] || '',
           createdAt: r[7] || '',
         }));
@@ -58,7 +58,7 @@ export async function getAttendanceRecords(courseCode?: string, date?: string): 
     }
   }
 
-  const rawRecords = readLocalJson<any[]>('attendance_records.json', []);
+  const rawRecords = readLocalJson<AttendanceRecord[]>('attendance_records.json', []);
   // Filter out any legacy mock records that lacked courseCode or valid date
   const validLocal = rawRecords.filter(
     (a) => a && a.courseCode && a.date && !Number.isNaN(Date.parse(String(a.date)))
@@ -71,7 +71,7 @@ export async function getAttendanceRecords(courseCode?: string, date?: string): 
     sessionId: a.sessionId,
     studentCode: a.studentCode || '',
     studentName: a.studentName || '',
-    status: a.status === 'EXCUSED' ? 'LEAVE' : (a.status || 'PRESENT'),
+    status: (a.status as string) === 'EXCUSED' ? 'LEAVE' : (a.status || 'PRESENT'),
     recordedBy: a.recordedBy || 'อาจารย์ผู้สอน',
     createdAt: a.createdAt || new Date().toISOString(),
     note: a.note || undefined,
@@ -110,7 +110,7 @@ export async function saveAttendanceBatch(records: Omit<AttendanceRecord, 'id' |
     }
   }
 
-  const localList = readLocalJson<any[]>('attendance_records.json', []);
+  const localList = readLocalJson<AttendanceRecord[]>('attendance_records.json', []);
   localList.push(...newRecords);
   writeLocalJson('attendance_records.json', localList);
 
@@ -134,7 +134,7 @@ export async function deleteAttendanceRecord(id: string): Promise<boolean> {
     }
   }
 
-  const localList = readLocalJson<any[]>('attendance_records.json', []);
+  const localList = readLocalJson<AttendanceRecord[]>('attendance_records.json', []);
   const filtered = localList.filter((r) => r.id !== id);
   writeLocalJson('attendance_records.json', filtered);
   return true;
@@ -177,7 +177,7 @@ export async function clearAttendanceRecords(mode: 'all' | 'invalid' = 'all'): P
     }
   }
 
-  const localList = readLocalJson<any[]>('attendance_records.json', []);
+  const localList = readLocalJson<AttendanceRecord[]>('attendance_records.json', []);
   if (mode === 'all') {
     deletedCount = Math.max(deletedCount, localList.length);
     writeLocalJson('attendance_records.json', []);

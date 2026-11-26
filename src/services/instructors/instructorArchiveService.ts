@@ -1,4 +1,4 @@
-import { InstructorAccount, ArchivedInstructor } from '@/types';
+import { InstructorAccount, ArchivedInstructor, UserRole } from '@/types';
 import { readLocalJson, writeLocalJson, getSheetsClient } from '../storageHelper';
 
 // ----------------- ARCHIVE & RESTORE INSTRUCTORS -----------------
@@ -151,7 +151,7 @@ export async function getArchivedInstructors(): Promise<ArchivedInstructor[]> {
             gmail: r[4] || '',
             department: r[5] || '',
             instructorType: r[6] || 'อาจารย์ประจำ',
-            role: (r[7] as any) || 'INSTRUCTOR',
+            role: (r[7] as UserRole) || 'INSTRUCTOR',
             isActive: false,
             isSuspended: true,
             archivedAt: r[9] || new Date().toISOString(),

@@ -163,7 +163,7 @@ export async function getInstructorAccounts(): Promise<InstructorAccount[]> {
           // Google Sheet values are persistent cloud truth on Vercel
           const effectiveEmail = email || localMatch?.email || '';
           const effectiveGmail = gmail || localMatch?.gmail || '';
-          const effectiveRole = (role as any) || localMatch?.role || 'INSTRUCTOR';
+          const effectiveRole = (role as UserRole) || localMatch?.role || 'INSTRUCTOR';
           const isSuper =
             effectiveEmail === 'phaisal.dis@mcu.ac.th' ||
             effectiveRole === 'SUPER_ADMIN' ||
