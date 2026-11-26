@@ -70,14 +70,14 @@ export function CustomizerEditModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
       onClick={(e) => {
         if (e.target === e.currentTarget) setEditingItem(null);
       }}
     >
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div className="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
+        {/* Sticky Modal Header */}
+        <div className="flex items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-slate-100 bg-white shrink-0">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
               <Pencil className="w-4 h-4" />
@@ -98,14 +98,15 @@ export function CustomizerEditModal({
           <button
             type="button"
             onClick={() => setEditingItem(null)}
-            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
+            className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
+            aria-label="ปิดหน้าต่าง"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="space-y-3.5 text-xs">
+        {/* Scrollable Modal Body */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
           {editingItem.type === 'banner' && (
             <>
               <div>
@@ -589,19 +590,19 @@ export function CustomizerEditModal({
           </div>
         </div>
 
-        {/* Modal Footer */}
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        {/* Sticky Modal Footer */}
+        <div className="flex items-center justify-end gap-2 p-4 sm:px-6 sm:py-3.5 border-t border-slate-100 bg-slate-50/95 shrink-0">
           <button
             type="button"
             onClick={() => setEditingItem(null)}
-            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition"
+            className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 cursor-pointer transition"
           >
             ยกเลิก
           </button>
           <button
             type="button"
             onClick={onSave}
-            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold shadow-sm cursor-pointer transition"
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-xs font-extrabold shadow-sm cursor-pointer transition"
           >
             <Save className="w-3.5 h-3.5" />
             <span>บันทึกการแก้ไข</span>
