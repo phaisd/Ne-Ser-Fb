@@ -493,6 +493,7 @@ export async function batchImportSeatingFromRows(
     seatNumber?: string;
     seatZone?: string;
     vasa?: string;
+    role?: string;
     seatCheckedIn?: boolean;
     seatCheckinBy?: string;
   }>,
@@ -547,6 +548,9 @@ export async function batchImportSeatingFromRows(
       if (row.vasa !== undefined && row.vasa !== null) {
         const v = String(row.vasa).replace(/\s*พรรษา$/g, '').trim();
         target.vasa = v && v !== '-' ? v : undefined;
+      }
+      if (row.role) {
+        target.role = row.role.trim();
       }
       if (row.seatCheckedIn !== undefined) {
         if (row.seatCheckedIn) {

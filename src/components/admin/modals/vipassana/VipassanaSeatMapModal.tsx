@@ -149,6 +149,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
       seatNumber: string;
       seatZone: string;
       vasa?: string;
+      role?: string;
       seatCheckedIn?: boolean;
       checkinText?: string;
       status: 'VALID' | 'DUPLICATE_SEAT' | 'NOT_FOUND';
@@ -603,6 +604,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
     let nameCol = -1;
     let checkinCol = -1;
     let vasaCol = -1;
+    let roleCol = -1;
 
     for (let i = 0; i < Math.min(6, matrix.length); i++) {
       const row = matrix[i].map((c) => String(c || '').trim().toLowerCase());
@@ -645,6 +647,13 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         );
         vasaCol = row.findIndex(
           (cell) => cell.includes('พรรษา') || cell === 'vasa' || cell === 'vassa' || cell.includes('vassa')
+        );
+        roleCol = row.findIndex(
+          (cell) =>
+            cell.includes('สถานภาพ') ||
+            cell.includes('เพศ') ||
+            cell === 'role' ||
+            cell === 'status'
         );
         break;
       }
@@ -693,6 +702,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         const v = String(row[vasaCol] ?? '').replace(/\s*พรรษา$/g, '').trim();
         rawVasa = v === '-' ? '' : v;
       }
+      const rawRole = roleCol !== -1 && row[roleCol] ? String(row[roleCol]).trim() : undefined;
 
       if (!rawCode && !rawGroupCode && !rawSeat) continue;
       if (rawCode.includes('รหัส') || rawCode.toLowerCase().includes('student')) continue;
@@ -754,6 +764,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
         seatNumber: rawSeat,
         seatZone: rawZone || matchedReg?.seatZone || '',
         vasa: rawVasa,
+        role: rawRole || matchedReg?.role,
         seatCheckedIn,
         checkinText,
         status,
@@ -931,6 +942,7 @@ export const VipassanaSeatMapModal: React.FC<VipassanaSeatMapModalProps> = ({
             seatNumber: r.seatNumber ? normalizeSeatCode(r.seatNumber) : undefined,
             seatZone: r.seatZone,
             vasa: r.vasa,
+            role: r.role,
             seatCheckedIn: r.seatCheckedIn,
           })),
         }),

@@ -143,22 +143,118 @@
         }
       ],
       "groupAssignments": {
-        "1": { "groupNumber": 1, "groupName": "กลุ่มที่ 1", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "2": { "groupNumber": 2, "groupName": "กลุ่มที่ 2", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "3": { "groupNumber": 3, "groupName": "กลุ่มที่ 3", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "4": { "groupNumber": 4, "groupName": "กลุ่มที่ 4", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "5": { "groupNumber": 5, "groupName": "กลุ่มที่ 5", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "6": { "groupNumber": 6, "groupName": "กลุ่มที่ 6", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "7": { "groupNumber": 7, "groupName": "กลุ่มที่ 7", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "8": { "groupNumber": 8, "groupName": "กลุ่มที่ 8", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "9": { "groupNumber": 9, "groupName": "กลุ่มที่ 9", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "10": { "groupNumber": 10, "groupName": "กลุ่มที่ 10", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "11": { "groupNumber": 11, "groupName": "กลุ่มที่ 11", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "12": { "groupNumber": 12, "groupName": "กลุ่มที่ 12 (English)", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "13": { "groupNumber": 13, "groupName": "กลุ่มที่ 13", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "14": { "groupNumber": 14, "groupName": "กลุ่มที่ 14", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "15": { "groupNumber": 15, "groupName": "กลุ่มที่ 15", "advisors": [], "vipassanaMasters": [], "notes": "" },
-        "16": { "groupNumber": 16, "groupName": "กลุ่มที่ 16", "advisors": [], "vipassanaMasters": [], "notes": "" }
+        "1": {
+          "groupNumber": 1,
+          "groupName": "กลุ่มที่ 1",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "2": {
+          "groupNumber": 2,
+          "groupName": "กลุ่มที่ 2",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "3": {
+          "groupNumber": 3,
+          "groupName": "กลุ่มที่ 3",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "4": {
+          "groupNumber": 4,
+          "groupName": "กลุ่มที่ 4",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "5": {
+          "groupNumber": 5,
+          "groupName": "กลุ่มที่ 5",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "6": {
+          "groupNumber": 6,
+          "groupName": "กลุ่มที่ 6",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "7": {
+          "groupNumber": 7,
+          "groupName": "กลุ่มที่ 7",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "8": {
+          "groupNumber": 8,
+          "groupName": "กลุ่มที่ 8",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "9": {
+          "groupNumber": 9,
+          "groupName": "กลุ่มที่ 9",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "10": {
+          "groupNumber": 10,
+          "groupName": "กลุ่มที่ 10",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "11": {
+          "groupNumber": 11,
+          "groupName": "กลุ่มที่ 11",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "12": {
+          "groupNumber": 12,
+          "groupName": "กลุ่มที่ 12 (English)",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "13": {
+          "groupNumber": 13,
+          "groupName": "กลุ่มที่ 13",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "14": {
+          "groupNumber": 14,
+          "groupName": "กลุ่มที่ 14",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "15": {
+          "groupNumber": 15,
+          "groupName": "กลุ่มที่ 15",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        },
+        "16": {
+          "groupNumber": 16,
+          "groupName": "กลุ่มที่ 16",
+          "advisors": [],
+          "vipassanaMasters": [],
+          "notes": ""
+        }
       }
     },
     "createdAt": "2026-11-20T09:57:01.983Z",
@@ -171,7 +267,65 @@
     "targetProgram": "ALL",
     "coordinatorName": "คณะพุทธศาสตร์",
     "coordinatorTitle": "ผู้รับผิดชอบ: คณะพุทธศาสตร์",
-    "showCoordinator": true
+    "showCoordinator": true,
+    "seatingConfig": {
+      "enabled": true,
+      "layoutType": "GRID",
+      "venueName": "อาคารสถาบันวิปัสสนาธุระ มจร จังหวัดพระนครศรีอยุธยา",
+      "roomName": "หอประชุมใหญ่",
+      "zones": [
+        {
+          "id": "zone-a",
+          "name": "โซน A (ที่นั่งปฏิบัติและทำวัตร ห้อง 1)",
+          "color": "amber",
+          "rows": 19,
+          "cols": 14,
+          "prefix": "",
+          "description": "ที่นั่งปฏิบัติและทำวัตร ห้อง 1"
+        },
+        {
+          "id": "zone-b",
+          "name": "โซน B (ที่นั่งปฏิบัติและทำวัตร ห้อง 2)",
+          "color": "blue",
+          "rows": 10,
+          "cols": 13,
+          "prefix": "B-",
+          "description": "ที่นั่งปฏิบัติและทำวัตร ห้อง 2"
+        }
+      ],
+      "disabledSeats": [
+        "A-08",
+        "B-08",
+        "C-08",
+        "D-08",
+        "E-08",
+        "F-08",
+        "G-08",
+        "H-08",
+        "I-08",
+        "J-08",
+        "K-08",
+        "L-08",
+        "M-08",
+        "N-08",
+        "O-08",
+        "P-08",
+        "Q-08",
+        "R-08",
+        "S-08",
+        "B-A-07",
+        "B-B-07",
+        "B-C-07",
+        "B-D-07",
+        "B-E-07",
+        "B-F-07",
+        "B-G-07",
+        "B-H-07",
+        "B-I-07",
+        "B-J-07"
+      ],
+      "updatedAt": "2026-11-25T10:59:59.458Z"
+    }
   },
   {
     "id": "2a384a4c-2186-481c-a0cd-1238e427d756",
