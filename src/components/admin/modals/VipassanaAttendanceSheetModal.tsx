@@ -428,11 +428,19 @@ export function VipassanaAttendanceSheetModal({
 
   // Auto-evaluate late status based on check-in times
   const handleAutoEvaluateLate = () => {
+    const parseStartMinutes = (timeStr?: string, fallbackMin: number = 0) => {
+      if (!timeStr) return fallbackMin;
+      const s = timeStr.split('-')[0]?.trim().replace('.', ':');
+      if (!s || !s.includes(':')) return fallbackMin;
+      const [h, m] = s.split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    };
+
     const periodStarts: Record<'p1' | 'p2' | 'p3' | 'p4', number> = {
-      p1: 4 * 60,       // 04:00
-      p2: 8 * 60,       // 08:00
-      p3: 12 * 60 + 30, // 12:30
-      p4: 17 * 60 + 30, // 17:30
+      p1: parseStartMinutes(p1Conf?.time, 4 * 60 + 30),
+      p2: parseStartMinutes(p2Conf?.time, 8 * 60),
+      p3: parseStartMinutes(p3Conf?.time, 12 * 60 + 30),
+      p4: parseStartMinutes(p4Conf?.time, 17 * 60 + 30),
     };
 
     setAttendanceState((prev) => {
