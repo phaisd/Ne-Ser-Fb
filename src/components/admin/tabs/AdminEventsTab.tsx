@@ -337,7 +337,7 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {isAdmin && (
+          {(isAdmin || isAdvisorOrOfficer) && (
             <button
               type="button"
               onClick={handleOpenAddEvent}
@@ -358,8 +358,8 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         </div>
       </div>
 
-      {/* Public Visibility Toggle Banner (เฉพาะ Admin ทุกระดับ) */}
-      {isAdmin && (
+      {/* Public Visibility Toggle Banner (Admin และ ผู้ช่วย สามารถเปิด/ปิดการแสดงผลได้) */}
+      {(isAdmin || isAdvisorOrOfficer) && (
         <div
           className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm transition print:hidden ${
             settings?.showEventsMenu === true

@@ -4,6 +4,7 @@ import React from 'react';
 import { Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import { AdmissionPortalConfig } from '@/types';
 import { DEFAULT_ADMISSION_PORTAL_CONFIG } from '@/lib/admission-config';
+import { canUserDelete, getAuthUser } from '@/lib/auth-client';
 import { EditModalState } from './types';
 
 interface CustomizerCoursePlanSectionProps {
@@ -232,21 +233,23 @@ export function CustomizerCoursePlanSection({
                     <Pencil className="w-3.5 h-3.5" />
                     <span>แก้ไข</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateConfig((prev) => ({
-                        ...prev,
-                        [coursesConfigKey]: (prev[coursesConfigKey] || []).filter(
-                          (c) => c.id !== course.id
-                        ),
-                      }))
-                    }
-                    className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
-                    title="ลบรายวิชานี้"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {canUserDelete(typeof window !== 'undefined' ? getAuthUser() : null) && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateConfig((prev) => ({
+                          ...prev,
+                          [coursesConfigKey]: (prev[coursesConfigKey] || []).filter(
+                            (c) => c.id !== course.id
+                          ),
+                        }))
+                      }
+                      className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                      title="ลบรายวิชานี้ (เฉพาะแอดมิน)"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))

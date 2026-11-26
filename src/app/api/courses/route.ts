@@ -9,7 +9,7 @@ import {
   importCoursesBatch,
   cloneCoursesTerm,
 } from '@/lib/data-store';
-import { requireAdminOrOfficer } from '@/lib/server-auth-guard';
+import { requireAdminOrOfficer, requireAdminOnly } from '@/lib/server-auth-guard';
 
 export async function GET(request: Request) {
   try {
@@ -198,7 +198,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const auth = requireAdminOrOfficer(request);
+    const auth = requireAdminOnly(request);
     if (auth.response) return auth.response;
 
     const { searchParams } = new URL(request.url);

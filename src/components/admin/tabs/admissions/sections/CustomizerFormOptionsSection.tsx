@@ -3,6 +3,7 @@
 import React from 'react';
 import { Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import { AdmissionPortalConfig } from '@/types';
+import { canUserDelete, getAuthUser } from '@/lib/auth-client';
 import { EditModalState, SelectOptionKey } from './types';
 
 interface CustomizerFormOptionsSectionProps {
@@ -133,21 +134,23 @@ export function CustomizerFormOptionsSection({
                   <Pencil className="w-3.5 h-3.5" />
                   <span>แก้ไข</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm(`ต้องการลบตัวเลือก "${opt.label}" หรือไม่?`)) {
-                      updateConfig((prev) => ({
-                        ...prev,
-                        [key]: (prev[key] || []).filter((item) => item.id !== opt.id),
-                      }));
-                    }
-                  }}
-                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer"
-                  title="ลบรายการนี้"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {canUserDelete(typeof window !== 'undefined' ? getAuthUser() : null) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`ต้องการลบตัวเลือก "${opt.label}" หรือไม่?`)) {
+                        updateConfig((prev) => ({
+                          ...prev,
+                          [key]: (prev[key] || []).filter((item) => item.id !== opt.id),
+                        }));
+                      }
+                    }}
+                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer"
+                    title="ลบรายการนี้ (เฉพาะแอดมิน)"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           ))}

@@ -78,6 +78,16 @@ export function isServerSuperAdmin(user?: ServerAuthUser | null): boolean {
 }
 
 /**
+ * Checks if a user has full System Admin authority (SUPER_ADMIN or ADMIN).
+ * Excludes Assistant Officers and Staff.
+ */
+export function isServerAdminOnly(user?: ServerAuthUser | null): boolean {
+  if (!user) return false;
+  const role = String(user.role || '').toUpperCase();
+  return isServerSuperAdmin(user) || role === 'ADMIN';
+}
+
+/**
  * Checks if a user has Admin or Officer role
  */
 export function isServerAdminOrOfficer(user?: ServerAuthUser | null): boolean {
@@ -140,6 +150,25 @@ export function requireAdminOrOfficer(
     return {
       response: NextResponse.json(
         { success: false, error: 'สงวนสิทธิ์เฉพาะผู้ดูแลระบบและเจ้าหน้าที่เท่านั้น (Forbidden)' },
+        { status: 403 }
+      ),
+    };
+  }
+  return { user: auth.user };
+}
+
+export function requireAdminOnly(
+  request: Request
+): { user: ServerAuthUser; response?: never } | { user?: null; response: NextResponse } {
+  const auth = requireAuthenticatedUser(request);
+  if (auth.response) return auth;
+  if (!isServerAdminOnly(auth.user)) {
+    return {
+      response: NextResponse.json(
+        {
+          success: false,
+          error: 'สงวนสิทธิ์การลบ/ดำเนินการระดับสูงเฉพาะผู้ดูแลระบบ (Admin) เท่านั้น ผู้ช่วยไม่ได้รับอนุญาตให้ลบข้อมูล',
+        },
         { status: 403 }
       ),
     };

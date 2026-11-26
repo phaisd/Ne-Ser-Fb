@@ -14,6 +14,43 @@ export interface SavedBrowserAccount {
 const SAVED_ACCOUNTS_KEY = 'mcu_saved_google_accounts';
 
 /**
+ * Checks whether a user has full System Admin authority (SUPER_ADMIN or ADMIN)
+ */
+export function isSystemAdmin(user?: AuthUser | null): boolean {
+  if (!user) return false;
+  const role = String(user.role || '').toUpperCase();
+  return (
+    role === 'SUPER_ADMIN' ||
+    role === 'ADMIN' ||
+    user.isSuperAdmin === true ||
+    user.email?.toLowerCase() === 'phaisal.dis@mcu.ac.th'
+  );
+}
+
+/**
+ * Checks whether a user is an Assistant / Officer / Staff (not a full system admin)
+ */
+export function isAssistantUser(user?: AuthUser | null): boolean {
+  if (!user) return false;
+  if (isSystemAdmin(user)) return false;
+  const role = String(user.role || '').toUpperCase();
+  return (
+    user.isActingOfficer === true ||
+    role === 'ACTING_OFFICER' ||
+    role === 'OFFICER' ||
+    role === 'STAFF'
+  );
+}
+
+/**
+ * Checks whether a user is allowed to perform destructive DELETE operations.
+ * Assistants can create, edit, and toggle visibility, but CANNOT delete data.
+ */
+export function canUserDelete(user?: AuthUser | null): boolean {
+  return isSystemAdmin(user);
+}
+
+/**
  * Checks whether a user object has Admin / Super Admin / Officer privileges
  */
 export function isAdminOrOfficer(user?: AuthUser | null): boolean {

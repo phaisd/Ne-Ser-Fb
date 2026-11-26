@@ -3,6 +3,7 @@
 import React from 'react';
 import { Plus, Pencil, Trash2, CreditCard, Landmark } from 'lucide-react';
 import { AdmissionPortalConfig } from '@/types';
+import { canUserDelete, getAuthUser } from '@/lib/auth-client';
 import { EditModalState } from './types';
 
 interface CustomizerQualificationsSectionProps {
@@ -138,19 +139,21 @@ export function CustomizerQualificationsSection({
                   <Pencil className="w-3.5 h-3.5" />
                   <span>แก้ไข</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateConfig((prev) => ({
-                      ...prev,
-                      qualifications: prev.qualifications.filter((q) => q.id !== card.id),
-                    }))
-                  }
-                  className="p-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
-                  title="ลบกลุ่มคุณสมบัตินี้"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {canUserDelete(typeof window !== 'undefined' ? getAuthUser() : null) && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateConfig((prev) => ({
+                        ...prev,
+                        qualifications: prev.qualifications.filter((q) => q.id !== card.id),
+                      }))
+                    }
+                    className="p-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                    title="ลบกลุ่มคุณสมบัตินี้ (เฉพาะแอดมิน)"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Bullet items inside card */}
@@ -246,19 +249,21 @@ export function CustomizerQualificationsSection({
                     <Pencil className="w-3.5 h-3.5" />
                     <span>แก้ไข</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateConfig((prev) => ({
-                        ...prev,
-                        requiredDocuments: prev.requiredDocuments.filter((d) => d.id !== doc.id),
-                      }))
-                    }
-                    className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
-                    title="ลบเอกสารนี้"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {canUserDelete(typeof window !== 'undefined' ? getAuthUser() : null) && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateConfig((prev) => ({
+                          ...prev,
+                          requiredDocuments: prev.requiredDocuments.filter((d) => d.id !== doc.id),
+                        }))
+                      }
+                      className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                      title="ลบเอกสารนี้ (เฉพาะแอดมิน)"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
               <input
@@ -447,21 +452,23 @@ export function CustomizerQualificationsSection({
                         >
                           {fee.enabled ? 'แสดง' : 'ซ่อน'}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateConfig((prev) => ({
-                              ...prev,
-                              applicationFees: (prev.applicationFees || []).filter(
-                                (f) => f.id !== fee.id
-                              ),
-                            }))
-                          }
-                          className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
-                          title="ลบรายการนี้"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {canUserDelete(typeof window !== 'undefined' ? getAuthUser() : null) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateConfig((prev) => ({
+                                ...prev,
+                                applicationFees: (prev.applicationFees || []).filter(
+                                  (f) => f.id !== fee.id
+                                ),
+                              }))
+                            }
+                            className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 cursor-pointer"
+                            title="ลบรายการนี้ (เฉพาะแอดมิน)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
 

@@ -10,7 +10,11 @@ import {
   maskCitizenId,
   maskPassportNumber,
 } from '@/lib/data-store';
-import { getAuthenticatedUserFromRequest, isServerAdminOrOfficer } from '@/lib/server-auth-guard';
+import {
+  getAuthenticatedUserFromRequest,
+  isServerAdminOrOfficer,
+  isServerAdminOnly,
+} from '@/lib/server-auth-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -141,6 +145,15 @@ export async function POST(request: Request) {
     }
 
     if (action === 'delete') {
+      if (!isServerAdminOnly(authUser)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'สงวนสิทธิ์การลบข้อมูลใบสมัครเฉพาะผู้ดูแลระบบ (Admin) เท่านั้น ผู้ช่วยไม่สามารถลบข้อมูลได้',
+          },
+          { status: 403 }
+        );
+      }
       await deleteAdmissionApplication(body.id || body.applicationCode);
       return NextResponse.json({
         success: true,

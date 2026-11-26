@@ -295,16 +295,25 @@ export const RolePermissionsMatrixView: React.FC<RolePermissionsMatrixViewProps>
     name,
     desc,
     route,
+    grantToAssistant = true,
   }: {
     name: string;
     desc: string;
     route: string;
+    grantToAssistant?: boolean;
   }) => {
     const rowNumber = permissions.length + 1;
     const formattedTitle = /^\d+\./.test(name) ? name : `${rowNumber}. ${name}`;
     const initialRoles: Record<string, boolean> = {};
     roleColumns.forEach((c) => {
-      initialRoles[c.key] = c.key === 'SUPER_ADMIN' || c.key === 'ADMIN';
+      // Default: Admin has full access, Assistant (ACTING_OFFICER, OFFICER) has operational access
+      if (c.key === 'SUPER_ADMIN' || c.key === 'ADMIN') {
+        initialRoles[c.key] = true;
+      } else if (grantToAssistant && (c.key === 'ACTING_OFFICER' || c.key === 'OFFICER')) {
+        initialRoles[c.key] = true;
+      } else {
+        initialRoles[c.key] = false;
+      }
     });
 
     const newRow: PermissionItem = {

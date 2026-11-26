@@ -16,6 +16,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Course } from '@/types';
+import { canUserDelete, getAuthUser } from '@/lib/auth-client';
 
 export interface CourseEditModalProps {
   editingCourse: Course | null;
@@ -422,14 +423,17 @@ export function CourseEditModal({
 
             {/* Modal Actions */}
             <div className="flex items-center justify-between pt-4 border-t flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => onOpenDelete(editingCourse)}
-                className="px-3 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>ลบรายวิชานี้</span>
-              </button>
+              {canUserDelete(typeof window !== 'undefined' ? getAuthUser() : null) && (
+                <button
+                  type="button"
+                  onClick={() => onOpenDelete(editingCourse)}
+                  className="px-3 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer"
+                  title="ลบรายวิชานี้ (เฉพาะแอดมิน)"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>ลบรายวิชานี้</span>
+                </button>
+              )}
 
               <div className="flex items-center gap-2 ml-auto">
                 <button

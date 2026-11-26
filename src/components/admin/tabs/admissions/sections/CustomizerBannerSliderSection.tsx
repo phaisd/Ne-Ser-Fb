@@ -22,6 +22,7 @@ import {
 } from '@/types';
 import { EditModalState } from './types';
 import { AdmissionDepartmentBannerSlider } from '@/components/enroll/AdmissionDepartmentBannerSlider';
+import { canUserDelete, getAuthUser } from '@/lib/auth-client';
 
 interface CustomizerBannerSliderSectionProps {
   config: AdmissionPortalConfig;
@@ -345,15 +346,17 @@ export function CustomizerBannerSliderSection({
                     <span>แก้ไข</span>
                   </button>
 
-                  {/* Delete Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteBanner(banner.id, banner.majorName)}
-                    className="p-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                    title="ลบสไลด์นี้"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {/* Delete Button (เฉพาะแอดมินเท่านั้น) */}
+                  {canUserDelete(typeof window !== 'undefined' ? getAuthUser() : null) && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteBanner(banner.id, banner.majorName)}
+                      className="p-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
+                      title="ลบสไลด์นี้ (เฉพาะแอดมิน)"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );

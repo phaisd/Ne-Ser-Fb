@@ -11,6 +11,7 @@ import {
 } from '@/services';
 import {
   requireAdminOrOfficer,
+  requireAdminOnly,
   requireStaffOrInstructor,
   requireAuthenticatedUser,
   getAuthenticatedUserFromRequest,
@@ -578,7 +579,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const adminAuth = requireAdminOrOfficer(request);
+    const adminAuth = requireAdminOnly(request);
     if (adminAuth.response) return adminAuth.response;
 
     const { searchParams } = new URL(request.url);

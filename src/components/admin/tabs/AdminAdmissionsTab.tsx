@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { AdmissionApplication, AdmissionStatus, SystemSettings } from '@/types';
 import { useAdminAdmissions } from '@/hooks/admin/useAdminAdmissions';
+import { canUserDelete, getAuthUser } from '@/lib/auth-client';
 import { AdmissionPortalCustomizer } from './admissions/AdmissionPortalCustomizer';
 
 export interface AdminAdmissionsTabProps {
@@ -109,6 +110,9 @@ export function AdminAdmissionsTab({
     onRefreshStudents,
     setActionSuccess,
   });
+
+  const activeUser = typeof window !== 'undefined' ? getAuthUser() : null;
+  const canDelete = canUserDelete(activeUser);
 
 
 
@@ -654,14 +658,16 @@ export function AdminAdmissionsTab({
                             <span>นัดสัมภาษณ์/รหัส</span>
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteApplicant(app)}
-                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition cursor-pointer"
-                            title="ลบใบสมัคร"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteApplicant(app)}
+                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition cursor-pointer"
+                              title="ลบใบสมัคร (เฉพาะแอดมิน)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
 
                         {/* 1-Click Transfer to Student Registry */}

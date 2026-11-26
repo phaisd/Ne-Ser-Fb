@@ -407,8 +407,8 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                       )}
                   </div>
 
-                  {/* แอดมิน: แก้ไข & ลบโครงการ */}
-                  {isAdmin && (
+                  {/* จัดการโครงการ: แอดมิน และ ผู้ช่วย สามารถแก้ไขได้ แต่เฉพาะแอดมินเท่านั้นที่ลบได้ */}
+                  {(isAdmin || isAdvisorOrOfficer) && (
                     <div className="flex items-center gap-1 ml-auto shrink-0">
                       <button
                         type="button"
@@ -419,14 +419,16 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                         <Edit3 className="w-3 h-3 text-slate-500" />
                         <span>แก้ไข</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={(evt) => onOpenDeleteEvent(e, evt)}
-                        className="p-1 rounded-lg text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
-                        title="ลบโครงการนี้"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={(evt) => onOpenDeleteEvent(e, evt)}
+                          className="p-1 rounded-lg text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
+                          title="ลบโครงการนี้ (เฉพาะแอดมิน)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
