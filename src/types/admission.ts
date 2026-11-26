@@ -57,6 +57,15 @@ export interface AdmissionRequiredDocItem {
   enabled: boolean;
 }
 
+export interface AdmissionApplicationFeeItem {
+  id: string;
+  degreeLevel: string; // เช่น 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'ประกาศนียบัตร'
+  amount: number; // เช่น 300, 500, 1000 หรือ 0 (ฟรี/ทุน)
+  currency?: string; // เช่น 'บาท'
+  note?: string; // เช่น 'ชำระในวันสอบสัมภาษณ์ หรือแนบหลักฐานการโอน'
+  enabled: boolean;
+}
+
 export interface AdmissionSelectOptionItem {
   id: string;
   value: string;
@@ -88,6 +97,13 @@ export interface AdmissionPortalConfig {
   qualifications: AdmissionQualificationCard[];
   requiredDocsTitle?: string;
   requiredDocuments: AdmissionRequiredDocItem[];
+
+  // Application Fees Configuration
+  showApplicationFee?: boolean;
+  applicationFeeTitle?: string;
+  applicationFeeSubtitle?: string;
+  applicationFeeBankInfo?: string;
+  applicationFees?: AdmissionApplicationFeeItem[];
 
   // Section 2: Application Form Options
   applyFormTitle?: string;

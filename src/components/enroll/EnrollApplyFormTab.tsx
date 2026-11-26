@@ -491,6 +491,27 @@ export function EnrollApplyFormTab({
                       </option>
                     ))}
                   </select>
+
+                  {portalConfig.showApplicationFee !== false &&
+                    (() => {
+                      const matchedFee = portalConfig.applicationFees?.find(
+                        (f) => f.enabled && f.degreeLevel === degreeLevel
+                      );
+                      if (!matchedFee) return null;
+                      return (
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                          <span className="font-bold">💰 ค่าสมัคร:</span>
+                          <span className="font-mono font-black text-amber-800">
+                            {matchedFee.amount > 0
+                              ? `${matchedFee.amount.toLocaleString()} ${matchedFee.currency || 'บาท'}`
+                              : 'ฟรี / ได้รับทุน'}
+                          </span>
+                          {matchedFee.note && (
+                            <span className="text-[10.5px] text-slate-500">({matchedFee.note})</span>
+                          )}
+                        </div>
+                      );
+                    })()}
                 </div>
 
                 <div>

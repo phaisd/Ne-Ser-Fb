@@ -48,7 +48,7 @@ export const StudentAccessSlipModal: React.FC<StudentAccessSlipModalProps> = ({
   const isHash =
     typeof student.password === 'string' &&
     (student.password.startsWith('$2') || student.password.length > 25);
-  const defaultPassword = !isHash && student.password ? student.password : (student.defaultPassword || student.studentCode);
+  const defaultPassword = !isHash && student.password ? student.password : ((student as any).defaultPassword || student.studentCode);
   const username = student.studentCode;
   const studentEmail = student.email || `${student.studentCode}@mcu.ac.th`;
   const programLabel =

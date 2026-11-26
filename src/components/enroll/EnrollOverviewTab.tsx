@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BookOpen, FileText, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { BookOpen, FileText, ArrowRight, CheckCircle2, CreditCard, Landmark } from 'lucide-react';
 import {
   AdmissionPortalConfig,
   AdmissionQualificationCard,
@@ -128,6 +128,84 @@ export function EnrollOverviewTab({
           </div>
         </div>
       )}
+
+      {/* Application Fees Section */}
+      {portalConfig.showApplicationFee !== false &&
+        Array.isArray(portalConfig.applicationFees) &&
+        portalConfig.applicationFees.some((f) => f.enabled) && (
+          <div className="rounded-2xl bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-white border border-amber-200/90 p-5 sm:p-6 space-y-4 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/60 pb-3">
+              <div>
+                <h3 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+                  <span>
+                    {portalConfig.applicationFeeTitle ||
+                      'อัตราค่าธรรมเนียมการสมัครเข้าศึกษา (Application Fees)'}
+                  </span>
+                </h3>
+                {portalConfig.applicationFeeSubtitle && (
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    {portalConfig.applicationFeeSubtitle}
+                  </p>
+                )}
+              </div>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 self-start sm:self-auto shrink-0 border border-amber-300">
+                💰 ค่าธรรมเนียมตามหลักสูตร
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              {portalConfig.applicationFees
+                .filter((f) => f.enabled)
+                .map((fee) => (
+                  <div
+                    key={fee.id}
+                    className="bg-white p-4 rounded-xl border border-amber-200/80 flex flex-col justify-between space-y-2 shadow-2xs"
+                  >
+                    <div>
+                      <div className="font-extrabold text-slate-900 text-sm">
+                        {fee.degreeLevel}
+                      </div>
+                      {fee.note && (
+                        <div className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                          {fee.note}
+                        </div>
+                      )}
+                    </div>
+                    <div className="pt-2 border-t border-slate-100 flex items-baseline justify-between">
+                      <span className="text-[11px] text-slate-400 font-medium">ค่าสมัคร:</span>
+                      <span className="font-mono font-black text-amber-800 text-base">
+                        {fee.amount > 0 ? (
+                          <>
+                            {fee.amount.toLocaleString()}{' '}
+                            <span className="text-xs font-normal text-slate-600">
+                              {fee.currency || 'บาท'}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-emerald-700 text-xs font-extrabold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            ฟรี / ได้รับทุน
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {portalConfig.applicationFeeBankInfo && (
+              <div className="bg-amber-100/70 border border-amber-300 rounded-xl p-3 text-xs text-amber-950 flex items-start gap-2.5">
+                <Landmark className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-bold">ช่องทางชำระค่าธรรมเนียม:</span>
+                  <p className="text-[11px] text-amber-900 leading-relaxed font-medium">
+                    {portalConfig.applicationFeeBankInfo}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
     </div>
   );
 }

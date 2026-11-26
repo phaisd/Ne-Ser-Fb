@@ -43,6 +43,11 @@ export function CustomizerVisibilitySection({
       title: 'แถบทดสอบระบบด่วน 3 รหัส (Quick Test Simulation Links)',
       desc: 'เปิด/ปิด แถบปุ่มจำลองรหัสทดสอบ (1349900123456 ฯลฯ) แนะนำให้ปิดเมื่อเปิดรับสมัครจริง',
     },
+    {
+      key: 'showApplicationFee' as const,
+      title: 'ข้อมูล "อัตราค่าธรรมเนียมการสมัครเข้าศึกษา (Application Fees)"',
+      desc: 'เปิด/ปิด การแสดงกล่องค่าธรรมเนียมตามหลักสูตร และเลขบัญชีธนาคารในแท็บที่ 1 และแบบฟอร์มสมัคร',
+    },
   ];
 
   return (

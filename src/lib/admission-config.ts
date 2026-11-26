@@ -80,6 +80,47 @@ export const DEFAULT_ADMISSION_PORTAL_CONFIG: AdmissionPortalConfig = {
     },
   ],
 
+  showApplicationFee: true,
+  applicationFeeTitle: 'อัตราค่าธรรมเนียมการสมัครเข้าศึกษา (Application Fees)',
+  applicationFeeSubtitle:
+    'ค่าธรรมเนียมการสมัครตามระดับการศึกษา สามารถชำระในวันสอบสัมภาษณ์ หรือโอนผ่านบัญชีธนาคารของมหาวิทยาลัย',
+  applicationFeeBankInfo:
+    'ธนาคารกรุงไทย สาขาอยุธยา • เลขที่บัญชี 101-0-12345-6 • ชื่อบัญชี คณะพุทธศาสตร์ มจร (กรุณาแนบสลิปหรือนำมายื่นในวันสอบสัมภาษณ์)',
+  applicationFees: [
+    {
+      id: 'fee-ba',
+      degreeLevel: 'ปริญญาตรี',
+      amount: 300,
+      currency: 'บาท',
+      note: 'หลักสูตร พธ.บ. ภาคไทย และ นานาชาติ (บรรพชิตได้รับการยกเว้น/ทุนการศึกษา)',
+      enabled: true,
+    },
+    {
+      id: 'fee-ma',
+      degreeLevel: 'ปริญญาโท',
+      amount: 500,
+      currency: 'บาท',
+      note: 'หลักสูตร พธ.ม. ทุกสาขาวิชา',
+      enabled: true,
+    },
+    {
+      id: 'fee-phd',
+      degreeLevel: 'ปริญญาเอก',
+      amount: 1000,
+      currency: 'บาท',
+      note: 'หลักสูตร พธ.ด. ทุกสาขาวิชา',
+      enabled: true,
+    },
+    {
+      id: 'fee-cert',
+      degreeLevel: 'ประกาศนียบัตร',
+      amount: 300,
+      currency: 'บาท',
+      note: 'หลักสูตรประกาศนียบัตรบัณฑิต',
+      enabled: true,
+    },
+  ],
+
   applyFormTitle: 'แบบฟอร์มยื่นใบสมัครเข้าศึกษาออนไลน์ คณะพุทธศาสตร์ มจร',
   applyFormSubtitle:
     'กรอกข้อมูลผู้สมัครให้ครบถ้วน ระบบจะออกรหัสใบสมัครเพื่อใช้ตรวจสอบสถานะและขึ้นทะเบียนนิสิตออนไลน์ทันที',
@@ -448,6 +489,15 @@ export function resolveAdmissionPortalConfig(
     requiredDocuments: Array.isArray(c.requiredDocuments)
       ? c.requiredDocuments
       : DEFAULT_ADMISSION_PORTAL_CONFIG.requiredDocuments,
+    showApplicationFee: c.showApplicationFee !== false,
+    applicationFeeTitle: c.applicationFeeTitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.applicationFeeTitle,
+    applicationFeeSubtitle:
+      c.applicationFeeSubtitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.applicationFeeSubtitle,
+    applicationFeeBankInfo:
+      c.applicationFeeBankInfo ?? DEFAULT_ADMISSION_PORTAL_CONFIG.applicationFeeBankInfo,
+    applicationFees: Array.isArray(c.applicationFees)
+      ? c.applicationFees
+      : DEFAULT_ADMISSION_PORTAL_CONFIG.applicationFees,
     applyFormTitle: c.applyFormTitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.applyFormTitle,
     applyFormSubtitle: c.applyFormSubtitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.applyFormSubtitle,
     showDocumentUploadField: c.showDocumentUploadField !== false,
