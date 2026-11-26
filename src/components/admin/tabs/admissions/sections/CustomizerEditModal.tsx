@@ -3,6 +3,7 @@
 import React from 'react';
 import { Pencil, X, Save } from 'lucide-react';
 import { EditModalState } from './types';
+import { DepartmentBannerColorTheme } from '@/types';
 
 interface CustomizerEditModalProps {
   editingItem: NonNullable<EditModalState>;
@@ -33,6 +34,7 @@ export function CustomizerEditModal({
             </div>
             <div>
               <h4 className="text-sm font-black text-slate-900">
+                {editingItem.type === 'banner' && 'แก้ไขสไลด์แบนเนอร์สาขาวิชา'}
                 {editingItem.type === 'qualification' && 'แก้ไขกลุ่มคุณสมบัติผู้สมัคร'}
                 {editingItem.type === 'document' && 'แก้ไขรายการเอกสารหลักฐาน'}
                 {editingItem.type === 'selectOption' && `แก้ไขตัวเลือก: ${editingItem.categoryTitle}`}
@@ -54,6 +56,124 @@ export function CustomizerEditModal({
 
         {/* Modal Body */}
         <div className="space-y-3.5 text-xs">
+          {editingItem.type === 'banner' && (
+            <>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  ชื่อสาขาวิชา (Major Name)
+                </label>
+                <input
+                  type="text"
+                  value={editingItem.majorName}
+                  onChange={(e) =>
+                    setEditingItem({ ...editingItem, majorName: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    ระดับการศึกษาที่เปิดสอน
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.degreeLevel}
+                    onChange={(e) =>
+                      setEditingItem({ ...editingItem, degreeLevel: e.target.value })
+                    }
+                    placeholder="เช่น พธ.บ. • พธ.ม. • พธ.ด."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    โทนสีสบายตา (Color Theme)
+                  </label>
+                  <select
+                    value={editingItem.colorTheme}
+                    onChange={(e) =>
+                      setEditingItem({
+                        ...editingItem,
+                        colorTheme: e.target.value as DepartmentBannerColorTheme,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900 cursor-pointer"
+                  >
+                    <option value="sage">🌿 เขียวเซจธรรมชาติ (สบายตา)</option>
+                    <option value="emerald">💎 เขียวมรกตสุขุม (ภูมิฐาน)</option>
+                    <option value="forest">🌲 เขียวป่าไม้อบอุ่น (สายภาวนา)</option>
+                    <option value="amber">☸️ ส้มทองอำพัน (พุทธศาสตร์)</option>
+                    <option value="indigo">🏛️ กรมท่าสุขุม (ปรัชญา)</option>
+                    <option value="earth">🍂 น้ำตาลเอิร์ธโทน (โบราณ)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  คำโปรย / จุดเด่นหลักของสาขาวิชา (Tagline)
+                </label>
+                <textarea
+                  rows={2}
+                  value={editingItem.tagline}
+                  onChange={(e) =>
+                    setEditingItem({ ...editingItem, tagline: e.target.value })
+                  }
+                  placeholder="แนะนำจุดเด่นและเป้าหมายการเรียนการสอนของสาขาวิชา..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  จุดเด่นย่อย (Highlights - บรรทัดละ 1 ข้อ)
+                </label>
+                <textarea
+                  rows={3}
+                  value={editingItem.highlightsText}
+                  onChange={(e) =>
+                    setEditingItem({ ...editingItem, highlightsText: e.target.value })
+                  }
+                  placeholder="เช่น มีทุนการศึกษาสนับสนุน&#10;เปิดสอนภาคปกติและภาคพิเศษ&#10;เน้นการวิจัยเชิงลึก"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900 font-mono text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    ป้ายกำกับพิเศษ (Badge Text)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.badgeText}
+                    onChange={(e) =>
+                      setEditingItem({ ...editingItem, badgeText: e.target.value })
+                    }
+                    placeholder="เช่น 🌟 แนะนำ, 🧘 เน้นปฏิบัติ"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    ข้อความบนปุ่มกด (Action Text)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.actionText}
+                    onChange={(e) =>
+                      setEditingItem({ ...editingItem, actionText: e.target.value })
+                    }
+                    placeholder="เช่น สมัครเรียนสาขานี้ →"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           {editingItem.type === 'qualification' && (
             <>
               <div>

@@ -73,6 +73,30 @@ export interface AdmissionSelectOptionItem {
   enabled: boolean;
 }
 
+export type DepartmentBannerColorTheme =
+  | 'sage' // เขียวเซจ/ธรรมชาติ สบายตา
+  | 'emerald' // เขียวมรกตสุขุม
+  | 'forest' // เขียวป่าไม้อบอุ่น
+  | 'amber' // ส้มทองอำพันพุทธศาสตร์
+  | 'indigo' // กรมท่าสงบ สุขุม
+  | 'earth'; // เอิร์ธโทน น้ำตาลอบอุ่น
+
+export interface AdmissionDepartmentBannerItem {
+  id: string;
+  majorName: string; // เช่น สาขาวิชาพระพุทธศาสนา (Buddhist Studies)
+  degreeLevel: string; // เช่น พธ.บ. • ปริญญาตรี, พธ.ม. • ปริญญาโท, พธ.ด. • ปริญญาเอก
+  tagline: string; // คำโปรย/จุดเด่น
+  highlights?: string[]; // จุดเด่นย่อย (2-3 ข้อ)
+  colorTheme: DepartmentBannerColorTheme; // โทนสีสบายตา
+  customBgGradient?: string; // Gradient เพิ่มเติม (optional)
+  bgImageUrl?: string; // รูปภาพพื้นหลัง (optional)
+  actionText?: string; // ข้อความปุ่ม (เช่น "สมัครเรียนสาขานี้ →")
+  actionType?: 'APPLY_NOW' | 'EXTERNAL_LINK' | 'VIEW_INFO';
+  actionUrl?: string; // ลิงก์ภายนอกถ้ามี
+  badgeText?: string; // ป้ายกำกับพิเศษ เช่น "🌟 แนะนำ", "เปิดรับ 2570"
+  enabled: boolean;
+}
+
 export interface AdmissionFirstYearCourseItem {
   id: string;
   code: string;
@@ -90,6 +114,11 @@ export interface AdmissionPortalConfig {
   showApplyTab: boolean;
   showStatusTab: boolean;
   showRegisterTab: boolean;
+
+  // Department Banner Slider (สไลด์แบนเนอร์สาขาวิชาโทนสีสบายตา)
+  showDepartmentBannerSlider?: boolean;
+  bannerAutoSlideInterval?: number; // วินาที (เช่น 5 วินาที)
+  departmentBanners?: AdmissionDepartmentBannerItem[];
 
   // Section 1: Overview, Qualifications & Required Docs
   overviewTitle?: string;

@@ -1,5 +1,6 @@
 export * from './types';
 export * from './CustomizerVisibilitySection';
+export * from './CustomizerBannerSliderSection';
 export * from './CustomizerQualificationsSection';
 export * from './CustomizerFormOptionsSection';
 export * from './CustomizerStatusCheckSection';

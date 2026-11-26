@@ -11,6 +11,7 @@ import {
   Layers,
   GraduationCap,
   Eye,
+  Sliders,
 } from 'lucide-react';
 import {
   AdmissionPortalConfig,
@@ -19,6 +20,7 @@ import {
   AdmissionRequiredDocItem,
   AdmissionSelectOptionItem,
   AdmissionFirstYearCourseItem,
+  AdmissionDepartmentBannerItem,
 } from '@/types';
 import {
   DEFAULT_ADMISSION_PORTAL_CONFIG,
@@ -29,6 +31,7 @@ import {
   SelectOptionKey,
   EditModalState,
   CustomizerVisibilitySection,
+  CustomizerBannerSliderSection,
   CustomizerQualificationsSection,
   CustomizerFormOptionsSection,
   CustomizerStatusCheckSection,
@@ -83,6 +86,25 @@ export function AdmissionPortalCustomizer({
     };
     setSettings(nextSettings);
     await onSaveSettings(nextSettings);
+  };
+
+  const addDepartmentBanner = () => {
+    const newBanner: AdmissionDepartmentBannerItem = {
+      id: `banner-${Date.now().toString(36)}`,
+      majorName: 'สาขาวิชาใหม่ (New Major Program)',
+      degreeLevel: 'พธ.บ. • พธ.ม. (ตรี - โท)',
+      tagline: 'ศึกษาวิจัยและเรียนรู้หลักธรรมเพื่อการพัฒนาตนและสังคม',
+      highlights: ['เปิดรับสมัครทั้งบรรพชิตและคฤหัสถ์', 'มีทุนการศึกษา'],
+      colorTheme: 'sage',
+      badgeText: '✨ เปิดรับสมัคร',
+      actionText: 'สมัครเรียนสาขานี้ →',
+      actionType: 'APPLY_NOW',
+      enabled: true,
+    };
+    updateConfig((prev) => ({
+      ...prev,
+      departmentBanners: [...(prev.departmentBanners || []), newBanner],
+    }));
   };
 
   const addQualificationCard = () => {
@@ -151,7 +173,30 @@ export function AdmissionPortalCustomizer({
   const handleSaveEditingItem = () => {
     if (!editingItem) return;
 
-    if (editingItem.type === 'qualification') {
+    if (editingItem.type === 'banner') {
+      const lines = editingItem.highlightsText
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      updateConfig((prev) => ({
+        ...prev,
+        departmentBanners: (prev.departmentBanners || []).map((b) =>
+          b.id === editingItem.id
+            ? {
+                ...b,
+                majorName: editingItem.majorName,
+                degreeLevel: editingItem.degreeLevel,
+                tagline: editingItem.tagline,
+                highlights: lines,
+                colorTheme: editingItem.colorTheme,
+                badgeText: editingItem.badgeText,
+                actionText: editingItem.actionText,
+                enabled: editingItem.enabled,
+              }
+            : b
+        ),
+      }));
+    } else if (editingItem.type === 'qualification') {
       const lines = editingItem.itemsText
         .split('\n')
         .map((s) => s.trim())
@@ -288,6 +333,18 @@ export function AdmissionPortalCustomizer({
         </button>
         <button
           type="button"
+          onClick={() => setActiveSubSection('BANNERS')}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            activeSubSection === 'BANNERS'
+              ? 'bg-emerald-700 text-white shadow-xs'
+              : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/60'
+          }`}
+        >
+          <Sliders className="w-3.5 h-3.5" />
+          <span>สไลด์แบนเนอร์สาขาวิชา ({config.departmentBanners?.length || 0})</span>
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveSubSection('SECTION1')}
           className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
             activeSubSection === 'SECTION1'
@@ -339,6 +396,15 @@ export function AdmissionPortalCustomizer({
       {/* Render Subsections */}
       {activeSubSection === 'VISIBILITY' && (
         <CustomizerVisibilitySection config={config} updateConfig={updateConfig} />
+      )}
+
+      {activeSubSection === 'BANNERS' && (
+        <CustomizerBannerSliderSection
+          config={config}
+          updateConfig={updateConfig}
+          setEditingItem={setEditingItem}
+          onAddNewBanner={addDepartmentBanner}
+        />
       )}
 
       {activeSubSection === 'SECTION1' && (

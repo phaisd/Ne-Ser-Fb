@@ -15,6 +15,7 @@ interface EnrollApplyFormTabProps {
   portalConfig: AdmissionPortalConfig;
   settings: Partial<SystemSettings>;
   academicYear: string;
+  initialMajor?: string;
   onSubmittedApplication: (app: AdmissionApplication) => void;
   onGoToStatus: () => void;
   onGoToRegister: () => void;
@@ -24,6 +25,7 @@ export function EnrollApplyFormTab({
   portalConfig,
   settings,
   academicYear,
+  initialMajor,
   onSubmittedApplication,
   onGoToStatus,
   onGoToRegister,
@@ -40,8 +42,14 @@ export function EnrollApplyFormTab({
   );
   const [programType, setProgramType] = useState<'THAI' | 'ENGLISH'>('THAI');
   const [major, setMajor] = useState(
-    DEFAULT_ADMISSION_PORTAL_CONFIG.majorOptions[0]?.value || ''
+    initialMajor || DEFAULT_ADMISSION_PORTAL_CONFIG.majorOptions[0]?.value || ''
   );
+
+  useEffect(() => {
+    if (initialMajor) {
+      setMajor(initialMajor);
+    }
+  }, [initialMajor]);
   const [previousEducation, setPreviousEducation] = useState(
     DEFAULT_ADMISSION_PORTAL_CONFIG.previousEducationOptions[0]?.value ||
       'มัธยมศึกษาตอนปลาย (ม.6) หรือเทียบเท่า'

@@ -1,4 +1,103 @@
-import { AdmissionPortalConfig } from '@/types';
+import { AdmissionDepartmentBannerItem, AdmissionPortalConfig } from '@/types';
+
+export const DEFAULT_DEPARTMENT_BANNERS: AdmissionDepartmentBannerItem[] = [
+  {
+    id: 'banner-buddhist-studies',
+    majorName: 'สาขาวิชาพระพุทธศาสนา (Buddhist Studies)',
+    degreeLevel: 'พธ.บ. • พธ.ม. • พธ.ด. (ตรี - โท - เอก)',
+    tagline: 'ศึกษาวิจัยพระไตรปิฎกเชิงลึก บูรณาการพุทธธรรมเพื่อการพัฒนาจิต สังคม และสันติภาพสากล',
+    highlights: [
+      'เปิดรับทั้งบรรพชิตและคฤหัสถ์',
+      'หลักสูตรภาคปกติ & ภาคพิเศษ (เสาร์-อาทิตย์)',
+      'มีทุนการศึกษาสนับสนุนการวิจัย',
+    ],
+    colorTheme: 'sage',
+    badgeText: '🌟 หลักสูตรยอดนิยม',
+    actionText: 'สมัครเรียนสาขานี้ →',
+    actionType: 'APPLY_NOW',
+    enabled: true,
+  },
+  {
+    id: 'banner-vipassana',
+    majorName: 'สาขาวิชาวิปัสสนาภาวนา (Vipassana Meditation)',
+    degreeLevel: 'พธ.บ. • พธ.ม. • พธ.ด. (ตรี - โท - เอก)',
+    tagline: 'ฝึกอบรมจิตตภาวนาตามหลักสติปัฏฐาน ๔ ผสานคัมภีร์สู่ภาคปฏิบัติจริงและการยกระดับปัญญา',
+    highlights: [
+      'ปฏิบัติวิปัสสนากัมมัฏฐานเข้มข้น',
+      'อาจารย์ผู้ทรงคุณวุฒิภาคทฤษฎีและปฏิบัติ',
+      'สถานที่สัปปายะเหมาะแก่การภาวนา',
+    ],
+    colorTheme: 'forest',
+    badgeText: '🧘 เน้นภาคปฏิบัติภาวนา',
+    actionText: 'สมัครเรียนสาขานี้ →',
+    actionType: 'APPLY_NOW',
+    enabled: true,
+  },
+  {
+    id: 'banner-philosophy',
+    majorName: 'สาขาวิชาศาสนาและปรัชญา (Religion and Philosophy)',
+    degreeLevel: 'พธ.บ. • พธ.ม. • พธ.ด. (ตรี - โท - เอก)',
+    tagline: 'สำรวจระบบคิดปรัชญาตะวันออกและตะวันตก พัฒนากรอบคิดวิพากษ์และจริยศาสตร์ยุคดิจิทัล',
+    highlights: [
+      'สัมมนาวิชาการระดับชาติและนานาชาติ',
+      'ประยุกต์ใช้กับภาวะผู้นำและสังคม',
+      'ต่อยอดงานวิชาชีพและวิชาการ',
+    ],
+    colorTheme: 'indigo',
+    badgeText: '💡 พัฒนากระบวนการคิด',
+    actionText: 'สมัครเรียนสาขานี้ →',
+    actionType: 'APPLY_NOW',
+    enabled: true,
+  },
+  {
+    id: 'banner-tipitaka',
+    majorName: 'สาขาวิชาพระไตรปิฎกศึกษา (Tipitaka Studies)',
+    degreeLevel: 'พธ.บ. • พธ.ม. (ตรี - โท)',
+    tagline: 'ศึกษาค้นคว้าคัมภีร์พระไตรปิฎก อรรถกถา ฎีกา เข้าถึงแก่นคำสอนดั้งเดิมอย่างลึกซึ้งและแม่นยำ',
+    highlights: [
+      'คลังคัมภีร์โบราณและฐานข้อมูลดิจิทัล',
+      'ทักษะการตรวจชำระและแปลคัมภีร์',
+      'อาจารย์ผู้เชี่ยวชาญพระคัมภีร์',
+    ],
+    colorTheme: 'amber',
+    badgeText: '📜 สืบทอดพระพุทธวจนะ',
+    actionText: 'สมัครเรียนสาขานี้ →',
+    actionType: 'APPLY_NOW',
+    enabled: true,
+  },
+  {
+    id: 'banner-pali-sanskrit',
+    majorName: 'สาขาวิชาบาลีสันสกฤตและพุทธศาสน์ฮินดู (Pali, Sanskrit & Hindu Studies)',
+    degreeLevel: 'พธ.บ. • พธ.ม. (ตรี - โท)',
+    tagline: 'ศาสตร์แห่งภาษาโบราณและอารยธรรมอินเดีย สืบสาวรากเหง้าคำสอนและความเชื่อมโยงทางวัฒนธรรม',
+    highlights: [
+      'ไวยากรณ์บาลี-สันสกฤตเชิงเปรียบเทียบ',
+      'คติชนวิทยาและวรรณกรรมศาสนา',
+      'ปูพื้นฐานงานวิจัยภาษาศาสตร์โบราณ',
+    ],
+    colorTheme: 'earth',
+    badgeText: '🕉️ ภาษาและอารยธรรมโบราณ',
+    actionText: 'สมัครเรียนสาขานี้ →',
+    actionType: 'APPLY_NOW',
+    enabled: true,
+  },
+  {
+    id: 'banner-international',
+    majorName: 'Buddhist Studies (International English Program)',
+    degreeLevel: 'B.A. • M.A. • Ph.D. (International)',
+    tagline: 'Global Buddhist education taught in English, welcoming monastic and lay students worldwide.',
+    highlights: [
+      '100% English medium of instruction',
+      'Multicultural learning community from 20+ countries',
+      'Official Non-Immigrant ED Visa support',
+    ],
+    colorTheme: 'emerald',
+    badgeText: '🌐 International Program',
+    actionText: 'Apply in English →',
+    actionType: 'APPLY_NOW',
+    enabled: true,
+  },
+];
 
 export const DEFAULT_ADMISSION_PORTAL_CONFIG: AdmissionPortalConfig = {
   showProcessSteps: true,
@@ -7,6 +106,10 @@ export const DEFAULT_ADMISSION_PORTAL_CONFIG: AdmissionPortalConfig = {
   showApplyTab: true,
   showStatusTab: true,
   showRegisterTab: true,
+
+  showDepartmentBannerSlider: true,
+  bannerAutoSlideInterval: 5,
+  departmentBanners: DEFAULT_DEPARTMENT_BANNERS,
 
   overviewTitle: 'คุณสมบัติผู้สมัครและเอกสารหลักฐานที่ต้องใช้',
   overviewSubtitle:
@@ -480,6 +583,14 @@ export function resolveAdmissionPortalConfig(
     showApplyTab: c.showApplyTab !== false,
     showStatusTab: c.showStatusTab !== false,
     showRegisterTab: c.showRegisterTab !== false,
+    showDepartmentBannerSlider: c.showDepartmentBannerSlider !== false,
+    bannerAutoSlideInterval:
+      typeof c.bannerAutoSlideInterval === 'number' && c.bannerAutoSlideInterval > 0
+        ? c.bannerAutoSlideInterval
+        : DEFAULT_ADMISSION_PORTAL_CONFIG.bannerAutoSlideInterval ?? 5,
+    departmentBanners: Array.isArray(c.departmentBanners) && c.departmentBanners.length > 0
+      ? c.departmentBanners
+      : DEFAULT_ADMISSION_PORTAL_CONFIG.departmentBanners ?? DEFAULT_DEPARTMENT_BANNERS,
     overviewTitle: c.overviewTitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.overviewTitle,
     overviewSubtitle: c.overviewSubtitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.overviewSubtitle,
     qualifications: Array.isArray(c.qualifications)

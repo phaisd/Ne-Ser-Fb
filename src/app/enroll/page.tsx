@@ -33,6 +33,7 @@ import { EnrollOverviewTab } from '@/components/enroll/EnrollOverviewTab';
 import { EnrollApplyFormTab } from '@/components/enroll/EnrollApplyFormTab';
 import { EnrollStatusTab } from '@/components/enroll/EnrollStatusTab';
 import { EnrollRegisterVoucherTab } from '@/components/enroll/EnrollRegisterVoucherTab';
+import { AdmissionDepartmentBannerSlider } from '@/components/enroll/AdmissionDepartmentBannerSlider';
 
 type EnrollTab = 'OVERVIEW' | 'APPLY' | 'STATUS' | 'REGISTER';
 
@@ -50,6 +51,15 @@ function EnrollPortalContent() {
       ? 'REGISTER'
       : 'OVERVIEW'
   );
+  const [selectedMajorForApply, setSelectedMajorForApply] = useState<string | undefined>(undefined);
+
+  const handleSelectMajorFromBanner = (majorName: string) => {
+    setSelectedMajorForApply(majorName);
+    setActiveTab('APPLY');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 380, behavior: 'smooth' });
+    }
+  };
 
   const [settings, setSettings] = useState<Partial<SystemSettings>>({
     universityNameTh: 'มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย',
@@ -265,6 +275,15 @@ function EnrollPortalContent() {
         </div>
       </div>
 
+      {/* 1.5 Department Banner Slider (สไลด์แบนเนอร์สาขาวิชาโทนสีสบายตา) */}
+      {portalConfig.showDepartmentBannerSlider && (
+        <AdmissionDepartmentBannerSlider
+          banners={portalConfig.departmentBanners}
+          autoSlideInterval={portalConfig.bannerAutoSlideInterval}
+          onSelectMajor={handleSelectMajorFromBanner}
+        />
+      )}
+
       {/* 2. 4-Step Process Flow Cards */}
       {portalConfig.showProcessSteps && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
@@ -447,6 +466,7 @@ function EnrollPortalContent() {
           portalConfig={portalConfig}
           settings={settings}
           academicYear={academicYear}
+          initialMajor={selectedMajorForApply}
           onSubmittedApplication={(app) => {
             setMatchedApp(app);
             setLookupQuery(app.applicationCode);

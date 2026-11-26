@@ -34,6 +34,11 @@ export function CustomizerVisibilitySection({
       desc: 'เปิด/ปิด การแสดงแท็บที่ 4 (หน้ายืนยันสิทธิ์รับรหัสนิสิต และพิมพ์ใบรายงานตัว A4)',
     },
     {
+      key: 'showDepartmentBannerSlider' as const,
+      title: 'สไลด์แบนเนอร์สาขาวิชาหลักสูตร (Department Banner Slider ใต้แบนเนอร์หลัก)',
+      desc: 'เปิด/ปิด สไลด์แนะนำสาขาวิชาโทนสีสบายตา พร้อมปุ่มกดเลือกสาขาเข้าสู่ใบสมัครทันที',
+    },
+    {
       key: 'showProcessSteps' as const,
       title: 'การ์ดผังกระบวนการ 4 ขั้นตอนด้านบนหน้า /enroll',
       desc: 'เปิด/ปิด การแสดงการ์ดสรุปขั้นตอนที่ 1–4 ด้านบนของหน้ารับสมัคร',
