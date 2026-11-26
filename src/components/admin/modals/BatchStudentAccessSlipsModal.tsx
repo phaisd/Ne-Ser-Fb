@@ -90,7 +90,8 @@ export const BatchStudentAccessSlipsModal: React.FC<BatchStudentAccessSlipsModal
     const headers = ['รหัสนิสิต', 'ชื่อ-นามสกุล', 'ระดับการศึกษา', 'สาขาวิชา', 'ชั้นปี', 'หลักสูตร', 'Username', 'Default Password', 'Email'];
     const rows = displayStudents.map((s) => {
       const name = [s.title, s.firstName, s.lastName].filter(Boolean).join(' ') || s.fullName || '';
-      const pass = s.password || s.studentCode;
+      const isHash = typeof s.password === 'string' && (s.password.startsWith('$2') || s.password.length > 25);
+      const pass = !isHash && s.password ? s.password : ((s as any).defaultPassword || s.studentCode);
       const email = s.email || `${s.studentCode}@mcu.ac.th`;
       const prog = s.programType === 'ENGLISH' ? 'International' : 'Thai';
       return [s.studentCode, `"${name}"`, s.degree || 'ปริญญาตรี', `"${s.major || ''}"`, s.yearLevel || '', prog, s.studentCode, pass, email];
@@ -268,7 +269,8 @@ export const BatchStudentAccessSlipsModal: React.FC<BatchStudentAccessSlipsModal
                   [s.title, s.firstName, s.lastName].filter(Boolean).join(' ') ||
                   s.fullName ||
                   'นิสิตคณะพุทธศาสตร์';
-                const pass = s.password || s.studentCode;
+                const isHash = typeof s.password === 'string' && (s.password.startsWith('$2') || s.password.length > 25);
+                const pass = !isHash && s.password ? s.password : ((s as any).defaultPassword || s.studentCode);
                 const qr = qrMap[s.studentCode];
 
                 return (

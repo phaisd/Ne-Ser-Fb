@@ -45,7 +45,10 @@ export const StudentAccessSlipModal: React.FC<StudentAccessSlipModalProps> = ({
     student.fullName ||
     'นิสิตคณะพุทธศาสตร์';
 
-  const defaultPassword = student.password || student.studentCode;
+  const isHash =
+    typeof student.password === 'string' &&
+    (student.password.startsWith('$2') || student.password.length > 25);
+  const defaultPassword = !isHash && student.password ? student.password : (student.defaultPassword || student.studentCode);
   const username = student.studentCode;
   const studentEmail = student.email || `${student.studentCode}@mcu.ac.th`;
   const programLabel =
@@ -55,17 +58,19 @@ export const StudentAccessSlipModal: React.FC<StudentAccessSlipModalProps> = ({
 
   const handleCopyLine = () => {
     const text = [
-      `🔔 [บัตรแจ้งรหัสผ่านเข้าระบบบริการการศึกษา คณะพุทธศาสตร์ มจร]`,
+      `🔔 [บัตรแจ้งข้อมูลเข้าสู่ระบบบริการการศึกษา คณะพุทธศาสตร์ มจร]`,
       `👤 นิสิต: ${displayName}`,
       `🆔 รหัสนิสิต: ${student.studentCode}`,
       `🎓 ระดับ/สาขาวิชา: ${student.degree || 'ปริญญาตรี'} - ${student.major || student.curriculumName || 'พระพุทธศาสนา'} (ปี ${student.yearLevel || 1})`,
       `━━━━━━━━━━━━━━━━━━━━`,
-      `🔑 ข้อมูลเข้าใช้งานระบบ:`,
-      `• ชื่อผู้ใช้ (Username): ${username}`,
-      `• รหัสผ่านเริ่มต้น (Default Password): ${defaultPassword}`,
-      `• ลิงก์เข้าสู่ระบบ: https://ne-ser-fb.vercel.app/login`,
+      `✨ วิธีเข้าใช้งาน (เลือกได้ 2 วิธี):`,
+      `1️⃣ [แนะนำ] ล็อกอินผ่านปุ่ม "Google" ด้วยอีเมลมหาวิทยาลัย (${studentEmail}) ได้ทันที >> *ไม่ต้องใส่รหัสผ่าน*`,
+      `2️⃣ หรือเข้าด้วยรหัสนิสิต:`,
+      `   • ชื่อผู้ใช้ (Username): ${username}`,
+      `   • รหัสผ่านเริ่มต้น (Default Password): ${defaultPassword}`,
+      `🔗 ลิงก์เข้าสู่ระบบ: https://ne-ser-fb.vercel.app/login`,
       `━━━━━━━━━━━━━━━━━━━━`,
-      `⚠️ คำแนะนำ: กรุณาเปลี่ยนรหัสผ่านส่วนตัวทันทีเมื่อเข้าสู่ระบบครั้งแรกเพื่อความปลอดภัย`,
+      `⚠️ คำแนะนำ: หากเข้าใช้งานด้วยรหัสนิสิต กรุณาเปลี่ยนรหัสผ่านส่วนตัวทันทีเมื่อเข้าสู่ระบบครั้งแรกเพื่อความปลอดภัย`,
     ].join('\n');
 
     navigator.clipboard.writeText(text);
@@ -197,44 +202,55 @@ export const StudentAccessSlipModal: React.FC<StudentAccessSlipModalProps> = ({
             </div>
           </div>
 
+          {/* Quick SSO Recommendation - Log in with MCU Google account */}
+          <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-950 text-xs">
+            <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 font-black text-xs shadow-xs">
+              G
+            </div>
+            <div className="text-[11px] leading-snug flex-1">
+              <span className="font-bold text-emerald-900">แนะนำสำหรับนิสิต:</span>{' '}
+              กดปุ่ม <span className="font-semibold underline">"เข้าสู่ระบบด้วย Google"</span> ด้วยอีเมล <span className="font-mono font-bold text-emerald-800">{studentEmail}</span> ได้ทันที <span className="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded ml-0.5">โดยไม่ต้องใส่รหัสผ่าน</span>
+            </div>
+          </div>
+
           {/* Login Credentials Box + QR Code */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center p-4 rounded-xl bg-orange-50/70 border border-orange-200">
-            <div className="sm:col-span-2 space-y-2 text-xs">
+          <div className="flex flex-col sm:flex-row items-stretch gap-3 p-3.5 sm:p-4 rounded-xl bg-orange-50/70 border border-orange-200">
+            <div className="flex-1 space-y-2 text-xs min-w-0">
               <div className="flex items-center gap-1.5 font-bold text-orange-950 text-xs">
-                <Key className="w-3.5 h-3.5 text-orange-600" />
-                <span>ข้อมูลเข้าสู่ระบบบริการนิสิต (Login Credentials):</span>
+                <Key className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                <span>ข้อมูลเข้าสู่ระบบด้วยรหัสนิสิต (Manual Sign-In):</span>
               </div>
 
-              <div className="grid grid-cols-1 gap-1.5 pl-1">
-                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-orange-200">
-                  <span className="text-slate-500 text-[11px]">ชื่อผู้ใช้ (Username):</span>
+              <div className="grid grid-cols-1 gap-1.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200/90 shadow-2xs">
+                  <span className="text-slate-500 text-[11px] shrink-0">ชื่อผู้ใช้ (Username):</span>
                   <span className="font-mono font-bold text-slate-900 text-xs select-all">
                     {username}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-orange-200">
-                  <span className="text-slate-500 text-[11px]">รหัสผ่านเริ่มต้น (Default Password):</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200/90 shadow-2xs">
+                  <span className="text-slate-500 text-[11px] shrink-0">รหัสผ่านเริ่มต้น (Default Password):</span>
                   <span className="font-mono font-black text-orange-700 text-xs select-all">
                     {defaultPassword}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-orange-200">
-                  <span className="text-slate-500 text-[11px]">อีเมลมหาวิทยาลัย:</span>
-                  <span className="font-mono text-slate-700 text-[11px] truncate max-w-[190px]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 bg-white px-3 py-1.5 rounded-lg border border-orange-200/90 shadow-2xs">
+                  <span className="text-slate-500 text-[11px] shrink-0">อีเมลมหาวิทยาลัย:</span>
+                  <span className="font-mono text-slate-700 text-[11px] truncate select-all">
                     {studentEmail}
                   </span>
                 </div>
               </div>
 
-              <div className="text-[10px] text-orange-900/80 pt-0.5 leading-relaxed">
+              <div className="text-[10px] text-orange-900/80 pt-0.5 leading-relaxed truncate">
                 👉 เข้าใช้งานได้ที่: <span className="font-mono font-bold text-orange-800">https://ne-ser-fb.vercel.app/login</span>
               </div>
             </div>
 
             {/* QR Code */}
-            <div className="flex flex-col items-center justify-center p-2 bg-white rounded-xl border border-orange-200 text-center shadow-xs">
+            <div className="flex flex-col items-center justify-center p-2.5 bg-white rounded-xl border border-orange-200 text-center shadow-xs shrink-0 self-center sm:self-stretch sm:w-32">
               {qrCodeUrl ? (
                 <img src={qrCodeUrl} alt="Login QR Code" className="w-24 h-24 object-contain" />
               ) : (
