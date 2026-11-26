@@ -15,10 +15,13 @@ import {
   RefreshCw,
   Trash2,
   AlertTriangle,
+  Calendar,
+  MapPin,
+  QrCode,
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, SystemSettings } from '@/types';
 import dynamic from 'next/dynamic';
-import { useAdminEvents } from '@/hooks/admin';
+import { useAdminEvents, getEventAcademicYear } from '@/hooks/admin';
 import { getAuthUser } from '@/lib/auth-client';
 import { hasProjectDuty } from '@/lib/events/projectDuty';
 import {
@@ -87,6 +90,16 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
       userRole === 'INSTRUCTOR' ||
       Boolean(activeUser?.isActingOfficer));
   const {
+    academicYearFilter,
+    setAcademicYearFilter,
+    availableAcademicYears,
+    filteredEvents,
+    selectedEvent,
+    selectedEventStats,
+    yearEventsCount,
+    yearTotalRegs,
+    yearAttendedCount,
+    yearPendingCount,
     selectedEventId,
     setSelectedEventId,
     search,
@@ -421,53 +434,168 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         </div>
       )}
 
-      {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-slate-900">{totalEvents}</div>
-            <div className="text-[11px] font-medium text-slate-500">โครงการทั้งหมด</div>
-          </div>
+      {/* Global Overview Dashboard (แดชบอร์ดภาพรวมแบบรวมอยู่ด้านบน) */}
+      <div className="space-y-2.5 print:hidden">
+        <div className="flex items-center justify-between text-xs px-1 text-slate-600">
+          <span className="font-bold text-slate-800 flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-amber-600" />
+            <span>📊 แดชบอร์ดภาพรวมกิจกรรมและโครงการทั้งหมด (All Events Overview)</span>
+          </span>
+          {academicYearFilter !== 'ALL' && (
+            <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-bold text-[11px]">
+              กำลังแสดงเฉพาะปีการศึกษา {academicYearFilter}
+            </span>
+          )}
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-            <Users className="w-5 h-5" />
+        {/* KPI Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-slate-900">
+                {academicYearFilter === 'ALL' ? totalEvents : yearEventsCount}
+                {academicYearFilter !== 'ALL' && (
+                  <span className="text-xs text-slate-400 font-normal ml-1">/ {totalEvents} รวม</span>
+                )}
+              </div>
+              <div className="text-[11px] font-medium text-slate-500">
+                โครงการทั้งหมด {academicYearFilter !== 'ALL' && `(ปี ${academicYearFilter})`}
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="text-2xl font-black text-slate-900">{totalRegs}</div>
-            <div className="text-[11px] font-medium text-slate-500">ยอดลงทะเบียนรวม</div>
-          </div>
-        </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-slate-900">
+                {academicYearFilter === 'ALL' ? totalRegs : yearTotalRegs}
+              </div>
+              <div className="text-[11px] font-medium text-slate-500">
+                ยอดลงทะเบียนรวม {academicYearFilter !== 'ALL' && `(ปี ${academicYearFilter})`}
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="text-2xl font-black text-emerald-700">{attendedCount}</div>
-            <div className="text-[11px] font-medium text-slate-500">ผ่านการเข้าร่วมแล้ว</div>
-          </div>
-        </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-slate-500" />
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-emerald-700">
+                {academicYearFilter === 'ALL' ? attendedCount : yearAttendedCount}
+              </div>
+              <div className="text-[11px] font-medium text-slate-500">
+                ผ่านการเข้าร่วมแล้ว {academicYearFilter !== 'ALL' && `(ปี ${academicYearFilter})`}
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="text-2xl font-black text-slate-700">{pendingCount}</div>
-            <div className="text-[11px] font-medium text-slate-500">รอเช็คชื่อ/รอตรวจ</div>
+
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-slate-500" />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-slate-700">
+                {academicYearFilter === 'ALL' ? pendingCount : yearPendingCount}
+              </div>
+              <div className="text-[11px] font-medium text-slate-500">
+                รอเช็คชื่อ/รอตรวจ {academicYearFilter !== 'ALL' && `(ปี ${academicYearFilter})`}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Events Showcase & Management Cards */}
+      {/* Academic Year Tabs (แท็บแยกปีการศึกษา: แสดงเฉพาะกิจกรรมในปีนั้น ไม่รวมของปีอื่น) */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5 print:hidden">
+        <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+          <div className="font-bold text-slate-800 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-amber-600" />
+            <span>แท็บแยกปีการศึกษา (Academic Year Filter):</span>
+            <span className="text-[11px] font-normal text-slate-500 hidden sm:inline">
+              (คลิกเลือกปีการศึกษาเพื่อแสดงเฉพาะกิจกรรมของปีนั้นๆ ไม่รวมปีอื่น)
+            </span>
+          </div>
+          {academicYearFilter !== 'ALL' && (
+            <button
+              type="button"
+              onClick={() => {
+                setAcademicYearFilter('ALL');
+                setSelectedEventId('ALL');
+              }}
+              className="text-xs text-amber-700 hover:text-amber-800 font-bold underline cursor-pointer"
+            >
+              ✕ แสดงรวมทุกปีการศึกษา
+            </button>
+          )}
+        </div>
+
+        {/* Year Pill Buttons */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
+          <button
+            type="button"
+            onClick={() => {
+              setAcademicYearFilter('ALL');
+              setSelectedEventId('ALL');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              academicYearFilter === 'ALL'
+                ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-sm shadow-amber-600/20'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+            }`}
+          >
+            <span>🌐 ทุกปีการศึกษา</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                academicYearFilter === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700 font-bold'
+              }`}
+            >
+              {eventsList.length}
+            </span>
+          </button>
+
+          {availableAcademicYears.map((yr) => {
+            const countInYear = eventsList.filter((e) => getEventAcademicYear(e) === yr).length;
+            const isSelected = academicYearFilter === yr;
+            return (
+              <button
+                key={`year-tab-${yr}`}
+                type="button"
+                onClick={() => {
+                  setAcademicYearFilter(yr);
+                  if (selectedEvent && getEventAcademicYear(selectedEvent) !== yr) {
+                    setSelectedEventId('ALL');
+                  }
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-sm shadow-amber-600/20'
+                    : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
+                }`}
+              >
+                <span>📅 ปีการศึกษา {yr}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900 font-bold'
+                  }`}
+                >
+                  {countInYear}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Events Showcase & Management Cards (แสดงเฉพาะโครงการตามปีที่เลือก) */}
       <div className="print:hidden">
         <EventCardGrid
-          eventsList={eventsList}
+          eventsList={filteredEvents}
           registrationsList={registrationsList}
           selectedEventId={selectedEventId}
           onSelectEventId={setSelectedEventId}
@@ -485,10 +613,155 @@ export const AdminEventsTab: React.FC<AdminEventsTabProps> = ({
         />
       </div>
 
+      {/* Per-Event Dashboard: แดชบอร์ดเฉพาะโครงการ (อยู่ด้านล่าง โดยอยู่ด้านบนของกิจกรรมของตนเอง) */}
+      {selectedEvent && selectedEventStats && (
+        <div className="bg-gradient-to-r from-amber-900 via-amber-800 to-orange-900 text-white p-5 rounded-3xl shadow-lg border border-amber-700/50 space-y-4 animate-in fade-in duration-200 print:hidden">
+          {/* Header Bar of Active Event */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-amber-700/60">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-400 text-slate-950 uppercase tracking-wider">
+                  📊 แดชบอร์ดเฉพาะกิจกรรม
+                </span>
+                <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-white/20 text-white backdrop-blur-xs">
+                  📅 ปีการศึกษา {getEventAcademicYear(selectedEvent)}
+                </span>
+                <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-amber-500/30 text-amber-200 border border-amber-400/40">
+                  {selectedEvent.eventType === 'MEDITATION' ? '🧘 วิปัสสนากัมมัฏฐาน' : '🌟 กิจกรรมนิสิต'}
+                </span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-amber-50 tracking-tight leading-snug">
+                {selectedEvent.title}
+              </h3>
+              <div className="flex items-center gap-3 text-xs text-amber-200/90 flex-wrap">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-amber-300" />
+                  {selectedEvent.startDate ? new Date(selectedEvent.startDate).toLocaleDateString('th-TH') : '-'}
+                  {selectedEvent.endDate && selectedEvent.endDate !== selectedEvent.startDate && ` - ${new Date(selectedEvent.endDate).toLocaleDateString('th-TH')}`}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-rose-300" />
+                  {selectedEvent.location || 'คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย'}
+                </span>
+                <span className="font-mono bg-black/30 px-2 py-0.5 rounded text-[11px] text-amber-300">
+                  ⏱️ {selectedEvent.activityHours || 0} ชั่วโมงกิจกรรม
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSelectedEventId('ALL')}
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+                title="กลับไปดูภาพรวมทุกกิจกรรม"
+              >
+                <span>✕ แสดงรวมทุกกิจกรรม</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 4 Specific KPI Metrics for this Event */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-slate-900">
+            {/* 1. ยอดลงทะเบียนในโครงการ */}
+            <div className="bg-white/95 backdrop-blur-xs p-3.5 rounded-2xl border border-amber-100 shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-slate-500 text-[11px] font-semibold">
+                <span>ยอดลงทะเบียนในโครงการ</span>
+                <Users className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-slate-900">{selectedEventStats.total}</span>
+                <span className="text-xs text-slate-500">คน</span>
+                {selectedEventStats.capacity > 0 && (
+                  <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded font-bold ml-auto">
+                    รับได้ {selectedEventStats.capacity}
+                  </span>
+                )}
+              </div>
+              {selectedEventStats.capacity > 0 && (
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                  <div
+                    className="bg-amber-600 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${selectedEventStats.fillPercent}%` }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 2. ผ่านการเช็คชื่อ/เข้าร่วมแล้ว */}
+            <div className="bg-white/95 backdrop-blur-xs p-3.5 rounded-2xl border border-emerald-100 shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-slate-500 text-[11px] font-semibold">
+                <span>ผ่านการเข้าร่วม/เช็คชื่อแล้ว</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-emerald-700">{selectedEventStats.attended}</span>
+                <span className="text-xs text-slate-500">คน</span>
+                <span className="text-[10.5px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded ml-auto">
+                  {selectedEventStats.attendedPercent}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                <div
+                  className="bg-emerald-600 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${selectedEventStats.attendedPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* 3. รอเช็คชื่อ/รอตรวจ */}
+            <div className="bg-white/95 backdrop-blur-xs p-3.5 rounded-2xl border border-slate-100 shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-slate-500 text-[11px] font-semibold">
+                <span>รอเช็คชื่อ / กำลังดำเนินการ</span>
+                <Clock className="w-4 h-4 text-slate-400" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-slate-700">{selectedEventStats.pending}</span>
+                <span className="text-xs text-slate-500">คน</span>
+                <span className="text-[10.5px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded ml-auto">
+                  {100 - selectedEventStats.attendedPercent}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                <div
+                  className="bg-slate-400 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.max(0, 100 - selectedEventStats.attendedPercent)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* 4. ผังที่นั่ง หรือ ประเมินผล */}
+            <div className="bg-white/95 backdrop-blur-xs p-3.5 rounded-2xl border border-indigo-100 shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-slate-500 text-[11px] font-semibold">
+                <span>{selectedEvent.eventType === 'MEDITATION' ? 'จัดผังที่นั่ง & สอบอารมณ์' : 'จัดผังที่นั่งในงาน'}</span>
+                <Sparkles className="w-4 h-4 text-indigo-600" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-indigo-900">{selectedEventStats.seated}</span>
+                <span className="text-xs text-slate-500">/ {selectedEventStats.total} ที่นั่ง</span>
+                {selectedEvent.eventType === 'MEDITATION' && selectedEventStats.evaluated > 0 && (
+                  <span className="text-[10px] text-purple-800 bg-purple-50 px-1.5 py-0.2 rounded font-bold ml-auto">
+                    สอบแล้ว {selectedEventStats.evaluated}
+                  </span>
+                )}
+              </div>
+              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                <div
+                  className="bg-indigo-600 h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${selectedEventStats.total > 0 ? Math.round((selectedEventStats.seated / selectedEventStats.total) * 100) : 0}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Registrations List with Filter Toolbar */}
       <div className="print:hidden">
         <EventParticipantsTable
-          eventsList={eventsList}
+          eventsList={filteredEvents}
           selectedEventId={selectedEventId}
           setSelectedEventId={setSelectedEventId}
           search={search}

@@ -10,6 +10,7 @@ export const DEFAULT_EVENT_FORM: Partial<StudentEvent> = {
   title: '',
   description: '',
   eventType: 'SPECIAL',
+  academicYear: '2569',
   durationFormat: 'SINGLE_DAY',
   totalDays: 1,
   attendanceMode: 'SINGLE_SCAN',
@@ -27,6 +28,17 @@ export const DEFAULT_EVENT_FORM: Partial<StudentEvent> = {
   coordinatorTitle: 'ผู้รับผิดชอบโครงการ',
   coordinatorPhone: '',
   coordinatorEmail: '',
+};
+
+export const getEventAcademicYear = (e: StudentEvent): string => {
+  if (e.academicYear && e.academicYear.trim()) return e.academicYear.trim();
+  if (e.startDate) {
+    const yr = parseInt(e.startDate.slice(0, 4), 10);
+    if (!isNaN(yr)) {
+      return String(yr < 2500 ? yr + 543 : yr);
+    }
+  }
+  return '2569';
 };
 
 interface UseAdminEventsParams {
@@ -57,6 +69,7 @@ export function useAdminEvents({
   }, [rawRegistrationsList]);
 
   // Filter States
+  const [academicYearFilter, setAcademicYearFilter] = useState<string>('ALL');
   const [selectedEventId, setSelectedEventId] = useState<string>('ALL');
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -64,6 +77,59 @@ export function useAdminEvents({
   const [programFilter, setProgramFilter] = useState<string>('ALL');
   const [yearLevelFilter, setYearLevelFilter] = useState<string>('ALL');
   const [majorFilter, setMajorFilter] = useState<string>('ALL');
+
+  // Extract all unique Academic Years from events
+  const availableAcademicYears = useMemo(() => {
+    const set = new Set<string>();
+    eventsList.forEach((e) => {
+      const y = getEventAcademicYear(e);
+      if (y) set.add(y);
+    });
+    // Ensure default common academic years exist
+    ['2570', '2569', '2568'].forEach((y) => set.add(y));
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [eventsList]);
+
+  // Filter events by selected Academic Year
+  const filteredEvents = useMemo(() => {
+    if (academicYearFilter === 'ALL') return eventsList;
+    return eventsList.filter((e) => getEventAcademicYear(e) === academicYearFilter);
+  }, [eventsList, academicYearFilter]);
+
+  // Selected Event & Specific Event Dashboard Stats
+  const selectedEvent = useMemo(() => {
+    if (selectedEventId === 'ALL') return null;
+    return eventsList.find((e) => e.id === selectedEventId) || null;
+  }, [eventsList, selectedEventId]);
+
+  const selectedEventStats = useMemo(() => {
+    if (!selectedEvent) return null;
+    const regs = registrationsList.filter((r) => r.eventId === selectedEvent.id);
+    const total = regs.length;
+    const attended = regs.filter((r) => r.status === 'ATTENDED').length;
+    const pending = total - attended;
+    const seated = regs.filter((r) => Boolean(r.seatNumber)).length;
+    const evaluated = regs.filter(
+      (r) =>
+        r.passedMeditation === true ||
+        r.finalMeditationResult === 'PASS' ||
+        Boolean(r.vipassanaInterviews && Object.keys(r.vipassanaInterviews).length > 0)
+    ).length;
+    const capacity = selectedEvent.capacity || selectedEvent.maxParticipants || 0;
+    const fillPercent = capacity > 0 ? Math.min(100, Math.round((total / capacity) * 100)) : 0;
+    const attendedPercent = total > 0 ? Math.round((attended / total) * 100) : 0;
+
+    return {
+      total,
+      attended,
+      pending,
+      seated,
+      evaluated,
+      capacity,
+      fillPercent,
+      attendedPercent,
+    };
+  }, [selectedEvent, registrationsList]);
 
   // Public Visibility Toggle State
   const [isTogglingVisibility, setIsTogglingVisibility] = useState(false);
@@ -126,7 +192,13 @@ export function useAdminEvents({
 
   // Filtered Participants List
   const filteredRegistrations = useMemo(() => {
+    const allowedEventIds = new Set(filteredEvents.map((e) => e.id));
     return registrationsList.filter((r) => {
+      // If a specific academic year is selected, exclude registrations from events of other years
+      if (academicYearFilter !== 'ALL' && r.eventId && !allowedEventIds.has(r.eventId)) {
+        return false;
+      }
+
       const matchSearch =
         !search.trim() ||
         r.studentCode?.toLowerCase().includes(search.toLowerCase()) ||
@@ -164,6 +236,8 @@ export function useAdminEvents({
     });
   }, [
     registrationsList,
+    filteredEvents,
+    academicYearFilter,
     search,
     selectedEventId,
     statusFilter,
@@ -173,11 +247,22 @@ export function useAdminEvents({
     majorFilter,
   ]);
 
-  // KPI Calculations
+  // Global KPI Calculations
   const totalEvents = eventsList.length;
   const totalRegs = registrationsList.length;
   const attendedCount = registrationsList.filter((r) => r.status === 'ATTENDED').length;
   const pendingCount = registrationsList.filter((r) => r.status !== 'ATTENDED').length;
+
+  // Year Filtered KPI Calculations
+  const yearEventsCount = filteredEvents.length;
+  const yearEventIds = useMemo(() => new Set(filteredEvents.map((e) => e.id)), [filteredEvents]);
+  const yearRegs = useMemo(
+    () => registrationsList.filter((r) => r.eventId && yearEventIds.has(r.eventId)),
+    [registrationsList, yearEventIds]
+  );
+  const yearTotalRegs = yearRegs.length;
+  const yearAttendedCount = yearRegs.filter((r) => r.status === 'ATTENDED').length;
+  const yearPendingCount = yearTotalRegs - yearAttendedCount;
 
   const handleToggle = async (regId: string, currentStatus: string) => {
     setUpdatingId(regId);
@@ -190,7 +275,10 @@ export function useAdminEvents({
 
   const handleOpenAddEvent = () => {
     setEditingEventId(null);
-    setEventForm(DEFAULT_EVENT_FORM);
+    setEventForm({
+      ...DEFAULT_EVENT_FORM,
+      academicYear: academicYearFilter !== 'ALL' ? academicYearFilter : '2569',
+    });
     setIsEventModalOpen(true);
   };
 
@@ -206,6 +294,7 @@ export function useAdminEvents({
         : 'SINGLE_DAY');
     setEventForm({
       ...event,
+      academicYear: getEventAcademicYear(event),
       durationFormat: inferredDuration,
       totalDays: event.totalDays || (inferredDuration === 'LONG_TERM_MEDITATION' ? 10 : inferredDuration === 'MULTI_DAY' ? 3 : 1),
       meditationDaysRequired: event.meditationDaysRequired || 10,
@@ -487,6 +576,16 @@ export function useAdminEvents({
   };
 
   return {
+    academicYearFilter,
+    setAcademicYearFilter,
+    availableAcademicYears,
+    filteredEvents,
+    selectedEvent,
+    selectedEventStats,
+    yearEventsCount,
+    yearTotalRegs,
+    yearAttendedCount,
+    yearPendingCount,
     selectedEventId,
     setSelectedEventId,
     search,

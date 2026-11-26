@@ -21,6 +21,7 @@ import {
 import type { StudentEvent, EventRegistration } from '@/types';
 import { getAuthUser } from '@/lib/auth-client';
 import { hasProjectDuty } from '@/lib/events/projectDuty';
+import { getEventAcademicYear } from '@/hooks/admin/useAdminEvents';
 
 interface EventCardGridProps {
   eventsList: StudentEvent[];
@@ -132,6 +133,9 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                         ? '🤝 จิตอาสา'
                         : '🌟 กิจกรรมพิเศษ'}
                     </span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                      📅 ปี {getEventAcademicYear(e)}
+                    </span>
                     {/* Duration Format Badge */}
                     {e.durationFormat === 'LONG_TERM_MEDITATION' || e.eventType === 'MEDITATION' ? (
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
@@ -162,7 +166,7 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                     </span>
                     {attended > 0 && (
                       <span className="text-emerald-700 font-bold border-l border-slate-300 pl-1.5">
-                        (เช็คชื่อแล้ว {attended})
+                        (ผ่าน {attended} • {count > 0 ? Math.round((attended / count) * 100) : 0}%)
                       </span>
                     )}
                   </div>

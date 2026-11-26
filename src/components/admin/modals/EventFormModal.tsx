@@ -84,8 +84,8 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 />
               </div>
 
-              {/* Event Type & Activity Hours */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Event Type, Academic Year & Activity Hours */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">ประเภทกิจกรรม:</label>
                   <select
@@ -102,7 +102,18 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">จำนวนชั่วโมงกิจกรรม (Activity Hours):</label>
+                  <label className="font-bold text-slate-700 block mb-1">ปีการศึกษา (Academic Year):</label>
+                  <input
+                    type="text"
+                    placeholder="เช่น 2570, 2569, 2568"
+                    value={eventForm.academicYear || ''}
+                    onChange={(e) => setEventForm({ ...eventForm, academicYear: e.target.value.trim() })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-bold text-amber-900 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">จำนวนชั่วโมงกิจกรรม:</label>
                   <input
                     type="number"
                     min="1"
