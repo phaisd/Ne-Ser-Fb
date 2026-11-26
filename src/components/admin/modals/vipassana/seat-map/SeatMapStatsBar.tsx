@@ -1,0 +1,326 @@
+import React from 'react';
+import {
+  Calendar,
+  Clock,
+  CheckCheck,
+  AlertOctagon,
+  Users,
+  RotateCcw,
+} from 'lucide-react';
+import { INSPECTION_PERIODS, type InspectionPeriodKey } from './types';
+
+export interface SeatingStatsData {
+  totalParticipants: number;
+  totalCapacity: number;
+  assignedCount: number;
+  checkedInCount: number;
+  vacantCount: number;
+  disabledCount: number;
+  unassignedCount: number;
+  statusCounts: {
+    MONK: number;
+    BHIKKHUNI: number;
+    SAMANERA: number;
+    MAECHI: number;
+    LAY_MALE: number;
+    LAY_FEMALE: number;
+    UNKNOWN?: number;
+  };
+}
+
+export interface SeatingDailyStatsData {
+  scannedTotal: number;
+  presentInSeat: number;
+  absentFromSeat: number;
+  notScanned: number;
+  unscannedPresent: number;
+}
+
+export interface SeatMapStatsBarProps {
+  inspectionDay: number | 'ALL' | string;
+  setInspectionDay: (day: number | 'ALL') => void;
+  totalDays: number;
+  inspectionPeriod: string;
+  setInspectionPeriod: (period: InspectionPeriodKey) => void;
+  onMarkAllScannedOccupied: () => void;
+  isSavingInspection: boolean;
+  dailyStats: SeatingDailyStatsData | null;
+  onOpenAbsentReport: () => void;
+  stats: SeatingStatsData;
+  onDeduplicateRegistrations: () => void;
+  isDeduplicating: boolean;
+}
+
+export const SeatMapStatsBar: React.FC<SeatMapStatsBarProps> = ({
+  inspectionDay,
+  setInspectionDay,
+  totalDays,
+  inspectionPeriod,
+  setInspectionPeriod,
+  onMarkAllScannedOccupied,
+  isSavingInspection,
+  dailyStats,
+  onOpenAbsentReport,
+  stats,
+  onDeduplicateRegistrations,
+  isDeduplicating,
+}) => {
+  return (
+    <>
+      {/* Daily & Period Inspection Bar */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-3 sm:px-4 py-2 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 border-b border-indigo-950 shrink-0">
+        {/* Day selection */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap pb-0.5 md:pb-0">
+          <span className="text-[11px] font-bold text-amber-300 shrink-0 flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5 text-amber-400" />
+            <span>ตรวจรายวัน:</span>
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setInspectionDay('ALL')}
+            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer ${
+              inspectionDay === 'ALL'
+                ? 'bg-amber-400 text-slate-950 shadow-xs ring-2 ring-amber-300'
+                : 'bg-white/10 hover:bg-white/20 text-slate-300'
+            }`}
+          >
+            ผังรวม (ตลอดโครงการ)
+          </button>
+
+          {Array.from({ length: totalDays }, (_, idx) => {
+            const dNum = idx + 1;
+            const isSelected = inspectionDay === dNum;
+            return (
+              <button
+                key={dNum}
+                type="button"
+                onClick={() => setInspectionDay(dNum)}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer ${
+                  isSelected
+                    ? 'bg-indigo-500 text-white shadow-xs ring-2 ring-indigo-300'
+                    : 'bg-white/10 hover:bg-white/20 text-slate-300'
+                }`}
+              >
+                วัน {dNum}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Period selection & quick batch inspection buttons */}
+        {inspectionDay !== 'ALL' && (
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0 pt-1 md:pt-0 border-t md:border-t-0 border-white/10">
+            <span className="text-[11px] font-bold text-indigo-300 shrink-0 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-indigo-300" />
+              <span>รอบ:</span>
+            </span>
+
+            {INSPECTION_PERIODS.map((period) => {
+              const isSelected = inspectionPeriod === period.id;
+              return (
+                <button
+                  key={period.id}
+                  type="button"
+                  onClick={() => setInspectionPeriod(period.id as InspectionPeriodKey)}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-emerald-500 text-slate-950 shadow-xs ring-2 ring-emerald-300'
+                      : 'bg-white/10 hover:bg-white/20 text-slate-300'
+                  }`}
+                  title={`${period.nameTh} (${period.time})`}
+                >
+                  <span>{period.icon}</span>
+                  <span>{period.nameTh}</span>
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={onMarkAllScannedOccupied}
+              disabled={isSavingInspection}
+              className="ml-1 px-2.5 py-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer shrink-0 disabled:opacity-50"
+              title="ตั้งค่าให้นิสิตทุกคนที่สแกนแล้ว อยู่ที่นั่งครบทั้งหมด แล้วท่านค่อยแตะเฉพาะคนที่ไม่อยู่"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">ถือว่าสแกนแล้วอยู่ครบ</span>
+              <span className="sm:hidden">อยู่ครบ</span>
+            </button>
+
+            {dailyStats && dailyStats.absentFromSeat > 0 && (
+              <button
+                type="button"
+                onClick={onOpenAbsentReport}
+                className="px-2.5 py-1 text-xs font-black bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer shrink-0 animate-bounce"
+                title="คลิกดูรายชื่อนิสิตที่สแกนเข้าแต่ตรวจพบว่าที่นั่งว่าง"
+              >
+                <AlertOctagon className="w-3.5 h-3.5" />
+                <span>🚨 สแกนแต่ไม่อยู่ {dailyStats.absentFromSeat} คน</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Stats & Legend Pill Banner */}
+      <div className="bg-white border-b border-slate-200 px-3 sm:px-4 py-2 flex flex-col gap-1.5 shrink-0 text-xs">
+        {/* Stats Row */}
+        {inspectionDay === 'ALL' ? (
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar whitespace-nowrap text-slate-600 pb-0.5">
+            <span className="flex items-center gap-1 font-semibold text-slate-700 shrink-0">
+              <Users className="w-3.5 h-3.5 text-slate-500" />
+              <span>
+                ผู้เข้าร่วม: <b className="text-slate-900">{stats.totalParticipants}</b> คน
+              </span>
+              <button
+                type="button"
+                onClick={onDeduplicateRegistrations}
+                disabled={isDeduplicating}
+                className="p-1 hover:text-amber-700 hover:bg-amber-50 rounded transition text-slate-400 cursor-pointer"
+                title="รีเซ็ต/ล้างรายชื่อที่ซ้ำซ้อนให้ตรงกับจำนวนจริง (309 คน)"
+              >
+                <RotateCcw
+                  className={`w-3 h-3 ${isDeduplicating ? 'animate-spin text-amber-600' : ''}`}
+                />
+              </button>
+            </span>
+            <span className="flex items-center gap-1 shrink-0">
+              ความจุ: <b className="text-slate-900">{stats.totalCapacity}</b> ที่
+            </span>
+            <span className="flex items-center gap-1 bg-blue-50 text-blue-800 px-2 py-0.5 rounded-md font-semibold border border-blue-200 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+              จัดแล้ว: <b>{stats.assignedCount}</b> ที่ (
+              {stats.totalParticipants > 0
+                ? Math.round((stats.assignedCount / stats.totalParticipants) * 100)
+                : 0}
+              %)
+            </span>
+            <span className="flex items-center gap-1 bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md font-semibold border border-emerald-200 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+              เข้าที่นั่ง: <b>{stats.checkedInCount}</b> คน
+            </span>
+            <span className="flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md shrink-0">
+              ว่าง: <b>{stats.vacantCount}</b> ที่
+            </span>
+            {stats.unassignedCount > 0 && (
+              <span className="flex items-center gap-1 text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 font-bold shrink-0">
+                ⚠️ ยังไม่มีที่นั่ง: {stats.unassignedCount} คน
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar whitespace-nowrap text-slate-600 pb-0.5">
+            <span className="flex items-center gap-1 font-extrabold text-indigo-950 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200 shrink-0">
+              <span>{INSPECTION_PERIODS.find((p) => p.id === inspectionPeriod)?.icon}</span>
+              <span>
+                ตรวจวันที่ {inspectionDay} •{' '}
+                {INSPECTION_PERIODS.find((p) => p.id === inspectionPeriod)?.nameTh}
+              </span>
+            </span>
+            <span className="flex items-center gap-1 shrink-0">
+              มีที่นั่ง: <b className="text-slate-900">{stats.assignedCount}</b> ที่
+            </span>
+            <span className="flex items-center gap-1 bg-blue-50 text-blue-900 px-2 py-0.5 rounded-md font-bold border border-blue-200 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+              สแกนแล้ว: <b>{dailyStats?.scannedTotal || 0}</b> คน
+            </span>
+            <span className="flex items-center gap-1 bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded-md font-bold border border-emerald-300 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              อยู่ที่นั่ง: <b>{dailyStats?.presentInSeat || 0}</b> คน
+            </span>
+            <span
+              className={`flex items-center gap-1 px-2.5 py-0.5 rounded-md font-black shrink-0 ${
+                (dailyStats?.absentFromSeat || 0) > 0
+                  ? 'bg-rose-600 text-white border border-rose-300 animate-pulse shadow-xs cursor-pointer'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
+              onClick={() => (dailyStats?.absentFromSeat || 0) > 0 && onOpenAbsentReport()}
+            >
+              <span>🚨 สแกนแต่ที่นั่งว่าง: {dailyStats?.absentFromSeat || 0} คน</span>
+            </span>
+            <span className="flex items-center gap-1 bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md shrink-0">
+              ยังไม่สแกน: <b>{dailyStats?.notScanned || 0}</b> คน
+            </span>
+            {(dailyStats?.unscannedPresent || 0) > 0 && (
+              <span className="flex items-center gap-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-md border border-amber-300 font-bold shrink-0">
+                ⚠️ อยู่ที่นั่งแต่ไม่สแกน: {dailyStats?.unscannedPresent} คน
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Color Legend */}
+        <div className="w-full flex items-center gap-2 pt-1 border-t border-slate-100 text-[11px] overflow-x-auto no-scrollbar whitespace-nowrap pb-0.5">
+          <span className="shrink-0 text-slate-700 font-bold text-[10px] sm:text-xs">
+            สัญลักษณ์สี:
+          </span>
+          {inspectionDay === 'ALL' ? (
+            <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black shadow-2xs whitespace-nowrap shrink-0">
+                <span className="w-2 h-2 rounded-full bg-slate-950" />
+                <span>พระภิกษุ ({stats.statusCounts.MONK})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-900 text-amber-100 font-extrabold shadow-2xs whitespace-nowrap shrink-0">
+                <span className="w-2 h-2 rounded-full bg-amber-300" />
+                <span>ภิกษุณี/Inter ({stats.statusCounts.BHIKKHUNI})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-600 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
+                <span className="w-2 h-2 rounded-full bg-white" />
+                <span>สามเณร ({stats.statusCounts.SAMANERA})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 font-bold border border-amber-300 shadow-2xs whitespace-nowrap shrink-0">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>แม่ชี ({stats.statusCounts.MAECHI})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-600 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
+                <span className="w-2 h-2 rounded-full bg-white" />
+                <span>ฆราวาสชาย ({stats.statusCounts.LAY_MALE})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-700 text-white font-extrabold shadow-2xs whitespace-nowrap shrink-0">
+                <span className="w-2 h-2 rounded-full bg-white" />
+                <span>ฆราวาสหญิง ({stats.statusCounts.LAY_FEMALE})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white text-slate-600 border border-slate-300 font-medium whitespace-nowrap shrink-0">
+                <span className="w-2 h-2 rounded-xs bg-slate-200 border border-slate-400" />
+                <span>ว่าง ({stats.vacantCount})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-200 text-slate-600 font-medium whitespace-nowrap shrink-0">
+                <span>— ทางเดิน/เสา ({stats.disabledCount})</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-300 whitespace-nowrap shrink-0">
+                <span>✓ เช็คอินแล้ว</span>
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-600 text-white font-bold whitespace-nowrap shrink-0">
+                <span>🟢 นั่งอยู่ปกติ</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-rose-600 text-white font-black animate-pulse whitespace-nowrap shrink-0">
+                <span>🚨 สแกนแต่ที่นั่งว่าง (ไม่อยู่)</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-blue-600 text-white font-medium whitespace-nowrap shrink-0">
+                <span>🔵 สแกนแล้วรอตรวจ</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-600 font-medium whitespace-nowrap shrink-0 opacity-60">
+                <span>⚪ ยังไม่สแกน (ขาด)</span>
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-amber-400 text-slate-950 font-bold whitespace-nowrap shrink-0">
+                <span>⚠️ นั่งอยู่แต่ไม่สแกน</span>
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
