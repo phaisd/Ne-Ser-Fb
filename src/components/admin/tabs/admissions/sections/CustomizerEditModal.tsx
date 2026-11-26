@@ -70,27 +70,27 @@ export function CustomizerEditModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+      className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex flex-col items-center justify-center p-2.5 sm:p-5 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) setEditingItem(null);
       }}
     >
-      <div className="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full my-auto max-h-[calc(100dvh-1.25rem)] sm:max-h-[90dvh] flex flex-col shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
         {/* Sticky Modal Header */}
-        <div className="flex items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-slate-100 bg-white shrink-0">
+        <div className="flex items-center justify-between p-3.5 sm:px-6 sm:py-4 border-b border-slate-100 bg-white shrink-0">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
               <Pencil className="w-4 h-4" />
             </div>
-            <div>
-              <h4 className="text-sm font-black text-slate-900">
+            <div className="min-w-0">
+              <h4 className="text-xs sm:text-sm font-black text-slate-900 truncate">
                 {editingItem.type === 'banner' && 'แก้ไขสไลด์แบนเนอร์สาขาวิชา'}
                 {editingItem.type === 'qualification' && 'แก้ไขกลุ่มคุณสมบัติผู้สมัคร'}
                 {editingItem.type === 'document' && 'แก้ไขรายการเอกสารหลักฐาน'}
                 {editingItem.type === 'selectOption' && `แก้ไขตัวเลือก: ${editingItem.categoryTitle}`}
                 {editingItem.type === 'course' && `แก้ไขข้อมูลรายวิชา (${editingItem.degreeTitle})`}
               </h4>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[10.5px] sm:text-[11px] text-slate-500 truncate">
                 ปรับปรุงรายละเอียด และกดปุ่ม &ldquo;บันทึกการแก้ไข&rdquo;
               </p>
             </div>
@@ -98,15 +98,15 @@ export function CustomizerEditModal({
           <button
             type="button"
             onClick={() => setEditingItem(null)}
-            className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer shrink-0 ml-2"
             aria-label="ปิดหน้าต่าง"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Scrollable Modal Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
+        {/* Scrollable Modal Body with min-h-0 for mobile WebKit & Blink flexbox */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs overscroll-contain">
           {editingItem.type === 'banner' && (
             <>
               <div>
@@ -123,7 +123,7 @@ export function CustomizerEditModal({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
                     ระดับการศึกษาที่เปิดสอน
@@ -192,7 +192,7 @@ export function CustomizerEditModal({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
                     ป้ายกำกับพิเศษ (Badge Text)
@@ -511,7 +511,7 @@ export function CustomizerEditModal({
 
           {editingItem.type === 'course' && (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">รหัสวิชา</label>
                   <input
