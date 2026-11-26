@@ -88,6 +88,18 @@ export function AdmissionPortalCustomizer({
     await onSaveSettings(nextSettings);
   };
 
+  const handleToggleVisibility = async (key: keyof AdmissionPortalConfig, val: boolean) => {
+    const nextConfig = {
+      ...config,
+      [key]: val,
+    };
+    updateConfig(() => nextConfig);
+    await onSaveSettings({
+      ...settings,
+      admissionPortalConfig: nextConfig,
+    });
+  };
+
   const addDepartmentBanner = () => {
     const newBanner: AdmissionDepartmentBannerItem = {
       id: `banner-${Date.now().toString(36)}`,
@@ -395,7 +407,11 @@ export function AdmissionPortalCustomizer({
 
       {/* Render Subsections */}
       {activeSubSection === 'VISIBILITY' && (
-        <CustomizerVisibilitySection config={config} updateConfig={updateConfig} />
+        <CustomizerVisibilitySection
+          config={config}
+          updateConfig={updateConfig}
+          onToggleVisibility={handleToggleVisibility}
+        />
       )}
 
       {activeSubSection === 'BANNERS' && (

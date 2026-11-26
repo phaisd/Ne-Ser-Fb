@@ -401,6 +401,13 @@ export const DEFAULT_ADMISSION_PORTAL_CONFIG: AdmissionPortalConfig = {
   statusSectionTitle: 'ตรวจสอบสถานะการสมัคร & ตารางนัดสอบสัมภาษณ์',
   statusSectionSubtitle:
     'กรอกเลขประจำตัวประชาชน 13 หลัก, เลขพาสปอร์ต หรือรหัสใบสมัคร (เช่น MCU-FB-2570-0001)',
+  showPassedInterviewRoster: true,
+  passedInterviewNoticeTitle: 'ประกาศรายชื่อผู้ผ่านการสอบสัมภาษณ์ และขั้นตอนการขึ้นทะเบียนนิสิต',
+  passedInterviewNoticeText:
+    'ขอให้ผู้มีรายชื่อผ่านการสอบสัมภาษณ์ (มีสิทธิ์เข้าศึกษา) เตรียมเอกสารหลักฐานตัวจริง และดำเนินการติดต่อสำนักทะเบียนและวัดผล มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย เพื่อรายงานตัวและขึ้นทะเบียนนิสิตใหม่ตามกำหนดการ',
+  registrarOfficeName: 'สำนักทะเบียนและวัดผล มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย',
+  registrarOfficeContact: 'อาคารเรียนรวม / สำนักงานอธิการบดี ชั้น 3 โทร. 035-248-000 ต่อ 8100',
+  registrarWebsiteUrl: 'https://reg.mcu.ac.th',
 
   registerSectionTitle: 'ยืนยันสิทธิ์และขึ้นทะเบียนนิสิตใหม่ออนไลน์ (Online Student Enrollment)',
   registerSectionSubtitle:
@@ -641,6 +648,17 @@ export function resolveAdmissionPortalConfig(
     statusSectionTitle: c.statusSectionTitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.statusSectionTitle,
     statusSectionSubtitle:
       c.statusSectionSubtitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.statusSectionSubtitle,
+    showPassedInterviewRoster: c.showPassedInterviewRoster !== false,
+    passedInterviewNoticeTitle:
+      c.passedInterviewNoticeTitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.passedInterviewNoticeTitle,
+    passedInterviewNoticeText:
+      c.passedInterviewNoticeText ?? DEFAULT_ADMISSION_PORTAL_CONFIG.passedInterviewNoticeText,
+    registrarOfficeName:
+      c.registrarOfficeName ?? DEFAULT_ADMISSION_PORTAL_CONFIG.registrarOfficeName,
+    registrarOfficeContact:
+      c.registrarOfficeContact ?? DEFAULT_ADMISSION_PORTAL_CONFIG.registrarOfficeContact,
+    registrarWebsiteUrl:
+      c.registrarWebsiteUrl ?? DEFAULT_ADMISSION_PORTAL_CONFIG.registrarWebsiteUrl,
     registerSectionTitle:
       c.registerSectionTitle ?? DEFAULT_ADMISSION_PORTAL_CONFIG.registerSectionTitle,
     registerSectionSubtitle:

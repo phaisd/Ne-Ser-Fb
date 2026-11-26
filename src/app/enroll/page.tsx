@@ -361,18 +361,34 @@ function EnrollPortalContent() {
               </span>
               <UserCheck className="w-4 h-4 text-emerald-600" />
             </div>
-            <h3 className="font-extrabold text-slate-900 text-sm">๔. ขึ้นทะเบียนนิสิตใหม่</h3>
+            <h3 className="font-extrabold text-slate-900 text-sm">
+              {portalConfig.showRegisterTab
+                ? '๔. ขึ้นทะเบียนนิสิตใหม่'
+                : '๔. รายงานตัวและขึ้นทะเบียน'}
+            </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              ยืนยันสิทธิ์เข้าศึกษา รับรหัสประจำตัวนิสิต และพิมพ์ใบรายงานตัวออนไลน์
+              {portalConfig.showRegisterTab
+                ? 'ยืนยันสิทธิ์เข้าศึกษา รับรหัสประจำตัวนิสิต และพิมพ์ใบรายงานตัวออนไลน์'
+                : 'ผู้ผ่านการสอบสัมภาษณ์ ติดต่อสำนักทะเบียนและวัดผล มจร เพื่อรายงานตัวและขึ้นทะเบียน'}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setActiveTab('REGISTER')}
-            className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
-          >
-            ขึ้นทะเบียนนิสิตออนไลน์ →
-          </button>
+          {portalConfig.showRegisterTab ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab('REGISTER')}
+              className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+            >
+              ขึ้นทะเบียนนิสิตออนไลน์ →
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setActiveTab('STATUS')}
+              className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+            >
+              ดูประกาศผล &amp; คำแนะนำ →
+            </button>
+          )}
         </div>
       </div>
       )}
@@ -387,10 +403,15 @@ function EnrollPortalContent() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => handleQuickTest('1349900123456', 'REGISTER')}
+            onClick={() =>
+              handleQuickTest(
+                '1349900123456',
+                portalConfig.showRegisterTab ? 'REGISTER' : 'STATUS'
+              )
+            }
             className="px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold transition cursor-pointer shadow-2xs"
           >
-            🟢 ทดสอบขั้นตอนที่ ๔ (พร้อมขึ้นทะเบียน: 1349900123456)
+            🟢 ทดสอบขั้นตอนที่ ๔ (ผู้ผ่านสัมภาษณ์: 1349900123456)
           </button>
           <button
             type="button"
@@ -401,7 +422,12 @@ function EnrollPortalContent() {
           </button>
           <button
             type="button"
-            onClick={() => handleQuickTest('1349900555555', 'REGISTER')}
+            onClick={() =>
+              handleQuickTest(
+                '1349900555555',
+                portalConfig.showRegisterTab ? 'REGISTER' : 'STATUS'
+              )
+            }
             className="px-3 py-1.5 rounded-xl bg-white hover:bg-purple-50 text-purple-800 border border-purple-300 font-bold transition cursor-pointer shadow-2xs"
           >
             🟣 ดูนิสิตที่ขึ้นทะเบียนแล้ว (1349900555555)

@@ -153,6 +153,12 @@ export interface AdmissionPortalConfig {
   // Section 3: Status Check & Interview Schedule
   statusSectionTitle?: string;
   statusSectionSubtitle?: string;
+  showPassedInterviewRoster?: boolean; // เปิด/ปิด การแสดงประกาศรายชื่อผู้ผ่านการสอบสัมภาษณ์
+  passedInterviewNoticeTitle?: string; // เช่น "ประกาศรายชื่อผู้ผ่านการสอบสัมภาษณ์ และขั้นตอนการขึ้นทะเบียนนิสิต"
+  passedInterviewNoticeText?: string; // คำแนะนำขั้นตอนสำหรับผู้ผ่านสัมภาษณ์
+  registrarOfficeName?: string; // เช่น "สำนักทะเบียนและวัดผล มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย"
+  registrarOfficeContact?: string; // เช่น "อาคารสำนักงานอธิการบดี / อาคารเรียนรวม โทร. 035-248-000 ต่อ 8100"
+  registrarWebsiteUrl?: string; // ลิงก์ระบบสำนักทะเบียน เช่น "https://reg.mcu.ac.th"
 
   // Section 4: Registration & First-Year Plan
   registerSectionTitle?: string;

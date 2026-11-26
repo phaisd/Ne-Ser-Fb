@@ -6,11 +6,13 @@ import { AdmissionPortalConfig } from '@/types';
 interface CustomizerVisibilitySectionProps {
   config: AdmissionPortalConfig;
   updateConfig: (updater: (prev: AdmissionPortalConfig) => AdmissionPortalConfig) => void;
+  onToggleVisibility?: (key: keyof AdmissionPortalConfig, val: boolean) => void;
 }
 
 export function CustomizerVisibilitySection({
   config,
   updateConfig,
+  onToggleVisibility,
 }: CustomizerVisibilitySectionProps) {
   const toggleItems = [
     {
@@ -32,6 +34,11 @@ export function CustomizerVisibilitySection({
       key: 'showRegisterTab' as const,
       title: '๔. ส่วน/แท็บ "ยืนยันสิทธิ์และขึ้นทะเบียนนิสิตใหม่ออนไลน์"',
       desc: 'เปิด/ปิด การแสดงแท็บที่ 4 (หน้ายืนยันสิทธิ์รับรหัสนิสิต และพิมพ์ใบรายงานตัว A4)',
+    },
+    {
+      key: 'showPassedInterviewRoster' as const,
+      title: 'ประกาศรายชื่อผู้ผ่านการสอบสัมภาษณ์ (ในแท็บที่ ๓ เพื่อติดต่อสำนักทะเบียน)',
+      desc: 'เปิด/ปิด ตารางประกาศรายชื่อผู้ผ่านการคัดเลือก พร้อมขั้นตอนแนะนำการติดต่อสำนักทะเบียนและวัดผล',
     },
     {
       key: 'showDepartmentBannerSlider' as const,
@@ -83,9 +90,13 @@ export function CustomizerVisibilitySection({
               <input
                 type="checkbox"
                 checked={checked}
-                onChange={(e) =>
-                  updateConfig((prev) => ({ ...prev, [item.key]: e.target.checked }))
-                }
+                onChange={(e) => {
+                  const val = e.target.checked;
+                  updateConfig((prev) => ({ ...prev, [item.key]: val }));
+                  if (onToggleVisibility) {
+                    onToggleVisibility(item.key, val);
+                  }
+                }}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
