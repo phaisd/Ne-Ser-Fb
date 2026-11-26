@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   CheckSquare,
   CheckCircle,
@@ -13,34 +14,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { getAuthUser, saveAuthSession, clearAuthSession, isAdminOrOfficer, canAccessAdminConsole } from '@/lib/auth-client';
-import {
-  AdminSheetsTab,
-  AdminTimetablesTab,
-  AdminAttendanceTab,
-  AdminCoursesTab,
-  AdminStudentsTab,
-  AdminDashboardTab,
-  AdminUsersTab,
-  AdminBrandingTab,
-  AdminCertificatesTab,
-  AdminEventsTab,
-  AdminAdmissionsTab,
-} from '@/components/admin/tabs';
 import { Student, AuthUser, UserAccount } from '@/types';
 import { toast } from '@/lib/toast';
-import {
-  StudentDeleteModal,
-  TeachingSlipModal,
-  BatchTeachingSlipsModal,
-  EditUserModal,
-  AutoProvisionModal,
-  AddUserModal,
-  CertRejectModal,
-  ArchiveSummaryModal,
-  BulkPromotionModal,
-  AdminCertificatePreviewModal,
-} from '@/components/admin/modals';
-import { NewAcademicYearWorkflowModal } from '@/components/admin/NewAcademicYearWorkflowModal';
 import { AdminSidebar, AdminTab } from '@/components/admin/AdminSidebar';
 import { hasProjectDuty } from '@/lib/events/projectDuty';
 import ThemeModeToggle from '@/components/ThemeModeToggle';
@@ -49,7 +24,123 @@ import {
   useAdminUsers,
   useAdminCertificates,
   useAdminStudents,
+  useAdminCourses,
+  useAdminTimetables,
+  useAdminAttendance,
 } from '@/hooks/admin';
+
+const TabLoadingFallback = () => (
+  <div className="flex flex-col items-center justify-center p-12 min-h-[360px] text-slate-500 gap-3">
+    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+    <span className="text-xs font-bold text-slate-600">กำลังโหลดส่วนงาน...</span>
+  </div>
+);
+
+// Dynamic Tab Components
+const AdminDashboardTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminDashboardTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminCertificatesTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminCertificatesTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminAdmissionsTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminAdmissionsTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminUsersTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminUsersTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminBrandingTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminBrandingTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminSheetsTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminSheetsTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminStudentsTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminStudentsTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminCoursesTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminCoursesTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminTimetablesTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminTimetablesTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminAttendanceTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminAttendanceTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+const AdminEventsTab = dynamic(
+  () => import('@/components/admin/tabs').then((m) => m.AdminEventsTab),
+  { loading: TabLoadingFallback, ssr: false }
+);
+
+// Dynamic Modals (only downloaded when opened)
+const AddUserModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.AddUserModal),
+  { ssr: false }
+);
+const EditUserModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.EditUserModal),
+  { ssr: false }
+);
+const AdminCertificatePreviewModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.AdminCertificatePreviewModal),
+  { ssr: false }
+);
+const CertRejectModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.CertRejectModal),
+  { ssr: false }
+);
+const ArchiveSummaryModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.ArchiveSummaryModal),
+  { ssr: false }
+);
+const TeachingSlipModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.TeachingSlipModal),
+  { ssr: false }
+);
+const BatchTeachingSlipsModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.BatchTeachingSlipsModal),
+  { ssr: false }
+);
+const BulkPromotionModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.BulkPromotionModal),
+  { ssr: false }
+);
+const NewAcademicYearWorkflowModal = dynamic(
+  () => import('@/components/admin/NewAcademicYearWorkflowModal').then((m) => m.NewAcademicYearWorkflowModal),
+  { ssr: false }
+);
+const StudentDeleteModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.StudentDeleteModal),
+  { ssr: false }
+);
+const AutoProvisionModal = dynamic(
+  () => import('@/components/admin/modals').then((m) => m.AutoProvisionModal),
+  { ssr: false }
+);
+
+const VALID_ADMIN_TABS: AdminTab[] = [
+  'DASHBOARD',
+  'CERTIFICATES',
+  'STUDENTS',
+  'ADMISSIONS',
+  'COURSES',
+  'TIMETABLES',
+  'ATTENDANCE',
+  'EVENTS',
+  'USERS',
+  'BRANDING',
+  'SHEETS',
+];
 
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<AdminTab>('DASHBOARD');
@@ -284,22 +375,40 @@ export default function AdminConsolePage() {
     loadData,
   });
 
-  // Courses filter states
-  const [courseSearch, setCourseSearch] = useState('');
-  const [courseProgramFilter, setCourseProgramFilter] = useState<'ALL' | 'THAI' | 'ENGLISH'>('ALL');
-  const [courseDegreeFilter, setCourseDegreeFilter] = useState<string>('ALL');
+  const adminCourses = useAdminCourses({
+    coursesList,
+    setCoursesList,
+    onRefreshCourses: loadData,
+    setActionSuccess,
+  });
 
-  // Timetables filter states
-  const [timetableSearch, setTimetableSearch] = useState('');
-  const [timetableYearFilter, setTimetableYearFilter] = useState<string>('ALL');
-  const [timetableSemesterFilter, setTimetableSemesterFilter] = useState<string>('ALL');
-  const [timetableDayFilter, setTimetableDayFilter] = useState<string>('ALL');
-  const [timetableMajorFilter, setTimetableMajorFilter] = useState<string>('ALL');
-  const [timetableProgramFilter, setTimetableProgramFilter] = useState<string>('ALL');
+  const adminTimetables = useAdminTimetables({ timetablesList });
 
-  // Attendance filter states
-  const [attendanceSearch, setAttendanceSearch] = useState('');
-  const [attendanceStatusFilter, setAttendanceStatusFilter] = useState<string>('ALL');
+  const adminAttendance = useAdminAttendance({ attendanceList });
+
+  // Tab Switching & URL Sync with Browser History
+  const handleTabChange = useCallback((tab: AdminTab) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.pushState({ adminTab: tab }, '', url.toString());
+    }
+  }, []);
+
+  // Browser Back/Forward navigation listener
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as AdminTab | null;
+      if (tabParam && VALID_ADMIN_TABS.includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleToggleEventStatus = async (regId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'ATTENDED' ? 'REGISTERED' : 'ATTENDED';
@@ -357,21 +466,7 @@ export default function AdminConsolePage() {
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         const tabParam = urlParams.get('tab') as AdminTab | null;
-        if (
-          tabParam &&
-          [
-            'DASHBOARD',
-            'CERTIFICATES',
-            'STUDENTS',
-            'COURSES',
-            'TIMETABLES',
-            'ATTENDANCE',
-            'EVENTS',
-            'USERS',
-            'BRANDING',
-            'SHEETS',
-          ].includes(tabParam)
-        ) {
+        if (tabParam && VALID_ADMIN_TABS.includes(tabParam)) {
           setActiveTab(tabParam);
         }
         if (urlParams.get('promote') === 'true') {
@@ -386,22 +481,22 @@ export default function AdminConsolePage() {
   // Redirect Officer, Vipassana Master, and Instructor away from restricted tabs
   useEffect(() => {
     if (isOfficer && (activeTab === 'BRANDING' || activeTab === 'SHEETS')) {
-      setActiveTab('DASHBOARD');
+      handleTabChange('DASHBOARD');
     }
     if (isVipassanaMaster && (activeTab === 'BRANDING' || activeTab === 'SHEETS' || activeTab === 'USERS')) {
-      setActiveTab('EVENTS');
+      handleTabChange('EVENTS');
     }
     if (isInstructorOnly) {
       const hasExplicitDuty = Boolean(
         currentUser?.isProjectCoordinator || currentUser?.isMeditationStaff
       );
       if (!hasExplicitDuty && activeTab !== 'ATTENDANCE') {
-        setActiveTab('ATTENDANCE');
+        handleTabChange('ATTENDANCE');
       } else if (hasExplicitDuty && activeTab !== 'EVENTS' && activeTab !== 'ATTENDANCE') {
-        setActiveTab('ATTENDANCE');
+        handleTabChange('ATTENDANCE');
       }
     }
-  }, [isOfficer, isVipassanaMaster, isInstructorOnly, isProjectDutyHolder, activeTab]);
+  }, [isOfficer, isVipassanaMaster, isInstructorOnly, isProjectDutyHolder, activeTab, handleTabChange]);
 
   const handleArchiveYear = async () => {
     if (!confirm(`ยืนยันการสรุปปิดยอดและจัดเก็บประวัติปีการศึกษา ${archivingYear} หรือไม่?`)) return;
@@ -460,68 +555,6 @@ export default function AdminConsolePage() {
     clearAuthSession();
     window.location.href = '/login';
   };
-
-  // Filter Courses
-  const filteredCourses = useMemo(() => {
-    return coursesList.filter((c) => {
-      if (courseProgramFilter !== 'ALL') {
-        if (courseProgramFilter === 'ENGLISH' && c.programType !== 'ENGLISH') return false;
-        if (courseProgramFilter === 'THAI' && c.programType === 'ENGLISH') return false;
-      }
-      if (courseDegreeFilter !== 'ALL' && c.degreeLevel !== courseDegreeFilter) return false;
-      if (courseSearch.trim()) {
-        const q = courseSearch.toLowerCase();
-        return (
-          c.courseCode?.toLowerCase().includes(q) ||
-          c.courseName?.toLowerCase().includes(q) ||
-          c.courseNameEn?.toLowerCase().includes(q) ||
-          c.instructor?.toLowerCase().includes(q) ||
-          c.primaryTeacherName?.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [coursesList, courseProgramFilter, courseDegreeFilter, courseSearch]);
-
-  // Filter Timetables
-  const filteredTimetables = useMemo(() => {
-    return timetablesList.filter((t) => {
-      if (timetableYearFilter !== 'ALL' && t.academicYear !== timetableYearFilter) return false;
-      if (timetableSemesterFilter !== 'ALL' && String(t.semester) !== timetableSemesterFilter) return false;
-      if (timetableDayFilter !== 'ALL' && String(t.dayOfWeek) !== timetableDayFilter) return false;
-      if (timetableMajorFilter !== 'ALL' && t.major !== timetableMajorFilter) return false;
-      if (timetableProgramFilter !== 'ALL' && t.programType !== timetableProgramFilter) return false;
-      if (timetableSearch.trim()) {
-        const q = timetableSearch.toLowerCase();
-        return (
-          t.courseCode?.toLowerCase().includes(q) ||
-          t.courseName?.toLowerCase().includes(q) ||
-          t.instructor?.toLowerCase().includes(q) ||
-          t.room?.toLowerCase().includes(q) ||
-          t.major?.toLowerCase().includes(q) ||
-          t.degreeLevel?.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [timetablesList, timetableYearFilter, timetableSemesterFilter, timetableDayFilter, timetableMajorFilter, timetableProgramFilter, timetableSearch]);
-
-  // Filter Attendance
-  const filteredAttendance = useMemo(() => {
-    return attendanceList.filter((a) => {
-      if (attendanceStatusFilter !== 'ALL' && a.status !== attendanceStatusFilter) return false;
-      if (attendanceSearch.trim()) {
-        const q = attendanceSearch.toLowerCase();
-        return (
-          a.courseCode?.toLowerCase().includes(q) ||
-          a.studentCode?.toLowerCase().includes(q) ||
-          a.studentName?.toLowerCase().includes(q) ||
-          a.recordedBy?.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [attendanceList, attendanceStatusFilter, attendanceSearch]);
 
   if (!authChecked) {
     return (
@@ -592,7 +625,7 @@ export default function AdminConsolePage() {
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         settings={adminSettings.settings}
         pendingRequestsCount={adminCerts.pendingRequests.length}
         studentsTotalCount={studentsCount.total}
@@ -721,7 +754,7 @@ export default function AdminConsolePage() {
               coursesCount={coursesCount}
               coursesList={coursesList}
               users={adminUsers.users}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
               setStatusFilter={adminCerts.setStatusFilter}
               setApprovingId={adminCerts.setApprovingId}
               onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
@@ -785,7 +818,7 @@ export default function AdminConsolePage() {
               isScanningInstructors={adminUsers.isScanningInstructors}
               handleScanTimetables={adminUsers.handleScanTimetables}
               setIsAddUserOpen={adminUsers.setIsAddUserOpen}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
               setStudentSearch={adminStudents.setStudentSearch}
               handleStartEditUser={(u) => adminUsers.handleStartEditUser(u as UserAccount)}
               handleOpenTeachingSlip={(u) => adminUsers.handleOpenTeachingSlip(u as UserAccount)}
@@ -879,11 +912,11 @@ export default function AdminConsolePage() {
           {activeTab === 'COURSES' && (
             <AdminCoursesTab
               coursesCount={coursesCount}
-              filteredCourses={filteredCourses}
-              courseSearch={courseSearch}
-              setCourseSearch={setCourseSearch}
-              courseProgramFilter={courseProgramFilter}
-              setCourseProgramFilter={setCourseProgramFilter}
+              filteredCourses={adminCourses.filteredCourses}
+              courseSearch={adminCourses.courseSearch}
+              setCourseSearch={adminCourses.setCourseSearch}
+              courseProgramFilter={adminCourses.courseProgramFilter}
+              setCourseProgramFilter={adminCourses.setCourseProgramFilter}
               instructors={adminUsers.users.filter((u) => u.role === 'INSTRUCTOR')}
               onRefreshCourses={loadData}
             />
@@ -893,19 +926,19 @@ export default function AdminConsolePage() {
           {activeTab === 'TIMETABLES' && (
             <AdminTimetablesTab
               timetablesList={timetablesList}
-              filteredTimetables={filteredTimetables}
-              timetableSearch={timetableSearch}
-              setTimetableSearch={setTimetableSearch}
-              timetableYearFilter={timetableYearFilter}
-              setTimetableYearFilter={setTimetableYearFilter}
-              timetableSemesterFilter={timetableSemesterFilter}
-              setTimetableSemesterFilter={setTimetableSemesterFilter}
-              timetableDayFilter={timetableDayFilter}
-              setTimetableDayFilter={setTimetableDayFilter}
-              timetableMajorFilter={timetableMajorFilter}
-              setTimetableMajorFilter={setTimetableMajorFilter}
-              timetableProgramFilter={timetableProgramFilter}
-              setTimetableProgramFilter={setTimetableProgramFilter}
+              filteredTimetables={adminTimetables.filteredTimetables}
+              timetableSearch={adminTimetables.timetableSearch}
+              setTimetableSearch={adminTimetables.setTimetableSearch}
+              timetableYearFilter={adminTimetables.timetableYearFilter}
+              setTimetableYearFilter={adminTimetables.setTimetableYearFilter}
+              timetableSemesterFilter={adminTimetables.timetableSemesterFilter}
+              setTimetableSemesterFilter={adminTimetables.setTimetableSemesterFilter}
+              timetableDayFilter={adminTimetables.timetableDayFilter}
+              setTimetableDayFilter={adminTimetables.setTimetableDayFilter}
+              timetableMajorFilter={adminTimetables.timetableMajorFilter}
+              setTimetableMajorFilter={adminTimetables.setTimetableMajorFilter}
+              timetableProgramFilter={adminTimetables.timetableProgramFilter}
+              setTimetableProgramFilter={adminTimetables.setTimetableProgramFilter}
               handleScanTimetables={adminUsers.handleScanTimetables}
               isScanningInstructors={adminUsers.isScanningInstructors}
             />
@@ -915,11 +948,11 @@ export default function AdminConsolePage() {
           {activeTab === 'ATTENDANCE' && (
             <AdminAttendanceTab
               attendanceList={attendanceList}
-              filteredAttendance={filteredAttendance}
-              attendanceSearch={attendanceSearch}
-              setAttendanceSearch={setAttendanceSearch}
-              attendanceStatusFilter={attendanceStatusFilter}
-              setAttendanceStatusFilter={setAttendanceStatusFilter}
+              filteredAttendance={adminAttendance.filteredAttendance}
+              attendanceSearch={adminAttendance.attendanceSearch}
+              setAttendanceSearch={adminAttendance.setAttendanceSearch}
+              attendanceStatusFilter={adminAttendance.attendanceStatusFilter}
+              setAttendanceStatusFilter={adminAttendance.setAttendanceStatusFilter}
               timetablesList={timetablesList}
               studentsList={studentsList}
               currentUser={currentUser}
@@ -1066,7 +1099,7 @@ export default function AdminConsolePage() {
       <NewAcademicYearWorkflowModal
         isOpen={isNewYearWorkflowModalOpen}
         onClose={() => setIsNewYearWorkflowModalOpen(false)}
-        onNavigateTab={(tab) => setActiveTab(tab)}
+        onNavigateTab={(tab) => handleTabChange(tab)}
         onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
       />
 

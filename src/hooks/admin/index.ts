@@ -5,3 +5,5 @@ export * from './useAdminStudents';
 export * from './useAdminEvents';
 export * from './useAdminAdmissions';
 export * from './useAdminCourses';
+export * from './useAdminTimetables';
+export * from './useAdminAttendance';

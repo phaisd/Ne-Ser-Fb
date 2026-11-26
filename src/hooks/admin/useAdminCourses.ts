@@ -48,6 +48,7 @@ export function useAdminCourses({
           c.courseName?.toLowerCase().includes(q) ||
           c.courseNameEn?.toLowerCase().includes(q) ||
           c.instructor?.toLowerCase().includes(q) ||
+          c.primaryTeacherName?.toLowerCase().includes(q) ||
           c.major?.toLowerCase().includes(q)
         );
       }
