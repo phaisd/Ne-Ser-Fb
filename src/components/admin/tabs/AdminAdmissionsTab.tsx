@@ -22,6 +22,7 @@ import {
   Sparkles,
   Sliders,
   Users,
+  Phone,
 } from 'lucide-react';
 import { AdmissionApplication, AdmissionStatus, SystemSettings } from '@/types';
 import { useAdminAdmissions } from '@/hooks/admin/useAdminAdmissions';
@@ -234,50 +235,156 @@ export function AdminAdmissionsTab({
           </div>
         </div>
 
-        {/* Default Schedule & Academic Year Config */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 text-xs">
-          <div>
-            <label className="block font-bold text-slate-700 mb-1">ปีการศึกษาที่เปิดรับสมัคร</label>
-            <input
-              type="text"
-              value={settings.admissionAcademicYear || '2570'}
-              onChange={(e) => setSettings({ ...settings, admissionAcademicYear: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
-            />
-          </div>
-          <div className="md:col-span-1">
-            <label className="block font-bold text-slate-700 mb-1">วัน-เวลาสอบสัมภาษณ์เริ่มต้น</label>
-            <input
-              type="text"
-              value={settings.admissionDefaultInterviewDate || ''}
-              onChange={(e) =>
-                setSettings({ ...settings, admissionDefaultInterviewDate: e.target.value })
-              }
-              placeholder="เช่น 20 พฤษภาคม 2570 เวลา 09.00-12.00 น."
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
-            />
-          </div>
-          <div className="md:col-span-1">
-            <label className="block font-bold text-slate-700 mb-1">สถานที่ / ห้องสอบสัมภาษณ์เริ่มต้น</label>
-            <input
-              type="text"
-              value={settings.admissionDefaultInterviewRoom || ''}
-              onChange={(e) =>
-                setSettings({ ...settings, admissionDefaultInterviewRoom: e.target.value })
-              }
-              placeholder="เช่น อาคารเรียนรวม ห้อง C301"
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900"
-            />
-          </div>
-          <div className="flex items-end">
-            <button
-              type="button"
-              onClick={() => handleSaveAdmissionConfig()}
-              disabled={savingConfig}
-              className="w-full py-2 px-4 rounded-xl bg-slate-900 hover:bg-indigo-700 text-white font-bold transition cursor-pointer"
-            >
-              {savingConfig ? 'กำลังบันทึก...' : '💾 บันทึกกำหนดการรับสมัคร'}
-            </button>
+        {/* Admission Schedule & Coordinator Contact Configuration */}
+        <div className="pt-2 border-t border-slate-100 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 text-xs">
+            {/* Left 7 cols: Schedule & Coordinator Settings */}
+            <div className="lg:col-span-7 space-y-3">
+              <div className="font-extrabold text-slate-800 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-amber-600" />
+                <span>กำหนดการและสถานที่สอบสัมภาษณ์</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">ปีการศึกษาที่เปิดรับสมัคร</label>
+                  <input
+                    type="text"
+                    value={settings.admissionAcademicYear || '2570'}
+                    onChange={(e) => setSettings({ ...settings, admissionAcademicYear: e.target.value })}
+                    placeholder="เช่น 2570"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900 bg-white"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-slate-700 mb-1">วัน-เวลาสอบสัมภาษณ์เริ่มต้น</label>
+                  <input
+                    type="text"
+                    value={settings.admissionDefaultInterviewDate || ''}
+                    onChange={(e) =>
+                      setSettings({ ...settings, admissionDefaultInterviewDate: e.target.value })
+                    }
+                    placeholder="เช่น 20 พฤษภาคม 2570 เวลา 09.00-12.00 น."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900 bg-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">สถานที่ / ห้องสอบสัมภาษณ์เริ่มต้น</label>
+                <input
+                  type="text"
+                  value={settings.admissionDefaultInterviewRoom || ''}
+                  onChange={(e) =>
+                    setSettings({ ...settings, admissionDefaultInterviewRoom: e.target.value })
+                  }
+                  placeholder="เช่น อาคารสมเด็จพระพุฒาจารย์ (อาคารเรียนรวม) คณะพุทธศาสตร์ มจร วังน้อย"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900 bg-white"
+                />
+              </div>
+
+              {/* Coordinator Information Fields */}
+              <div className="pt-2 border-t border-slate-100 font-extrabold text-slate-800 flex items-center gap-2">
+                <Phone className="w-4 h-4 text-amber-600" />
+                <span>ข้อมูลติดต่อศูนย์ประสานงาน (แสดงบนแบนเนอร์ /enroll)</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">หัวข้อกล่องประสานงาน</label>
+                  <input
+                    type="text"
+                    value={settings.admissionCoordinatorTitle ?? 'ศูนย์ประสานงานการรับสมัครนิสิตใหม่'}
+                    onChange={(e) =>
+                      setSettings({ ...settings, admissionCoordinatorTitle: e.target.value })
+                    }
+                    placeholder="เช่น ศูนย์ประสานงานการรับสมัครนิสิตใหม่"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900 bg-white font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">เบอร์โทรศัพท์ติดต่อ / ต่อสายใน</label>
+                  <input
+                    type="text"
+                    value={settings.admissionCoordinatorPhone ?? '035-248-000 ต่อ 8323'}
+                    onChange={(e) =>
+                      setSettings({ ...settings, admissionCoordinatorPhone: e.target.value })
+                    }
+                    placeholder="เช่น 035-248-000 ต่อ 8323"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900 bg-white font-medium"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">ชื่อหน่วยงาน / สำนักงานผู้รับผิดชอบ</label>
+                <input
+                  type="text"
+                  value={settings.admissionCoordinatorName ?? 'สำนักงานคณบดีคณะพุทธศาสตร์ ฝ่ายทะเบียนและวัดผล'}
+                  onChange={(e) =>
+                    setSettings({ ...settings, admissionCoordinatorName: e.target.value })
+                  }
+                  placeholder="เช่น สำนักงานคณบดีคณะพุทธศาสตร์ ฝ่ายทะเบียนและวัดผล"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900 bg-white font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Right 5 cols: Live Preview Card of Coordinator Banner Box */}
+            <div className="lg:col-span-5 flex flex-col justify-between space-y-3 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-5 rounded-2xl border border-amber-500/30 shadow-md">
+              <div>
+                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2 mb-3">
+                  <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>ตัวอย่างแสดงผลจริงบนแบนเนอร์หน้า /enroll (Live Preview)</span>
+                  </span>
+                  <span className="text-[10px] text-amber-200/60 font-mono">Banner Box</span>
+                </div>
+
+                {/* The exact preview card matching the user's screenshot */}
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 space-y-2 shadow-inner">
+                  <div className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>{settings.admissionCoordinatorTitle || 'ศูนย์ประสานงานการรับสมัครนิสิตใหม่'}</span>
+                  </div>
+                  <div className="text-xs sm:text-sm font-extrabold text-white leading-snug">
+                    {settings.admissionCoordinatorName || 'สำนักงานคณบดีคณะพุทธศาสตร์ ฝ่ายทะเบียนและวัดผล'}
+                  </div>
+                  <div className="text-[11px] text-slate-300 flex items-center gap-1.5">
+                    <span>โทร:</span>
+                    <span className="font-bold text-amber-200">
+                      {settings.admissionCoordinatorPhone || '035-248-000 ต่อ 8323'}
+                    </span>
+                  </div>
+                  <div className="pt-1 flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        settings.admissionOpen !== false
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                          : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          settings.admissionOpen !== false ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                        }`}
+                      />
+                      {settings.admissionOpen !== false
+                        ? `เปิดรับสมัครออนไลน์ ปี ${settings.admissionAcademicYear || '2570'}`
+                        : 'ปิดรับยื่นใบสมัครรอบปัจจุบัน'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleSaveAdmissionConfig()}
+                  disabled={savingConfig}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold text-xs transition cursor-pointer shadow-md flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingConfig ? 'กำลังบันทึกข้อมูล...' : '💾 บันทึกกำหนดการ & ข้อมูลศูนย์ประสานงาน'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

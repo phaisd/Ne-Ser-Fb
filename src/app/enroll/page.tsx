@@ -229,13 +229,13 @@ function EnrollPortalContent() {
           </div>
 
           {/* Coordinator Contact Card */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 sm:p-5 space-y-2 shrink-0 lg:w-80">
+          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 sm:p-5 space-y-2 shrink-0 lg:w-80 shadow-lg">
             <div className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5" />
-              <span>ศูนย์ประสานงานการรับสมัครนิสิตใหม่</span>
+              <span>{settings.admissionCoordinatorTitle || 'ศูนย์ประสานงานการรับสมัครนิสิตใหม่'}</span>
             </div>
             <div className="text-sm font-extrabold text-white">
-              {settings.admissionCoordinatorName || 'สำนักงานคณบดีคณะพุทธศาสตร์'}
+              {settings.admissionCoordinatorName || 'สำนักงานคณบดีคณะพุทธศาสตร์ ฝ่ายทะเบียนและวัดผล'}
             </div>
             <div className="text-xs text-slate-300 flex items-center gap-1.5">
               <span>โทร:</span>
