@@ -201,6 +201,8 @@ export function AdmissionPortalCustomizer({
                 tagline: editingItem.tagline,
                 highlights: lines,
                 colorTheme: editingItem.colorTheme,
+                bgImageUrl: editingItem.bgImageUrl,
+                bgImageOpacity: editingItem.bgImageOpacity,
                 badgeText: editingItem.badgeText,
                 actionText: editingItem.actionText,
                 enabled: editingItem.enabled,

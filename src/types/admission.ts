@@ -89,7 +89,8 @@ export interface AdmissionDepartmentBannerItem {
   highlights?: string[]; // จุดเด่นย่อย (2-3 ข้อ)
   colorTheme: DepartmentBannerColorTheme; // โทนสีสบายตา
   customBgGradient?: string; // Gradient เพิ่มเติม (optional)
-  bgImageUrl?: string; // รูปภาพพื้นหลัง (optional)
+  bgImageUrl?: string; // รูปภาพพื้นหลังลายน้ำ (optional)
+  bgImageOpacity?: number; // ค่าความโปร่งใส/โอปาซิตี้ของลายน้ำ 0.05 - 0.60 (default: 0.18 หรือ 18%)
   actionText?: string; // ข้อความปุ่ม (เช่น "สมัครเรียนสาขานี้ →")
   actionType?: 'APPLY_NOW' | 'EXTERNAL_LINK' | 'VIEW_INFO';
   actionUrl?: string; // ลิงก์ภายนอกถ้ามี

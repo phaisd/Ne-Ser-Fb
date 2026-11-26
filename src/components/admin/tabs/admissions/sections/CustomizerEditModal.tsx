@@ -1,7 +1,17 @@
 'use client';
 
-import React from 'react';
-import { Pencil, X, Save } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import {
+  Pencil,
+  X,
+  Save,
+  UploadCloud,
+  Image as ImageIcon,
+  Trash2,
+  Sliders,
+  Info,
+  AlertCircle,
+} from 'lucide-react';
 import { EditModalState } from './types';
 import { DepartmentBannerColorTheme } from '@/types';
 
@@ -16,6 +26,46 @@ export function CustomizerEditModal({
   setEditingItem,
   onSave,
 }: CustomizerEditModalProps) {
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleUploadFile = async (file: File) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('ขนาดไฟล์เกินกำหนด (สูงสุด 5 MB)');
+      return;
+    }
+    setUploadingImage(true);
+    setUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('scope', 'branding');
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && (data.url || data.publicUrl)) {
+        const finalUrl = data.url || data.publicUrl;
+        if (editingItem.type === 'banner') {
+          setEditingItem({
+            ...editingItem,
+            bgImageUrl: finalUrl,
+            bgImageOpacity: editingItem.bgImageOpacity ?? 0.18,
+          });
+        }
+      } else {
+        setUploadError(data.error || 'ไม่สามารถอัปโหลดไฟล์ได้');
+      }
+    } catch {
+      setUploadError('เกิดข้อผิดพลาดในการเชื่อมต่อเพื่ออัปโหลดไฟล์');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
   return (
     <div
       role="dialog"
@@ -170,6 +220,181 @@ export function CustomizerEditModal({
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 font-bold text-slate-900"
                   />
                 </div>
+              </div>
+
+              {/* Watermark Background Image Section */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="font-extrabold text-slate-800 flex items-center gap-1.5 text-xs">
+                    <ImageIcon className="w-4 h-4 text-emerald-600" />
+                    <span>ภาพพื้นหลังลายน้ำประจำสาขาวิชา (Watermark Image)</span>
+                  </label>
+                  {editingItem.bgImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingItem({ ...editingItem, bgImageUrl: '' })}
+                      className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>ลบภาพพื้นหลัง</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Dimension & Guideline Info Box */}
+                <div className="bg-sky-50/70 border border-sky-200/80 rounded-xl p-3 text-[11px] text-sky-950 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-sky-900">
+                    <Info className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                    <span>คำแนะนำและขนาดภาพที่เหมาะสม:</span>
+                  </div>
+                  <ul className="list-disc list-inside space-y-0.5 text-slate-600 pl-1">
+                    <li>
+                      <strong className="text-slate-800">ขนาดที่เหมาะสม:</strong> 1200 x 360 พิกเซล (แนวนอน อัตราส่วน ~10:3 หรือ 16:5) หรือขั้นต่ำ 800 x 240 px
+                    </li>
+                    <li>
+                      <strong className="text-slate-800">ลักษณะภาพ:</strong> ภาพพระคัมภีร์ใบลาน, พระพุทธรูป, นั่งสมาธิ, ลายไทย, สถูป หรือภาพบรรยากาศการเรียน
+                    </li>
+                    <li>
+                      <strong className="text-slate-800">ประเภทไฟล์:</strong> JPG, PNG (แนะนำไฟล์โปร่งใส PNG จะซ้อนเป็นลายน้ำได้สวยงาม), WebP ขนาดไม่เกิน 5 MB
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Drag & Drop Upload Box */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      handleUploadFile(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1.5 ${
+                    isDragging
+                      ? 'border-emerald-500 bg-emerald-50'
+                      : 'border-slate-300 hover:border-emerald-400 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleUploadFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                  <UploadCloud
+                    className={`w-6 h-6 ${
+                      uploadingImage ? 'animate-bounce text-emerald-600' : 'text-slate-400'
+                    }`}
+                  />
+                  <div className="text-xs font-bold text-slate-700">
+                    {uploadingImage
+                      ? 'กำลังอัปโหลดรูปภาพลายน้ำ...'
+                      : 'ลากและวางไฟล์รูปภาพที่นี่ หรือคลิกเพื่อเลือกไฟล์จากเครื่อง'}
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    รองรับไฟล์ JPG, PNG, WebP สูงสุด 5 MB
+                  </p>
+                </div>
+
+                {uploadError && (
+                  <p className="text-[11px] font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{uploadError}</span>
+                  </p>
+                )}
+
+                {/* Direct Image URL input */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    หรือระบุลิงก์รูปภาพ (Image URL / Google Drive):
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.bgImageUrl || ''}
+                    onChange={(e) =>
+                      setEditingItem({ ...editingItem, bgImageUrl: e.target.value })
+                    }
+                    placeholder="เช่น /images/banner-vipassana.jpg หรือ https://..."
+                    className="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white text-slate-900 font-mono"
+                  />
+                </div>
+
+                {/* Opacity Slider */}
+                {editingItem.bgImageUrl && (
+                  <div className="space-y-1.5 pt-2 border-t border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-700 text-xs flex items-center gap-1.5">
+                        <Sliders className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>ปรับความโปร่งแสงลายน้ำ (Opacity / ทึบ-จาง):</span>
+                      </span>
+                      <span className="font-mono font-black text-xs px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                        {Math.round((editingItem.bgImageOpacity ?? 0.18) * 100)}%
+                        {(editingItem.bgImageOpacity ?? 0.18) <= 0.25 &&
+                        (editingItem.bgImageOpacity ?? 0.18) >= 0.15
+                          ? ' (สบายตา แนะนำ)'
+                          : ''}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-slate-400 font-bold">5% จางมาก</span>
+                      <input
+                        type="range"
+                        min="0.05"
+                        max="0.60"
+                        step="0.01"
+                        value={editingItem.bgImageOpacity ?? 0.18}
+                        onChange={(e) =>
+                          setEditingItem({
+                            ...editingItem,
+                            bgImageOpacity: parseFloat(e.target.value),
+                          })
+                        }
+                        className="flex-1 accent-emerald-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold">60% ทึบชัดเจน</span>
+                    </div>
+
+                    {/* Live Preview Box inside Modal */}
+                    <div className="pt-2">
+                      <div className="text-[10px] font-bold text-slate-500 mb-1">
+                        ตัวอย่างการมองเห็นลายน้ำหลังข้อความ (Watermark Preview):
+                      </div>
+                      <div className="relative overflow-hidden rounded-xl p-3.5 bg-slate-950 text-white border border-slate-800 shadow-inner">
+                        {/* The watermark */}
+                        <div
+                          className="absolute inset-0 bg-cover bg-center pointer-events-none mix-blend-screen"
+                          style={{
+                            backgroundImage: `url('${editingItem.bgImageUrl}')`,
+                            opacity: editingItem.bgImageOpacity ?? 0.18,
+                          }}
+                        />
+                        <div className="relative z-10 space-y-0.5">
+                          <div className="text-[10px] font-bold text-amber-300">
+                            {editingItem.degreeLevel || 'พธ.บ. (ตรี)'}
+                          </div>
+                          <div className="text-xs font-black text-white truncate">
+                            {editingItem.majorName || 'ชื่อสาขาวิชา'}
+                          </div>
+                          <p className="text-[10px] text-slate-300 line-clamp-1">
+                            {editingItem.tagline || 'ตัวอย่างคำโปรยสาขาวิชา...'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}

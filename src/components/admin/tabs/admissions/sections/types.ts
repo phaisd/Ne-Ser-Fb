@@ -26,6 +26,8 @@ export type EditModalState =
       tagline: string;
       highlightsText: string;
       colorTheme: DepartmentBannerColorTheme;
+      bgImageUrl?: string;
+      bgImageOpacity?: number;
       badgeText: string;
       actionText: string;
       enabled: boolean;

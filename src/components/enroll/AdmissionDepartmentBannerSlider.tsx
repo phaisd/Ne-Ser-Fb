@@ -182,6 +182,58 @@ export function AdmissionDepartmentBannerSlider({
         />
         <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/[0.03] rounded-full blur-2xl pointer-events-none" />
 
+        {/* Department Watermark Background Image with Custom Opacity */}
+        {currentBanner.bgImageUrl ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center pointer-events-none transition-all duration-700 mix-blend-screen"
+            style={{
+              backgroundImage: `url('${currentBanner.bgImageUrl}')`,
+              opacity:
+                typeof currentBanner.bgImageOpacity === 'number'
+                  ? currentBanner.bgImageOpacity
+                  : 0.18,
+            }}
+          />
+        ) : (
+          /* Built-in Decorative Artistic Watermark Silhouette when no custom photo is uploaded */
+          <div className="absolute right-2 sm:right-8 -bottom-8 w-44 h-44 sm:w-56 sm:h-56 pointer-events-none opacity-[0.08] text-white select-none transition-all duration-700">
+            {currentBanner.colorTheme === 'forest' ? (
+              <svg viewBox="0 0 100 100" fill="currentColor" className="w-full h-full">
+                <path d="M50 15 C45 35 30 45 10 50 C30 55 45 65 50 85 C55 65 70 55 90 50 C70 45 55 35 50 15 Z" />
+                <path
+                  d="M50 30 C45 42 35 50 25 55 C35 60 45 68 50 80 C55 68 65 60 75 55 C65 50 55 42 50 30 Z"
+                  opacity="0.6"
+                />
+              </svg>
+            ) : currentBanner.colorTheme === 'amber' ? (
+              <svg viewBox="0 0 100 100" fill="currentColor" className="w-full h-full">
+                <path d="M15 25 Q50 35 85 25 L85 75 Q50 85 15 75 Z" />
+                <path d="M50 35 L50 85" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 100 100" fill="currentColor" className="w-full h-full">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="6" />
+                <circle cx="50" cy="50" r="14" fill="none" stroke="currentColor" strokeWidth="5" />
+                <circle cx="50" cy="50" r="6" />
+                {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+                  <line
+                    key={angle}
+                    x1="50"
+                    y1="50"
+                    x2={50 + 38 * Math.cos((angle * Math.PI) / 180)}
+                    y2={50 + 38 * Math.sin((angle * Math.PI) / 180)}
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                ))}
+              </svg>
+            )}
+          </div>
+        )}
+
+        {/* Soft text protection shadow overlay to ensure text stays crystal-clear over any watermark */}
+        <div className="absolute inset-y-0 left-0 w-full md:w-3/4 bg-gradient-to-r from-black/50 via-black/20 to-transparent pointer-events-none" />
+
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Left Column: Tag & Major Info */}
           <div className="space-y-2 max-w-3xl">

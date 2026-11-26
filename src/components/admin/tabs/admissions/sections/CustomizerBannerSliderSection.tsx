@@ -128,6 +128,8 @@ export function CustomizerBannerSliderSection({
       tagline: b.tagline,
       highlightsText: (b.highlights || []).join('\n'),
       colorTheme: b.colorTheme || 'sage',
+      bgImageUrl: b.bgImageUrl || '',
+      bgImageOpacity: typeof b.bgImageOpacity === 'number' ? b.bgImageOpacity : 0.18,
       badgeText: b.badgeText || '',
       actionText: b.actionText || 'สมัครเรียนสาขานี้ →',
       enabled: b.enabled !== false,
@@ -292,6 +294,15 @@ export function CustomizerBannerSliderSection({
                       {banner.badgeText && (
                         <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
                           {banner.badgeText}
+                        </span>
+                      )}
+                      {banner.bgImageUrl ? (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-1">
+                          <span>🖼️ ลายน้ำ {Math.round((banner.bgImageOpacity ?? 0.18) * 100)}%</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-medium">
+                          ลายน้ำมาตรฐาน
                         </span>
                       )}
                     </div>
