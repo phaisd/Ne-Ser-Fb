@@ -79,7 +79,7 @@ export function UserFilterToolbar({
                   userRoleFilter === 'ADMIN' ? 'bg-indigo-600 text-white shadow-xs' : 'text-indigo-700 hover:bg-white/60'
                 }`}
               >
-                Admin ({users.filter((u) => u.role === 'ADMIN').length})
+                Admin ({users.filter((u) => u.role === 'ADMIN' && !u.isSuperAdmin && u.email !== 'phaisal.dis@mcu.ac.th').length})
               </button>
               <button
                 onClick={() => setUserRoleFilter('OFFICER')}
@@ -87,7 +87,15 @@ export function UserFilterToolbar({
                   userRoleFilter === 'OFFICER' ? 'bg-sky-600 text-white shadow-xs' : 'text-sky-700 hover:bg-white/60'
                 }`}
               >
-                เจ้าหน้าที่ ({users.filter((u) => u.role === 'OFFICER').length})
+                📋 เจ้าหน้าที่หลักสูตร ({users.filter((u) => u.role === 'OFFICER').length})
+              </button>
+              <button
+                onClick={() => setUserRoleFilter('STAFF')}
+                className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
+                  userRoleFilter === 'STAFF' ? 'bg-blue-600 text-white shadow-xs' : 'text-blue-700 hover:bg-white/60'
+                }`}
+              >
+                💼 สายสนับสนุน ({users.filter((u) => u.role === 'STAFF').length})
               </button>
             </>
           )}
@@ -97,7 +105,7 @@ export function UserFilterToolbar({
               userRoleFilter === 'INSTRUCTOR' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 hover:bg-white/60'
             }`}
           >
-            อาจารย์ ({isOfficer ? filteredUsers.length : users.filter((u) => u.role === 'INSTRUCTOR').length})
+            👨‍🏫 อาจารย์ ({isOfficer ? filteredUsers.length : users.filter((u) => (u.role || 'INSTRUCTOR') === 'INSTRUCTOR').length})
           </button>
         </div>
       </div>
@@ -129,12 +137,12 @@ export function UserFilterToolbar({
             onClick={() => setUserRoleFilter('ACTING_OFFICER')}
             className={`px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
               userRoleFilter === 'ACTING_OFFICER'
-                ? 'bg-sky-600 text-white shadow-xs'
-                : 'text-sky-800 hover:bg-white/60'
+                ? 'bg-teal-600 text-white shadow-xs'
+                : 'text-teal-800 hover:bg-white/60'
             }`}
-            title="ดูรายชื่ออาจารย์และนิสิตที่ได้รับมอบหมายให้ช่วยงานเจ้าหน้าที่"
+            title="ดูรายชื่ออาจารย์และนิสิตที่ได้รับมอบหมายให้เป็นผู้ช่วยเจ้าหน้าที่ (ช่วยงานเจ้าหน้าที่)"
           >
-            ☑️ ช่วยงานเจ้าหน้าที่ (
+            ☑️ ผู้ช่วยเจ้าหน้าที่ (
             {users.filter((u) => u.isActingOfficer).length +
               studentsList.filter((s) => s.isActingOfficer).length}
             )

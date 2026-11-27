@@ -104,6 +104,30 @@ export function useAdminUsers({
       alert('เจ้าหน้าที่ (OFFICER) ไม่มีสิทธิ์ในการปรับเปลี่ยนระดับสิทธิ์ของผู้ใช้งาน กรุณาติดต่อ Super Admin');
       return;
     }
+
+    // Optimistic local state update for instant role badge and group counter response
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id !== userId) return u;
+        if (newRole === 'ACTING_OFFICER') {
+          return {
+            ...u,
+            role: 'INSTRUCTOR',
+            isActingOfficer: true,
+            instructorType:
+              u.instructorType && !u.instructorType.includes('ผู้ช่วย')
+                ? 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)'
+                : u.instructorType,
+          };
+        }
+        return {
+          ...u,
+          role: newRole,
+          isActingOfficer: false,
+        };
+      })
+    );
+
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
@@ -116,9 +140,11 @@ export function useAdminUsers({
         loadData();
       } else {
         alert(data.error);
+        loadData();
       }
     } catch (e: unknown) {
       alert(getErrorMessage(e));
+      loadData();
     }
   };
 
@@ -745,6 +771,10 @@ ${coursesText}
         if (!u.isSuspended && u.isActive !== false) return false;
       } else if (userRoleFilter === 'SUPER_ADMIN') {
         if (u.role !== 'SUPER_ADMIN' && !u.isSuperAdmin && u.email !== 'phaisal.dis@mcu.ac.th') return false;
+      } else if (userRoleFilter === 'ADMIN') {
+        if (u.role !== 'ADMIN' || u.isSuperAdmin || u.email === 'phaisal.dis@mcu.ac.th') return false;
+      } else if (userRoleFilter === 'INSTRUCTOR') {
+        if ((u.role || 'INSTRUCTOR') !== 'INSTRUCTOR') return false;
       } else if (userRoleFilter !== 'ALL' && u.role !== userRoleFilter) {
         return false;
       }
