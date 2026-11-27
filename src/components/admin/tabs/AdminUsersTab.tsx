@@ -483,6 +483,7 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
           onClose={() => setIsOfficerModalOpen(false)}
           existingUsers={users}
           onSuccess={() => {
+            setIsOfficerModalOpen(false);
             if (onRefresh) onRefresh();
             else if (typeof window !== 'undefined') window.location.reload();
           }}

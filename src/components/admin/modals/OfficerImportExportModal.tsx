@@ -506,11 +506,15 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
         throw new Error(data.error || 'เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
       }
 
-      setSubmitSuccess(
-        `บันทึกสำเร็จ: เพิ่มบัญชีใหม่ ${data.createdCount || 0} ท่าน, อัปเดตข้อมูลเดิม ${data.updatedCount || 0} ท่าน`
-      );
+      const msg = `นำเข้าข้อมูลเรียบร้อยแล้ว: เพิ่มบัญชีใหม่ ${data.createdCount || 0} ท่าน, อัปเดตข้อมูลเดิม ${data.updatedCount || 0} ท่าน`;
+      setSubmitSuccess(msg);
 
+      // Notify parent to refresh user list
       onSuccess();
+
+      // Show confirmation and close modal so user immediately sees the updated list
+      alert(msg);
+      onClose();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
