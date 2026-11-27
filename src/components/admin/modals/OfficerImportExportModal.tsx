@@ -156,50 +156,137 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
       return;
     }
 
-    const delimiter = detectDelimiter(lines[0]);
-    const rawHeaders = parseCSVRow(lines[0], delimiter);
-    const normalizedHeaders = rawHeaders.map((h) =>
-      h.toLowerCase().replace(/[\s\-_]/g, '')
-    );
+    // 1. Scan up to first 10 lines to locate the true header row (skips title/subtitle banner rows)
+    let headerLineIdx = -1;
+    let delimiter = detectDelimiter(lines[0]);
+    let normalizedHeaders: string[] = [];
 
-    const isHeaderPresent = normalizedHeaders.some((h) =>
-      h.includes('ชื่อ') ||
-      h.includes('name') ||
-      h.includes('ตำแหน่ง') ||
-      h.includes('position') ||
-      h.includes('อีเมล') ||
-      h.includes('email') ||
-      h.includes('โทร')
-    );
+    const maxScan = Math.min(lines.length, 10);
+    for (let i = 0; i < maxScan; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const d = detectDelimiter(line);
+      const rawCols = parseCSVRow(line, d);
+      // Skip title / subtitle banners that only occupy a single cell or line
+      if (rawCols.length < 2) continue;
 
-    const dataLines = isHeaderPresent ? lines.slice(1) : lines;
+      const norm = rawCols.map((h) => h.toLowerCase().replace(/[\s\-_/()]/g, ''));
+      const matchCount = norm.filter((h) =>
+        h.includes('ชื่อ') ||
+        h.includes('name') ||
+        h.includes('คำนำหน้า') ||
+        h.includes('บทบาท') ||
+        h.includes('role') ||
+        h.includes('ตำแหน่ง') ||
+        h.includes('position') ||
+        h.includes('หน้าที่') ||
+        h.includes('หน่วยงาน') ||
+        h.includes('ภาควิชา') ||
+        h.includes('สังกัด') ||
+        h.includes('department') ||
+        h.includes('โทร') ||
+        h.includes('phone') ||
+        h.includes('tel') ||
+        h.includes('เบอร์') ||
+        h.includes('อีเมล') ||
+        h.includes('email') ||
+        h.includes('ไอดี') ||
+        h.includes('username') ||
+        h.includes('เข้าใช้งาน') ||
+        h.includes('รหัสผ่าน') ||
+        h.includes('password') ||
+        h.includes('pass') ||
+        h.includes('ลำดับ')
+      ).length;
 
-    let colName = 0;
+      if (matchCount >= 2) {
+        headerLineIdx = i;
+        delimiter = d;
+        normalizedHeaders = norm;
+        break;
+      }
+    }
+
+    let colName = -1;
     let colPosition = -1;
     let colRole = -1;
     let colDept = -1;
     let colPhone = -1;
     let colEmail = -1;
     let colPassword = -1;
+    let dataLines: string[] = [];
 
-    if (isHeaderPresent) {
+    if (headerLineIdx !== -1) {
+      dataLines = lines.slice(headerLineIdx + 1);
       normalizedHeaders.forEach((h, idx) => {
-        if (h.includes('ชื่อ') || h.includes('name')) colName = idx;
-        else if (h.includes('บทบาท') || h.includes('role')) colRole = idx;
-        else if (h.includes('ตำแหน่ง') || h.includes('position') || h.includes('หน้าที่')) colPosition = idx;
-        else if (h.includes('หน่วยงาน') || h.includes('ภาควิชา') || h.includes('สาขา') || h.includes('สังกัด') || h.includes('department')) colDept = idx;
-        else if (h.includes('โทร') || h.includes('phone') || h.includes('tel') || h.includes('เบอร์')) colPhone = idx;
-        else if (h.includes('อีเมล') || h.includes('email') || h.includes('ไอดี') || h.includes('username')) colEmail = idx;
-        else if (h.includes('รหัสผ่าน') || h.includes('password') || h.includes('pass')) colPassword = idx;
+        const isEmail =
+          h.includes('อีเมล') ||
+          h.includes('email') ||
+          h.includes('ไอดี') ||
+          h.includes('username') ||
+          h.includes('เข้าใช้งาน');
+        const isPassword =
+          h.includes('รหัสผ่าน') ||
+          h.includes('password') ||
+          h.includes('pass');
+        const isPhone =
+          h.includes('โทร') ||
+          h.includes('phone') ||
+          h.includes('tel') ||
+          h.includes('เบอร์');
+        const isRole =
+          h.includes('บทบาท') ||
+          h.includes('role');
+        const isPosition =
+          (h.includes('ตำแหน่ง') || h.includes('position') || h.includes('หน้าที่')) && !isRole;
+        const isDept =
+          h.includes('หน่วยงาน') ||
+          h.includes('ภาควิชา') ||
+          h.includes('สาขา') ||
+          h.includes('สังกัด') ||
+          h.includes('department');
+        const isName =
+          (h.includes('ชื่อ') || h.includes('name') || h.includes('fullname') || h.includes('คำนำหน้า')) &&
+          !isEmail &&
+          !h.includes('หน่วยงาน') &&
+          !h.includes('บทบาท') &&
+          !h.includes('หน้าที่') &&
+          !h.includes('ลำดับ');
+
+        if (isEmail) colEmail = idx;
+        else if (isPassword) colPassword = idx;
+        else if (isPhone) colPhone = idx;
+        else if (isRole) colRole = idx;
+        else if (isPosition) colPosition = idx;
+        else if (isDept) colDept = idx;
+        else if (isName && colName === -1) colName = idx;
       });
+      if (colName === -1) colName = 0;
     } else {
-      // Default fallback column indices: [0: Name, 1: Position, 2: Department, 3: Phone, 4: Email, 5: Password]
-      colName = 0;
-      colPosition = 1;
-      colDept = 2;
-      colPhone = 3;
-      colEmail = 4;
-      colPassword = 5;
+      // Default fallback when no header row is detected
+      delimiter = detectDelimiter(lines[0]);
+      dataLines = lines;
+      const sampleCols = parseCSVRow(lines[0], delimiter);
+      const isFirstColSeqNum = /^\d+$/.test(sampleCols[0]?.trim()) && sampleCols.length >= 2;
+
+      if (isFirstColSeqNum) {
+        // [0: Seq, 1: Name, 2: Role, 3: Position, 4: Department, 5: Phone, 6: Email, 7: Password]
+        colName = 1;
+        colRole = 2;
+        colPosition = 3;
+        colDept = 4;
+        colPhone = 5;
+        colEmail = 6;
+        colPassword = 7;
+      } else {
+        // [0: Name, 1: Position, 2: Department, 3: Phone, 4: Email, 5: Password]
+        colName = 0;
+        colPosition = 1;
+        colDept = 2;
+        colPhone = 3;
+        colEmail = 4;
+        colPassword = 5;
+      }
     }
 
     const staged: ParsedOfficerItem[] = [];
@@ -210,7 +297,17 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
       const cols = recombineAcademicTitles(rawCols);
 
       const rawName = String(cols[colName] || '').trim();
-      if (!rawName || rawName === 'ชื่อ' || rawName === 'Name') return;
+      if (
+        !rawName ||
+        rawName === 'ชื่อ' ||
+        rawName === 'Name' ||
+        rawName === 'ชื่อ-นามสกุล' ||
+        rawName === 'คำนำหน้า/ชื่อ-สกุล' ||
+        rawName === 'ลำดับ' ||
+        /^\d+$/.test(rawName)
+      ) {
+        return;
+      }
 
       const rawPosition = colPosition !== -1 && cols[colPosition] ? String(cols[colPosition]).trim() : '';
       const rawRole = colRole !== -1 && cols[colRole] ? String(cols[colRole]).trim() : '';
@@ -219,10 +316,14 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
       const rawEmail = colEmail !== -1 && cols[colEmail] ? String(cols[colEmail]).trim().toLowerCase() : '';
       const rawPassword = colPassword !== -1 && cols[colPassword] ? String(cols[colPassword]).trim() : '';
 
+      const cleanPhone = rawPhone === '-' ? '' : rawPhone;
+      const cleanDept = rawDept === '-' || !rawDept ? 'สำนักงานคณบดี คณะพุทธศาสตร์' : rawDept;
+      const cleanPosition = rawPosition === '-' ? '' : rawPosition;
+
       // Determine Role & Acting status
       let role: 'OFFICER' | 'INSTRUCTOR' | 'STAFF' = 'OFFICER';
       let isActingOfficer = false;
-      const posLow = (rawPosition + ' ' + rawRole).toLowerCase();
+      const posLow = (cleanPosition + ' ' + rawRole).toLowerCase();
 
       if (defaultRoleOption === 'ACTING_OFFICER') {
         role = 'INSTRUCTOR';
@@ -234,7 +335,7 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
         role = 'STAFF';
         isActingOfficer = false;
       } else {
-        // AUTO detection from rawRole and rawPosition
+        // AUTO detection from rawRole and cleanPosition
         if (posLow.includes('ผู้ช่วย') || posLow.includes('acting') || posLow.includes('อาจารย์ช่วย')) {
           role = 'INSTRUCTOR';
           isActingOfficer = true;
@@ -264,9 +365,9 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
       staged.push({
         id: existingMatch?.id,
         name: rawName,
-        position: rawPosition || (isActingOfficer ? 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)' : 'เจ้าหน้าที่หลักสูตร'),
-        department: rawDept,
-        phoneNumber: rawPhone,
+        position: cleanPosition || (isActingOfficer ? 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)' : 'เจ้าหน้าที่หลักสูตร'),
+        department: cleanDept,
+        phoneNumber: cleanPhone,
         email: assignedEmail,
         password: assignedPassword,
         role,
