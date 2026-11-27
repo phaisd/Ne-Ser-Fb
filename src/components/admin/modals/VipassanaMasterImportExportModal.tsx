@@ -82,7 +82,7 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   const [exportPositionFilter, setExportPositionFilter] = useState('ALL');
 
   // ===================== SLIPS / BADGES TAB STATES =====================
-  const [slipsLayout, setSlipsLayout] = useState<'FOUR_PER_PAGE' | 'TWO_PER_PAGE' | 'ONE_PER_PAGE'>('FOUR_PER_PAGE');
+  const [slipsLayout, setSlipsLayout] = useState<'SIX_PER_PAGE' | 'FOUR_PER_PAGE' | 'TWO_PER_PAGE' | 'ONE_PER_PAGE'>('SIX_PER_PAGE');
   const [slipsSearch, setSlipsSearch] = useState('');
   const [slipsPositionFilter, setSlipsPositionFilter] = useState('ALL');
   const [slipsQrCodes, setSlipsQrCodes] = useState<Record<string, string>>({});
@@ -647,7 +647,14 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
     };
   }, [activeTab, currentMasters]);
 
-  const slipsPerPage = slipsLayout === 'ONE_PER_PAGE' ? 1 : slipsLayout === 'TWO_PER_PAGE' ? 2 : 4;
+  const slipsPerPage =
+    slipsLayout === 'SIX_PER_PAGE'
+      ? 6
+      : slipsLayout === 'FOUR_PER_PAGE'
+      ? 4
+      : slipsLayout === 'TWO_PER_PAGE'
+      ? 2
+      : 1;
 
   const slipsFilteredMasters = useMemo(() => {
     return currentMasters.filter((m) => {
@@ -1149,6 +1156,17 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                     </span>
                     <button
                       type="button"
+                      onClick={() => setSlipsLayout('SIX_PER_PAGE')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        slipsLayout === 'SIX_PER_PAGE'
+                          ? 'bg-purple-700 text-white border-purple-800 shadow-xs'
+                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      6 รูปต่อ A4 (6:1 บัตรมาตรฐาน)
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setSlipsLayout('FOUR_PER_PAGE')}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
                         slipsLayout === 'FOUR_PER_PAGE'
@@ -1408,7 +1426,9 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                       {/* Grid of Master Badges on this Sheet */}
                       <div
                         className={`grid w-full h-full ${
-                          slipsLayout === 'FOUR_PER_PAGE'
+                          slipsLayout === 'SIX_PER_PAGE'
+                            ? 'grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-2.5 print:gap-1.5 print:grid-rows-3'
+                            : slipsLayout === 'FOUR_PER_PAGE'
                             ? 'grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-3 print:gap-2 print:grid-rows-2'
                             : slipsLayout === 'TWO_PER_PAGE'
                             ? 'grid-cols-1 print:grid-cols-1 gap-4 print:gap-3 print:grid-rows-2'
@@ -1424,16 +1444,18 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                           return (
                             <div
                               key={m.id || m.email}
-                              className={`border-2 rounded-2xl bg-gradient-to-br from-amber-50/40 via-white to-purple-50/30 p-3.5 print:p-3 flex flex-col justify-between shadow-2xs print:shadow-none print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${
+                              className={`border-2 rounded-2xl bg-gradient-to-br from-amber-50/40 via-white to-purple-50/30 flex flex-col justify-between shadow-2xs print:shadow-none print:break-inside-avoid print:page-break-inside-avoid relative overflow-hidden ${
                                 isLeader
                                   ? 'border-amber-400/90 ring-1 ring-amber-400/40'
                                   : 'border-purple-300/80 ring-1 ring-purple-300/30'
                               } ${
-                                slipsLayout === 'FOUR_PER_PAGE'
-                                  ? 'min-h-[295px] print:h-[135mm]'
+                                slipsLayout === 'SIX_PER_PAGE'
+                                  ? 'p-2.5 print:p-2 min-h-[225px] print:h-[90mm]'
+                                  : slipsLayout === 'FOUR_PER_PAGE'
+                                  ? 'p-3.5 print:p-3 min-h-[295px] print:h-[135mm]'
                                   : slipsLayout === 'TWO_PER_PAGE'
-                                  ? 'min-h-[380px] print:h-[138mm]'
-                                  : 'min-h-[550px] print:h-[280mm]'
+                                  ? 'p-3.5 print:p-3 min-h-[380px] print:h-[138mm]'
+                                  : 'p-3.5 print:p-3 min-h-[550px] print:h-[280mm]'
                               }`}
                             >
                               {/* Background Watermark Layer - subtle & safe for QR scanning */}
@@ -1452,91 +1474,90 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                               )}
 
                               {/* Card Header */}
-                              <div className="border-b border-amber-200/80 pb-2 flex items-start justify-between gap-2 shrink-0 relative z-10">
-                                <div className="flex items-center gap-2">
-                                  {slipsSystemLogoUrl ? (
-                                    <img
-                                      src={slipsSystemLogoUrl}
-                                      alt="MCU Logo"
-                                      className="w-8 h-8 rounded-xl object-contain p-0.5 bg-white border border-amber-400/40 shrink-0 shadow-2xs"
-                                      crossOrigin="anonymous"
-                                    />
-                                  ) : (
-                                    <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-400/40 flex items-center justify-center text-base shrink-0 shadow-2xs">
-                                      ☸️
-                                    </div>
-                                  )}
-                                  <div>
-                                    <div className="text-[9.5px] font-black uppercase text-amber-900 tracking-wide leading-tight">
-                                      คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
-                                    </div>
-                                    <div className="text-[10.5px] font-extrabold text-slate-800 leading-tight">
-                                      โครงการปฏิบัติวิปัสสนากัมมัฏฐาน ประจำปี ๒๕๖๙
-                                    </div>
+                              <div className="border-b border-amber-200/80 pb-1.5 flex items-start gap-2.5 shrink-0 relative z-10">
+                                {slipsSystemLogoUrl ? (
+                                  <img
+                                    src={slipsSystemLogoUrl}
+                                    alt="MCU Logo"
+                                    className={`${slipsLayout === 'SIX_PER_PAGE' ? 'w-7 h-7' : 'w-8 h-8'} rounded-xl object-contain p-0.5 bg-white border border-amber-400/40 shrink-0 shadow-2xs mt-0.5`}
+                                    crossOrigin="anonymous"
+                                  />
+                                ) : (
+                                  <div className={`${slipsLayout === 'SIX_PER_PAGE' ? 'w-7 h-7 text-sm' : 'w-8 h-8 text-base'} rounded-xl bg-amber-500/15 border border-amber-400/40 flex items-center justify-center shrink-0 shadow-2xs mt-0.5`}>
+                                    ☸️
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className={`${slipsLayout === 'SIX_PER_PAGE' ? 'text-[9px]' : 'text-[9.5px]'} font-black uppercase text-amber-900 tracking-wide leading-tight`}>
+                                    คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
+                                  </div>
+                                  <div className={`${slipsLayout === 'SIX_PER_PAGE' ? 'text-[10px]' : 'text-[10.5px]'} font-extrabold text-slate-800 leading-tight`}>
+                                    โครงการปฏิบัติวิปัสสนากัมมัฏฐาน ประจำปี ๒๕๖๙
+                                  </div>
+                                  <div className="mt-1 flex items-center">
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full ${slipsLayout === 'SIX_PER_PAGE' ? 'text-[8.5px]' : 'text-[9px]'} font-black tracking-wide border inline-block ${
+                                        isLeader
+                                          ? 'bg-amber-100 text-amber-900 border-amber-300'
+                                          : 'bg-purple-100 text-purple-900 border-purple-200'
+                                      }`}
+                                    >
+                                      {posTitle}
+                                    </span>
                                   </div>
                                 </div>
-
-                                <span
-                                  className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wide border shrink-0 ${
-                                    isLeader
-                                      ? 'bg-amber-100 text-amber-900 border-amber-300'
-                                      : 'bg-purple-100 text-purple-900 border-purple-200'
-                                  }`}
-                                >
-                                  {posTitle}
-                                </span>
                               </div>
 
                               {/* Master Profile & Ecclesiastical Details */}
-                              <div className="py-2 space-y-1 shrink-0 relative z-10">
+                              <div className={`${slipsLayout === 'SIX_PER_PAGE' ? 'py-1 space-y-0.5' : 'py-2 space-y-1'} shrink-0 relative z-10`}>
                                 <div className="flex items-baseline gap-2 flex-wrap">
-                                  <h4 className="text-sm sm:text-base font-black text-slate-900 leading-snug">
+                                  <h4 className={`${slipsLayout === 'SIX_PER_PAGE' ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'} font-black text-slate-900 leading-snug`}>
                                     {m.name}
                                   </h4>
                                   {m.ecclesiasticalTitle && (
-                                    <span className="text-[10.5px] font-bold text-amber-800 bg-amber-50 px-2 py-0.2 rounded border border-amber-200/60">
+                                    <span className="text-[9px] sm:text-[10.5px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/60">
                                       {m.ecclesiasticalTitle}
                                     </span>
                                   )}
                                 </div>
                                 {m.nameEn && (
-                                  <div className="text-[10px] text-slate-500 font-medium italic">
+                                  <div className="text-[9px] sm:text-[10px] text-slate-500 font-medium italic">
                                     {m.nameEn}
                                   </div>
                                 )}
-                                <div className="text-[10px] text-slate-600 flex items-center gap-2 flex-wrap pt-0.5">
+                                <div className="text-[9px] sm:text-[10px] text-slate-600 flex items-center gap-1.5 flex-wrap pt-0.5">
                                   <span className="font-semibold text-slate-700">สังกัด/ที่อยู่:</span>
-                                  <span>{m.contactAddress || m.department || 'ฝ่ายวิปัสสนาธุระ / คณะพุทธศาสตร์ มจร'}</span>
+                                  <span className="truncate">{m.contactAddress || m.department || 'ฝ่ายวิปัสสนาธุระ / คณะพุทธศาสตร์ มจร'}</span>
                                 </div>
                               </div>
 
                               {/* Workload Brief Box */}
-                              <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-2 text-[10px] text-purple-950 space-y-0.5 shrink-0 relative z-10">
+                              <div className={`bg-purple-50/70 border border-purple-200/80 rounded-xl ${slipsLayout === 'SIX_PER_PAGE' ? 'p-1.5 text-[9px]' : 'p-2 text-[10px]'} text-purple-950 space-y-0.5 shrink-0 relative z-10`}>
                                 <div className="font-bold flex items-center gap-1.5 text-purple-900">
-                                  <Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                                  <span>ภาระงาน: สอบอารมณ์สติปัฏฐาน ๔ และประเมินผลการปฏิบัติธรรม</span>
+                                  <Sparkles className={`${slipsLayout === 'SIX_PER_PAGE' ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-purple-600 shrink-0`} />
+                                  <span className="leading-tight">ภาระงาน: สอบอารมณ์สติปัฏฐาน ๔ และประเมินผลการปฏิบัติธรรม</span>
                                 </div>
-                                <p className="text-[9.5px] text-purple-800/90 leading-tight">
+                                <p className={`${slipsLayout === 'SIX_PER_PAGE' ? 'text-[8.5px]' : 'text-[9.5px]'} text-purple-800/90 leading-tight`}>
                                   รับผิดชอบตรวจอารมณ์กรรมฐาน (กาย เวทนา จิต ธรรม) ณ อาคารโพธิญาณมหาวิชชาลัย
                                 </p>
                               </div>
 
                               {/* Credentials & Quick Scan Login QR Box */}
-                              <div className="bg-white/95 rounded-xl border border-slate-200/90 p-2.5 my-auto flex items-center justify-between gap-3 shadow-2xs relative z-10">
-                                <div className="space-y-1 text-[10.5px] flex-1">
-                                  <div className="text-[9.5px] font-extrabold uppercase text-slate-400 tracking-wider flex items-center gap-1">
+                              <div className={`bg-white/95 rounded-xl border border-slate-200/90 ${slipsLayout === 'SIX_PER_PAGE' ? 'p-1.5 my-auto' : 'p-2.5 my-auto'} flex items-center justify-between gap-2 shadow-2xs relative z-10`}>
+                                <div className={`space-y-0.5 sm:space-y-1 ${slipsLayout === 'SIX_PER_PAGE' ? 'text-[9.5px]' : 'text-[10.5px]'} flex-1 min-w-0`}>
+                                  <div className="text-[8.5px] sm:text-[9.5px] font-extrabold uppercase text-slate-400 tracking-wider flex items-center gap-1">
                                     <Key className="w-3 h-3 text-amber-600" />
-                                    <span>ข้อมูลสำหรับเข้าสู่ระบบ (Credentials):</span>
+                                    <span>ข้อมูลสำหรับเข้าสู่ระบบ:</span>
                                   </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-slate-500 font-medium">ไอดี (Username):</span>
-                                    <span className="font-mono font-black text-amber-950 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/80 text-[11px]">
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <span className="text-slate-500 font-medium shrink-0">ไอดี:</span>
+                                    <span className="font-mono font-black text-amber-950 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/80 text-[10px] sm:text-[11px] truncate">
                                       {m.email}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-slate-500 font-medium">รหัสผ่าน (Password):</span>
-                                    <span className="font-mono font-bold text-slate-800 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200 text-[10.5px]">
+                                    <span className="text-slate-500 font-medium shrink-0">รหัสผ่าน:</span>
+                                    <span className="font-mono font-bold text-slate-800 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200 text-[9.5px] sm:text-[10.5px]">
                                       {m.defaultPassword || m.password || 'mcu123456'}
                                     </span>
                                   </div>
@@ -1545,28 +1566,28 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                                 {/* QR Code Box */}
                                 <div className="flex flex-col items-center shrink-0">
                                   {qrData ? (
-                                    <div className="p-1 bg-white rounded-xl border border-purple-200 shadow-2xs">
+                                    <div className="p-0.5 sm:p-1 bg-white rounded-lg sm:rounded-xl border border-purple-200 shadow-2xs">
                                       <img
                                         src={qrData}
                                         alt={`QR ${m.name}`}
-                                        className="w-16 h-16 sm:w-18 sm:h-18 object-contain block bg-white"
+                                        className={`${slipsLayout === 'SIX_PER_PAGE' ? 'w-12 h-12 sm:w-13 sm:h-13' : 'w-16 h-16 sm:w-18 sm:h-18'} object-contain block bg-white`}
                                       />
                                     </div>
                                   ) : (
-                                    <div className="w-16 h-16 bg-purple-50 rounded-lg animate-pulse border border-purple-200" />
+                                    <div className={`${slipsLayout === 'SIX_PER_PAGE' ? 'w-12 h-12' : 'w-16 h-16'} bg-purple-50 rounded-lg animate-pulse border border-purple-200`} />
                                   )}
-                                  <span className="text-[7.5px] font-bold text-purple-900 tracking-tight mt-0.5 text-center leading-tight">
+                                  <span className="text-[7px] sm:text-[7.5px] font-bold text-purple-900 tracking-tight mt-0.5 text-center leading-tight">
                                     สแกนเข้าระบบด่วน
                                   </span>
                                 </div>
                               </div>
 
                               {/* Card Footer */}
-                              <div className="border-t border-slate-200/80 pt-1.5 text-[8.5px] text-slate-400 flex items-center justify-between shrink-0 relative z-10">
-                                <span className="font-medium text-slate-500">
+                              <div className="border-t border-slate-200/80 pt-1 text-[8px] sm:text-[8.5px] text-slate-400 flex items-center justify-between shrink-0 relative z-10">
+                                <span className="font-medium text-slate-500 truncate">
                                   คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย
                                 </span>
-                                <span className="font-mono font-bold text-purple-900 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200">
+                                <span className="font-mono font-bold text-purple-900 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200 shrink-0 ml-1">
                                   #VIP-{String(overallIndex + 1).padStart(2, '0')}
                                 </span>
                               </div>
