@@ -136,6 +136,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                 { label: 'อาจารย์ประจำ', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
                 { label: 'อาจารย์พิเศษ', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
                 { label: 'อาจารย์ผู้ช่วยสอน', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+                { label: 'เจ้าหน้าที่หลักสูตร', color: 'bg-sky-100 text-sky-800 border-sky-300' },
                 { label: 'เจ้าหน้าที่', color: 'bg-blue-100 text-blue-800 border-blue-400' },
                 { label: 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)', color: 'bg-teal-100 text-teal-800 border-teal-300' },
               ].map((item) => (
@@ -143,7 +144,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                   key={item.label}
                   type="button"
                   onClick={() => {
-                    const nextRole = item.label === 'เจ้าหน้าที่' && (!editUserForm.role || editUserForm.role === 'INSTRUCTOR')
+                    const isOfficerType = item.label === 'เจ้าหน้าที่' || item.label === 'เจ้าหน้าที่หลักสูตร';
+                    const nextRole = isOfficerType && (!editUserForm.role || editUserForm.role === 'INSTRUCTOR')
                       ? 'OFFICER'
                       : editUserForm.role;
                     setEditUserForm({
@@ -169,7 +171,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
               type="text"
               value={editUserForm.instructorType || ''}
               onChange={(e) => setEditUserForm({ ...editUserForm, instructorType: e.target.value })}
-              placeholder="เลือกจากปุ่มด้านบน หรือพิมพ์ระบุ เช่น อาจารย์ประจำ, อาจารย์พิเศษ, อาจารย์ผู้ช่วยสอน, เจ้าหน้าที่"
+              placeholder="เลือกจากปุ่มด้านบน หรือพิมพ์ระบุ เช่น อาจารย์ประจำ, อาจารย์พิเศษ, อาจารย์ผู้ช่วยสอน, เจ้าหน้าที่หลักสูตร, เจ้าหน้าที่"
               className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 text-xs"
             />
             <span className="text-[10px] text-slate-400 block">

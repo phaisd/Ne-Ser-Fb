@@ -28,7 +28,7 @@ export interface InstructorAccount {
   password?: string;
   defaultPassword?: string;
   department?: string;
-  instructorType?: string; // ประเภทอาจารย์ เช่น 'อาจารย์ประจำ', 'อาจารย์พิเศษ', 'อาจารย์ผู้ช่วยสอน'
+  instructorType?: string; // ประเภทอาจารย์ เช่น 'อาจารย์ประจำ', 'อาจารย์พิเศษ', 'อาจารย์ผู้ช่วยสอน', 'เจ้าหน้าที่หลักสูตร', 'เจ้าหน้าที่'
   ecclesiasticalTitle?: string; // ตำแหน่งทางคณะสงฆ์ เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระมหา...
   contactAddress?: string; // ที่อยู่ติดต่อ / สังกัดวัด
   phoneNumber?: string; // เบอร์โทรศัพท์ติดต่อ
