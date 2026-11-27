@@ -294,7 +294,9 @@ export function EnrollApplyFormTab({
                 ขณะนี้ปิดรับการยื่นใบสมัครออนไลน์ชั่วคราว
               </h3>
               <p className="text-xs text-rose-700 max-w-lg mx-auto">
-                สำหรับผู้สมัครที่ได้ยื่นใบสมัครไว้แล้ว ท่านยังสามารถตรวจสอบสถานะการสมัคร ตารางสอบสัมภาษณ์ และขึ้นทะเบียนนิสิตใหม่ได้ที่แท็บที่ ๓ และ ๔ ตามปกติ
+                {portalConfig.showRegisterTab
+                  ? 'สำหรับผู้สมัครที่ได้ยื่นใบสมัครไว้แล้ว ท่านยังสามารถตรวจสอบสถานะการสมัคร ตารางสอบสัมภาษณ์ และขึ้นทะเบียนนิสิตใหม่ได้ที่แท็บที่ ๓ และ ๔ ตามปกติ'
+                  : 'สำหรับผู้สมัครที่ได้ยื่นใบสมัครไว้แล้ว ท่านยังสามารถตรวจสอบสถานะการสมัครและตารางสอบสัมภาษณ์ได้ที่แท็บที่ ๓ ตามปกติ'}
               </p>
               <div className="flex justify-center gap-3 pt-2">
                 <button
@@ -304,13 +306,15 @@ export function EnrollApplyFormTab({
                 >
                   ไปหน้าตรวจสอบสถานะ
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onGoToRegister()}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold cursor-pointer"
-                >
-                  ไปหน้าขึ้นทะเบียนนิสิต
-                </button>
+                {portalConfig.showRegisterTab && (
+                  <button
+                    type="button"
+                    onClick={() => onGoToRegister()}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold cursor-pointer"
+                  >
+                    ไปหน้าขึ้นทะเบียนนิสิต
+                  </button>
+                )}
               </div>
             </div>
           ) : submittedApp ? (

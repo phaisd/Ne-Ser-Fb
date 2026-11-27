@@ -111,7 +111,7 @@ export const DEFAULT_ADMISSION_PORTAL_CONFIG: AdmissionPortalConfig = {
   showOverviewTab: true,
   showApplyTab: true,
   showStatusTab: true,
-  showRegisterTab: true,
+  showRegisterTab: false,
 
   showDepartmentBannerSlider: true,
   bannerAutoSlideInterval: 5,
@@ -595,7 +595,7 @@ export function resolveAdmissionPortalConfig(
     showOverviewTab: c.showOverviewTab !== false,
     showApplyTab: c.showApplyTab !== false,
     showStatusTab: c.showStatusTab !== false,
-    showRegisterTab: c.showRegisterTab !== false,
+    showRegisterTab: c.showRegisterTab === true,
     showDepartmentBannerSlider: c.showDepartmentBannerSlider !== false,
     bannerAutoSlideInterval:
       typeof c.bannerAutoSlideInterval === 'number' && c.bannerAutoSlideInterval > 0

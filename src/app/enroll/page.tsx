@@ -241,7 +241,9 @@ function EnrollPortalContent() {
               </span>
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-              เปิดรับสมัครพระภิกษุ-สามเณร (บรรพชิต) และประชาชนทั่วไป (คฤหัสถ์) ทั้งหลักสูตรภาษาไทยและหลักสูตรนานาชาติ (International Program) ครบวงจรใน 4 ขั้นตอน: ยื่นใบสมัคร ➔ ตรวจเอกสาร ➔ สอบสัมภาษณ์ ➔ ขึ้นทะเบียนนิสิตและพิมพ์ใบรายงานตัวออนไลน์
+              {portalConfig.showRegisterTab
+                ? 'เปิดรับสมัครพระภิกษุ-สามเณร (บรรพชิต) และประชาชนทั่วไป (คฤหัสถ์) ทั้งหลักสูตรภาษาไทยและหลักสูตรนานาชาติ (International Program) ครบวงจรใน 4 ขั้นตอน: ยื่นใบสมัคร ➔ ตรวจเอกสาร ➔ สอบสัมภาษณ์ ➔ ขึ้นทะเบียนนิสิตและพิมพ์ใบรายงานตัวออนไลน์'
+                : 'เปิดรับสมัครพระภิกษุ-สามเณร (บรรพชิต) และประชาชนทั่วไป (คฤหัสถ์) ทั้งหลักสูตรภาษาไทยและหลักสูตรนานาชาติ (International Program) ครบวงจร 3 ขั้นตอน: ยื่นใบสมัคร ➔ ตรวจเอกสาร ➔ สอบสัมภาษณ์และประกาศผล'}
             </p>
           </div>
 
@@ -333,7 +335,9 @@ function EnrollPortalContent() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                <span className="text-xs font-black text-slate-900">๔ ขั้นตอนการรับสมัคร &amp; ขึ้นทะเบียน</span>
+                <span className="text-xs font-black text-slate-900">
+                  {portalConfig.showRegisterTab ? '๔ ขั้นตอนการรับสมัคร & ขึ้นทะเบียน' : '๓ ขั้นตอนการรับสมัคร & ตรวจสอบผล'}
+                </span>
               </div>
               <button
                 type="button"
@@ -346,7 +350,7 @@ function EnrollPortalContent() {
             </div>
 
             {/* Quick Touch Stepper (Tap to jump to tab directly) */}
-            <div className="grid grid-cols-4 gap-1.5 pt-0.5 text-center">
+            <div className={`grid ${portalConfig.showRegisterTab ? 'grid-cols-4' : 'grid-cols-3'} gap-1.5 pt-0.5 text-center`}>
               <button
                 type="button"
                 onClick={() => setActiveTab('APPLY')}
@@ -386,23 +390,25 @@ function EnrollPortalContent() {
                 <span className="text-[10px] font-extrabold leading-tight">๓. สัมภาษณ์</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('REGISTER')}
-                className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
-                  activeTab === 'REGISTER'
-                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50/50'
-                }`}
-              >
-                <UserCheck className="w-4 h-4 shrink-0" />
-                <span className="text-[10px] font-extrabold leading-tight">๔. ทะเบียน</span>
-              </button>
+              {portalConfig.showRegisterTab && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('REGISTER')}
+                  className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+                    activeTab === 'REGISTER'
+                      ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50/50'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4 shrink-0" />
+                  <span className="text-[10px] font-extrabold leading-tight">๔. ทะเบียน</span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* Full Process Cards: always visible on sm:, collapsible on mobile */}
-          <div className={`${isProcessStepsExpanded ? 'grid' : 'hidden sm:grid'} grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`}>
+          <div className={`${isProcessStepsExpanded ? 'grid' : 'hidden sm:grid'} grid-cols-1 ${portalConfig.showRegisterTab ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'} gap-4`}>
             <div className="bg-white rounded-2xl border border-orange-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -469,26 +475,22 @@ function EnrollPortalContent() {
               </button>
             </div>
 
-            <div className="bg-white rounded-2xl border border-emerald-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold">
-                    ขั้นตอนที่ ๔
-                  </span>
-                  <UserCheck className="w-4 h-4 text-emerald-600" />
+            {portalConfig.showRegisterTab && (
+              <div className="bg-white rounded-2xl border border-emerald-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold">
+                      ขั้นตอนที่ ๔
+                    </span>
+                    <UserCheck className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <h3 className="font-extrabold text-slate-900 text-sm">
+                    ๔. ขึ้นทะเบียนนิสิตใหม่
+                  </h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    ยืนยันสิทธิ์เข้าศึกษา รับรหัสประจำตัวนิสิต และพิมพ์ใบรายงานตัวออนไลน์
+                  </p>
                 </div>
-                <h3 className="font-extrabold text-slate-900 text-sm">
-                  {portalConfig.showRegisterTab
-                    ? '๔. ขึ้นทะเบียนนิสิตใหม่'
-                    : '๔. รายงานตัวและขึ้นทะเบียน'}
-                </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {portalConfig.showRegisterTab
-                    ? 'ยืนยันสิทธิ์เข้าศึกษา รับรหัสประจำตัวนิสิต และพิมพ์ใบรายงานตัวออนไลน์'
-                    : 'ผู้ผ่านการสอบสัมภาษณ์ ติดต่อสำนักทะเบียนและวัดผล มจร เพื่อรายงานตัวและขึ้นทะเบียน'}
-                </p>
-              </div>
-              {portalConfig.showRegisterTab ? (
                 <button
                   type="button"
                   onClick={() => setActiveTab('REGISTER')}
@@ -496,16 +498,8 @@ function EnrollPortalContent() {
                 >
                   ขึ้นทะเบียนนิสิตออนไลน์ →
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('STATUS')}
-                  className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
-                >
-                  ดูประกาศผล &amp; คำแนะนำ →
-                </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -566,9 +560,9 @@ function EnrollPortalContent() {
         </div>
       )}
 
-      {/* 4. Main Tab Navigation (2x2 Grid on Mobile, Flex on Desktop) */}
+      {/* 4. Main Tab Navigation (Grid on Mobile, Flex on Desktop) */}
       {visibleTabs.length > 0 ? (
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2 bg-white p-1.5 sm:p-2 rounded-2xl border border-slate-200 shadow-xs print:hidden">
+        <div className={`grid ${visibleTabs.length === 3 ? 'grid-cols-3' : visibleTabs.length === 2 ? 'grid-cols-2' : visibleTabs.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2 bg-white p-1.5 sm:p-2 rounded-2xl border border-slate-200 shadow-xs print:hidden`}>
           {visibleTabs.map((t) => {
             const Icon = t.icon;
             const active = activeTab === t.id;
