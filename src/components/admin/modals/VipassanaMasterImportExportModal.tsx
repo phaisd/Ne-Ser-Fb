@@ -506,80 +506,102 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   // ─────────────────────────────────────────────────────────────────────────
   // Export Handlers (.xlsx and .csv)
   // ─────────────────────────────────────────────────────────────────────────
-  const handleExportXlsx = (dataToExport: any[] = filteredMasters) => {
-    const headers = [
-      'ลำดับ',
-      'ชื่อ-ฉายา (ภาษาไทย)',
-      'ชื่อ-ฉายา (ภาษาอังกฤษ)',
-      'ตำแหน่งในโครงการ',
-      'ตำแหน่งทางคณะสงฆ์',
-      'หน่วยงาน / ภาควิชา',
-      'ที่อยู่ติดต่อ / สังกัดวัด',
-      'บทบาท (Role)',
-      'ไอดีเข้าใช้งาน (Username/Email)',
-      'รหัสผ่านเริ่มต้น (Default Password)',
-      'สถานะ',
-    ];
+  const handleExportXlsx = (dataToExport?: any) => {
+    try {
+      const list = Array.isArray(dataToExport) ? dataToExport : filteredMasters;
+      if (!list || list.length === 0) {
+        alert('ไม่พบรายการข้อมูลพระวิปัสสนาจารย์สำหรับส่งออก');
+        return;
+      }
 
-    const rows = dataToExport.map((m, idx) => [
-      idx + 1,
-      m.name || '',
-      m.nameEn || '',
-      m.instructorType || m.position || 'พระวิปัสสนาจารย์',
-      m.ecclesiasticalTitle || '-',
-      m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
-      m.contactAddress || '-',
-      m.role || 'VIPASSANA_MASTER',
-      m.email || '',
-      m.defaultPassword || m.password || 'mcu123456',
-      m.isActive !== false ? 'เปิดใช้งาน' : 'ระงับ',
-    ]);
+      const headers = [
+        'ลำดับ',
+        'ชื่อ-ฉายา (ภาษาไทย)',
+        'ชื่อ-ฉายา (ภาษาอังกฤษ)',
+        'ตำแหน่งในโครงการ',
+        'ตำแหน่งทางคณะสงฆ์',
+        'หน่วยงาน / ภาควิชา',
+        'ที่อยู่ติดต่อ / สังกัดวัด',
+        'บทบาท (Role)',
+        'ไอดีเข้าใช้งาน (Username/Email)',
+        'รหัสผ่านเริ่มต้น (Default Password)',
+        'สถานะ',
+      ];
 
-    const sheet: XlsxSheet = {
-      name: 'พระวิปัสสนาจารย์',
-      title: 'ทำเนียบพระวิปัสสนาจารย์และรหัสผ่านเข้าใช้งานระบบ',
-      subtitle: `ส่งออกเมื่อ ${new Date().toLocaleDateString('th-TH')} • จำนวนทั้งหมด ${rows.length} รูป`,
-      headers,
-      rows,
-      columnWidths: [8, 30, 30, 26, 26, 28, 34, 20, 32, 22, 14],
-    };
+      const rows = list.map((m, idx) => [
+        idx + 1,
+        m.name || '',
+        m.nameEn || '',
+        m.instructorType || m.position || 'พระวิปัสสนาจารย์',
+        m.ecclesiasticalTitle || '-',
+        m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
+        m.contactAddress || '-',
+        m.role || 'VIPASSANA_MASTER',
+        m.email || '',
+        m.defaultPassword || m.password || 'mcu123456',
+        m.isActive !== false ? 'เปิดใช้งาน' : 'ระงับ',
+      ]);
 
-    downloadXlsx(`บัญชีพระวิปัสสนาจารย์_${new Date().toISOString().split('T')[0]}.xlsx`, [sheet]);
+      const sheet: XlsxSheet = {
+        name: 'พระวิปัสสนาจารย์',
+        title: 'ทำเนียบพระวิปัสสนาจารย์และรหัสผ่านเข้าใช้งานระบบ',
+        subtitle: `ส่งออกเมื่อ ${new Date().toLocaleDateString('th-TH')} • จำนวนทั้งหมด ${rows.length} รูป`,
+        headers,
+        rows,
+        columnWidths: [8, 30, 30, 26, 26, 28, 34, 20, 32, 22, 14],
+      };
+
+      downloadXlsx(`บัญชีพระวิปัสสนาจารย์_${new Date().toISOString().split('T')[0]}.xlsx`, [sheet]);
+    } catch (err) {
+      console.error('Failed to export xlsx:', err);
+      alert('เกิดข้อผิดพลาดในการส่งออกไฟล์ Excel: ' + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
-  const handleExportCsv = (dataToExport: any[] = filteredMasters) => {
-    const headers = [
-      'ลำดับ',
-      'ชื่อ-ฉายา (ภาษาไทย)',
-      'ชื่อ-ฉายา (ภาษาอังกฤษ)',
-      'ตำแหน่งในโครงการ',
-      'ตำแหน่งทางคณะสงฆ์',
-      'หน่วยงาน / ภาควิชา',
-      'ที่อยู่ติดต่อ / สังกัดวัด',
-      'บทบาท',
-      'ไอดีเข้าใช้งาน',
-      'รหัสผ่านเริ่มต้น',
-      'สถานะ',
-    ];
-    const rows = dataToExport.map((m, idx) => [
-      idx + 1,
-      m.name || '',
-      m.nameEn || '',
-      m.instructorType || m.position || 'พระวิปัสสนาจารย์',
-      m.ecclesiasticalTitle || '-',
-      m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
-      m.contactAddress || '-',
-      m.role || 'VIPASSANA_MASTER',
-      m.email || '',
-      m.defaultPassword || m.password || 'mcu123456',
-      m.isActive !== false ? 'เปิดใช้งาน' : 'ระงับ',
-    ]);
+  const handleExportCsv = (dataToExport?: any) => {
+    try {
+      const list = Array.isArray(dataToExport) ? dataToExport : filteredMasters;
+      if (!list || list.length === 0) {
+        alert('ไม่พบรายการข้อมูลพระวิปัสสนาจารย์สำหรับส่งออก');
+        return;
+      }
 
-    downloadCsvFile({
-      filename: `บัญชีพระวิปัสสนาจารย์_${new Date().toISOString().split('T')[0]}.csv`,
-      headers,
-      rows,
-    });
+      const headers = [
+        'ลำดับ',
+        'ชื่อ-ฉายา (ภาษาไทย)',
+        'ชื่อ-ฉายา (ภาษาอังกฤษ)',
+        'ตำแหน่งในโครงการ',
+        'ตำแหน่งทางคณะสงฆ์',
+        'หน่วยงาน / ภาควิชา',
+        'ที่อยู่ติดต่อ / สังกัดวัด',
+        'บทบาท',
+        'ไอดีเข้าใช้งาน',
+        'รหัสผ่านเริ่มต้น',
+        'สถานะ',
+      ];
+      const rows = list.map((m, idx) => [
+        idx + 1,
+        m.name || '',
+        m.nameEn || '',
+        m.instructorType || m.position || 'พระวิปัสสนาจารย์',
+        m.ecclesiasticalTitle || '-',
+        m.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
+        m.contactAddress || '-',
+        m.role || 'VIPASSANA_MASTER',
+        m.email || '',
+        m.defaultPassword || m.password || 'mcu123456',
+        m.isActive !== false ? 'เปิดใช้งาน' : 'ระงับ',
+      ]);
+
+      downloadCsvFile({
+        filename: `บัญชีพระวิปัสสนาจารย์_${new Date().toISOString().split('T')[0]}.csv`,
+        headers,
+        rows,
+      });
+    } catch (err) {
+      console.error('Failed to export csv:', err);
+      alert('เกิดข้อผิดพลาดในการส่งออกไฟล์ CSV: ' + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1095,8 +1117,8 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
               setExportSearch={setExportSearch}
               exportPositionFilter={exportPositionFilter}
               setExportPositionFilter={setExportPositionFilter}
-              onExportXlsx={handleExportXlsx}
-              onExportCsv={handleExportCsv}
+              onExportXlsx={() => handleExportXlsx()}
+              onExportCsv={() => handleExportCsv()}
             />
           )}
 

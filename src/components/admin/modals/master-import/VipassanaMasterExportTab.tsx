@@ -66,7 +66,7 @@ export const VipassanaMasterExportTab: React.FC<VipassanaMasterExportTabProps> =
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={onExportXlsx}
+            onClick={() => onExportXlsx()}
             className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             title="ดาวน์โหลดรายชื่อพระวิปัสสนาจารย์และรหัสผ่านทั้งหมดเป็นไฟล์ Excel"
           >
@@ -75,7 +75,7 @@ export const VipassanaMasterExportTab: React.FC<VipassanaMasterExportTabProps> =
           </button>
           <button
             type="button"
-            onClick={onExportCsv}
+            onClick={() => onExportCsv()}
             className="px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
           >
             <Download className="w-4 h-4 text-slate-500" />
