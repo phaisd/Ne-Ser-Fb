@@ -35,7 +35,7 @@ import {
 } from '@/lib/parsers/csvParser';
 import { stripLeadingTitles } from '@/lib/utils/name-matcher';
 import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
-import { parseXlsxToTsv } from '@/lib/utils/xlsx-import';
+import { readSpreadsheetFile, getNextSequentialEmail } from '@/lib/utils/file-import-helpers';
 import { downloadCsvFile } from '@/lib/utils';
 
 interface OfficerImportExportModalProps {
@@ -127,19 +127,12 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
 
   // Helper: Next sequential officer email
   const getNextOfficerEmail = (offsetIndex: number, currentList: UserAccount[], staged: ParsedOfficerItem[]) => {
-    let seq = 1;
-    let attempts = 0;
-    while (attempts < 500) {
-      const candidate = `officer${String(seq).padStart(2, '0')}@mcu.ac.th`.toLowerCase();
-      const usedInDb = currentList.some((u) => (u.email || '').toLowerCase() === candidate);
-      const usedInStaged = staged.slice(0, offsetIndex).some((s) => s.email.toLowerCase() === candidate);
-      if (!usedInDb && !usedInStaged) {
-        return candidate;
-      }
-      seq++;
-      attempts++;
-    }
-    return `officer${Date.now().toString().slice(-4)}@mcu.ac.th`;
+    return getNextSequentialEmail({
+      prefix: 'officer',
+      offsetIndex,
+      existingEmails: currentList.map((u) => u.email),
+      stagedEmails: staged.map((s) => s.email),
+    });
   };
 
   const getPasswordForIndex = () => {
@@ -400,29 +393,9 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
     if (!file) return;
 
     try {
-      const fileName = file.name.toLowerCase();
-      if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-        const buf = await file.arrayBuffer();
-        const tsv = await parseXlsxToTsv(buf);
-        setRawText(tsv);
-        parseRawTextToOfficers(tsv);
-      } else {
-        const buf = await file.arrayBuffer();
-        let text = '';
-        try {
-          // Attempt standard UTF-8 decoding
-          text = new TextDecoder('utf-8', { fatal: true }).decode(buf);
-        } catch {
-          // Fallback to Windows-874 / TIS-620 for Thai CSV files exported/saved from Excel on Windows
-          try {
-            text = new TextDecoder('windows-874').decode(buf);
-          } catch {
-            text = await file.text();
-          }
-        }
-        setRawText(text);
-        parseRawTextToOfficers(text);
-      }
+      const { rawText } = await readSpreadsheetFile(file);
+      setRawText(rawText);
+      parseRawTextToOfficers(rawText);
     } catch (err: unknown) {
       alert('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + (err instanceof Error ? err.message : String(err)));
     } finally {

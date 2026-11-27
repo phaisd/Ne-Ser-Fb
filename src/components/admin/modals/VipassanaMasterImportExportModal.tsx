@@ -37,7 +37,7 @@ import {
 } from '@/lib/parsers/csvParser';
 import { stripLeadingTitles } from '@/lib/utils/name-matcher';
 import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
-import { parseXlsxToTsv } from '@/lib/utils/xlsx-import';
+import { readSpreadsheetFile, getNextSequentialEmail } from '@/lib/utils/file-import-helpers';
 import { downloadCsvFile } from '@/lib/utils/csv-helpers';
 import { exportMultiPagePdf } from '@/lib/utils/pdf-export';
 import { useWatermarkSettings } from '@/hooks/useWatermarkSettings';
@@ -134,19 +134,12 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   // Helper: Get next available vipassana sequential email
   // ─────────────────────────────────────────────────────────────────────────
   const getNextVipassanaEmail = (offsetIndex: number, currentList: UserAccount[], staged: ParsedMasterItem[]) => {
-    let seq = 1;
-    let attempts = 0;
-    while (attempts < 500) {
-      const candidate = `vipassana${String(seq).padStart(2, '0')}@mcu.ac.th`.toLowerCase();
-      const usedInDb = currentList.some((u) => (u.email || '').toLowerCase() === candidate);
-      const usedInStaged = staged.slice(0, offsetIndex).some((s) => s.email.toLowerCase() === candidate);
-      if (!usedInDb && !usedInStaged) {
-        return candidate;
-      }
-      seq++;
-      attempts++;
-    }
-    return `vipassana${Date.now().toString().slice(-4)}@mcu.ac.th`;
+    return getNextSequentialEmail({
+      prefix: 'vipassana',
+      offsetIndex,
+      existingEmails: currentList.map((u) => u.email),
+      stagedEmails: staged.map((s) => s.email),
+    });
   };
 
   // Helper: Get password based on current option
@@ -327,17 +320,9 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
     if (!file) return;
 
     try {
-      const lowerName = file.name.toLowerCase();
-      if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
-        const buffer = await file.arrayBuffer();
-        const tsv = await parseXlsxToTsv(buffer);
-        setRawText(tsv);
-        parseRawTextToMasters(tsv);
-      } else {
-        const text = await file.text();
-        setRawText(text);
-        parseRawTextToMasters(text);
-      }
+      const { rawText } = await readSpreadsheetFile(file);
+      setRawText(rawText);
+      parseRawTextToMasters(rawText);
     } catch (err) {
       alert('ไม่สามารถอ่านไฟล์ได้: ' + (err instanceof Error ? err.message : String(err)));
     }
