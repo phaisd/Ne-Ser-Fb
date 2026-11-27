@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { UserCog, Mail, Info, ShieldCheck } from 'lucide-react';
+import { UserCog, Mail, Info, ShieldCheck, ClipboardList, GraduationCap, Briefcase } from 'lucide-react';
 import { UserAccount, UserRole } from '@/types';
 
 export interface NewUserFormData {
@@ -14,6 +14,7 @@ export interface NewUserFormData {
   ecclesiasticalTitle?: string;
   contactAddress?: string;
   role: UserRole;
+  isActingOfficer?: boolean;
   password: string;
 }
 
@@ -126,7 +127,7 @@ export function AddUserModal({
             * ต้องระบุอีเมลอย่างน้อย 1 ช่องทาง (ระบุเฉพาะ Gmail หรือ @mcu.ac.th หรือระบุทั้งสองอย่างได้)
           </span>
 
-          {/* ประเภทอาจารย์ (ก่อนหน่วยงาน / ภาควิชา) */}
+          {/* ประเภทอาจารย์ / สถานะการสอน */}
           <div className="space-y-1.5 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
             <label className="font-bold text-slate-800 block text-xs">
               ประเภทอาจารย์ / สถานะการสอน:
@@ -146,14 +147,28 @@ export function AddUserModal({
                   key={item.label}
                   type="button"
                   onClick={() => {
-                    const isOfficerType = item.label === 'เจ้าหน้าที่' || item.label === 'เจ้าหน้าที่หลักสูตร';
-                    const nextRole = isOfficerType && (!newUserForm.role || newUserForm.role === 'INSTRUCTOR')
-                      ? 'OFFICER'
-                      : newUserForm.role;
+                    const isActing = item.label.includes('ผู้ช่วยเจ้าหน้าที่');
+                    const isOfficerRole = item.label === 'เจ้าหน้าที่หลักสูตร';
+                    const isStaffRole = item.label === 'เจ้าหน้าที่';
+                    let nextRole = newUserForm.role;
+                    let nextActing = false;
+
+                    if (isActing) {
+                      nextRole = 'INSTRUCTOR';
+                      nextActing = true;
+                    } else if (isOfficerRole) {
+                      nextRole = 'OFFICER';
+                    } else if (isStaffRole) {
+                      nextRole = 'STAFF';
+                    } else {
+                      nextRole = 'INSTRUCTOR';
+                    }
+
                     setNewUserForm({
                       ...newUserForm,
                       instructorType: item.label,
                       role: nextRole,
+                      isActingOfficer: nextActing,
                     });
                   }}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
@@ -175,42 +190,24 @@ export function AddUserModal({
               placeholder="เลือกจากปุ่มด้านบน หรือพิมพ์ระบุ เช่น อาจารย์ประจำ, อาจารย์พิเศษ, อาจารย์ผู้ช่วยสอน, เจ้าหน้าที่หลักสูตร, เจ้าหน้าที่"
               className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 text-xs"
             />
+            <span className="text-[10px] text-slate-400 block">
+              * ข้อมูลนี้จะแสดงบนบัตรแจ้งภาระงานสอน และใช้จัดกลุ่มในระบบ
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">บทบาทและสิทธิ์การใช้งาน (Role):</label>
-              {isOfficer ? (
-                <div className="p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-slate-700 font-semibold flex items-center justify-between text-xs">
-                  <span>อาจารย์ผู้สอน (INSTRUCTOR)</span>
-                  <span className="text-[10px] text-slate-400 font-normal">ล็อกเฉพาะอาจารย์</span>
-                </div>
-              ) : (
-                <select
-                  value={newUserForm.role || 'INSTRUCTOR'}
-                  onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value as any })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                >
-                  <option value="INSTRUCTOR">อาจารย์ผู้สอน (เช็คชื่อ / ตารางสอน)</option>
-                  <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์ / วัดผลปฏิบัติ)</option>
-                  <option value="OFFICER">เจ้าหน้าที่ดูแลระบบ (พิจารณาคำร้อง)</option>
-                  <option value="ADMIN">ผู้ดูแลระบบ (Admin Access)</option>
-                </select>
-              )}
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">หน่วยงาน / ภาควิชา:</label>
-              <input
-                type="text"
-                value={newUserForm.department || ''}
-                onChange={(e) => setNewUserForm({ ...newUserForm, department: e.target.value })}
-                placeholder="เช่น คณะพุทธศาสตร์ หรือ อาจารย์พิเศษภายนอก"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-              />
-            </div>
+          {/* หน่วยงาน / ภาควิชา: Full width */}
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">หน่วยงาน / ภาควิชา:</label>
+            <input
+              type="text"
+              value={newUserForm.department || ''}
+              onChange={(e) => setNewUserForm({ ...newUserForm, department: e.target.value })}
+              placeholder="เช่น สำนักงานคณบดี คณะพุทธศาสตร์ มจร หรือ คณะพุทธศาสตร์ ภาควิชาพระพุทธศาสนา"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500/20 font-medium"
+            />
           </div>
 
+          {/* ตำแหน่งทางคณะสงฆ์ และ ที่อยู่ติดต่อ: 2 คอลัมน์ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
               <label className="font-bold text-slate-700 block mb-1">ตำแหน่งทางคณะสงฆ์ / สมณศักดิ์:</label>
@@ -232,6 +229,142 @@ export function AddUserModal({
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
               />
             </div>
+          </div>
+
+          {/* บทบาทและสิทธิ์การใช้งาน (Role): Full width */}
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">บทบาทและสิทธิ์การใช้งาน (Role):</label>
+            {(() => {
+              const currentRoleSelection: UserRole =
+                newUserForm.isActingOfficer && (newUserForm.role === 'INSTRUCTOR' || !newUserForm.role)
+                  ? 'ACTING_OFFICER'
+                  : newUserForm.role || 'INSTRUCTOR';
+
+              return (
+                <div className="space-y-2">
+                  {isOfficer ? (
+                    <div className="p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-slate-700 font-semibold flex items-center justify-between text-xs">
+                      <span>{currentRoleSelection === 'ACTING_OFFICER' ? '🎓 ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)' : '👨‍🏫 อาจารย์ผู้สอน (INSTRUCTOR)'}</span>
+                      <span className="text-[10px] text-slate-400 font-normal">ล็อกเฉพาะอาจารย์</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={currentRoleSelection}
+                      onChange={(e) => {
+                        const val = e.target.value as UserRole;
+                        if (val === 'ACTING_OFFICER') {
+                          setNewUserForm({
+                            ...newUserForm,
+                            role: 'INSTRUCTOR',
+                            isActingOfficer: true,
+                            instructorType:
+                              newUserForm.instructorType && !newUserForm.instructorType.includes('ผู้ช่วย')
+                                ? 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)'
+                                : newUserForm.instructorType || 'ผู้ช่วยเจ้าหน้าที่ (อาจารย์ช่วยงาน)',
+                          });
+                        } else if (val === 'OFFICER') {
+                          setNewUserForm({
+                            ...newUserForm,
+                            role: 'OFFICER',
+                            isActingOfficer: false,
+                            instructorType:
+                              !newUserForm.instructorType || newUserForm.instructorType === 'อาจารย์ประจำ'
+                                ? 'เจ้าหน้าที่หลักสูตร'
+                                : newUserForm.instructorType,
+                          });
+                        } else if (val === 'STAFF') {
+                          setNewUserForm({
+                            ...newUserForm,
+                            role: 'STAFF',
+                            isActingOfficer: false,
+                            instructorType:
+                              !newUserForm.instructorType || newUserForm.instructorType === 'อาจารย์ประจำ'
+                                ? 'เจ้าหน้าที่'
+                                : newUserForm.instructorType,
+                          });
+                        } else if (val === 'ADMIN') {
+                          setNewUserForm({
+                            ...newUserForm,
+                            role: 'ADMIN',
+                            isActingOfficer: false,
+                          });
+                        } else if (val === 'VIPASSANA_MASTER') {
+                          setNewUserForm({
+                            ...newUserForm,
+                            role: 'VIPASSANA_MASTER',
+                            isActingOfficer: false,
+                          });
+                        } else {
+                          setNewUserForm({
+                            ...newUserForm,
+                            role: 'INSTRUCTOR',
+                            isActingOfficer: false,
+                          });
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/20 cursor-pointer text-xs"
+                    >
+                      <option value="ADMIN">🛡️ ผู้ดูแลระบบ (ADMIN)</option>
+                      <option value="OFFICER">📋 เจ้าหน้าที่หลักสูตร (OFFICER)</option>
+                      <option value="ACTING_OFFICER">🎓 ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)</option>
+                      <option value="STAFF">💼 เจ้าหน้าที่สายสนับสนุน / วิชาการ (STAFF)</option>
+                      <option value="INSTRUCTOR">👨‍🏫 อาจารย์ผู้สอน (INSTRUCTOR)</option>
+                      <option value="VIPASSANA_MASTER">🧘 พระวิปัสสนาจารย์ (สอบอารมณ์ / วัดผลปฏิบัติ)</option>
+                    </select>
+                  )}
+
+                  {/* Role Explanation Card */}
+                  {currentRoleSelection === 'ADMIN' && (
+                    <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-[11px] text-purple-900 leading-relaxed flex items-start gap-2">
+                      <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>🛡️ ผู้ดูแลระบบ (ADMIN):</strong> มีสิทธิ์เข้าถึงและจัดการระบบทั้งหมด ตั้งค่าระบบ จัดการข้อมูลอาจารย์ นิสิต และนโยบายความปลอดภัย
+                      </div>
+                    </div>
+                  )}
+                  {currentRoleSelection === 'OFFICER' && (
+                    <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-[11px] text-teal-900 leading-relaxed flex items-start gap-2">
+                      <ClipboardList className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>📋 เจ้าหน้าที่หลักสูตร (OFFICER):</strong> มีสิทธิ์บริหารจัดการข้อมูลหลักสูตร ตารางสอน งานบริการการศึกษา ทะเบียนนิสิต และตรวจสอบคำร้อง
+                      </div>
+                    </div>
+                  )}
+                  {currentRoleSelection === 'ACTING_OFFICER' && (
+                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
+                      <GraduationCap className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>🎓 ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน):</strong> ผู้ได้รับมอบหมายให้ช่วยงานเจ้าหน้าที่หลักสูตร สามารถช่วยลงทะเบียน ตรวจสอบคำร้อง และออกเอกสารได้ โดยยังคงมีสถานะเดิมตามปกติ
+                      </div>
+                    </div>
+                  )}
+                  {currentRoleSelection === 'STAFF' && (
+                    <div className="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px] text-indigo-900 leading-relaxed flex items-start gap-2">
+                      <Briefcase className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>💼 เจ้าหน้าที่สายสนับสนุน (STAFF):</strong> บุคลากรสายสนับสนุนวิชาการ / ธุรการของคณะ
+                      </div>
+                    </div>
+                  )}
+                  {currentRoleSelection === 'VIPASSANA_MASTER' && (
+                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
+                      <span className="text-base leading-none">🧘</span>
+                      <div>
+                        <strong>🧘 พระวิปัสสนาจารย์ (VIPASSANA_MASTER):</strong> ทำหน้าที่สอบอารมณ์และประเมินผลการปฏิบัติธรรมในโครงการปฏิบัติวิปัสสนากัมมัฏฐาน
+                      </div>
+                    </div>
+                  )}
+                  {currentRoleSelection === 'INSTRUCTOR' && (
+                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 leading-relaxed flex items-start gap-2">
+                      <span className="text-base leading-none">👨‍🏫</span>
+                      <div>
+                        <strong>👨‍🏫 อาจารย์ผู้สอน (INSTRUCTOR):</strong> ทำหน้าที่เช็คชื่อในชั้นเรียน ส่งเกรด และดูแลกลุ่มกิจกรรม
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           <div>

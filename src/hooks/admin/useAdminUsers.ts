@@ -93,6 +93,7 @@ export function useAdminUsers({
     ecclesiasticalTitle: '',
     contactAddress: '',
     role: 'INSTRUCTOR' as UserRole,
+    isActingOfficer: false,
     password: 'mcu123456',
   });
 
@@ -658,6 +659,7 @@ ${coursesText}
       const emailToSave = newUserForm.email?.trim() || primaryEmail;
       const gmailToSave = newUserForm.gmail?.trim() || (primaryEmail.endsWith('@gmail.com') ? primaryEmail : '');
       const roleToSave = isOfficer ? 'INSTRUCTOR' : (newUserForm.role || 'INSTRUCTOR');
+      const isActingOfficerToSave = isOfficer ? false : Boolean(newUserForm.isActingOfficer);
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -666,6 +668,7 @@ ${coursesText}
           userData: {
             ...newUserForm,
             role: roleToSave,
+            isActingOfficer: isActingOfficerToSave,
             email: emailToSave,
             gmail: gmailToSave,
           },
@@ -685,6 +688,7 @@ ${coursesText}
           ecclesiasticalTitle: '',
           contactAddress: '',
           role: 'INSTRUCTOR',
+          isActingOfficer: false,
           password: 'mcu123456',
         });
         loadData();

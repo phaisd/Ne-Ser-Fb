@@ -661,6 +661,7 @@ export async function createUserAccount(accountData: Partial<InstructorAccount>)
     ecclesiasticalTitle: accountData.ecclesiasticalTitle ? accountData.ecclesiasticalTitle.trim() : undefined,
     contactAddress: accountData.contactAddress ? accountData.contactAddress.trim() : undefined,
     role: accountData.role || 'INSTRUCTOR',
+    isActingOfficer: Boolean(accountData.isActingOfficer),
     coursesCount: 0,
     isActive: true,
     isSuspended: false,
