@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   Lock,
   AlertTriangle,
@@ -118,7 +118,7 @@ export function EligibilityTab({
   const [mobileViewMode, setMobileViewMode] = useState<'card' | 'table'>('card');
   const tableColCount = showReasonColumn ? 11 : 10;
 
-  const toggleReasonColumn = () => {
+  const toggleReasonColumn = useCallback(() => {
     setShowReasonColumn((prev) => {
       const next = !prev;
       try {
@@ -126,7 +126,7 @@ export function EligibilityTab({
       } catch {}
       return next;
     });
-  };
+  }, []);
 
   useEffect(() => {
     try {
@@ -148,7 +148,7 @@ export function EligibilityTab({
     } catch {}
   }, []);
 
-  const applyPrintLayoutPreset = (preset: 'ULTRA_COMPACT' | 'COMPACT' | 'COMFORTABLE') => {
+  const applyPrintLayoutPreset = useCallback((preset: 'ULTRA_COMPACT' | 'COMPACT' | 'COMFORTABLE') => {
     setPrintSpacingPreset(preset);
     const nextPad = preset === 'ULTRA_COMPACT' ? 2 : preset === 'COMPACT' ? 4 : 6;
     const nextFont = preset === 'ULTRA_COMPACT' ? 11 : preset === 'COMPACT' ? 12 : 13;
@@ -167,9 +167,9 @@ export function EligibilityTab({
         })
       );
     } catch {}
-  };
+  }, []);
 
-  const updateCustomPrintLayout = (pad: number, font: number, margin: number) => {
+  const updateCustomPrintLayout = useCallback((pad: number, font: number, margin: number) => {
     const cPad = Math.max(1, Math.min(10, pad));
     const cFont = Math.max(9.5, Math.min(15, Number(font.toFixed(1))));
     const cMargin = Math.max(4, Math.min(16, margin));
@@ -188,7 +188,7 @@ export function EligibilityTab({
         })
       );
     } catch {}
-  };
+  }, []);
 
   if (!currentUser) {
     return (
