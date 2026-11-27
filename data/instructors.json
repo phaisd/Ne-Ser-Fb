@@ -2793,5 +2793,49 @@
     ],
     "isSuperAdmin": false,
     "isActingOfficer": false
+  },
+  {
+    "id": "inst-1795771917699-6726",
+    "name": "พระมหาศตนนท คมฺภีรเมโธ",
+    "nameEn": "",
+    "email": "officer07@mcu.ac.th",
+    "gmail": "officer07@gmail.com",
+    "phoneNumber": "035-248-000",
+    "password": "Fb8323mcu",
+    "defaultPassword": "Fb8323mcu",
+    "department": "สำนักงานคณบดี คณะพุทธศาสตร์",
+    "instructorType": "เจ้าหน้าที่นักจัดการงานทั่วไป",
+    "role": "STAFF",
+    "isActingOfficer": false,
+    "coursesCount": 0,
+    "isActive": true,
+    "isSuspended": false,
+    "aliases": [
+      "พระมหาศตนนท คมฺภีรเมโธ"
+    ],
+    "createdAt": "2026-11-27T09:31:58.065Z",
+    "updatedAt": "2026-11-27T09:31:58.065Z"
+  },
+  {
+    "id": "inst-1795771917700-1216",
+    "name": "พระมหาขันทอง ถาวโร",
+    "nameEn": "",
+    "email": "officer08@mcu.ac.th",
+    "gmail": "officer08@gmail.com",
+    "phoneNumber": "035-248-000",
+    "password": "Fb8323mcu",
+    "defaultPassword": "Fb8323mcu",
+    "department": "สำนักงานคณบดี คณะพุทธศาสตร์",
+    "instructorType": "เจ้าหน้าที่นักจัดการงานทั่วไป",
+    "role": "STAFF",
+    "isActingOfficer": false,
+    "coursesCount": 0,
+    "isActive": true,
+    "isSuspended": false,
+    "aliases": [
+      "พระมหาขันทอง ถาวโร"
+    ],
+    "createdAt": "2026-11-27T09:31:58.065Z",
+    "updatedAt": "2026-11-27T09:31:58.065Z"
   }
 ]
