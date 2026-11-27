@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "tsc --noEmit && vitest run"
+    "check": "tsc --noEmit && vitest run",
+    "backup": "node scripts/backup-data.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",
