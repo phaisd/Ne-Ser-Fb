@@ -2661,5 +2661,137 @@
     "nameEn": "Assoc. Prof. Dr. Waraporn Kittayakiarn",
     "instructorType": "อาจารย์พิเศษ",
     "updatedAt": "2026-11-05T09:18:02.143Z"
+  },
+  {
+    "id": "inst-officer-1-1795769698060",
+    "name": "พระมหาณรงค์ชัย กิตฺติญาโณ",
+    "email": "officer01@mcu.ac.th",
+    "gmail": "officer01.mcu@gmail.com",
+    "password": "Fb8323mcu",
+    "defaultPassword": "Fb8323mcu",
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "role": "OFFICER",
+    "instructorType": "เจ้าหน้าที่หลักสูตร",
+    "phoneNumber": "",
+    "coursesCount": 0,
+    "isActive": true,
+    "createdAt": "2026-11-27T08:54:58.061Z",
+    "updatedAt": "2026-11-27T08:54:58.062Z",
+    "aliases": [
+      "พระมหาณรงค์ชัย กิตฺติญาโณ",
+      "officer01@mcu.ac.th"
+    ],
+    "isSuperAdmin": false,
+    "isActingOfficer": false
+  },
+  {
+    "id": "inst-officer-2-1795769698062",
+    "name": "นางสาวกัญญ์วราพัชญ์ หอมชื่น",
+    "email": "officer02@mcu.ac.th",
+    "gmail": "officer02.mcu@gmail.com",
+    "password": "Fb8323mcu",
+    "defaultPassword": "Fb8323mcu",
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "role": "OFFICER",
+    "instructorType": "เจ้าหน้าที่หลักสูตร",
+    "phoneNumber": "",
+    "coursesCount": 0,
+    "isActive": true,
+    "createdAt": "2026-11-27T08:54:58.062Z",
+    "updatedAt": "2026-11-27T08:54:58.062Z",
+    "aliases": [
+      "นางสาวกัญญ์วราพัชญ์ หอมชื่น",
+      "officer02@mcu.ac.th"
+    ],
+    "isSuperAdmin": false,
+    "isActingOfficer": false
+  },
+  {
+    "id": "inst-officer-3-1795769698062",
+    "name": "นางสาวปาริชาติ พิมพ์อุบล",
+    "email": "officer03@mcu.ac.th",
+    "gmail": "officer03.mcu@gmail.com",
+    "password": "Fb8323mcu",
+    "defaultPassword": "Fb8323mcu",
+    "department": "ภาควิชาศาสนาและปรัชญา",
+    "role": "OFFICER",
+    "instructorType": "เจ้าหน้าที่หลักสูตร",
+    "phoneNumber": "",
+    "coursesCount": 0,
+    "isActive": true,
+    "createdAt": "2026-11-27T08:54:58.062Z",
+    "updatedAt": "2026-11-27T08:54:58.062Z",
+    "aliases": [
+      "นางสาวปาริชาติ พิมพ์อุบล",
+      "officer03@mcu.ac.th"
+    ],
+    "isSuperAdmin": false,
+    "isActingOfficer": false
+  },
+  {
+    "id": "inst-officer-4-1795769698062",
+    "name": "นายศิรณัฎฐ์ ชูทรัพย์",
+    "email": "officer04@mcu.ac.th",
+    "gmail": "officer04.mcu@gmail.com",
+    "password": "Fb8323mcu",
+    "defaultPassword": "Fb8323mcu",
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "role": "OFFICER",
+    "instructorType": "เจ้าหน้าที่หลักสูตร",
+    "phoneNumber": "",
+    "coursesCount": 0,
+    "isActive": true,
+    "createdAt": "2026-11-27T08:54:58.062Z",
+    "updatedAt": "2026-11-27T08:54:58.062Z",
+    "aliases": [
+      "นายศิรณัฎฐ์ ชูทรัพย์",
+      "officer04@mcu.ac.th"
+    ],
+    "isSuperAdmin": false,
+    "isActingOfficer": false
+  },
+  {
+    "id": "inst-officer-5-1795769698062",
+    "name": "นายณัฐภัทร บุญรอด",
+    "email": "officer05@mcu.ac.th",
+    "gmail": "officer05.mcu@gmail.com",
+    "password": "Fb8323mcu",
+    "defaultPassword": "Fb8323mcu",
+    "department": "ภาควิชาพระพุทธศาสนา",
+    "role": "OFFICER",
+    "instructorType": "เจ้าหน้าที่หลักสูตร",
+    "phoneNumber": "",
+    "coursesCount": 0,
+    "isActive": true,
+    "createdAt": "2026-11-27T08:54:58.062Z",
+    "updatedAt": "2026-11-27T08:54:58.062Z",
+    "aliases": [
+      "นายณัฐภัทร บุญรอด",
+      "officer05@mcu.ac.th"
+    ],
+    "isSuperAdmin": false,
+    "isActingOfficer": false
+  },
+  {
+    "id": "inst-officer-6-1795769698062",
+    "name": "นายพีรพงศ์  โตดี",
+    "email": "officer06@mcu.ac.th",
+    "gmail": "officer06.mcu@gmail.com",
+    "password": "Fb8323mcu",
+    "defaultPassword": "Fb8323mcu",
+    "department": "สำนักงานคณบดี คณะพุทธศาสตร์",
+    "role": "OFFICER",
+    "instructorType": "เจ้าหน้าที่หลักสูตร",
+    "phoneNumber": "",
+    "coursesCount": 0,
+    "isActive": true,
+    "createdAt": "2026-11-27T08:54:58.062Z",
+    "updatedAt": "2026-11-27T08:54:58.062Z",
+    "aliases": [
+      "นายพีรพงศ์  โตดี",
+      "officer06@mcu.ac.th"
+    ],
+    "isSuperAdmin": false,
+    "isActingOfficer": false
   }
 ]
