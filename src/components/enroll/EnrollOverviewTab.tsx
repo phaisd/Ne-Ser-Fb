@@ -154,13 +154,13 @@ export function EnrollOverviewTab({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
               {portalConfig.applicationFees
                 .filter((f) => f.enabled)
                 .map((fee) => (
                   <div
                     key={fee.id}
-                    className="bg-white p-4 rounded-xl border border-amber-200/80 flex flex-col justify-between space-y-2 shadow-2xs"
+                    className="bg-white p-3 sm:p-4 rounded-xl border border-amber-200/80 flex flex-col justify-between space-y-2 shadow-2xs"
                   >
                     <div>
                       <div className="font-extrabold text-slate-900 text-sm">

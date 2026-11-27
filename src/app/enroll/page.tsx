@@ -23,6 +23,8 @@ import {
   ShieldCheck,
   Calendar,
   RotateCcw,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { AdmissionApplication, SystemSettings } from '@/types';
 import {
@@ -79,6 +81,11 @@ function EnrollPortalContent() {
   const [matchedApp, setMatchedApp] = useState<AdmissionApplication | null>(null);
   const [confirmingEnroll, setConfirmingEnroll] = useState(false);
   const [confirmSuccessMsg, setConfirmSuccessMsg] = useState<string | null>(null);
+
+  // Mobile responsive accordion & collapsible controls
+  const [isProcessStepsExpanded, setIsProcessStepsExpanded] = useState(false);
+  const [isQuickTestExpanded, setIsQuickTestExpanded] = useState(false);
+  const [isCoordinatorExpanded, setIsCoordinatorExpanded] = useState(false);
 
   useEffect(() => {
     const loadSettings = () => {
@@ -238,22 +245,56 @@ function EnrollPortalContent() {
             </p>
           </div>
 
-          {/* Coordinator Contact Card */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 sm:p-5 space-y-2 shrink-0 lg:w-80 shadow-lg">
-            <div className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5" />
-              <span>{settings.admissionCoordinatorTitle || 'ศูนย์ประสานงานการรับสมัครนิสิตใหม่'}</span>
+          {/* Coordinator Contact Card (Collapsible & Tap-to-call on Mobile) */}
+          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3.5 sm:p-5 space-y-2 shrink-0 lg:w-80 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5" />
+                <span>{settings.admissionCoordinatorTitle || 'ศูนย์ประสานงานการรับสมัครนิสิตใหม่'}</span>
+              </div>
+              <span
+                className={`sm:hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  settings.admissionOpen !== false
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                    : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    settings.admissionOpen !== false ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                  }`}
+                />
+                {settings.admissionOpen !== false ? 'เปิดรับสมัคร' : 'ปิดรับ'}
+              </span>
             </div>
+
             <div className="text-sm font-extrabold text-white">
               {settings.admissionCoordinatorName || 'สำนักงานคณบดีคณะพุทธศาสตร์ ฝ่ายทะเบียนและวัดผล'}
             </div>
-            <div className="text-xs text-slate-300 flex items-center gap-1.5">
-              <span>โทร:</span>
-              <span className="font-bold text-amber-200">
-                {settings.admissionCoordinatorPhone || settings.contactPhone || '035-248-000 ต่อ 8323'}
-              </span>
+
+            <div className="flex items-center justify-between flex-wrap gap-2 pt-0.5">
+              <div className="text-xs text-slate-300 flex items-center gap-1.5">
+                <span>โทร:</span>
+                <a
+                  href={`tel:${String(settings.admissionCoordinatorPhone || settings.contactPhone || '035248000').replace(/[^0-9]/g, '')}`}
+                  className="font-bold text-amber-300 hover:underline flex items-center gap-1"
+                >
+                  <span>{settings.admissionCoordinatorPhone || settings.contactPhone || '035-248-000 ต่อ 8323'}</span>
+                  <Phone className="w-3 h-3 text-amber-400 sm:hidden" />
+                </a>
+              </div>
+
+              {/* Direct Touch Dial Button on Mobile */}
+              <a
+                href={`tel:${String(settings.admissionCoordinatorPhone || settings.contactPhone || '035248000').replace(/[^0-9]/g, '')}`}
+                className="sm:hidden px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] inline-flex items-center gap-1 shadow-xs"
+              >
+                <Phone className="w-3 h-3" />
+                <span>โทรสอบถาม</span>
+              </a>
             </div>
-            <div className="pt-1 flex items-center gap-2">
+
+            <div className="hidden sm:flex pt-1 items-center gap-2">
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
                   settings.admissionOpen !== false
@@ -284,161 +325,250 @@ function EnrollPortalContent() {
         />
       )}
 
-      {/* 2. 4-Step Process Flow Cards */}
+      {/* 2. 4-Step Process Flow Cards (Collapsible & Compact on Mobile) */}
       {portalConfig.showProcessSteps && (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
-        <div className="bg-white rounded-2xl border border-orange-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
-          <div className="space-y-1.5">
+        <div className="space-y-3 print:hidden">
+          {/* Mobile Quick Touch Stepper & Accordion Header */}
+          <div className="sm:hidden bg-white rounded-2xl border border-slate-200/90 p-3 shadow-xs space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[11px] font-extrabold">
-                ขั้นตอนที่ ๑
-              </span>
-              <FileText className="w-4 h-4 text-orange-600" />
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                <span className="text-xs font-black text-slate-900">๔ ขั้นตอนการรับสมัคร &amp; ขึ้นทะเบียน</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsProcessStepsExpanded((prev) => !prev)}
+                className="text-xs font-bold text-orange-700 hover:text-orange-900 flex items-center gap-1 bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200 transition cursor-pointer"
+              >
+                <span>{isProcessStepsExpanded ? 'ย่อเก็บ' : 'ดูรายละเอียด'}</span>
+                {isProcessStepsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
             </div>
-            <h3 className="font-extrabold text-slate-900 text-sm">๑. ยื่นใบสมัครออนไลน์</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              กรอกข้อมูลผู้สมัคร เลือกระดับปริญญาและสาขาวิชา พร้อมรับรหัสใบสมัครทันที
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setActiveTab('APPLY')}
-            className="w-full py-2 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition cursor-pointer"
-          >
-            กรอกใบสมัครออนไลน์ →
-          </button>
-        </div>
 
-        <div className="bg-white rounded-2xl border border-sky-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[11px] font-extrabold">
-                ขั้นตอนที่ ๒
-              </span>
-              <Search className="w-4 h-4 text-sky-600" />
-            </div>
-            <h3 className="font-extrabold text-slate-900 text-sm">๒. ตรวจสอบเอกสาร</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              เจ้าหน้าที่ตรวจสอบคุณสมบัติและเอกสารหลักฐานการสมัครของท่าน
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setActiveTab('STATUS')}
-            className="w-full py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition cursor-pointer"
-          >
-            เช็คสถานะเอกสาร →
-          </button>
-        </div>
+            {/* Quick Touch Stepper (Tap to jump to tab directly) */}
+            <div className="grid grid-cols-4 gap-1.5 pt-0.5 text-center">
+              <button
+                type="button"
+                onClick={() => setActiveTab('APPLY')}
+                className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+                  activeTab === 'APPLY'
+                    ? 'bg-orange-600 text-white border-orange-700 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-orange-50/50'
+                }`}
+              >
+                <FileText className="w-4 h-4 shrink-0" />
+                <span className="text-[10px] font-extrabold leading-tight">๑. สมัคร</span>
+              </button>
 
-        <div className="bg-white rounded-2xl border border-indigo-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[11px] font-extrabold">
-                ขั้นตอนที่ ๓
-              </span>
-              <Calendar className="w-4 h-4 text-indigo-600" />
-            </div>
-            <h3 className="font-extrabold text-slate-900 text-sm">๓. สอบสัมภาษณ์</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              ตรวจสอบวัน เวลา และห้องสอบสัมภาษณ์ พร้อมติดตามผลสัมภาษณ์ออนไลน์
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setActiveTab('STATUS')}
-            className="w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition cursor-pointer"
-          >
-            ตารางสอบสัมภาษณ์ →
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('STATUS')}
+                className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+                  activeTab === 'STATUS'
+                    ? 'bg-sky-600 text-white border-sky-700 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-sky-50/50'
+                }`}
+              >
+                <Search className="w-4 h-4 shrink-0" />
+                <span className="text-[10px] font-extrabold leading-tight">๒. เอกสาร</span>
+              </button>
 
-        <div className="bg-white rounded-2xl border border-emerald-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold">
-                ขั้นตอนที่ ๔
-              </span>
-              <UserCheck className="w-4 h-4 text-emerald-600" />
+              <button
+                type="button"
+                onClick={() => setActiveTab('STATUS')}
+                className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+                  activeTab === 'STATUS'
+                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-indigo-50/50'
+                }`}
+              >
+                <Calendar className="w-4 h-4 shrink-0" />
+                <span className="text-[10px] font-extrabold leading-tight">๓. สัมภาษณ์</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('REGISTER')}
+                className={`p-2 rounded-xl border flex flex-col items-center gap-1 transition cursor-pointer ${
+                  activeTab === 'REGISTER'
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50/50'
+                }`}
+              >
+                <UserCheck className="w-4 h-4 shrink-0" />
+                <span className="text-[10px] font-extrabold leading-tight">๔. ทะเบียน</span>
+              </button>
             </div>
-            <h3 className="font-extrabold text-slate-900 text-sm">
-              {portalConfig.showRegisterTab
-                ? '๔. ขึ้นทะเบียนนิสิตใหม่'
-                : '๔. รายงานตัวและขึ้นทะเบียน'}
-            </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              {portalConfig.showRegisterTab
-                ? 'ยืนยันสิทธิ์เข้าศึกษา รับรหัสประจำตัวนิสิต และพิมพ์ใบรายงานตัวออนไลน์'
-                : 'ผู้ผ่านการสอบสัมภาษณ์ ติดต่อสำนักทะเบียนและวัดผล มจร เพื่อรายงานตัวและขึ้นทะเบียน'}
-            </p>
           </div>
-          {portalConfig.showRegisterTab ? (
-            <button
-              type="button"
-              onClick={() => setActiveTab('REGISTER')}
-              className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
-            >
-              ขึ้นทะเบียนนิสิตออนไลน์ →
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setActiveTab('STATUS')}
-              className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
-            >
-              ดูประกาศผล &amp; คำแนะนำ →
-            </button>
-          )}
+
+          {/* Full Process Cards: always visible on sm:, collapsible on mobile */}
+          <div className={`${isProcessStepsExpanded ? 'grid' : 'hidden sm:grid'} grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`}>
+            <div className="bg-white rounded-2xl border border-orange-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[11px] font-extrabold">
+                    ขั้นตอนที่ ๑
+                  </span>
+                  <FileText className="w-4 h-4 text-orange-600" />
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-sm">๑. ยื่นใบสมัครออนไลน์</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  กรอกข้อมูลผู้สมัคร เลือกระดับปริญญาและสาขาวิชา พร้อมรับรหัสใบสมัครทันที
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('APPLY')}
+                className="w-full py-2 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition cursor-pointer"
+              >
+                กรอกใบสมัครออนไลน์ →
+              </button>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-sky-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[11px] font-extrabold">
+                    ขั้นตอนที่ ๒
+                  </span>
+                  <Search className="w-4 h-4 text-sky-600" />
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-sm">๒. ตรวจสอบเอกสาร</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  เจ้าหน้าที่ตรวจสอบคุณสมบัติและเอกสารหลักฐานการสมัครของท่าน
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('STATUS')}
+                className="w-full py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition cursor-pointer"
+              >
+                เช็คสถานะเอกสาร →
+              </button>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-indigo-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[11px] font-extrabold">
+                    ขั้นตอนที่ ๓
+                  </span>
+                  <Calendar className="w-4 h-4 text-indigo-600" />
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-sm">๓. สอบสัมภาษณ์</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  ตรวจสอบวัน เวลา และห้องสอบสัมภาษณ์ พร้อมติดตามผลสัมภาษณ์ออนไลน์
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('STATUS')}
+                className="w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition cursor-pointer"
+              >
+                ตารางสอบสัมภาษณ์ →
+              </button>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-emerald-200/80 p-4 shadow-sm flex flex-col justify-between gap-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold">
+                    ขั้นตอนที่ ๔
+                  </span>
+                  <UserCheck className="w-4 h-4 text-emerald-600" />
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-sm">
+                  {portalConfig.showRegisterTab
+                    ? '๔. ขึ้นทะเบียนนิสิตใหม่'
+                    : '๔. รายงานตัวและขึ้นทะเบียน'}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {portalConfig.showRegisterTab
+                    ? 'ยืนยันสิทธิ์เข้าศึกษา รับรหัสประจำตัวนิสิต และพิมพ์ใบรายงานตัวออนไลน์'
+                    : 'ผู้ผ่านการสอบสัมภาษณ์ ติดต่อสำนักทะเบียนและวัดผล มจร เพื่อรายงานตัวและขึ้นทะเบียน'}
+                </p>
+              </div>
+              {portalConfig.showRegisterTab ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('REGISTER')}
+                  className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  ขึ้นทะเบียนนิสิตออนไลน์ →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('STATUS')}
+                  className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  ดูประกาศผล &amp; คำแนะนำ →
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
       )}
 
-      {/* 3. Quick Test Simulation Links Bar (สำหรับทดสอบ Flow ทั้ง 4 ขั้นตอนทันที) */}
+      {/* 3. Quick Test Simulation Links Bar (Collapsible on Mobile) */}
       {portalConfig.showQuickTestBar && (
-      <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 text-xs print:hidden">
-        <div className="flex items-center gap-2 font-bold text-amber-900">
-          <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-          <span>แถบทดสอบระบบด่วน (คลิกเพื่อจำลองการตรวจสถานะและขึ้นทะเบียน):</span>
+        <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-3 sm:p-4 text-xs print:hidden">
+          <div
+            className="flex items-center justify-between cursor-pointer select-none"
+            onClick={() => setIsQuickTestExpanded((prev) => !prev)}
+          >
+            <div className="flex items-center gap-2 font-bold text-amber-900">
+              <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>แถบทดสอบระบบด่วน (จำลองตรวจสถานะ &amp; ขึ้นทะเบียน)</span>
+            </div>
+            <button
+              type="button"
+              className="sm:hidden text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1 text-[11px] cursor-pointer"
+            >
+              <span>{isQuickTestExpanded ? 'ย่อเก็บ' : 'คลิกเพื่อทดสอบ'}</span>
+              {isQuickTestExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          <div className={`${isQuickTestExpanded ? 'flex' : 'hidden sm:flex'} flex-wrap items-center gap-2 pt-2.5 sm:pt-2`}>
+            <button
+              type="button"
+              onClick={() =>
+                handleQuickTest(
+                  '1349900123456',
+                  portalConfig.showRegisterTab ? 'REGISTER' : 'STATUS'
+                )
+              }
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold transition cursor-pointer shadow-2xs text-[11px] sm:text-xs"
+            >
+              🟢 ผู้ผ่านสัมภาษณ์ (1349900123456)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickTest('1349900987654', 'STATUS')}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-sky-50 text-sky-800 border border-sky-300 font-bold transition cursor-pointer shadow-2xs text-[11px] sm:text-xs"
+            >
+              🔵 รอสัมภาษณ์ (1349900987654)
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                handleQuickTest(
+                  '1349900555555',
+                  portalConfig.showRegisterTab ? 'REGISTER' : 'STATUS'
+                )
+              }
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-purple-50 text-purple-800 border border-purple-300 font-bold transition cursor-pointer shadow-2xs text-[11px] sm:text-xs"
+            >
+              🟣 ขึ้นทะเบียนแล้ว (1349900555555)
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              handleQuickTest(
-                '1349900123456',
-                portalConfig.showRegisterTab ? 'REGISTER' : 'STATUS'
-              )
-            }
-            className="px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold transition cursor-pointer shadow-2xs"
-          >
-            🟢 ทดสอบขั้นตอนที่ ๔ (ผู้ผ่านสัมภาษณ์: 1349900123456)
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickTest('1349900987654', 'STATUS')}
-            className="px-3 py-1.5 rounded-xl bg-white hover:bg-sky-50 text-sky-800 border border-sky-300 font-bold transition cursor-pointer shadow-2xs"
-          >
-            🔵 ทดสอบขั้นตอนที่ ๒-๓ (รอสัมภาษณ์: 1349900987654)
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              handleQuickTest(
-                '1349900555555',
-                portalConfig.showRegisterTab ? 'REGISTER' : 'STATUS'
-              )
-            }
-            className="px-3 py-1.5 rounded-xl bg-white hover:bg-purple-50 text-purple-800 border border-purple-300 font-bold transition cursor-pointer shadow-2xs"
-          >
-            🟣 ดูนิสิตที่ขึ้นทะเบียนแล้ว (1349900555555)
-          </button>
-        </div>
-      </div>
       )}
 
-      {/* 4. Main Tab Navigation */}
+      {/* 4. Main Tab Navigation (2x2 Grid on Mobile, Flex on Desktop) */}
       {visibleTabs.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs print:hidden">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2 bg-white p-1.5 sm:p-2 rounded-2xl border border-slate-200 shadow-xs print:hidden">
           {visibleTabs.map((t) => {
             const Icon = t.icon;
             const active = activeTab === t.id;
@@ -447,14 +577,14 @@ function EnrollPortalContent() {
                 key={t.id}
                 type="button"
                 onClick={() => setActiveTab(t.id)}
-                className={`flex-1 min-w-[200px] inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition cursor-pointer ${
+                className={`flex-1 sm:min-w-[180px] inline-flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-extrabold transition cursor-pointer text-center ${
                   active
                     ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 bg-slate-50/70 sm:bg-transparent'
                 }`}
               >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span>{t.label}</span>
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span className="truncate">{t.label}</span>
               </button>
             );
           })}

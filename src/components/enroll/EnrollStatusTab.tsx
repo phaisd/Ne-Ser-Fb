@@ -18,6 +18,8 @@ import {
   Phone,
   Clock,
   Filter,
+  LayoutGrid,
+  Table as TableIcon,
 } from 'lucide-react';
 import { AdmissionApplication, AdmissionPortalConfig, SystemSettings } from '@/types';
 
@@ -55,6 +57,7 @@ export function EnrollStatusTab({
   const [rosterDegreeFilter, setRosterDegreeFilter] = useState<string>('ALL');
   const [rosterMajorFilter, setRosterMajorFilter] = useState<string>('ALL');
   const [rosterSearch, setRosterSearch] = useState<string>('');
+  const [rosterViewMode, setRosterViewMode] = useState<'card' | 'table'>('card');
 
   const loadRoster = async () => {
     setLoadingRoster(true);
@@ -243,8 +246,8 @@ export function EnrollStatusTab({
                 )}
               </div>
 
-              {/* 4-Step Progress Tracker */}
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              {/* 4-Step Progress Tracker (2x2 Grid on Mobile, 4 Cols on Desktop) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {[
                   { step: 1, title: '๑. ยื่นใบสมัครแล้ว', desc: 'ระบบได้รับข้อมูลผู้สมัคร' },
                   { step: 2, title: '๒. ตรวจสอบเอกสาร', desc: 'ตรวจคุณสมบัติผ่านแล้ว' },
@@ -264,22 +267,22 @@ export function EnrollStatusTab({
                   return (
                     <div
                       key={item.step}
-                      className={`p-3.5 rounded-2xl border flex items-start gap-3 ${
+                      className={`p-2.5 sm:p-3.5 rounded-2xl border flex items-start gap-2 sm:gap-3 ${
                         done
                           ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
                           : 'bg-white border-slate-200 text-slate-400'
                       }`}
                     >
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                        className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
                           done ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'
                         }`}
                       >
                         {done ? '✓' : item.step}
                       </div>
-                      <div>
-                        <div className="text-xs font-extrabold">{item.title}</div>
-                        <div className="text-[11px] opacity-80">{item.desc}</div>
+                      <div className="min-w-0">
+                        <div className="text-[11px] sm:text-xs font-extrabold truncate">{item.title}</div>
+                        <div className="text-[10px] sm:text-[11px] opacity-80 leading-tight">{item.desc}</div>
                       </div>
                     </div>
                   );
@@ -491,8 +494,28 @@ export function EnrollStatusTab({
               )}
             </div>
 
-            {/* Quick Search */}
-            <div className="flex items-center gap-2">
+            {/* Quick Search & Mobile View Switcher */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {/* Mobile View Switcher */}
+              <button
+                type="button"
+                onClick={() => setRosterViewMode((prev) => (prev === 'card' ? 'table' : 'card'))}
+                className="md:hidden px-2.5 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold flex items-center gap-1 transition shrink-0 cursor-pointer shadow-2xs"
+                title="สลับมุมมองระหว่างการ์ดและตาราง"
+              >
+                {rosterViewMode === 'card' ? (
+                  <>
+                    <TableIcon className="w-3.5 h-3.5 text-slate-600" />
+                    <span>ตาราง</span>
+                  </>
+                ) : (
+                  <>
+                    <LayoutGrid className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>การ์ด</span>
+                  </>
+                )}
+              </button>
+
               <div className="relative flex-1 sm:w-60">
                 <input
                   type="text"
@@ -503,13 +526,13 @@ export function EnrollStatusTab({
                 />
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
               </div>
-              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-1.5 rounded-xl shrink-0">
+              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-1.5 rounded-xl shrink-0 whitespace-nowrap">
                 พบ {filteredPassedList.length} รูป/คน
               </span>
             </div>
           </div>
 
-          {/* Roster Table */}
+          {/* Roster Cards (Mobile) + Table (Desktop) */}
           {loadingRoster ? (
             <div className="py-12 text-center text-xs text-slate-500">
               กำลังโหลดรายชื่อผู้ผ่านการสอบสัมภาษณ์...
@@ -519,59 +542,105 @@ export function EnrollStatusTab({
               ไม่พบรายชื่อผู้ผ่านการคัดเลือกตามเงื่อนไขที่เลือก
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-700 font-extrabold border-b border-slate-200">
-                    <th className="py-3 px-3.5 text-center w-12">ลำดับ</th>
-                    <th className="py-3 px-3.5">รหัสใบสมัคร</th>
-                    <th className="py-3 px-3.5">ชื่อ - ฉายา / นามสกุล</th>
-                    <th className="py-3 px-3.5">ระดับการศึกษา</th>
-                    <th className="py-3 px-3.5">สาขาวิชา</th>
-                    <th className="py-3 px-3.5 text-center">ผลการคัดเลือก</th>
-                    <th className="py-3 px-3.5 text-center">รหัสนิสิต (ถ้ามี)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-800">
-                  {filteredPassedList.map((app, idx) => (
-                    <tr
-                      key={app.id}
-                      className="hover:bg-emerald-50/50 transition duration-150 odd:bg-white even:bg-slate-50/50"
-                    >
-                      <td className="py-3 px-3.5 text-center font-bold text-slate-500 font-mono">
-                        {idx + 1}
-                      </td>
-                      <td className="py-3 px-3.5 font-mono font-bold text-indigo-900">
-                        {app.applicationCode}
-                      </td>
-                      <td className="py-3 px-3.5 font-bold text-slate-900">
-                        {app.titleName} {app.firstName} {app.lastName}
-                        {app.monasticName && (
-                          <span className="text-slate-500 font-normal ml-1">
-                            ({app.monasticName})
+            <>
+              {/* 1. Mobile Cards */}
+              <div className={`${rosterViewMode === 'card' ? 'block md:hidden' : 'hidden'} space-y-3`}>
+                {filteredPassedList.map((app, idx) => (
+                  <div
+                    key={app.id}
+                    className="p-4 rounded-2xl border border-slate-200/90 bg-white shadow-2xs space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-extrabold text-sm text-slate-900 leading-snug">
+                          {idx + 1}. {app.titleName} {app.firstName} {app.lastName}
+                          {app.monasticName && (
+                            <span className="text-slate-500 font-normal ml-1">
+                              ({app.monasticName})
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                          <span className="font-mono font-extrabold text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                            {app.applicationCode}
                           </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3.5">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-[11px]">
-                          {app.degreeLevel}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3.5 font-medium text-slate-700">{app.major}</td>
-                      <td className="py-3 px-3.5 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>ผ่านสัมภาษณ์ (มีสิทธิ์เข้าศึกษา)</span>
-                        </span>
-                      </td>
-                      <td className="py-3 px-3.5 text-center font-mono font-bold text-slate-900">
-                        {app.assignedStudentCode || '-'}
-                      </td>
+                          <span className="text-xs text-slate-500 font-medium truncate">
+                            {app.degreeLevel} • {app.major}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>ผ่านสัมภาษณ์</span>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-0.5">
+                      <span className="text-slate-500">รหัสนิสิตใหม่:</span>
+                      <span className="font-mono font-extrabold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-md">
+                        {app.assignedStudentCode || 'รอขึ้นทะเบียน'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 2. Desktop Table */}
+              <div className={`${rosterViewMode === 'card' ? 'hidden md:block' : 'block'} overflow-x-auto rounded-2xl border border-slate-200`}>
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-700 font-extrabold border-b border-slate-200">
+                      <th className="py-3 px-3.5 text-center w-12">ลำดับ</th>
+                      <th className="py-3 px-3.5">รหัสใบสมัคร</th>
+                      <th className="py-3 px-3.5">ชื่อ - ฉายา / นามสกุล</th>
+                      <th className="py-3 px-3.5">ระดับการศึกษา</th>
+                      <th className="py-3 px-3.5">สาขาวิชา</th>
+                      <th className="py-3 px-3.5 text-center">ผลการคัดเลือก</th>
+                      <th className="py-3 px-3.5 text-center">รหัสนิสิต (ถ้ามี)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-800">
+                    {filteredPassedList.map((app, idx) => (
+                      <tr
+                        key={app.id}
+                        className="hover:bg-emerald-50/50 transition duration-150 odd:bg-white even:bg-slate-50/50"
+                      >
+                        <td className="py-3 px-3.5 text-center font-bold text-slate-500 font-mono">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3 px-3.5 font-mono font-bold text-indigo-900">
+                          {app.applicationCode}
+                        </td>
+                        <td className="py-3 px-3.5 font-bold text-slate-900">
+                          {app.titleName} {app.firstName} {app.lastName}
+                          {app.monasticName && (
+                            <span className="text-slate-500 font-normal ml-1">
+                              ({app.monasticName})
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3.5">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-[11px]">
+                            {app.degreeLevel}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3.5 font-medium text-slate-700">{app.major}</td>
+                        <td className="py-3 px-3.5 text-center">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>ผ่านสัมภาษณ์ (มีสิทธิ์เข้าศึกษา)</span>
+                          </span>
+                        </td>
+                        <td className="py-3 px-3.5 text-center font-mono font-bold text-slate-900">
+                          {app.assignedStudentCode || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}

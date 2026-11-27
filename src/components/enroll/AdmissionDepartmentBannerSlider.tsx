@@ -121,6 +121,7 @@ export function AdmissionDepartmentBannerSlider({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartXRef = useRef<number | null>(null);
 
   const nextSlide = useCallback(() => {
     if (total <= 1) return;
@@ -131,6 +132,25 @@ export function AdmissionDepartmentBannerSlider({
     if (total <= 1) return;
     setCurrentIndex((prev) => (prev - 1 + total) % total);
   }, [total]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsPaused(true);
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    setIsPaused(false);
+    if (touchStartXRef.current === null) return;
+    const diff = touchStartXRef.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+    touchStartXRef.current = null;
+  };
 
   // Autoplay effect
   useEffect(() => {
@@ -169,8 +189,8 @@ export function AdmissionDepartmentBannerSlider({
       className="relative overflow-hidden rounded-3xl border shadow-xl transition-all duration-700 ease-out print:hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Background Container with Eye-friendly Soft Ambient Glow */}
       <div
