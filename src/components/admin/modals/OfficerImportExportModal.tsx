@@ -268,9 +268,10 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
       dataLines = lines;
       const sampleCols = parseCSVRow(lines[0], delimiter);
       const isFirstColSeqNum = /^\d+$/.test(sampleCols[0]?.trim()) && sampleCols.length >= 2;
+      const isFirstColEmpty = !sampleCols[0]?.trim() && sampleCols.length >= 2;
 
-      if (isFirstColSeqNum) {
-        // [0: Seq, 1: Name, 2: Role, 3: Position, 4: Department, 5: Phone, 6: Email, 7: Password]
+      if (isFirstColSeqNum || isFirstColEmpty) {
+        // [0: Seq/Empty comma, 1: Name, 2: Role, 3: Position, 4: Department, 5: Phone, 6: Email, 7: Password]
         colName = 1;
         colRole = 2;
         colPosition = 3;
@@ -406,7 +407,19 @@ export const OfficerImportExportModal: React.FC<OfficerImportExportModalProps> =
         setRawText(tsv);
         parseRawTextToOfficers(tsv);
       } else {
-        const text = await file.text();
+        const buf = await file.arrayBuffer();
+        let text = '';
+        try {
+          // Attempt standard UTF-8 decoding
+          text = new TextDecoder('utf-8', { fatal: true }).decode(buf);
+        } catch {
+          // Fallback to Windows-874 / TIS-620 for Thai CSV files exported/saved from Excel on Windows
+          try {
+            text = new TextDecoder('windows-874').decode(buf);
+          } catch {
+            text = await file.text();
+          }
+        }
         setRawText(text);
         parseRawTextToOfficers(text);
       }
