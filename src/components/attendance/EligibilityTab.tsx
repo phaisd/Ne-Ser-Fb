@@ -15,6 +15,8 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  LayoutGrid,
+  Table as TableIcon,
 } from 'lucide-react';
 import { Course, TimetableItem, AuthUser, StudentEligibility } from '@/types';
 import { groupAndSortByMajor } from './majorGrouping';
@@ -112,6 +114,8 @@ export function EligibilityTab({
   const [showCourseCards, setShowCourseCards] = useState<boolean>(false);
   // เปิด/ปิด คอลัมน์ "เหตุผล / เงื่อนไข" (ปิดเพื่อให้ตารางกระชับ ไม่ห่างเกินไป)
   const [showReasonColumn, setShowReasonColumn] = useState<boolean>(true);
+  // สลับมุมมองบนมือถือ: 'card' (การ์ด - ค่าเริ่มต้น) หรือ 'table' (ตารางเลื่อนข้าง)
+  const [mobileViewMode, setMobileViewMode] = useState<'card' | 'table'>('card');
   const tableColCount = showReasonColumn ? 11 : 10;
 
   const toggleReasonColumn = () => {
@@ -767,57 +771,232 @@ export function EligibilityTab({
           />
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold w-full sm:w-auto shrink-0 justify-center">
-          <button
-            type="button"
-            onClick={() => setEligibilityStatusFilter('ALL')}
-            className={`px-3 py-1 rounded-lg transition cursor-pointer ${
-              eligibilityStatusFilter === 'ALL'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            ทั้งหมด ({eligibilityList.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setEligibilityStatusFilter('ELIGIBLE')}
-            className={`px-3 py-1 rounded-lg transition cursor-pointer ${
-              eligibilityStatusFilter === 'ELIGIBLE'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-emerald-700 hover:bg-emerald-50'
-            }`}
-          >
-            มีสิทธิ์สอบ ({eligibilityStats.eligible})
-          </button>
-          <button
-            type="button"
-            onClick={() => setEligibilityStatusFilter('WARNING')}
-            className={`px-3 py-1 rounded-lg transition cursor-pointer ${
-              eligibilityStatusFilter === 'WARNING'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'text-amber-800 hover:bg-amber-50'
-            }`}
-          >
-            เฝ้าระวัง ({eligibilityStats.warning})
-          </button>
-          <button
-            type="button"
-            onClick={() => setEligibilityStatusFilter('INELIGIBLE')}
-            className={`px-3 py-1 rounded-lg transition cursor-pointer ${
-              eligibilityStatusFilter === 'INELIGIBLE'
-                ? 'bg-rose-600 text-white shadow-sm'
-                : 'text-rose-700 hover:bg-rose-50'
-            }`}
-          >
-            หมดสิทธิ์สอบ ({eligibilityStats.ineligible})
-          </button>
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+          {/* Mobile View Toggle: Card vs Table */}
+          <div className="flex sm:hidden items-center shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileViewMode((prev) => (prev === 'card' ? 'table' : 'card'))}
+              className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="สลับมุมมองระหว่างแบบการ์ดและตาราง"
+            >
+              {mobileViewMode === 'card' ? (
+                <>
+                  <TableIcon className="w-3.5 h-3.5 text-slate-600" />
+                  <span>ตาราง</span>
+                </>
+              ) : (
+                <>
+                  <LayoutGrid className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>การ์ด</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold shrink-0 justify-center overflow-x-auto max-w-full">
+            <button
+              type="button"
+              onClick={() => setEligibilityStatusFilter('ALL')}
+              className={`px-2.5 sm:px-3 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
+                eligibilityStatusFilter === 'ALL'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              ทั้งหมด ({eligibilityList.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setEligibilityStatusFilter('ELIGIBLE')}
+              className={`px-2.5 sm:px-3 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
+                eligibilityStatusFilter === 'ELIGIBLE'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              มีสิทธิ์ ({eligibilityStats.eligible})
+            </button>
+            <button
+              type="button"
+              onClick={() => setEligibilityStatusFilter('WARNING')}
+              className={`px-2.5 sm:px-3 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
+                eligibilityStatusFilter === 'WARNING'
+                  ? 'bg-amber-600 text-white shadow-sm'
+                  : 'text-amber-800 hover:bg-amber-50'
+              }`}
+            >
+              เฝ้าระวัง ({eligibilityStats.warning})
+            </button>
+            <button
+              type="button"
+              onClick={() => setEligibilityStatusFilter('INELIGIBLE')}
+              className={`px-2.5 sm:px-3 py-1 rounded-lg transition cursor-pointer whitespace-nowrap ${
+                eligibilityStatusFilter === 'INELIGIBLE'
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'text-rose-700 hover:bg-rose-50'
+              }`}
+            >
+              หมดสิทธิ์ ({eligibilityStats.ineligible})
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Roster & Exam Eligibility Table (Grouped by Major & Numbered 1..N per Major) */}
+      {/* Roster & Exam Eligibility (Mobile Card View + Desktop Table) */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden print:border-none print:shadow-none">
-        <div className="overflow-x-auto">
+        {/* 1. Mobile Card View (shown on mobile when mobileViewMode === 'card') */}
+        <div className={`${mobileViewMode === 'card' ? 'block sm:hidden' : 'hidden'} print:hidden divide-y divide-slate-200`}>
+          {groupedEligibilitySections.length === 0 ? (
+            <div className="p-8 text-center text-slate-400 text-xs">
+              {eligibilitySearch.trim()
+                ? `ไม่พบนิสิตที่ตรงกับคำค้นหา "${eligibilitySearch}"`
+                : 'ไม่พบข้อมูลนิสิตตามเงื่อนไขที่เลือก'}
+            </div>
+          ) : (
+            groupedEligibilitySections.map((sec) => (
+              <div key={`m-elig-sec-${sec.groupKey}`} className="space-y-3 p-3 bg-slate-50/60">
+                {/* Major Sub-Header */}
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1 pt-1">
+                  <span className={`px-2.5 py-0.5 rounded-full border text-[11px] font-bold ${sec.meta.badgeColor}`}>
+                    {sec.meta.labelTh}
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    จำนวน {sec.items.length} รูป/คน
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {sec.items.map((row) => {
+                    const isEligible = row.status === 'ELIGIBLE';
+                    const isWarning = row.status === 'WARNING';
+                    const isIneligible = row.status === 'INELIGIBLE';
+
+                    return (
+                      <div
+                        key={`m-card-${row.studentCode}`}
+                        className={`p-3.5 rounded-2xl border shadow-2xs space-y-2.5 transition ${
+                          isIneligible
+                            ? 'bg-rose-50/70 border-rose-200'
+                            : isWarning
+                            ? 'bg-amber-50/60 border-amber-200'
+                            : 'bg-white border-slate-200/90'
+                        }`}
+                      >
+                        {/* Header: Number, Name, Code, Major & Status Badge */}
+                        <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-extrabold text-sm text-slate-900 leading-snug">
+                              {row.indexInMajor}. {row.studentName}
+                            </div>
+                            <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                              <span className="font-mono font-extrabold text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200 shadow-2xs">
+                                {row.studentCode}
+                              </span>
+                              {row.major && (
+                                <>
+                                  <span className="text-slate-300">•</span>
+                                  <span className="text-[11px] text-slate-500 font-medium truncate">
+                                    {row.major.replace(/^สาขาวิชา/, '')}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold shrink-0 border ${
+                              isEligible
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                : isWarning
+                                ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                : 'bg-rose-100 text-rose-800 border-rose-300'
+                            }`}
+                          >
+                            {isEligible && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                            {isWarning && <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
+                            {isIneligible && <XCircle className="w-3.5 h-3.5 text-rose-600" />}
+                            <span>{row.statusText}</span>
+                          </span>
+                        </div>
+
+                        {/* Attendance Progress & Quota */}
+                        <div className="space-y-1.5 pt-0.5">
+                          <div className="flex items-center justify-between text-xs font-semibold">
+                            <span className="text-slate-600 flex items-center gap-1.5">
+                              <span>เวลาเรียนจริง:</span>
+                              <span className="font-mono font-extrabold text-slate-800">{row.attendedPercent}%</span>
+                            </span>
+                            <div>
+                              {row.remainingAbsences > 0 ? (
+                                <span className="text-emerald-700 font-bold text-[11px]">
+                                  ขาดได้อีก {row.remainingAbsences} ครั้ง
+                                </span>
+                              ) : row.remainingAbsences === 0 ? (
+                                <span className="text-amber-800 font-bold text-[11px] px-1.5 py-0.5 rounded bg-amber-100">
+                                  ห้ามขาดอีก
+                                </span>
+                              ) : (
+                                <span className="text-rose-700 font-bold text-[11px] px-1.5 py-0.5 rounded bg-rose-100">
+                                  เกินเกณฑ์ {Math.abs(row.remainingAbsences)} ครั้ง
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Visual Progress Bar */}
+                          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                row.attendedPercent >= minAttendancePercent
+                                  ? 'bg-emerald-500'
+                                  : row.attendedPercent >= 70
+                                  ? 'bg-amber-500'
+                                  : 'bg-rose-500'
+                              }`}
+                              style={{ width: `${Math.min(100, Math.max(0, row.attendedPercent))}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* 4 Attendance Stats: มา สาย ลา ขาด */}
+                        <div className="grid grid-cols-4 gap-1.5 pt-1 text-center">
+                          <div className="p-1.5 rounded-xl bg-emerald-50 border border-emerald-100/80">
+                            <div className="text-[10px] font-bold text-emerald-800">มา</div>
+                            <div className="text-sm font-black text-emerald-700">{row.present}</div>
+                          </div>
+                          <div className="p-1.5 rounded-xl bg-yellow-50 border border-yellow-100/80">
+                            <div className="text-[10px] font-bold text-yellow-800">สาย</div>
+                            <div className="text-sm font-black text-yellow-700">{row.late}</div>
+                          </div>
+                          <div className="p-1.5 rounded-xl bg-blue-50 border border-blue-100/80">
+                            <div className="text-[10px] font-bold text-blue-800">ลา</div>
+                            <div className="text-sm font-black text-blue-700">{row.leave}</div>
+                          </div>
+                          <div className="p-1.5 rounded-xl bg-rose-50 border border-rose-100/80">
+                            <div className="text-[10px] font-bold text-rose-800">ขาด</div>
+                            <div className="text-sm font-black text-rose-700">{row.absent}</div>
+                          </div>
+                        </div>
+
+                        {/* Reason / Condition Note (if any) */}
+                        {(showReasonColumn || row.reason) && row.reason && (
+                          <div className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-200/60">
+                            <span className="font-semibold text-slate-600">เงื่อนไข: </span>
+                            {row.reason}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* 2. Desktop Table & Print View (shown on sm: and up, or when mobileViewMode === 'table') */}
+        <div className={`${mobileViewMode === 'card' ? 'hidden sm:block' : 'block'} print:block overflow-x-auto`}>
           <table className="w-full text-left text-xs text-slate-600 print:text-[10px]">
             <thead className="bg-slate-50 uppercase text-[11px] font-bold text-slate-500 border-b border-slate-200">
               <tr>
