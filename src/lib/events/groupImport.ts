@@ -877,21 +877,57 @@ export function buildGroupedStudentsFromDirectory(
  */
 export function formatGroupDisplay(
   g: number,
-  registrations?: Array<{ groupNumber?: number; programType?: string }>,
+  registrations?: Array<{
+    groupNumber?: number;
+    groupName?: string;
+    programType?: string;
+    groupSpecificCode?: string;
+    major?: string;
+    studentName?: string;
+  }>,
   customName?: string
 ): string {
   if (customName && !customName.match(/^กลุ่มที่?\s*\d+$/i)) {
     return customName;
   }
 
-  // Group 12 is explicitly Thai program (แม่ชี/ฆราวาส ภาคไทย) as per curriculum specification
-  if (g === 12) {
-    return `กลุ่ม 12 (ไทย)`;
-  }
+  // Filter practitioners in this group
+  const inGroup = (registrations || []).filter(
+    (r: any) =>
+      r.groupNumber === g ||
+      (r.groupName && parseInt(String(r.groupName).replace(/\D/g, ''), 10) === g)
+  );
 
-  const inGroup = (registrations || []).filter((r) => r.groupNumber === g);
-  const englishCount = inGroup.filter((r) => r.programType === 'ENGLISH' || r.programType === 'INTER').length;
-  const isEnglish = inGroup.length > 0 && englishCount > inGroup.length / 2;
+  let isEnglish = false;
+
+  if (inGroup.length > 0) {
+    const englishCount = inGroup.filter((r: any) => {
+      const pt = String(r.programType || '').toUpperCase();
+      if (pt === 'ENGLISH' || pt === 'INTER' || pt.includes('ENG') || pt.includes('INTER')) return true;
+      if (r.groupSpecificCode && (/^[A-Z]?\d*E/i.test(r.groupSpecificCode) || /^I/i.test(r.groupSpecificCode))) return true;
+      const m = String(r.major || '').toLowerCase();
+      if (m.includes('buddhist studies') || m.includes('english') || m.includes('international') || m.includes('inter')) return true;
+      const name = String(r.studentName || '').trim();
+      if (name && !/[\u0E00-\u0E7F]/.test(name) && /[a-zA-Z]/.test(name)) return true;
+      return false;
+    }).length;
+
+    // Group 12 is Thai program unless majority is strictly English
+    if (g === 12) {
+      isEnglish = englishCount > inGroup.length * 0.7;
+    } else {
+      isEnglish = englishCount >= inGroup.length / 2;
+    }
+  } else {
+    // Group 12 defaults to Thai program as per curriculum test
+    if (g === 12) {
+      return `กลุ่ม 12 (ไทย)`;
+    }
+    // Fallback based on standard Vipassana curriculum: groups 4 to 11 are English Program
+    if (g >= 4 && g <= 11) {
+      isEnglish = true;
+    }
+  }
 
   return isEnglish ? `Group ${g} (English)` : `กลุ่ม ${g} (ไทย)`;
 }

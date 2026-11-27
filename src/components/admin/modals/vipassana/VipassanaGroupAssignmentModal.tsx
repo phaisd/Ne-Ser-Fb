@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { StudentEvent, EventRegistration, MeditationGroupAssignment, MeditationConfig } from '@/types/event';
 import type { UserAccount } from '@/types/instructor';
+import { formatGroupDisplay } from '@/lib/events/groupImport';
 
 interface VipassanaGroupAssignmentModalProps {
   isOpen: boolean;
@@ -422,21 +423,21 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="px-5 py-4 bg-gradient-to-r from-purple-800 via-indigo-900 to-slate-900 text-white flex items-center justify-between shrink-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-inner">
-              <Users className="w-5 h-5 text-purple-200" />
+        <div className="px-3.5 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-purple-800 via-indigo-900 to-slate-900 text-white flex items-center justify-between shrink-0 shadow-sm">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shadow-inner shrink-0">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-200" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm sm:text-lg font-bold text-white tracking-tight truncate">
                   มอบหมายอาจารย์และพระวิปัสสนาจารย์ประจำกลุ่ม
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-amber-950">
+                <span className="px-2 py-0.5 rounded-full text-[9.5px] sm:text-[10px] font-bold bg-amber-400 text-amber-950 shrink-0">
                   รองรับหลายท่านต่อกลุ่ม
                 </span>
               </div>
-              <p className="text-xs text-purple-200 truncate max-w-xl">
+              <p className="text-[10.5px] sm:text-xs text-purple-200 truncate max-w-xl">
                 {event.title} • กำหนดผู้ดูแลเช็คชื่อ 4 รอบ และพระเถระผู้สอบอารมณ์สติปัฏฐาน 4
               </p>
             </div>
@@ -444,7 +445,7 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-white/15 text-white/80 hover:text-white transition cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-white/15 text-white/80 hover:text-white transition cursor-pointer shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>
@@ -452,8 +453,8 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
 
         {/* Modal Body */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-50">
-          {/* Left Column: Group Tabs Selector */}
-          <div className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-3 overflow-y-auto flex md:flex-col gap-1.5 shrink-0">
+          {/* Left Column: Group Tabs Selector (Horizontal scroll on mobile, Vertical on desktop) */}
+          <div className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-2 sm:p-3 overflow-x-auto md:overflow-y-auto md:overflow-x-hidden flex md:flex-col gap-1.5 shrink-0 scrollbar-none">
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-2 py-1 hidden md:block">
               เลือกกลุ่มเพื่อจัดการ
             </div>
@@ -464,24 +465,28 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
               const advCount = assign?.advisors?.length || 0;
               const mstCount = assign?.vipassanaMasters?.length || 0;
               const isSelected = activeGroup === gNum;
+              const gDisplay = formatGroupDisplay(gNum, registrations, assign?.groupName);
+              const isEnglishGroup = gDisplay.toLowerCase().includes('english') || gDisplay.toLowerCase().includes('inter');
 
               return (
                 <button
                   key={gNum}
                   type="button"
                   onClick={() => setActiveGroup(gNum)}
-                  className={`text-left px-3 py-2 rounded-xl transition cursor-pointer flex items-center justify-between gap-2 shrink-0 md:shrink ${
+                  className={`text-left px-3 py-2 rounded-xl transition cursor-pointer flex items-center justify-between gap-2 shrink-0 md:shrink min-w-[155px] md:min-w-0 ${
                     isSelected
                       ? 'bg-purple-50 text-purple-950 border border-purple-300 font-bold shadow-xs'
                       : 'hover:bg-slate-100 text-slate-700 border border-transparent font-medium'
                   }`}
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="text-xs truncate flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-bold inline-flex items-center justify-center shrink-0">
+                      <span className={`w-5 h-5 rounded-full text-[11px] font-bold inline-flex items-center justify-center shrink-0 ${
+                        isEnglishGroup ? 'bg-sky-100 text-sky-800' : 'bg-purple-100 text-purple-800'
+                      }`}>
                         {gNum}
                       </span>
-                      <span>{`กลุ่ม ${gNum} (ไทย)`}</span>
+                      <span className="font-bold truncate">{gDisplay}</span>
                     </div>
                     <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
                       <span>นิสิต: {pCount} คน</span>
@@ -498,25 +503,47 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
           </div>
 
           {/* Right Column: Detailed Assignment for Active Group */}
-          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-5 bg-slate-50">
+          <div className="flex-1 p-3.5 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 bg-slate-50">
+            {/* Mobile Fast Switch Dropdown (visible on mobile only) */}
+            <div className="flex md:hidden items-center justify-between gap-2 bg-purple-50/90 p-2.5 rounded-xl border border-purple-200">
+              <span className="text-xs font-bold text-purple-900 shrink-0">เลือกกลุ่ม:</span>
+              <select
+                value={activeGroup}
+                onChange={(e) => setActiveGroup(parseInt(e.target.value, 10))}
+                className="flex-1 py-1 px-2.5 bg-white border border-purple-300 rounded-lg text-xs font-bold text-purple-950 focus:outline-none"
+              >
+                {availableGroups.map((g) => {
+                  const title = formatGroupDisplay(g, registrations, assignments[String(g)]?.groupName);
+                  const pCount = practitionerCountForGroup(g);
+                  const advCount = assignments[String(g)]?.advisors?.length || 0;
+                  const mstCount = assignments[String(g)]?.vipassanaMasters?.length || 0;
+                  return (
+                    <option key={g} value={g}>
+                      {title} ({pCount} คน • อ.{advCount} | พระ {mstCount})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
             {/* Group Banner */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="text-base sm:text-lg font-black text-slate-800">
-                    {currentAssignment.groupName || `กลุ่มที่ ${activeGroup}`}
+                    {formatGroupDisplay(activeGroup, registrations, currentAssignment.groupName)}
                   </h4>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
                     นิสิตผู้ปฏิบัติ {practitionerCountForGroup(activeGroup)} รูป/คน
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
                   ท่านที่ระบุจะปรากฏในช่องเลือกลงชื่อตอนเช็คชื่อ 4 รอบ และในช่องรับรองท้ายใบพิมพ์ A4 ทางการ
                 </p>
               </div>
 
               {/* Quick jump next group + Copy from other group tool */}
-              <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              <div className="flex items-center gap-1.5 flex-wrap text-xs w-full sm:w-auto justify-end">
                 {availableGroups.length > 1 && (
                   <select
                     defaultValue=""
@@ -527,13 +554,13 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
                         e.target.value = '';
                       }
                     }}
-                    className="px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50/70 hover:bg-purple-100 text-[11px] font-bold text-purple-900 cursor-pointer transition outline-none shadow-2xs"
+                    className="flex-1 sm:flex-none px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50/70 hover:bg-purple-100 text-[11px] font-bold text-purple-900 cursor-pointer transition outline-none shadow-2xs"
                     title="คัดลอกรายชื่ออาจารย์และพระวิปัสสนาจารย์จากกลุ่มอื่นมาใส่ในกลุ่มนี้"
                   >
                     <option value="" disabled>📋 คัดลอกผู้ดูแลจากกลุ่ม...</option>
                     {availableGroups.filter((g) => g !== activeGroup).map((g) => (
                       <option key={g} value={g}>
-                        กลุ่ม {g} (อ.{assignments[String(g)]?.advisors?.length || 0} | พระ {assignments[String(g)]?.vipassanaMasters?.length || 0})
+                        {formatGroupDisplay(g, registrations, assignments[String(g)]?.groupName)} (อ.{assignments[String(g)]?.advisors?.length || 0} | พระ {assignments[String(g)]?.vipassanaMasters?.length || 0})
                       </option>
                     ))}
                   </select>
@@ -1021,13 +1048,13 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
         </div>
 
         {/* Modal Footer */}
-        <div className="px-5 py-3.5 bg-slate-100 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2 text-xs">
+        <div className="px-4 sm:px-5 py-3 bg-slate-100 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 text-xs w-full sm:w-auto">
             {errorMsg && <span className="font-bold text-red-600">• {errorMsg}</span>}
             {saveSuccess && (
               <span className="font-bold text-emerald-600 flex items-center gap-1">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                บันทึกการมอบหมายอาจารย์และพระวิปัสสนาจารย์ประจำกลุ่มเรียบร้อย!
+                บันทึกการมอบหมายเรียบร้อย!
               </span>
             )}
           </div>
@@ -1037,7 +1064,7 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition cursor-pointer text-center"
             >
               ปิดหน้าต่าง
             </button>
@@ -1045,7 +1072,7 @@ export const VipassanaGroupAssignmentModal: React.FC<VipassanaGroupAssignmentMod
               type="button"
               onClick={handleSaveAll}
               disabled={isSaving}
-              className="px-5 py-2 rounded-xl text-xs font-bold bg-purple-700 hover:bg-purple-800 disabled:bg-slate-400 text-white shadow-md flex items-center gap-2 transition cursor-pointer"
+              className="flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-bold bg-purple-700 hover:bg-purple-800 disabled:bg-slate-400 text-white shadow-md flex items-center justify-center gap-2 transition cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>{isSaving ? 'กำลังบันทึก...' : 'บันทึกการมอบหมายทุกกลุ่ม'}</span>
