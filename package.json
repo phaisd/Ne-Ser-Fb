@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "tsc --noEmit && vitest run",
-    "backup": "node scripts/backup-data.mjs"
+    "backup": "node scripts/backup-data.mjs",
+    "health": "node scripts/health-check.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",
