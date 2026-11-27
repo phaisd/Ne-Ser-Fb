@@ -24,7 +24,7 @@ import {
   parseGroupedParticipantsText,
   summarizeGroups,
 } from '@/lib/events/groupImport';
-import { parseXlsxToTsv } from '@/lib/utils/xlsx-import';
+import { readSpreadsheetFile } from '@/lib/utils/file-import-helpers';
 import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
 import { getAuthUser } from '@/lib/auth-client';
 
@@ -226,15 +226,9 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const lowerName = file.name.toLowerCase();
-      if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
-        const buffer = await file.arrayBuffer();
-        const tsv = await parseXlsxToTsv(buffer);
-        setRawText(tsv);
-      } else {
-        const text = await file.text();
-        setRawText(text);
-      }
+      const { rows, rawText: text } = await readSpreadsheetFile(file);
+      const tsv = rows && rows.length > 0 ? rows.map((r) => r.join('\t')).join('\n') : text;
+      setRawText(tsv);
       setErrorMsg(null);
     } catch (err: unknown) {
       setErrorMsg('ไม่สามารถอ่านไฟล์ได้: ' + (err instanceof Error ? err.message : String(err)));
@@ -661,16 +655,10 @@ export const EventGroupImportModal: React.FC<EventGroupImportModalProps> = ({
                   if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                     e.preventDefault();
                     const file = e.dataTransfer.files[0];
-                    const lower = file.name.toLowerCase();
                     try {
-                      if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
-                        const buffer = await file.arrayBuffer();
-                        const tsv = await parseXlsxToTsv(buffer);
-                        setRawText(tsv);
-                      } else {
-                        const text = await file.text();
-                        setRawText(text);
-                      }
+                      const { rows, rawText: text } = await readSpreadsheetFile(file);
+                      const tsv = rows && rows.length > 0 ? rows.map((r) => r.join('\t')).join('\n') : text;
+                      setRawText(tsv);
                       setErrorMsg(null);
                     } catch (err: unknown) {
                       setErrorMsg('ไม่สามารถอ่านไฟล์ที่ลากวางได้: ' + (err instanceof Error ? err.message : String(err)));
