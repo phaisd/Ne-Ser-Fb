@@ -7,6 +7,7 @@ export interface PrintAttendanceRow {
   registrationId: string;
   studentCode: string;
   studentName: string;
+  groupSpecificCode?: string;
   vasa?: string | number;
   groupNumber?: number;
   groupName?: string;
@@ -31,6 +32,8 @@ interface VipassanaAttendancePrintSheetProps {
   attendanceRows: PrintAttendanceRow[];
   advisors?: string[]; // รายนามอาจารย์ประจำกลุ่ม และผู้ช่วย
   scannerStaff?: string; // อาจารย์ผู้ดูแล หรือเจ้าหน้าที่ ที่สแกนตรวจเช็ค (กรณีสแกน QR Code)
+  eventYearTh?: string;
+  eventYearCe?: string;
 }
 
 export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintSheetProps> = ({
@@ -46,6 +49,8 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
   attendanceRows,
   advisors,
   scannerStaff,
+  eventYearTh = '2569',
+  eventYearCe = '2026',
 }) => {
   return (
     <div className="flex flex-col items-center print:block print:w-full">
@@ -113,15 +118,15 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
           <div className="space-y-4">
             {/* Header */}
             <div className="text-center space-y-1">
-              <h2 className="text-sm sm:text-base font-bold tracking-tight">
+              <h2 className="text-[12.5px] sm:text-[13px] font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
                 The Name List for the 1<sup>st</sup> - 4<sup>th</sup> students of the Faculty of Buddhism. (English Program)
               </h2>
               <h3 className="text-xs sm:text-sm font-semibold">
-                The Meditation Practice on December 11 - 22, 2025
+                The Meditation Practice on December 11 - 22, {eventYearCe}
               </h3>
               <p className="text-xs">AT Bodhiyanmahavijjalai, Nakhon Pathom</p>
               <p className="text-xs pt-1">
-                Date( &nbsp; &nbsp;{selectedDayNumber ? 10 + selectedDayNumber : '..........'}&nbsp; &nbsp; / December / 2025 )
+                Date( &nbsp; &nbsp;{selectedDayNumber ? 10 + selectedDayNumber : '..........'}&nbsp; &nbsp; / December / {eventYearCe} )
               </p>
             </div>
 
@@ -133,14 +138,14 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
             </div>
 
             {/* Table */}
-            <table className="w-full border-collapse border border-black text-center text-[10.5px]">
+            <table className="w-full border-collapse border border-black text-center text-[10px]">
               <thead>
                 <tr className="border-b border-black">
-                  <th rowSpan={2} className="border-r border-black p-1 w-8">No.</th>
-                  <th rowSpan={2} className="border-r border-black p-1 w-16">Code</th>
-                  <th rowSpan={2} className="border-r border-black p-1 text-left min-w-[150px]">Name/ Pali Name</th>
-                  <th rowSpan={2} className="border-r border-black p-1 w-10">Vasa</th>
-                  <th rowSpan={2} className="border-r border-black p-1 w-10">
+                  <th rowSpan={2} className="border-r border-black p-1 w-7">No.</th>
+                  <th rowSpan={2} className="border-r border-black p-1 w-14">เลขเฉพาะ</th>
+                  <th rowSpan={2} className="border-r border-black p-1 w-20">รหัสนิสิต</th>
+                  <th rowSpan={2} className="border-r border-black p-1 text-left min-w-[140px]">Name/ Pali Name</th>
+                  <th rowSpan={2} className="border-r border-black p-1 w-9">
                     <span className="block transform -rotate-90">Group</span>
                   </th>
                   <th colSpan={4} className="border-r border-black p-1 font-bold">
@@ -150,30 +155,30 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                     <span className="block transform -rotate-90">Remark</span>
                   </th>
                 </tr>
-                <tr className="border-b border-black text-[9.5px]">
-                  <th className="border-r border-black p-1 w-20">
+                <tr className="border-b border-black text-[9px]">
+                  <th className="border-r border-black p-1 w-[70px]">
                     <div>{p1Conf.nameEn || 'Dawn Period'}</div>
-                    <div className="font-mono text-[8.5px]">{p1Conf.time}</div>
+                    <div className="font-mono text-[8px]">{p1Conf.time}</div>
                   </th>
-                  <th className="border-r border-black p-1 w-20">
+                  <th className="border-r border-black p-1 w-[70px]">
                     <div>{p2Conf.nameEn || 'Morning Period'}</div>
-                    <div className="font-mono text-[8.5px]">{p2Conf.time}</div>
+                    <div className="font-mono text-[8px]">{p2Conf.time}</div>
                   </th>
-                  <th className="border-r border-black p-1 w-20">
+                  <th className="border-r border-black p-1 w-[70px]">
                     <div>{p3Conf.nameEn || 'Afternoon Period'}</div>
-                    <div className="font-mono text-[8.5px]">{p3Conf.time}</div>
+                    <div className="font-mono text-[8px]">{p3Conf.time}</div>
                   </th>
-                  <th className="border-r border-black p-1 w-20">
+                  <th className="border-r border-black p-1 w-[70px]">
                     <div>{p4Conf.nameEn || 'Evening Period'}</div>
-                    <div className="font-mono text-[8.5px]">{p4Conf.time}</div>
+                    <div className="font-mono text-[8px]">{p4Conf.time}</div>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {printBlankRows
                   ? Array.from({ length: 22 }, (_, idx) => (
-                      <tr key={idx} className="border-b border-black/70 h-7">
-                        <td className="border-r border-black/70 font-mono text-[9.5px]">{idx + 1}</td>
+                      <tr key={idx} className="border-b border-black/70 h-7 text-[9.5px]">
+                        <td className="border-r border-black/70 font-mono text-[9px]">{idx + 1}</td>
                         <td className="border-r border-black/70"></td>
                         <td className="border-r border-black/70"></td>
                         <td className="border-r border-black/70"></td>
@@ -186,13 +191,13 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                       </tr>
                     ))
                   : attendanceRows.map((row, idx) => (
-                      <tr key={idx} className="border-b border-black/70 h-6.5 text-[10px]">
-                        <td className="border-r border-black/70 font-mono text-[9.5px] p-0.5">{idx + 1}</td>
+                      <tr key={idx} className="border-b border-black/70 h-6 text-[9.5px]">
+                        <td className="border-r border-black/70 font-mono text-[9px] p-0.5">{idx + 1}</td>
+                        <td className="border-r border-black/70 font-mono p-0.5 font-bold text-slate-900">{row.groupSpecificCode || '-'}</td>
                         <td className="border-r border-black/70 font-mono p-0.5 font-semibold">{row.studentCode}</td>
-                        <td className="border-r border-black/70 text-left px-1.5 p-0.5 truncate max-w-[180px]">
+                        <td className="border-r border-black/70 text-left px-1.5 p-0.5 truncate max-w-[170px]">
                           {row.studentName}
                         </td>
-                        <td className="border-r border-black/70 font-mono p-0.5">{row.vasa || '-'}</td>
                         <td className="border-r border-black/70 p-0.5">
                           {row.groupNumber || (selectedGroup !== 'ALL' ? selectedGroup : '')}
                         </td>
@@ -208,7 +213,7 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                         <td className="border-r border-black/70 p-0.5 text-center">
                           {!hideCheckmarks && (row.p4 === 'PRESENT' ? '✓' : row.p4 === 'LATE' ? 'สาย' : row.p4 === 'SICK' ? 'ป่วย' : row.p4 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
-                        <td className="p-0.5 text-left text-[9px] px-1 truncate">{row.remark || ''}</td>
+                        <td className="p-0.5 text-left text-[8.5px] px-1 truncate">{row.remark || ''}</td>
                       </tr>
                     ))}
               </tbody>
@@ -267,11 +272,11 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                 บัญชีเช็คชื่อและเวลาปฏิบัติวิปัสสนากัมมัฏฐาน แต่ละวัน
               </h2>
               <h3 className="text-xs sm:text-sm font-semibold">
-                นิสิตคณะพุทธศาสตร์ ชั้นปีที่ 1 - 4 ปีการศึกษา 2568 (บรรพชิต)
+                นิสิตคณะพุทธศาสตร์ ชั้นปีที่ 1 - 4 ปีการศึกษา {eventYearTh} (บรรพชิต)
               </h3>
               <p className="text-xs">ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม</p>
               <p className="text-xs pt-1">
-                วัน ........................... ที่ &nbsp; &nbsp;{selectedDayNumber ? 10 + selectedDayNumber : '..........'}&nbsp; &nbsp; เดือน ธันวาคม พ.ศ. 2568
+                วัน ........................... ที่ &nbsp; &nbsp;{selectedDayNumber ? 10 + selectedDayNumber : '..........'}&nbsp; &nbsp; เดือน ธันวาคม พ.ศ. {eventYearTh}
               </p>
             </div>
 
@@ -286,46 +291,48 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
             </div>
 
             {/* Table */}
-            <table className="w-full border-collapse border border-black text-center text-[10.5px]">
+            <table className="w-full border-collapse border border-black text-center text-[10px]">
               <thead>
                 <tr className="border-b border-black">
-                  <th rowSpan={2} className="border-r border-black p-1 w-8">ที่</th>
-                  <th rowSpan={2} className="border-r border-black p-1 w-16">รหัส</th>
-                  <th rowSpan={2} className="border-r border-black p-1 text-left min-w-[150px]">ชื่อ ฉายา/นามสกุล</th>
-                  <th rowSpan={2} className="border-r border-black p-1 w-10">
+                  <th rowSpan={2} className="border-r border-black p-1 w-7">ที่</th>
+                  <th rowSpan={2} className="border-r border-black p-1 w-14">เลขเฉพาะ</th>
+                  <th rowSpan={2} className="border-r border-black p-1 w-20">รหัสนิสิต</th>
+                  <th rowSpan={2} className="border-r border-black p-1 text-left min-w-[140px]">ชื่อ ฉายา/นามสกุล</th>
+                  <th rowSpan={2} className="border-r border-black p-1 w-9">
                     <span className="block transform -rotate-90">กลุ่ม</span>
                   </th>
                   <th colSpan={4} className="border-r border-black p-1 font-bold">
                     ลงชื่อ / ในแต่ละช่วงเวลา
                   </th>
-                  <th rowSpan={2} className="p-1 w-16">
+                  <th rowSpan={2} className="p-1 w-12">
                     หมายเหตุ
                   </th>
                 </tr>
-                <tr className="border-b border-black text-[9.5px]">
-                  <th className="border-r border-black p-1 w-20">
+                <tr className="border-b border-black text-[9px]">
+                  <th className="border-r border-black p-1 w-[70px]">
                     <div>{p1Conf.nameTh}</div>
-                    <div className="font-mono text-[8.5px]">{p1Conf.time}</div>
+                    <div className="font-mono text-[8px]">{p1Conf.time}</div>
                   </th>
-                  <th className="border-r border-black p-1 w-20">
+                  <th className="border-r border-black p-1 w-[70px]">
                     <div>{p2Conf.nameTh}</div>
-                    <div className="font-mono text-[8.5px]">{p2Conf.time}</div>
+                    <div className="font-mono text-[8px]">{p2Conf.time}</div>
                   </th>
-                  <th className="border-r border-black p-1 w-20">
+                  <th className="border-r border-black p-1 w-[70px]">
                     <div>{p3Conf.nameTh}</div>
-                    <div className="font-mono text-[8.5px]">{p3Conf.time}</div>
+                    <div className="font-mono text-[8px]">{p3Conf.time}</div>
                   </th>
-                  <th className="border-r border-black p-1 w-20">
+                  <th className="border-r border-black p-1 w-[70px]">
                     <div>{p4Conf.nameTh}</div>
-                    <div className="font-mono text-[8.5px]">{p4Conf.time}</div>
+                    <div className="font-mono text-[8px]">{p4Conf.time}</div>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {printBlankRows
                   ? Array.from({ length: 22 }, (_, idx) => (
-                      <tr key={idx} className="border-b border-black/70 h-7">
-                        <td className="border-r border-black/70 font-mono text-[9.5px]">{idx + 1}</td>
+                      <tr key={idx} className="border-b border-black/70 h-7 text-[9.5px]">
+                        <td className="border-r border-black/70 font-mono text-[9px]">{idx + 1}</td>
+                        <td className="border-r border-black/70"></td>
                         <td className="border-r border-black/70"></td>
                         <td className="border-r border-black/70"></td>
                         <td className="border-r border-black/70">{selectedGroup !== 'ALL' ? selectedGroup : ''}</td>
@@ -337,10 +344,11 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                       </tr>
                     ))
                   : attendanceRows.map((row, idx) => (
-                      <tr key={idx} className="border-b border-black/70 h-6.5 text-[10px]">
-                        <td className="border-r border-black/70 font-mono text-[9.5px] p-0.5">{idx + 1}</td>
+                      <tr key={idx} className="border-b border-black/70 h-6 text-[9.5px]">
+                        <td className="border-r border-black/70 font-mono text-[9px] p-0.5">{idx + 1}</td>
+                        <td className="border-r border-black/70 font-mono p-0.5 font-bold text-slate-900">{row.groupSpecificCode || '-'}</td>
                         <td className="border-r border-black/70 font-mono p-0.5 font-semibold">{row.studentCode}</td>
-                        <td className="border-r border-black/70 text-left px-1.5 p-0.5 truncate max-w-[180px]">
+                        <td className="border-r border-black/70 text-left px-1.5 p-0.5 truncate max-w-[170px]">
                           {row.studentName}
                         </td>
                         <td className="border-r border-black/70 p-0.5">
@@ -358,7 +366,7 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                         <td className="border-r border-black/70 p-0.5 text-center">
                           {!hideCheckmarks && (row.p4 === 'PRESENT' ? '✓' : row.p4 === 'LATE' ? 'สาย' : row.p4 === 'SICK' ? 'ป่วย' : row.p4 === 'ABSENT' ? 'ขาด' : '')}
                         </td>
-                        <td className="p-0.5 text-left text-[9px] px-1 truncate">{row.remark || ''}</td>
+                        <td className="p-0.5 text-left text-[8.5px] px-1 truncate">{row.remark || ''}</td>
                       </tr>
                     ))}
               </tbody>

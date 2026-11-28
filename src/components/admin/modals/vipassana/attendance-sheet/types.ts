@@ -18,6 +18,7 @@ export interface StudentAttendanceRow {
   registrationId: string;
   studentCode: string;
   studentName: string;
+  groupSpecificCode?: string; // เลขเฉพาะกลุ่ม เช่น B3T18, B4E01
   vasa?: string | number;
   groupNumber?: number;
   groupName?: string;

@@ -250,6 +250,11 @@ export function VipassanaAttendanceSheetModal({
     return Array.from(setNames);
   }, [uniqueRegistrations, dayKey, currentGroupAssignment]);
 
+  // Dynamic academic year for attendance print sheets
+  const rawAcademicYear = event?.academicYear ? parseInt(event.academicYear, 10) : null;
+  const eventYearTh = rawAcademicYear && rawAcademicYear > 2500 ? String(rawAcademicYear) : '2569';
+  const eventYearCe = rawAcademicYear && rawAcademicYear > 2500 ? String(rawAcademicYear - 543) : '2026';
+
   // Sync / Initialize attendanceState when group or day changes (Default: UNCHECKED)
   const attendanceRows: StudentAttendanceRow[] = useMemo(() => {
     return groupRegistrations.map((r) => {
@@ -270,6 +275,7 @@ export function VipassanaAttendanceSheetModal({
         registrationId: r.id,
         studentCode: r.studentCode,
         studentName: r.studentName,
+        groupSpecificCode: r.groupSpecificCode || '',
         vasa: r.vasa || '',
         groupNumber: r.groupNumber || (r.groupName ? parseInt(r.groupName.replace(/\D/g, ''), 10) : undefined),
         groupName: r.groupName,
@@ -1082,7 +1088,8 @@ export function VipassanaAttendanceSheetModal({
                     <thead>
                       <tr className="bg-slate-100 text-slate-700 border-b border-slate-200 text-[11px]">
                         <th className="py-2.5 px-3 font-bold text-center w-12">ที่</th>
-                        <th className="py-2.5 px-3 font-bold w-24">รหัส</th>
+                        <th className="py-2.5 px-3 font-bold w-20">เลขเฉพาะ</th>
+                        <th className="py-2.5 px-3 font-bold w-24">รหัสนิสิต</th>
                         <th className="py-2.5 px-3 font-bold min-w-[180px]">ชื่อ ฉายา/นามสกุล</th>
                         <th className="py-2.5 px-2 font-bold text-center w-14">พรรษา</th>
                         <th className="py-2.5 px-2 font-bold text-center w-16">กลุ่ม</th>
@@ -1140,7 +1147,7 @@ export function VipassanaAttendanceSheetModal({
                     <tbody className="divide-y divide-slate-100">
                       {attendanceRows.length === 0 ? (
                         <tr>
-                          <td colSpan={10} className="p-8 text-center text-slate-400">
+                          <td colSpan={11} className="p-8 text-center text-slate-400">
                             ไม่พบนิสิตในกลุ่มนี้ หรือยังไม่มีการลงทะเบียน
                           </td>
                         </tr>
@@ -1156,6 +1163,7 @@ export function VipassanaAttendanceSheetModal({
                           return (
                             <tr key={row.registrationId} className="hover:bg-slate-50/60 transition-colors">
                               <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{idx + 1}</td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-amber-700 bg-amber-50/30">{row.groupSpecificCode || '-'}</td>
                               <td className="py-2.5 px-3 font-mono font-bold text-slate-800">{row.studentCode}</td>
                               <td className="py-2.5 px-3 font-medium text-slate-900">
                                 <div>{row.studentName}</div>
@@ -1293,6 +1301,8 @@ export function VipassanaAttendanceSheetModal({
                 attendanceRows={attendanceRows}
                 advisors={currentGroupAssignment?.advisors}
                 scannerStaff={scannerStaff}
+                eventYearTh={eventYearTh}
+                eventYearCe={eventYearCe}
               />
             </div>
           </>
@@ -1395,6 +1405,8 @@ export function VipassanaAttendanceSheetModal({
                 attendanceRows={attendanceRows}
                 advisors={currentGroupAssignment?.advisors}
                 scannerStaff={scannerStaff}
+                eventYearTh={eventYearTh}
+                eventYearCe={eventYearCe}
               />
             </div>
           )}
