@@ -15,6 +15,7 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  SlidersHorizontal,
 } from 'lucide-react';
 import type {
   BadgeLayoutMode,
@@ -22,7 +23,9 @@ import type {
   BadgeColorTheme,
   BadgeFontSize,
   QrScaleMode,
+  BadgeNoQrCustomSettings,
 } from './types';
+import { DEFAULT_NO_QR_SETTINGS } from './types';
 import type { WatermarkMode } from '@/hooks/useWatermarkSettings';
 import { formatGroupDisplay } from '@/lib/events/groupImport';
 
@@ -58,6 +61,10 @@ interface VipassanaBadgeToolbarProps {
   setShowScanPass: (v: boolean) => void;
   showStudentName: boolean;
   setShowStudentName: (v: boolean) => void;
+  showQrCode: boolean;
+  setShowQrCode: (v: boolean) => void;
+  noQrSettings: BadgeNoQrCustomSettings;
+  setNoQrSettings: React.Dispatch<React.SetStateAction<BadgeNoQrCustomSettings>>;
   footerLocationText: string;
   setFooterLocationText: (val: string) => void;
   searchQuery: string;
@@ -96,6 +103,10 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
   setShowScanPass,
   showStudentName,
   setShowStudentName,
+  showQrCode,
+  setShowQrCode,
+  noQrSettings,
+  setNoQrSettings,
   footerLocationText,
   setFooterLocationText,
   searchQuery,
@@ -239,23 +250,25 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
               />
             </div>
 
-            {/* QR Code Scale Selector */}
-            <div className="flex items-center gap-1.5 bg-emerald-50/80 px-2 py-1 rounded-xl border border-emerald-200">
-              <span className="font-bold text-emerald-950 flex items-center gap-1">
-                <QrCodeIcon className="w-3.5 h-3.5 text-emerald-700" />
-                ขนาด QR:
-              </span>
-              <select
-                value={qrScale}
-                onChange={(e) => setQrScale(e.target.value as QrScaleMode)}
-                className="px-2 py-1 bg-white rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 focus:outline-none cursor-pointer"
-              >
-                <option value="2.5X">🔥 ใหญ่ 2.5 เท่า (เต็มพื้นที่การ์ด)</option>
-                <option value="2X">⚡ ใหญ่ 2.0 เท่า (แนะนำ - คมชัด)</option>
-                <option value="1.5X">✨ ใหญ่ 1.5 เท่า</option>
-                <option value="1X">📐 ปกติ 1.0 เท่า</option>
-              </select>
-            </div>
+            {/* QR Code Scale Selector (Only when showQrCode is true) */}
+            {showQrCode && (
+              <div className="flex items-center gap-1.5 bg-emerald-50/80 px-2 py-1 rounded-xl border border-emerald-200">
+                <span className="font-bold text-emerald-950 flex items-center gap-1">
+                  <QrCodeIcon className="w-3.5 h-3.5 text-emerald-700" />
+                  ขนาด QR:
+                </span>
+                <select
+                  value={qrScale}
+                  onChange={(e) => setQrScale(e.target.value as QrScaleMode)}
+                  className="px-2 py-1 bg-white rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 focus:outline-none cursor-pointer"
+                >
+                  <option value="2.5X">🔥 ใหญ่ 2.5 เท่า (เต็มพื้นที่การ์ด)</option>
+                  <option value="2X">⚡ ใหญ่ 2.0 เท่า (แนะนำ - คมชัด)</option>
+                  <option value="1.5X">✨ ใหญ่ 1.5 เท่า</option>
+                  <option value="1X">📐 ปกติ 1.0 เท่า</option>
+                </select>
+              </div>
+            )}
 
             {/* Color Theme Selector */}
             <div className="flex items-center gap-1.5 bg-amber-50/80 px-2 py-1 rounded-xl border border-amber-200">
@@ -314,16 +327,40 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
               </span>
             </button>
 
-            {/* Toggle SCAN PASS */}
-            <label className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer bg-white px-2 py-1.5 rounded-lg border border-slate-300 shadow-2xs" title="แสดงหรือซ่อนข้อความ SCAN PASS ใต้ QR code เพื่อเพิ่มพื้นที่ให้ QR Code ขยายใหญ่เต็มที่">
-              <input
-                type="checkbox"
-                checked={showScanPass}
-                onChange={(e) => setShowScanPass(e.target.checked)}
-                className="rounded text-purple-600 focus:ring-purple-500"
-              />
-              <span>แสดงคำว่า SCAN PASS</span>
-            </label>
+            {/* Toggle SCAN PASS (Only when showQrCode is true) */}
+            {showQrCode && (
+              <label className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold cursor-pointer bg-white px-2 py-1.5 rounded-lg border border-slate-300 shadow-2xs" title="แสดงหรือซ่อนข้อความ SCAN PASS ใต้ QR code เพื่อเพิ่มพื้นที่ให้ QR Code ขยายใหญ่เต็มที่">
+                <input
+                  type="checkbox"
+                  checked={showScanPass}
+                  onChange={(e) => setShowScanPass(e.target.checked)}
+                  className="rounded text-purple-600 focus:ring-purple-500"
+                />
+                <span>แสดงคำว่า SCAN PASS</span>
+              </label>
+            )}
+
+            {/* Toggle QR Code On/Off (Image 1 Red Rectangle) */}
+            <button
+              type="button"
+              onClick={() => setShowQrCode(!showQrCode)}
+              className={`flex items-center gap-1.5 text-xs font-bold cursor-pointer px-2.5 py-1.5 rounded-lg border shadow-2xs transition ${
+                showQrCode
+                  ? 'bg-purple-50 border-purple-300 text-purple-900'
+                  : 'bg-amber-100 border-amber-400 text-amber-950 font-extrabold ring-2 ring-amber-400/40'
+              }`}
+              title="เปิดหรือปิดการแสดงผล QR Code บนป้าย (เมื่อปิดจะจัดวางข้อความ 5 แถวตรงกลางแบบเต็มป้าย)"
+            >
+              <QrCodeIcon className="w-3.5 h-3.5" />
+              <span>QR Code:</span>
+              <span
+                className={`px-1.5 py-0.2 rounded text-[10px] font-extrabold ${
+                  showQrCode ? 'bg-purple-600 text-white' : 'bg-amber-600 text-white'
+                }`}
+              >
+                {showQrCode ? 'เปิดแสดง' : 'ปิดซ่อน'}
+              </span>
+            </button>
 
             {/* Footer Practice Location Text Input */}
             <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
@@ -385,6 +422,144 @@ export const VipassanaBadgeToolbar: React.FC<VipassanaBadgeToolbarProps> = ({
           </button>
         )}
       </div>
+
+      {/* Dedicated 5-Row Custom Sizing & Spacing Toolbar when QR Code is Hidden */}
+      {!isToolbarCollapsed && !showQrCode && (
+        <div className="w-full mt-2 p-2.5 bg-gradient-to-r from-amber-50/90 via-orange-50/80 to-amber-50/90 border border-amber-300 rounded-xl flex flex-wrap items-center justify-between gap-2.5 shadow-2xs animate-in fade-in duration-200">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-extrabold text-amber-950 flex items-center gap-1.5 whitespace-nowrap">
+              <SlidersHorizontal className="w-4 h-4 text-amber-600" />
+              ปรับขนาดฟอนต์ 5 แถว:
+            </span>
+
+            {/* 1. ระดับ */}
+            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-amber-200 shadow-2xs">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">1.ระดับ:</span>
+              <select
+                value={noQrSettings.degreeScale}
+                onChange={(e) =>
+                  setNoQrSettings((prev) => ({ ...prev, degreeScale: parseFloat(e.target.value) }))
+                }
+                className="font-bold text-amber-950 bg-transparent focus:outline-none cursor-pointer text-xs"
+              >
+                <option value={1.0}>1.0x</option>
+                <option value={1.25}>1.25x</option>
+                <option value={1.5}>1.5x</option>
+                <option value={1.75}>1.75x</option>
+                <option value={2.0}>2.0x (แนะนำ)</option>
+                <option value={2.25}>2.25x</option>
+                <option value={2.5}>2.5x</option>
+                <option value={3.0}>3.0x</option>
+              </select>
+            </div>
+
+            {/* 2. สาขาวิชา */}
+            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-amber-200 shadow-2xs">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">2.สาขา:</span>
+              <select
+                value={noQrSettings.majorScale}
+                onChange={(e) =>
+                  setNoQrSettings((prev) => ({ ...prev, majorScale: parseFloat(e.target.value) }))
+                }
+                className="font-bold text-amber-950 bg-transparent focus:outline-none cursor-pointer text-xs"
+              >
+                <option value={1.0}>1.0x</option>
+                <option value={1.25}>1.25x</option>
+                <option value={1.5}>1.5x</option>
+                <option value={1.75}>1.75x</option>
+                <option value={2.0}>2.0x (แนะนำ)</option>
+                <option value={2.25}>2.25x</option>
+                <option value={2.5}>2.5x</option>
+              </select>
+            </div>
+
+            {/* 3. กลุ่ม (สีเขียว) */}
+            <div className="flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-300 shadow-2xs">
+              <span className="font-bold text-emerald-900 whitespace-nowrap">3.กลุ่ม:</span>
+              <select
+                value={noQrSettings.groupScale}
+                onChange={(e) =>
+                  setNoQrSettings((prev) => ({ ...prev, groupScale: parseFloat(e.target.value) }))
+                }
+                className="font-black text-emerald-900 bg-transparent focus:outline-none cursor-pointer text-xs"
+              >
+                <option value={1.0}>1.0x</option>
+                <option value={1.25}>1.25x</option>
+                <option value={1.5}>1.5x</option>
+                <option value={1.75}>1.75x</option>
+                <option value={2.0}>2.0x (แนะนำ)</option>
+                <option value={2.25}>2.25x</option>
+                <option value={2.5}>2.5x</option>
+              </select>
+            </div>
+
+            {/* 4. รหัส (สีน้ำเงิน) */}
+            <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg border border-blue-300 shadow-2xs">
+              <span className="font-bold text-blue-900 whitespace-nowrap">4.รหัส:</span>
+              <select
+                value={noQrSettings.codeScale}
+                onChange={(e) =>
+                  setNoQrSettings((prev) => ({ ...prev, codeScale: parseFloat(e.target.value) }))
+                }
+                className="font-black text-blue-900 bg-transparent focus:outline-none cursor-pointer text-xs"
+              >
+                <option value={1.5}>1.5x</option>
+                <option value={2.0}>2.0x</option>
+                <option value={2.5}>2.5x (แนะนำ)</option>
+                <option value={3.0}>3.0x (ใหญ่)</option>
+                <option value={3.5}>3.5x</option>
+              </select>
+            </div>
+
+            {/* 5. ชื่อ (สีแดง) */}
+            <div className="flex items-center gap-1 bg-rose-50 px-2 py-1 rounded-lg border border-rose-300 shadow-2xs">
+              <span className="font-bold text-rose-900 whitespace-nowrap">5.ชื่อ:</span>
+              <select
+                value={noQrSettings.nameScale}
+                onChange={(e) =>
+                  setNoQrSettings((prev) => ({ ...prev, nameScale: parseFloat(e.target.value) }))
+                }
+                className="font-bold text-rose-950 bg-transparent focus:outline-none cursor-pointer text-xs"
+              >
+                <option value={0.8}>0.8x</option>
+                <option value={1.0}>1.0x (เดิม)</option>
+                <option value={1.25}>1.25x</option>
+                <option value={1.5}>1.5x</option>
+                <option value={1.75}>1.75x</option>
+              </select>
+            </div>
+
+            {/* ช่องว่างแต่ละแถว (Line Spacing) */}
+            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-300 shadow-2xs">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">ช่องว่างแถว:</span>
+              <select
+                value={noQrSettings.lineGap}
+                onChange={(e) =>
+                  setNoQrSettings((prev) => ({ ...prev, lineGap: parseInt(e.target.value, 10) }))
+                }
+                className="font-bold text-slate-800 bg-transparent focus:outline-none cursor-pointer text-xs"
+              >
+                <option value={2}>กระชับมาก (2px)</option>
+                <option value={4}>กระชับ (4px)</option>
+                <option value={6}>พอดี (6px แนะนำ)</option>
+                <option value={8}>โปร่ง (8px)</option>
+                <option value={10}>กว้าง (10px)</option>
+                <option value={14}>กว้างมาก (14px)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Reset button */}
+          <button
+            type="button"
+            onClick={() => setNoQrSettings(DEFAULT_NO_QR_SETTINGS)}
+            className="text-[11px] font-bold text-amber-800 hover:text-amber-950 underline px-2 py-1 transition cursor-pointer whitespace-nowrap"
+            title="ย้อนกลับเป็นค่าขนาดแนะนำ (2x, 2x, 2x, 2.5x, 1x, 6px)"
+          >
+            รีเซ็ตขนาดแนะนำ
+          </button>
+        </div>
+      )}
     </div>
   );
 };

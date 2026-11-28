@@ -4,6 +4,7 @@ import {
   formatBadgeGroupLabel,
   formatBadgeDegree,
   formatBadgeFooterLocation,
+  DEFAULT_NO_QR_SETTINGS,
 } from './types';
 
 describe('Vipassana Badges Formatting Helpers', () => {
@@ -107,6 +108,17 @@ describe('Vipassana Badges Formatting Helpers', () => {
     it('preserves Thai text for Thai badges', () => {
       expect(formatBadgeFooterLocation('สถานที่ปฏิบัติ', false)).toBe('สถานที่ปฏิบัติ');
       expect(formatBadgeFooterLocation('ศาลา 1', false)).toBe('ศาลา 1');
+    });
+  });
+
+  describe('DEFAULT_NO_QR_SETTINGS', () => {
+    it('provides recommended font multipliers and spacing', () => {
+      expect(DEFAULT_NO_QR_SETTINGS.degreeScale).toBe(2.0);
+      expect(DEFAULT_NO_QR_SETTINGS.majorScale).toBe(2.0);
+      expect(DEFAULT_NO_QR_SETTINGS.groupScale).toBe(2.0);
+      expect(DEFAULT_NO_QR_SETTINGS.codeScale).toBe(2.5);
+      expect(DEFAULT_NO_QR_SETTINGS.nameScale).toBe(1.0);
+      expect(DEFAULT_NO_QR_SETTINGS.lineGap).toBe(6);
     });
   });
 });

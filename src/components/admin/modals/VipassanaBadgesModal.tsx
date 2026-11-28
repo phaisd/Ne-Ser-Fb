@@ -27,6 +27,8 @@ import {
   type QrScaleMode,
   type BadgeThemeStyles,
   type BadgeFontScale,
+  type BadgeNoQrCustomSettings,
+  DEFAULT_NO_QR_SETTINGS,
   isPractitionerEnglish,
 } from './badges/types';
 import { VipassanaBadgeToolbar } from './badges/VipassanaBadgeToolbar';
@@ -65,6 +67,8 @@ export function VipassanaBadgesModal({
   const [qrScale, setQrScale] = useState<QrScaleMode>('2X');
   const [showScanPass, setShowScanPass] = useState(false);
   const [showStudentName, setShowStudentName] = useState(true);
+  const [showQrCode, setShowQrCode] = useState(true);
+  const [noQrSettings, setNoQrSettings] = useState<BadgeNoQrCustomSettings>(DEFAULT_NO_QR_SETTINGS);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const [footerLocationText, setFooterLocationText] = useState<string>('');
   const [qrCodeUrls, setQrCodeUrls] = useState<Record<string, string>>({});
@@ -173,10 +177,10 @@ export function VipassanaBadgesModal({
     }
   }, [colorTheme]);
 
-  // Pre-generate QR codes for badges
+  // Pre-generate QR codes for badges (skip if QR codes are hidden)
   useEffect(() => {
     if (!isOpen) return;
-    if (filteredRegistrations.length === 0) {
+    if (!showQrCode || filteredRegistrations.length === 0) {
       setIsGeneratingQr(false);
       return;
     }
@@ -222,7 +226,7 @@ export function VipassanaBadgesModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, registrationKey, qrColor]);
+  }, [isOpen, registrationKey, qrColor, showQrCode]);
 
   // Color Theme Configuration
   const themeConfig: BadgeThemeStyles = useMemo(() => {
@@ -651,6 +655,10 @@ export function VipassanaBadgesModal({
           setShowScanPass={setShowScanPass}
           showStudentName={showStudentName}
           setShowStudentName={setShowStudentName}
+          showQrCode={showQrCode}
+          setShowQrCode={setShowQrCode}
+          noQrSettings={noQrSettings}
+          setNoQrSettings={setNoQrSettings}
           footerLocationText={footerLocationText}
           setFooterLocationText={handleFooterTextChange}
           searchQuery={searchQuery}
@@ -846,6 +854,8 @@ export function VipassanaBadgesModal({
                             qrCodeUrl={qrCodeUrls[reg.id]}
                             showScanPass={showScanPass}
                             showStudentName={showStudentName}
+                            showQrCode={showQrCode}
+                            noQrSettings={noQrSettings}
                             footerLocationText={footerLocationText}
                           />
                         );
@@ -869,6 +879,8 @@ export function VipassanaBadgesModal({
                           qrCodeUrl={qrCodeUrls[reg.id]}
                           showScanPass={showScanPass}
                           showStudentName={showStudentName}
+                          showQrCode={showQrCode}
+                          noQrSettings={noQrSettings}
                           footerLocationText={footerLocationText}
                         />
                       );

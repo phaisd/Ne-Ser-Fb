@@ -40,6 +40,24 @@ export interface BadgeFontScale {
   footer: string;
 }
 
+export interface BadgeNoQrCustomSettings {
+  degreeScale: number; // e.g. 1.0, 1.5, 2.0, 2.5
+  majorScale: number;  // e.g. 1.0, 1.5, 2.0, 2.5
+  groupScale: number;  // e.g. 1.0, 1.5, 2.0, 2.5
+  codeScale: number;   // e.g. 1.5, 2.0, 2.5, 3.0
+  nameScale: number;   // e.g. 0.8, 1.0, 1.25, 1.5
+  lineGap: number;     // px spacing between lines (2, 4, 6, 8, 10, 14)
+}
+
+export const DEFAULT_NO_QR_SETTINGS: BadgeNoQrCustomSettings = {
+  degreeScale: 2.0,
+  majorScale: 2.0,
+  groupScale: 2.0,
+  codeScale: 2.5,
+  nameScale: 1.0,
+  lineGap: 6,
+};
+
 /**
  * Detect if practitioner is in an English or International program/group.
  */

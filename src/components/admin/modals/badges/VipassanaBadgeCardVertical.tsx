@@ -5,6 +5,8 @@ import type { EventRegistration } from '@/types/event';
 import {
   type BadgeThemeStyles,
   type BadgeFontScale,
+  type BadgeNoQrCustomSettings,
+  DEFAULT_NO_QR_SETTINGS,
   formatBadgeGroupLabel,
   formatBadgeDegree,
   formatBadgeFooterLocation,
@@ -27,6 +29,8 @@ interface VipassanaBadgeCardVerticalProps {
   qrCodeUrl?: string;
   showScanPass: boolean;
   showStudentName?: boolean;
+  showQrCode?: boolean;
+  noQrSettings?: BadgeNoQrCustomSettings;
   footerLocationText?: string;
 }
 
@@ -47,8 +51,11 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
   qrCodeUrl,
   showScanPass,
   showStudentName = true,
+  showQrCode = true,
+  noQrSettings = DEFAULT_NO_QR_SETTINGS,
   footerLocationText,
 }) => {
+  const settings = noQrSettings || DEFAULT_NO_QR_SETTINGS;
   const gNum = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
   const cardFontClass = isEnglish ? 'badge-font-en' : 'badge-font-th';
 
@@ -113,74 +120,134 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
         </div>
       </div>
 
-      {/* 2. Subheader: Group Pill + Degree Level & Major + (When student name hidden) Code at End */}
-      <div className="flex items-center justify-between gap-1.5 pt-1 pb-0.5 shrink-0 relative z-10">
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-          <span className={`rounded-full ${fontScale.groupPill} font-black border shrink-0 ${themeConfig.groupPill}`}>
-            {formatBadgeGroupLabel(gNum, isEnglish)}
-          </span>
-          <div className="min-w-0 text-left leading-tight">
-            <div className={`${fontScale.degree} font-extrabold ${themeConfig.degreeText} break-words`}>
-              {formatBadgeDegree(reg.degreeLevel, isEnglish)}
-            </div>
-            {cleanedMajor && (
-              <div className={`${fontScale.major} font-semibold ${themeConfig.majorText} break-words line-clamp-2`} title={cleanedMajor}>
-                {cleanedMajor}
+      {showQrCode ? (
+        <>
+          {/* 2. Subheader: Group Pill + Degree Level & Major + (When student name hidden) Code at End */}
+          <div className="flex items-center justify-between gap-1.5 pt-1 pb-0.5 shrink-0 relative z-10">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <span className={`rounded-full ${fontScale.groupPill} font-black border shrink-0 ${themeConfig.groupPill}`}>
+                {formatBadgeGroupLabel(gNum, isEnglish)}
+              </span>
+              <div className="min-w-0 text-left leading-tight">
+                <div className={`${fontScale.degree} font-extrabold ${themeConfig.degreeText} break-words`}>
+                  {formatBadgeDegree(reg.degreeLevel, isEnglish)}
+                </div>
+                {cleanedMajor && (
+                  <div className={`${fontScale.major} font-semibold ${themeConfig.majorText} break-words line-clamp-2`} title={cleanedMajor}>
+                    {cleanedMajor}
+                  </div>
+                )}
               </div>
+            </div>
+            {!showStudentName && (
+              <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0 px-1.5 py-0.5 rounded border border-current/25 bg-white/70 shadow-2xs`}>
+                {reg.groupSpecificCode || reg.studentCode}
+              </span>
             )}
           </div>
-        </div>
-        {!showStudentName && (
-          <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0 px-1.5 py-0.5 rounded border border-current/25 bg-white/70 shadow-2xs`}>
-            {reg.groupSpecificCode || reg.studentCode}
-          </span>
-        )}
-      </div>
 
-      {/* 3. Participant: Group Code + Optional Student Name (Centered in Blue frame) */}
-      {showStudentName && (
-        <div className="flex items-center justify-center gap-1.5 px-0.5 py-0.5 shrink-0 min-w-0 relative z-10 text-center w-full">
-          <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0`}>
-            {reg.groupSpecificCode || reg.studentCode}
-          </span>
-          <span
-            className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug break-words line-clamp-2 text-center`}
-            title={reg.studentName}
+          {/* 3. Participant: Group Code + Optional Student Name (Centered in Blue frame) */}
+          {showStudentName && (
+            <div className="flex items-center justify-center gap-1.5 px-0.5 py-0.5 shrink-0 min-w-0 relative z-10 text-center w-full">
+              <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0`}>
+                {reg.groupSpecificCode || reg.studentCode}
+              </span>
+              <span
+                className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug break-words line-clamp-2 text-center`}
+                title={reg.studentName}
+              >
+                {reg.studentName}
+              </span>
+            </div>
+          )}
+
+          {/* 4. Center: High-Contrast Large QR Code */}
+          <div className="flex flex-col items-center justify-center my-auto py-1 relative z-10">
+            {qrCodeUrl ? (
+              <div className={`p-1 bg-white rounded-xl border ${themeConfig.qrBorder} shadow-2xs transition-all duration-200`}>
+                <img
+                  src={qrCodeUrl}
+                  alt={`QR ${reg.studentCode}`}
+                  className="object-contain block bg-white"
+                  style={{
+                    width: `${qrDimension}px`,
+                    height: `${qrDimension}px`,
+                  }}
+                />
+              </div>
+            ) : (
+              <div
+                className="bg-slate-100 rounded-md animate-pulse"
+                style={{
+                  width: `${qrDimension}px`,
+                  height: `${qrDimension}px`,
+                }}
+              />
+            )}
+            {showScanPass && (
+              <span className="text-[7px] sm:text-[7.5px] font-mono font-bold text-slate-400 tracking-widest mt-0.5">
+                SCAN PASS
+              </span>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Centered 5-Line Text Layout when QR Code is Hidden (Image 2) */
+        <div
+          className="flex flex-col items-center justify-center text-center my-auto px-1 py-1 w-full min-w-0 flex-1 relative z-10"
+          style={{ gap: `${settings.lineGap}px` }}
+        >
+          {/* 1. ระดับ */}
+          <div
+            className={`font-black ${themeConfig.degreeText} w-full truncate leading-tight tracking-tight`}
+            style={{ fontSize: `${Math.round(11 * settings.degreeScale)}px` }}
+            title={formatBadgeDegree(reg.degreeLevel, isEnglish)}
           >
-            {reg.studentName}
-          </span>
+            {formatBadgeDegree(reg.degreeLevel, isEnglish)}
+          </div>
+
+          {/* 2. สาขาวิชา */}
+          {cleanedMajor && (
+            <div
+              className={`font-bold ${themeConfig.majorText} w-full truncate leading-tight`}
+              style={{ fontSize: `${Math.round(9 * settings.majorScale)}px` }}
+              title={cleanedMajor}
+            >
+              {cleanedMajor}
+            </div>
+          )}
+
+          {/* 3. กลุ่ม (สีเขียว) */}
+          <div className="w-full flex justify-center py-0.5">
+            <span
+              className="inline-block font-black rounded-full px-4 py-0.5 border border-emerald-400 bg-emerald-50 text-emerald-900 shadow-2xs truncate max-w-full leading-normal"
+              style={{ fontSize: `${Math.round(10 * settings.groupScale)}px` }}
+            >
+              {formatBadgeGroupLabel(gNum, isEnglish)}
+            </span>
+          </div>
+
+          {/* 4. รหัส (สีน้ำเงิน) */}
+          <div
+            className="font-mono font-black text-blue-900 tracking-wider w-full truncate leading-tight py-0.5"
+            style={{ fontSize: `${Math.round(12 * settings.codeScale)}px` }}
+            title={reg.groupSpecificCode || reg.studentCode}
+          >
+            {reg.groupSpecificCode || reg.studentCode}
+          </div>
+
+          {/* 5. ชื่อนิสิต (สีแดง / โดดเด่น) */}
+          {showStudentName && (
+            <div
+              className="font-extrabold text-rose-900 w-full truncate leading-tight"
+              style={{ fontSize: `${Math.round(12 * settings.nameScale)}px` }}
+              title={reg.studentName}
+            >
+              {reg.studentName}
+            </div>
+          )}
         </div>
       )}
-
-      {/* 4. Center: High-Contrast Large QR Code */}
-      <div className="flex flex-col items-center justify-center my-auto py-1 relative z-10">
-        {qrCodeUrl ? (
-          <div className={`p-1 bg-white rounded-xl border ${themeConfig.qrBorder} shadow-2xs transition-all duration-200`}>
-            <img
-              src={qrCodeUrl}
-              alt={`QR ${reg.studentCode}`}
-              className="object-contain block bg-white"
-              style={{
-                width: `${qrDimension}px`,
-                height: `${qrDimension}px`,
-              }}
-            />
-          </div>
-        ) : (
-          <div
-            className="bg-slate-100 rounded-md animate-pulse"
-            style={{
-              width: `${qrDimension}px`,
-              height: `${qrDimension}px`,
-            }}
-          />
-        )}
-        {showScanPass && (
-          <span className="text-[7px] sm:text-[7.5px] font-mono font-bold text-slate-400 tracking-widest mt-0.5">
-            SCAN PASS
-          </span>
-        )}
-      </div>
 
       {/* 5. Bottom: Footer with Practice Location & Light-Gray Watermark Serial # */}
       <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8px] sm:text-[8.5px] flex items-center justify-between gap-1.5 shrink-0 relative z-10`}>
