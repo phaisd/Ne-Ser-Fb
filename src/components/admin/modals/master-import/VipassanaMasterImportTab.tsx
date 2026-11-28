@@ -10,6 +10,10 @@ import {
   Upload,
   CheckCircle2,
   AlertCircle,
+  Archive,
+  Trash2,
+  Users,
+  History,
 } from 'lucide-react';
 import type { ParsedMasterItem } from './types';
 
@@ -30,6 +34,12 @@ interface VipassanaMasterImportTabProps {
   submitError: string | null;
   lastCreatedList: ParsedMasterItem[];
   handleExportXlsx: (list?: ParsedMasterItem[]) => void;
+  currentMastersCount?: number;
+  onArchiveOldMasters?: () => Promise<void>;
+  onClearOldMasters?: () => Promise<void>;
+  archiveOldBeforeImport?: boolean;
+  setArchiveOldBeforeImport?: (val: boolean) => void;
+  onViewArchiveTab?: () => void;
 }
 
 export const VipassanaMasterImportTab: React.FC<VipassanaMasterImportTabProps> = ({
@@ -49,9 +59,80 @@ export const VipassanaMasterImportTab: React.FC<VipassanaMasterImportTabProps> =
   submitError,
   lastCreatedList,
   handleExportXlsx,
+  currentMastersCount = 0,
+  onArchiveOldMasters,
+  onClearOldMasters,
+  archiveOldBeforeImport = false,
+  setArchiveOldBeforeImport,
+  onViewArchiveTab,
 }) => {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      {/* Current Active Masters Status & Archiving Controls */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 rounded-2xl border border-indigo-950 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Users className="w-4 h-4 text-amber-400" />
+            <span className="text-xs font-bold text-white">
+              พระวิปัสสนาจารย์ในระบบปัจจุบัน:{' '}
+              <span className="text-amber-300 font-extrabold text-sm">{currentMastersCount} รูป</span>
+            </span>
+            {currentMastersCount > 0 ? (
+              <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                ไอดี vipassana01 ถึง vipassana{String(currentMastersCount).padStart(2, '0')}
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                พร้อมนำเข้าชุดใหม่เริ่มตั้งแต่ vipassana01
+              </span>
+            )}
+          </div>
+          <p className="text-[11.5px] text-slate-300">
+            {currentMastersCount > 0
+              ? 'หากท่านต้องการนำเข้ารายชื่อชุดใหม่สำหรับปีการศึกษาใหม่ หรือไม่ต้องการให้ติดข้อมูลตัวอย่างเดิม สามารถกดย้ายเข้าแฟ้มประวัติเพื่อเริ่มนับไอดี 01 ใหม่ได้'
+              : 'ขณะนี้ไม่มีข้อมูลค้างในระบบ เมื่อนำเข้าจะเริ่มสร้างไอดีตั้งแต่ vipassana01@mcu.ac.th ลำดับที่ 1 เป็นต้นไป'}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          {currentMastersCount > 0 && onArchiveOldMasters && (
+            <button
+              type="button"
+              onClick={onArchiveOldMasters}
+              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer border border-indigo-400/40"
+              title="จัดเก็บพระวิปัสสนาจารย์ชุดเดิมเข้าแฟ้มประวัติ (Archive) เพื่อเริ่มโครงการปีการศึกษาใหม่"
+            >
+              <Archive className="w-3.5 h-3.5 text-amber-300" />
+              <span>ย้ายเข้าแฟ้มประวัติ (Archive ปีก่อนหน้า)</span>
+            </button>
+          )}
+
+          {currentMastersCount > 0 && onClearOldMasters && (
+            <button
+              type="button"
+              onClick={onClearOldMasters}
+              className="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 hover:text-white font-bold text-xs flex items-center gap-1 transition cursor-pointer border border-rose-500/40"
+              title="ล้างข้อมูลพระวิปัสสนาจารย์ชุดปัจจุบันทั้งหมดออกจากระบบ"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-300" />
+              <span>ล้างข้อมูลเดิม</span>
+            </button>
+          )}
+
+          {onViewArchiveTab && (
+            <button
+              type="button"
+              onClick={onViewArchiveTab}
+              className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-bold text-xs flex items-center gap-1 transition cursor-pointer border border-white/20"
+              title="เปิดดูคลังแฟ้มประวัติพระวิปัสสนาจารย์ปีก่อนหน้า"
+            >
+              <History className="w-3.5 h-3.5 text-amber-300" />
+              <span>ดูแฟ้มประวัติ</span>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Top Action Card: Download Template */}
       <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-4 sm:p-5 rounded-2xl border border-amber-200/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -134,6 +215,30 @@ export const VipassanaMasterImportTab: React.FC<VipassanaMasterImportTabProps> =
             </div>
           </div>
         </div>
+
+        {/* Archive Old & Start Fresh Option */}
+        {currentMastersCount > 0 && setArchiveOldBeforeImport && (
+          <label className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/80 border border-amber-200 cursor-pointer text-xs transition hover:bg-amber-100/60 select-none">
+            <input
+              type="checkbox"
+              checked={archiveOldBeforeImport}
+              onChange={(e) => setArchiveOldBeforeImport(e.target.checked)}
+              className="mt-0.5 accent-amber-600 w-4 h-4 rounded cursor-pointer"
+            />
+            <div className="space-y-0.5">
+              <span className="font-bold text-amber-950 flex items-center gap-1.5">
+                <Archive className="w-3.5 h-3.5 text-amber-700" />
+                <span>
+                  ย้ายพระวิปัสสนาจารย์ชุดเดิม ({currentMastersCount} รูป) เข้าแฟ้มประวัติ (Archive) อัตโนมัติก่อนบันทึกชุดใหม่
+                </span>
+              </span>
+              <p className="text-[11px] text-amber-800">
+                ระบบจะจัดเก็บรายชื่อชุดเดิมเข้าแฟ้มประวัติ และเริ่มนับไอดีชุดใหม่ตั้งแต่{' '}
+                <strong className="underline">vipassana01@mcu.ac.th</strong> ลำดับที่ 1 เป็นต้นไป (ไม่ติดข้อมูลตัวอย่างเดิม)
+              </p>
+            </div>
+          </label>
+        )}
       </div>
 
       {/* Input Area: Upload or Paste */}

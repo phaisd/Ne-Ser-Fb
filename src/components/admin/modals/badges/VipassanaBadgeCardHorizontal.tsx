@@ -2,7 +2,13 @@
 
 import React from 'react';
 import type { EventRegistration } from '@/types/event';
-import type { BadgeThemeStyles, BadgeFontScale } from './types';
+import {
+  type BadgeThemeStyles,
+  type BadgeFontScale,
+  formatBadgeGroupLabel,
+  formatBadgeDegree,
+  formatBadgeFooterLocation,
+} from './types';
 
 interface VipassanaBadgeCardHorizontalProps {
   reg: EventRegistration;
@@ -95,7 +101,7 @@ export const VipassanaBadgeCardHorizontal: React.FC<VipassanaBadgeCardHorizontal
         <div className="flex-1 space-y-0.5 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className={`px-2 py-0.2 rounded-full ${fontScale.groupPill} font-black border ${themeConfig.groupPill}`}>
-              กลุ่ม {gNum || '-'}
+              {formatBadgeGroupLabel(gNum, isEnglish)}
             </span>
             {reg.groupSpecificCode && (
               <span className={`font-mono font-black ${fontScale.code} px-2 py-0.2 rounded ${themeConfig.participantCode} shadow-2xs`}>
@@ -116,7 +122,7 @@ export const VipassanaBadgeCardHorizontal: React.FC<VipassanaBadgeCardHorizontal
 
           <div className="flex flex-wrap items-baseline gap-x-1.5 leading-tight pt-0.5">
             <span className={`${fontScale.degree} font-extrabold ${themeConfig.degreeText}`}>
-              {reg.degreeLevel || (isEnglish ? "Bachelor's Degree" : 'ปริญญาตรี')}
+              {formatBadgeDegree(reg.degreeLevel, isEnglish)}
             </span>
             {reg.vasa && <span className="text-[8.5px] text-slate-500">({reg.vasa} พรรษา)</span>}
             {cleanedMajor && (
@@ -160,8 +166,8 @@ export const VipassanaBadgeCardHorizontal: React.FC<VipassanaBadgeCardHorizontal
 
       {/* Bottom Footer */}
       <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8.5px] flex items-center justify-between gap-1.5 shrink-0 relative z-10`}>
-        <span className={`${themeConfig.footerLabel} truncate flex-1`} title={footerLocationText}>
-          {footerLocationText || (isEnglish ? 'Practice Venue' : 'สถานที่ปฏิบัติ')}
+        <span className={`${themeConfig.footerLabel} truncate flex-1`} title={formatBadgeFooterLocation(footerLocationText, isEnglish)}>
+          {formatBadgeFooterLocation(footerLocationText, isEnglish)}
         </span>
         <span className="font-mono font-normal text-slate-300/75 select-none shrink-0">
           #{String(overallIdx + 1).padStart(3, '0')}

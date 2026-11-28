@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import {
   X,
   Upload,
@@ -21,24 +21,23 @@ import {
   FileUp,
   RefreshCw,
   ExternalLink,
+  Archive,
+  Trash2,
+  History,
 } from 'lucide-react';
 import { UserAccount } from '@/types';
-import {
-  detectDelimiter,
-  splitCSVLines,
-  parseCSVRow,
-  recombineAcademicTitles,
-} from '@/lib/parsers/csvParser';
-import { stripLeadingTitles } from '@/lib/utils/name-matcher';
 import { downloadXlsx, type XlsxSheet } from '@/lib/utils/xlsx-export';
-import { readSpreadsheetFile, getNextSequentialEmail } from '@/lib/utils/file-import-helpers';
+import { readSpreadsheetFile } from '@/lib/utils/file-import-helpers';
 import { downloadCsvFile } from '@/lib/utils/csv-helpers';
 import {
   ParsedMasterItem,
   STANDARD_POSITIONS,
+  cleanImportRawText,
+  parseCSVToVipassanaMasters,
   VipassanaMasterExportTab,
   VipassanaMasterSlipTab,
   VipassanaMasterImportTab,
+  VipassanaMasterArchiveTab,
 } from './master-import';
 
 export type { ParsedMasterItem };
@@ -57,7 +56,7 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   existingUsers,
   onSuccess,
 }) => {
-  const [activeTab, setActiveTab] = useState<'IMPORT' | 'EXPORT' | 'SLIPS'>('IMPORT');
+  const [activeTab, setActiveTab] = useState<'IMPORT' | 'EXPORT' | 'SLIPS' | 'ARCHIVE'>('IMPORT');
 
   // ===================== IMPORT TAB STATES =====================
   const [rawText, setRawText] = useState('');
@@ -68,6 +67,11 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [lastCreatedList, setLastCreatedList] = useState<any[]>([]);
+  const [archiveOldBeforeImport, setArchiveOldBeforeImport] = useState(false);
+
+  // ===================== ARCHIVE TAB STATES =====================
+  const [archivedMasters, setArchivedMasters] = useState<any[]>([]);
+  const [isLoadingArchive, setIsLoadingArchive] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -102,181 +106,51 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
   }, [currentMasters, exportPositionFilter, exportSearch]);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Helper: Get next available vipassana sequential email
+  // Fetch Archived Masters from server
   // ─────────────────────────────────────────────────────────────────────────
-  const getNextVipassanaEmail = (offsetIndex: number, currentList: UserAccount[], staged: ParsedMasterItem[]) => {
-    return getNextSequentialEmail({
-      prefix: 'vipassana',
-      offsetIndex,
-      existingEmails: currentList.map((u) => u.email),
-      stagedEmails: staged.map((s) => s.email),
-    });
-  };
-
-  // Helper: Get password based on current option
-  const getPasswordForIndex = (idx: number) => {
-    if (passwordOption === 'mcu123456') return 'mcu123456';
-    if (passwordOption === 'vp2569') return `Vp@2569#${String(idx + 1).padStart(2, '0')}`;
-    return customPassword.trim() || 'mcu123456';
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Parse raw text into structured masters
-  // ─────────────────────────────────────────────────────────────────────────
-  const parseRawTextToMasters = (text: string) => {
-    const lines = splitCSVLines(text);
-    if (lines.length === 0) {
-      setParsedList([]);
-      return;
-    }
-
-    const delimiter = detectDelimiter(lines[0]);
-    const rawHeaders = parseCSVRow(lines[0], delimiter);
-    const normalizedHeaders = rawHeaders.map((h) =>
-      h.toLowerCase().replace(/[\s\-_]/g, '')
-    );
-
-    const isHeaderPresent = normalizedHeaders.some((h) =>
-      ['name', 'ชื่อ', 'ชื่อพระ', 'พระอาจารย์', 'ชื่อฉายา', 'ตำแหน่ง', 'position', 'email', 'อีเมล'].includes(h)
-    );
-
-    const startLine = isHeaderPresent ? 1 : 0;
-    const result: ParsedMasterItem[] = [];
-
-    for (let i = startLine; i < lines.length; i++) {
-      if (!lines[i].trim()) continue;
-      let values = parseCSVRow(lines[i], delimiter);
-      if (values.length === 0 || values.every((v) => !v.trim())) continue;
-
-      values = recombineAcademicTitles(values);
-
-      let name = '';
-      let nameEn = '';
-      let position = 'พระวิปัสสนาจารย์';
-      let ecclesiasticalTitle = '';
-      let department = '';
-      let contactAddress = '';
-      let email = '';
-      let password = '';
-
-      if (isHeaderPresent) {
-        const obj: Record<string, string> = {};
-        normalizedHeaders.forEach((h, idx) => {
-          obj[h] = values[idx] !== undefined ? values[idx] : '';
+  const fetchArchivedMasters = useCallback(async () => {
+    setIsLoadingArchive(true);
+    try {
+      const res = await fetch('/api/users?archived=true');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        const masters = data.data.filter((u: any) => {
+          if (u.role === 'VIPASSANA_MASTER') return true;
+          const type = (u.instructorType || '').toLowerCase();
+          return type.includes('วิปัสสนา') || type.includes('ประธาน') || type.includes('เลขานุการ');
         });
-
-        name =
-          obj['name'] ||
-          obj['ชื่อ'] ||
-          obj['ชื่อฉายา'] ||
-          obj['ชื่อพระ'] ||
-          obj['พระวิปัสสนาจารย์'] ||
-          obj['fullname'] ||
-          '';
-
-        nameEn =
-          obj['nameen'] ||
-          obj['englishname'] ||
-          obj['ชื่อภาษาอังกฤษ'] ||
-          obj['ชื่ออังกฤษ'] ||
-          '';
-
-        position =
-          obj['position'] ||
-          obj['ตำแหน่ง'] ||
-          obj['ตำแหน่งในโครงการ'] ||
-          obj['หน้าที่'] ||
-          'พระวิปัสสนาจารย์';
-
-        ecclesiasticalTitle =
-          obj['ecclesiasticaltitle'] ||
-          obj['ตำแหน่งทางคณะสงฆ์'] ||
-          obj['ตำแหน่งสงฆ์'] ||
-          obj['สมณศักดิ์'] ||
-          obj['สังกัดสงฆ์'] ||
-          '';
-
-        department =
-          obj['department'] ||
-          obj['หน่วยงาน'] ||
-          obj['ภาควิชา'] ||
-          obj['หน่วยงาน/ภาควิชา'] ||
-          obj['สังกัด'] ||
-          '';
-
-        contactAddress =
-          obj['contactaddress'] ||
-          obj['ที่อยู่ติดต่อ'] ||
-          obj['ที่อยู่'] ||
-          obj['สังกัดวัด'] ||
-          obj['วัด'] ||
-          obj['ที่อยู่วัด'] ||
-          obj['address'] ||
-          '';
-
-        email = obj['email'] || obj['อีเมล'] || obj['ไอดี'] || obj['username'] || '';
-        password = obj['password'] || obj['รหัสผ่าน'] || '';
-      } else {
-        // Positional fallback:
-        // Col 0: No. or Name
-        const isFirstColNumber = /^\d+$/.test(values[0]?.trim());
-        const nameIdx = isFirstColNumber ? 1 : 0;
-
-        name = values[nameIdx] || '';
-        nameEn = values[nameIdx + 1] && !values[nameIdx + 1].includes('@') ? values[nameIdx + 1] : '';
-        position = values[nameIdx + 2] || 'พระวิปัสสนาจารย์';
-
-        for (let k = nameIdx + 1; k < values.length; k++) {
-          const val = (values[k] || '').trim();
-          if (val.includes('@')) {
-            email = val;
-          } else if (val.toLowerCase().startsWith('vp') || val.toLowerCase().startsWith('mcu')) {
-            password = val;
-          }
-        }
+        setArchivedMasters(masters);
       }
-
-      if (!name.trim()) continue;
-
-      // Clean position string
-      let cleanPos = position.trim();
-      if (!cleanPos || cleanPos === '-') cleanPos = 'พระวิปัสสนาจารย์';
-      if (cleanPos.includes('ประธาน') && !cleanPos.includes('รอง')) cleanPos = 'ประธานพระวิปัสสนาจารย์';
-      else if (cleanPos.includes('รองประธาน')) cleanPos = 'รองประธานพระวิปัสสนาจารย์';
-      else if (cleanPos.includes('เลขานุการ') && !cleanPos.includes('ผู้ช่วย')) cleanPos = 'เลขานุการพระวิปัสสนาจารย์';
-      else if (cleanPos.includes('ผู้ช่วยเลขา')) cleanPos = 'ผู้ช่วยเลขานุการพระวิปัสสนาจารย์';
-
-      const cleanName = name.trim();
-      const stripped = stripLeadingTitles(cleanName);
-
-      // Check existing
-      const existingMatch = existingUsers.find((u) => {
-        if (email && (u.email || '').toLowerCase() === email.toLowerCase()) return true;
-        if (u.name.trim() === cleanName) return true;
-        if (u.aliases && u.aliases.some((al) => al.trim() === cleanName || al.trim() === stripped)) return true;
-        if (stripLeadingTitles(u.name || '') === stripped && stripped.length >= 3) return true;
-        return false;
-      });
-
-      // Auto generate email if not provided
-      const finalEmail = email.trim() || (existingMatch?.email || getNextVipassanaEmail(result.length, existingUsers, result));
-      const finalPassword = password.trim() || getPasswordForIndex(result.length);
-
-      result.push({
-        name: cleanName,
-        nameEn: nameEn.trim() || existingMatch?.nameEn,
-        position: cleanPos,
-        ecclesiasticalTitle: ecclesiasticalTitle.trim() || existingMatch?.ecclesiasticalTitle || '',
-        department: department.trim() || existingMatch?.department || 'ฝ่ายวิปัสสนาธุระ / พระวิปัสสนาจารย์',
-        contactAddress: contactAddress.trim() || existingMatch?.contactAddress || '',
-        email: finalEmail,
-        password: finalPassword,
-        isExisting: !!existingMatch,
-        existingMatchName: existingMatch?.name,
-      });
+    } catch (err) {
+      console.error('Failed to fetch archived masters:', err);
+    } finally {
+      setIsLoadingArchive(false);
     }
+  }, []);
 
-    setParsedList(result);
+  useEffect(() => {
+    if (isOpen) {
+      fetchArchivedMasters();
+    }
+  }, [isOpen, fetchArchivedMasters]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Parse raw text into structured masters (using robust parser with banner skipping)
+  // ─────────────────────────────────────────────────────────────────────────
+  const parseRawTextToMasters = (text: string, forceStartFresh = archiveOldBeforeImport) => {
+    // If archiving old masters before import, we treat existingUsers without currentMasters
+    // so the new batch starts freshly at vipassana01@mcu.ac.th
+    const effectiveExisting = forceStartFresh
+      ? existingUsers.filter((u) => !currentMasters.some((m) => m.id === u.id))
+      : existingUsers;
+
+    const list = parseCSVToVipassanaMasters({
+      text,
+      existingUsers: effectiveExisting,
+      passwordOption,
+      customPassword,
+    });
+    setParsedList(list);
   };
 
   // Re-parse when raw text changes
@@ -291,12 +165,135 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
     if (!file) return;
 
     try {
-      const { rawText } = await readSpreadsheetFile(file);
-      setRawText(rawText);
-      parseRawTextToMasters(rawText);
+      const { rawText: uploadedText } = await readSpreadsheetFile(file);
+      // Clean title / subtitle banners so textarea starts directly from headers
+      const cleaned = cleanImportRawText(uploadedText);
+      setRawText(cleaned);
+      parseRawTextToMasters(cleaned);
     } catch (err) {
       alert('ไม่สามารถอ่านไฟล์ได้: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Archive or Clear Current Masters
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleArchiveOldMasters = async () => {
+    if (currentMasters.length === 0) return;
+    const defaultReason = `จัดเก็บพระวิปัสสนาจารย์ปีก่อนหน้า (ปีการศึกษา ${new Date().getFullYear() + 543 - 1})`;
+    const userReason = window.prompt(
+      `ต้องการย้ายพระวิปัสสนาจารย์ชุดปัจจุบัน (${currentMasters.length} รูป) เข้าสู่แฟ้มประวัติ (Archive) หรือไม่?\n\n• เมื่อย้ายแล้ว ข้อมูลเดิมจะถูกจัดเก็บเข้าแฟ้มประวัติอย่างปลอดภัย ไม่สูญหาย\n• ระบบจะพร้อมนำเข้าข้อมูลชุดใหม่เริ่มตั้งแต่ vipassana01@mcu.ac.th\n\nระบุหมายเหตุ/ปีการศึกษาที่จัดเก็บ:`,
+      defaultReason
+    );
+    if (userReason === null) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'archive-user',
+          userIds: currentMasters.map((m) => m.id),
+          archiveReason: userReason.trim() || defaultReason,
+          archivedBy: 'ผู้ดูแลระบบ (Admin)',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'เกิดข้อผิดพลาดในการย้ายเข้าแฟ้มประวัติ');
+      }
+
+      alert(
+        `ย้ายพระวิปัสสนาจารย์ชุดเดิม ${data.archivedCount || currentMasters.length} รูป เข้าสู่แฟ้มประวัติเรียบร้อยแล้ว\nระบบพร้อมนำเข้าข้อมูลชุดใหม่เริ่มตั้งแต่ vipassana01@mcu.ac.th`
+      );
+      onSuccess();
+      fetchArchivedMasters();
+      if (rawText) {
+        parseRawTextToMasters(rawText, true);
+      }
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาด: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClearOldMasters = async () => {
+    if (currentMasters.length === 0) return;
+    const confirmed = window.confirm(
+      `คำเตือน: คุณต้องการลบข้อมูลพระวิปัสสนาจารย์ชุดปัจจุบันทั้งหมด (${currentMasters.length} รูป) ออกจากระบบหรือไม่?\n\n• หากเป็นข้อมูลตัวอย่าง สามารถกดตกลงเพื่อลบออกได้เลย\n• หากเป็นข้อมูลจริงของปีก่อนหน้า แนะนำให้เลือก "ย้ายเข้าแฟ้มประวัติ" เพื่อเก็บประวัติไว้`
+    );
+    if (!confirmed) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      let deletedCount = 0;
+      for (const master of currentMasters) {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'delete-user',
+            id: master.id,
+          }),
+        });
+        if (res.ok) deletedCount++;
+      }
+
+      alert(
+        `ล้างข้อมูลพระวิปัสสนาจารย์เรียบร้อยแล้ว (${deletedCount} รูป)\nระบบพร้อมสำหรับการนำเข้าข้อมูลใหม่เริ่มต้นจาก vipassana01@mcu.ac.th`
+      );
+      onSuccess();
+      if (rawText) {
+        parseRawTextToMasters(rawText, true);
+      }
+    } catch (err: unknown) {
+      alert('เกิดข้อผิดพลาดในการล้างข้อมูล: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRestoreArchivedMaster = async (userId: string, name: string) => {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'restore-user',
+        userId,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'เกิดข้อผิดพลาดในการกู้คืนบัญชี');
+    }
+    alert(`กู้คืนบัญชี "${name}" กลับสู่ระบบพระวิปัสสนาจารย์ประจำปีปัจจุบันเรียบร้อยแล้ว`);
+    onSuccess();
+    fetchArchivedMasters();
+  };
+
+  const handleDeleteArchivedMasterPermanent = async (userId: string, name: string) => {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'delete-user',
+        id: userId,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'เกิดข้อผิดพลาดในการลบถาวร');
+    }
+    alert(`ลบบัญชี "${name}" ออกจากระบบและแฟ้มประวัติเรียบร้อยแล้ว`);
+    fetchArchivedMasters();
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -421,6 +418,24 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
     setSubmitSuccess(null);
 
     try {
+      // 1. If user opted to archive old masters before importing new batch:
+      if (archiveOldBeforeImport && currentMasters.length > 0) {
+        const archiveRes = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'archive-user',
+            userIds: currentMasters.map((m) => m.id),
+            archiveReason: `จัดเก็บพระวิปัสสนาจารย์ชุดปีก่อนหน้า ก่อนนำเข้าชุดใหม่`,
+            archivedBy: 'ผู้ดูแลระบบ (Admin)',
+          }),
+        });
+        if (!archiveRes.ok) {
+          console.warn('Failed to auto-archive old masters before import');
+        }
+      }
+
+      // 2. Batch import new masters
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -447,11 +462,14 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
 
       setLastCreatedList(data.processed || parsedList);
       setSubmitSuccess(
-        `บันทึกสำเร็จ: สร้างบัญชีพระวิปัสสนาจารย์ใหม่ ${data.createdCount || 0} รูป, อัปเดตข้อมูล ${data.updatedCount || 0} รูป`
+        archiveOldBeforeImport && currentMasters.length > 0
+          ? `บันทึกสำเร็จ: ย้ายชุดเดิม ${currentMasters.length} รูป เข้าแฟ้มประวัติ และสร้างบัญชีพระวิปัสสนาจารย์ใหม่ ${data.createdCount || 0} รูป เริ่มตั้งแต่ vipassana01`
+          : `บันทึกสำเร็จ: สร้างบัญชีพระวิปัสสนาจารย์ใหม่ ${data.createdCount || 0} รูป, อัปเดตข้อมูล ${data.updatedCount || 0} รูป`
       );
 
       // Notify parent to refresh user list
       onSuccess();
+      fetchArchivedMasters();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -641,6 +659,22 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
                 พร้อม QR เข้าสู่ระบบ
               </span>
             </button>
+
+            {/* TAB 4: ARCHIVE */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('ARCHIVE')}
+              className={`px-4 py-2.5 rounded-t-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border-t border-x ${
+                activeTab === 'ARCHIVE'
+                  ? 'bg-white text-indigo-950 border-indigo-300 shadow-xs ring-1 ring-indigo-400/30'
+                  : 'text-slate-600 border-transparent hover:bg-white/50'
+              }`}
+            >
+              <Archive className="w-4 h-4 text-indigo-600" />
+              <span className="font-extrabold text-indigo-900">
+                📁 แฟ้มประวัติปีก่อนหน้า (Archive: {archivedMasters.length} รูป)
+              </span>
+            </button>
           </div>
         </div>
 
@@ -665,6 +699,15 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
               submitError={submitError}
               lastCreatedList={lastCreatedList}
               handleExportXlsx={handleExportXlsx}
+              currentMastersCount={currentMasters.length}
+              onArchiveOldMasters={handleArchiveOldMasters}
+              onClearOldMasters={handleClearOldMasters}
+              archiveOldBeforeImport={archiveOldBeforeImport}
+              setArchiveOldBeforeImport={(val) => {
+                setArchiveOldBeforeImport(val);
+                if (rawText) parseRawTextToMasters(rawText, val);
+              }}
+              onViewArchiveTab={() => setActiveTab('ARCHIVE')}
             />
           )}
 
@@ -686,6 +729,17 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
           {activeTab === 'SLIPS' && (
             <VipassanaMasterSlipTab currentMasters={currentMasters} />
           )}
+
+          {/* ======================= TAB 4: ARCHIVE ======================= */}
+          {activeTab === 'ARCHIVE' && (
+            <VipassanaMasterArchiveTab
+              archivedMasters={archivedMasters}
+              isLoading={isLoadingArchive}
+              onRefresh={fetchArchivedMasters}
+              onRestore={handleRestoreArchivedMaster}
+              onDeletePermanent={handleDeleteArchivedMasterPermanent}
+            />
+          )}
         </div>
 
         {/* Modal Footer */}
@@ -695,8 +749,10 @@ export const VipassanaMasterImportExportModal: React.FC<VipassanaMasterImportExp
               <span>พร้อมสร้างบัญชีและรหัสผ่านอัตโนมัติสำหรับบทบาท <strong>พระวิปัสสนาจารย์ (VIPASSANA_MASTER)</strong></span>
             ) : activeTab === 'EXPORT' ? (
               <span>แสดงทั้งหมด <strong>{filteredMasters.length}</strong> รูป</span>
-            ) : (
+            ) : activeTab === 'SLIPS' ? (
               <span>แสดงบัตรทั้งหมด <strong>{currentMasters.length}</strong> รูป</span>
+            ) : (
+              <span>แฟ้มประวัติทั้งหมด <strong>{archivedMasters.length}</strong> รูป</span>
             )}
           </div>
 

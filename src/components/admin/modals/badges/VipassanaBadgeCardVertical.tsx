@@ -2,7 +2,13 @@
 
 import React from 'react';
 import type { EventRegistration } from '@/types/event';
-import type { BadgeThemeStyles, BadgeFontScale } from './types';
+import {
+  type BadgeThemeStyles,
+  type BadgeFontScale,
+  formatBadgeGroupLabel,
+  formatBadgeDegree,
+  formatBadgeFooterLocation,
+} from './types';
 
 interface VipassanaBadgeCardVerticalProps {
   reg: EventRegistration;
@@ -107,39 +113,44 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
         </div>
       </div>
 
-      {/* 2. Subheader: Group Pill + Degree Level & Major (Prefix "สาขาวิชา" removed) */}
-      <div className="flex items-center gap-1.5 pt-1 pb-0.5 shrink-0 relative z-10 flex-wrap">
-        <span className={`rounded-full ${fontScale.groupPill} font-black border shrink-0 ${themeConfig.groupPill}`}>
-          กลุ่ม {gNum || '-'}
-        </span>
-        <div className="min-w-0 text-left leading-tight flex-1">
-          <div className={`${fontScale.degree} font-extrabold ${themeConfig.degreeText} break-words`}>
-            {reg.degreeLevel || (isEnglish ? "Bachelor's Degree" : "ปริญญาตรี")}
-          </div>
-          <div className={`${fontScale.major} font-semibold ${themeConfig.majorText} break-words line-clamp-2`} title={cleanedMajor}>
-            {cleanedMajor}
+      {/* 2. Subheader: Group Pill + Degree Level & Major + (When student name hidden) Code at End */}
+      <div className="flex items-center justify-between gap-1.5 pt-1 pb-0.5 shrink-0 relative z-10">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <span className={`rounded-full ${fontScale.groupPill} font-black border shrink-0 ${themeConfig.groupPill}`}>
+            {formatBadgeGroupLabel(gNum, isEnglish)}
+          </span>
+          <div className="min-w-0 text-left leading-tight">
+            <div className={`${fontScale.degree} font-extrabold ${themeConfig.degreeText} break-words`}>
+              {formatBadgeDegree(reg.degreeLevel, isEnglish)}
+            </div>
+            {cleanedMajor && (
+              <div className={`${fontScale.major} font-semibold ${themeConfig.majorText} break-words line-clamp-2`} title={cleanedMajor}>
+                {cleanedMajor}
+              </div>
+            )}
           </div>
         </div>
+        {!showStudentName && (
+          <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0 px-1.5 py-0.5 rounded border border-current/25 bg-white/70 shadow-2xs`}>
+            {reg.groupSpecificCode || reg.studentCode}
+          </span>
+        )}
       </div>
 
-      {/* 3. Participant: Group Code + Optional Student Name */}
-      <div
-        className={`flex items-baseline gap-1.5 px-0.5 py-0.5 shrink-0 min-w-0 relative z-10 flex-wrap ${
-          !showStudentName ? 'justify-center' : ''
-        }`}
-      >
-        <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0`}>
-          {reg.groupSpecificCode || reg.studentCode}
-        </span>
-        {showStudentName && (
+      {/* 3. Participant: Group Code + Optional Student Name (Centered in Blue frame) */}
+      {showStudentName && (
+        <div className="flex items-center justify-center gap-1.5 px-0.5 py-0.5 shrink-0 min-w-0 relative z-10 text-center w-full">
+          <span className={`font-mono font-black ${fontScale.code} ${themeConfig.participantCode} shrink-0`}>
+            {reg.groupSpecificCode || reg.studentCode}
+          </span>
           <span
-            className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug break-words line-clamp-2 flex-1 min-w-[120px]`}
+            className={`font-extrabold ${fontScale.name} ${themeConfig.participantName} leading-snug break-words line-clamp-2 text-center`}
             title={reg.studentName}
           >
             {reg.studentName}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 4. Center: High-Contrast Large QR Code */}
       <div className="flex flex-col items-center justify-center my-auto py-1 relative z-10">
@@ -173,8 +184,8 @@ export const VipassanaBadgeCardVertical: React.FC<VipassanaBadgeCardVerticalProp
 
       {/* 5. Bottom: Footer with Practice Location & Light-Gray Watermark Serial # */}
       <div className={`border-t ${themeConfig.footerBorder} pt-0.5 text-[8px] sm:text-[8.5px] flex items-center justify-between gap-1.5 shrink-0 relative z-10`}>
-        <span className={`font-bold ${themeConfig.footerLabel} truncate flex-1`} title={footerLocationText}>
-          {footerLocationText || (isEnglish ? 'Practice Venue' : 'สถานที่ปฏิบัติ')}
+        <span className={`font-bold ${themeConfig.footerLabel} truncate flex-1`} title={formatBadgeFooterLocation(footerLocationText, isEnglish)}>
+          {formatBadgeFooterLocation(footerLocationText, isEnglish)}
         </span>
         <span className="font-mono font-normal text-slate-300/75 select-none shrink-0">
           #{String(overallIdx + 1).padStart(3, '0')}

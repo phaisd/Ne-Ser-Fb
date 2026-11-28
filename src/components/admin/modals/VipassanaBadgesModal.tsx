@@ -19,14 +19,15 @@ import { downloadCsvFile } from '@/lib/utils/csv-helpers';
 import { exportMultiPagePdf } from '@/lib/utils/pdf-export';
 import { extractThaiYear } from '@/lib/utils/thai-formatters';
 
-import type {
-  BadgeLayoutMode,
-  BadgeOrientation,
-  BadgeColorTheme,
-  BadgeFontSize,
-  QrScaleMode,
-  BadgeThemeStyles,
-  BadgeFontScale,
+import {
+  type BadgeLayoutMode,
+  type BadgeOrientation,
+  type BadgeColorTheme,
+  type BadgeFontSize,
+  type QrScaleMode,
+  type BadgeThemeStyles,
+  type BadgeFontScale,
+  isPractitionerEnglish,
 } from './badges/types';
 import { VipassanaBadgeToolbar } from './badges/VipassanaBadgeToolbar';
 import { VipassanaBadgeCardVertical } from './badges/VipassanaBadgeCardVertical';
@@ -779,7 +780,7 @@ export function VipassanaBadgesModal({
                     {pageRegistrations.map((reg, cardIdx) => {
                       const overallIdx = pageIdx * badgesPerPage + cardIdx;
                       const gNum = reg.groupNumber || (reg.groupName ? parseInt(reg.groupName.replace(/\D/g, ''), 10) : undefined);
-                      const isEnglish = gNum === 12 ? false : (reg.programType === 'ENGLISH' || reg.programType === 'INTER');
+                      const isEnglish = isPractitionerEnglish(reg);
 
                       // Exact print heights per card
                       const printCardHeight =
