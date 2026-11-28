@@ -17,6 +17,8 @@ import {
   Printer,
   RotateCcw,
   Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import type { StudentEvent, EventSeatingConfig } from '@/types/event';
 import { ZONE_COLORS } from './types';
@@ -82,6 +84,14 @@ export const SeatMapHeaderToolbar: React.FC<SeatMapHeaderToolbarProps> = ({
   onClearAllSeats,
   assignedCount,
 }) => {
+  // Action tools collapse/expand state (default to false on mobile, true on desktop)
+  const [isToolsExpanded, setIsToolsExpanded] = React.useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768;
+    }
+    return false;
+  });
+
   return (
     <>
       {/* Header Bar */}
@@ -272,98 +282,131 @@ export const SeatMapHeaderToolbar: React.FC<SeatMapHeaderToolbarProps> = ({
         </div>
       </div>
 
-      {/* Toolbar Row 2: Action & Management Tools */}
-      <div className="bg-slate-50 border-b border-slate-200 px-3 sm:px-4 py-1.5 flex flex-wrap items-center justify-between gap-1.5 shrink-0">
-        {/* Left: Seat Selection Tools */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-bold text-slate-500 hidden lg:inline-flex items-center mr-0.5">
-            เครื่องมือเลือก:
+      {/* Toolbar Row 2 Header / Collapse-Expand Toggle Bar (กรอบสีแดง ยุบ/คลี่ออกได้) */}
+      <div className="bg-slate-100 border-b border-slate-200 px-3 sm:px-4 py-1 flex items-center justify-between gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => setIsToolsExpanded((prev) => !prev)}
+          className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 cursor-pointer py-0.5 select-none"
+          title={isToolsExpanded ? 'กดยุบแถบเครื่องมือเพื่อเพิ่มพื้นที่ดูผัง' : 'กดคลี่ออกเพื่อใช้งานเครื่องมือจัดที่นั่ง/Excel'}
+        >
+          <span className="p-0.5 rounded bg-white border border-slate-300 text-slate-600 shadow-2xs">
+            {isToolsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              const next = !isBatchMode;
-              setIsBatchMode(next);
-              if (!next) onClearSelectedSeats();
-            }}
-            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap shrink-0 ${
-              isBatchMode
-                ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-black'
-                : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-300'
-            }`}
-            title="เปิด/ปิดโหมดเลือกหลายที่นั่งพร้อมกัน เพื่อทำทางเดิน/เสา หรือกำหนดกลุ่ม"
-          >
-            <CheckSquare className={`w-3.5 h-3.5 ${isBatchMode ? 'text-slate-950' : 'text-amber-600'}`} />
-            <span>{isBatchMode ? `โหมดเลือกกลุ่ม (${selectedSeatsCount})` : 'เลือกหลายที่นั่ง'}</span>
-          </button>
+          <span className="flex items-center gap-1">
+            <span>🛠️ เครื่องมือจัดที่นั่ง & คำสั่ง</span>
+            <span className="text-[10px] font-normal text-slate-500">
+              ({isToolsExpanded ? 'กดยุบ' : 'กดคลี่ออก'})
+            </span>
+          </span>
+          {!isToolsExpanded && (
+            <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.2 rounded-full border border-amber-300 ml-1">
+              แตะเพื่อเปิดคำสั่งจัดที่นั่ง/Excel
+            </span>
+          )}
+        </button>
 
-          <button
-            type="button"
-            onClick={onOpenRangeModal}
-            className="px-2.5 py-1 text-xs font-bold bg-white hover:bg-indigo-50 text-slate-700 border border-slate-300 rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
-            title="ระบุช่วงที่นั่งเพื่อเลือกกลุ่ม (เช่น D-03 ถึง I-03 หรือ D-10 ถึง G-12)"
-          >
-            <Layers className="w-3.5 h-3.5 text-indigo-600" />
-            <span>เลือกเป็นช่วง...</span>
-          </button>
-        </div>
-
-        {/* Right: Actions, Import/Export, Print & Reset */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <button
-            type="button"
-            onClick={onOpenAssignModal}
-            disabled={isSaving}
-            className="px-2.5 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
-            title="จัดที่นั่งอัตโนมัติ เรียงตามสถานภาพ เพศ หรือกลุ่ม"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-            <span>จัดที่นั่งอัตโนมัติ</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenImportExport}
-            className="px-2.5 py-1 text-xs font-bold bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
-            title="นำเข้าหรือส่งออกข้อมูลผังที่นั่งด้วยไฟล์ Excel / CSV"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-200" />
-            <span>นำเข้า/ส่งออก Excel</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenPrintModal}
-            className="px-2.5 py-1 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
-            title="พิมพ์ตารางที่นั่ง A4 (ทั้งแบบรวมทุกโซนใน 1 หน้า หรือแยกตามโซน)"
-          >
-            <Printer className="w-3.5 h-3.5 text-blue-200" />
-            <span>พิมพ์ตารางที่นั่ง A4</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onDeduplicate}
-            disabled={isDeduplicating || isSaving}
-            className="px-2.5 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0 disabled:opacity-50"
-            title="รีเซ็ตและลบรายชื่อผู้เข้าร่วมที่ซ้ำซ้อนให้ตรงกับจำนวนจริง (309 คน)"
-          >
-            <RotateCcw className={`w-3.5 h-3.5 text-amber-200 ${isDeduplicating ? 'animate-spin' : ''}`} />
-            <span>รีเซ็ตจำนวน / ลบรายการซ้ำ</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onClearAllSeats}
-            disabled={isSaving || assignedCount === 0}
-            className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition cursor-pointer disabled:opacity-40 shrink-0 flex items-center gap-1"
-            title="ล้างข้อมูลการจัดที่นั่งทั้งหมด (คืนค่าเป็น 0 ที่นั่ง)"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">ล้างผัง</span>
-          </button>
-        </div>
+        {isBatchMode && !isToolsExpanded && (
+          <span className="text-[10px] font-black bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md shadow-2xs">
+            เปิดโหมดเลือกกลุ่มอยู่ ({selectedSeatsCount})
+          </span>
+        )}
       </div>
+
+      {/* Toolbar Row 2: Action & Management Tools (Collapsible) */}
+      {isToolsExpanded && (
+        <div className="bg-slate-50 border-b border-slate-200 px-3 sm:px-4 py-1.5 flex flex-wrap items-center justify-between gap-1.5 shrink-0 animate-in slide-in-from-top-1 duration-150">
+          {/* Left: Seat Selection Tools */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-500 hidden lg:inline-flex items-center mr-0.5">
+              เครื่องมือเลือก:
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !isBatchMode;
+                setIsBatchMode(next);
+                if (!next) onClearSelectedSeats();
+              }}
+              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap shrink-0 ${
+                isBatchMode
+                  ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-black'
+                  : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-300'
+              }`}
+              title="เปิด/ปิดโหมดเลือกหลายที่นั่งพร้อมกัน เพื่อทำทางเดิน/เสา หรือกำหนดกลุ่ม"
+            >
+              <CheckSquare className={`w-3.5 h-3.5 ${isBatchMode ? 'text-slate-950' : 'text-amber-600'}`} />
+              <span>{isBatchMode ? `โหมดเลือกกลุ่ม (${selectedSeatsCount})` : 'เลือกหลายที่นั่ง'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenRangeModal}
+              className="px-2.5 py-1 text-xs font-bold bg-white hover:bg-indigo-50 text-slate-700 border border-slate-300 rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+              title="ระบุช่วงที่นั่งเพื่อเลือกกลุ่ม (เช่น D-03 ถึง I-03 หรือ D-10 ถึง G-12)"
+            >
+              <Layers className="w-3.5 h-3.5 text-indigo-600" />
+              <span>เลือกเป็นช่วง...</span>
+            </button>
+          </div>
+
+          {/* Right: Actions, Import/Export, Print & Reset */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={onOpenAssignModal}
+              disabled={isSaving}
+              className="px-2.5 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+              title="จัดที่นั่งอัตโนมัติ เรียงตามสถานภาพ เพศ หรือกลุ่ม"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+              <span>จัดที่นั่งอัตโนมัติ</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenImportExport}
+              className="px-2.5 py-1 text-xs font-bold bg-indigo-700 hover:bg-indigo-800 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+              title="นำเข้าหรือส่งออกข้อมูลผังที่นั่งด้วยไฟล์ Excel / CSV"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-200" />
+              <span>นำเข้า/ส่งออก Excel</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenPrintModal}
+              className="px-2.5 py-1 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+              title="พิมพ์ตารางที่นั่ง A4 (ทั้งแบบรวมทุกโซนใน 1 หน้า หรือแยกตามโซน)"
+            >
+              <Printer className="w-3.5 h-3.5 text-blue-200" />
+              <span>พิมพ์ตารางที่นั่ง A4</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onDeduplicate}
+              disabled={isDeduplicating || isSaving}
+              className="px-2.5 py-1 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer whitespace-nowrap shrink-0 disabled:opacity-50"
+              title="รีเซ็ตและลบรายชื่อผู้เข้าร่วมที่ซ้ำซ้อนให้ตรงกับจำนวนจริง (309 คน)"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 text-amber-200 ${isDeduplicating ? 'animate-spin' : ''}`} />
+              <span>รีเซ็ตจำนวน / ลบรายการซ้ำ</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClearAllSeats}
+              disabled={isSaving || assignedCount === 0}
+              className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition cursor-pointer disabled:opacity-40 shrink-0 flex items-center gap-1"
+              title="ล้างข้อมูลการจัดที่นั่งทั้งหมด (คืนค่าเป็น 0 ที่นั่ง)"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">ล้างผัง</span>
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

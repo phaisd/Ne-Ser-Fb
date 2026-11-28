@@ -4,7 +4,7 @@ import React from 'react';
 import { Edit, ShieldCheck, ClipboardList, Sparkles, Briefcase, GraduationCap } from 'lucide-react';
 import { UserAccount, UserRole } from '@/types';
 
-interface EditUserFormState {
+export interface EditUserFormState {
   name: string;
   nameEn?: string;
   email: string;
@@ -26,7 +26,7 @@ interface EditUserModalProps {
   editUserSaving: boolean;
   isOfficer?: boolean;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void | Promise<void>;
+  onSubmit: (e: React.FormEvent, customData?: EditUserFormState) => void | Promise<void>;
 }
 
 export const EditUserModal: React.FC<EditUserModalProps> = ({
@@ -38,12 +38,26 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const [form, setForm] = React.useState<EditUserFormState>(editUserForm);
+
+  React.useEffect(() => {
+    if (editingUser) {
+      setForm(editUserForm);
+    }
+  }, [editingUser]);
+
   if (!editingUser) return null;
 
   const isSuper =
     editingUser.role === 'SUPER_ADMIN' ||
     editingUser.email === 'phaisal.dis@mcu.ac.th' ||
     editingUser.isSuperAdmin;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditUserForm(form);
+    onSubmit(e, form);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
@@ -64,14 +78,14 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         </div>
 
         {/* Scrollable Form Body with Scrollbar */}
-        <form onSubmit={onSubmit} className="flex-1 overflow-y-auto pr-1.5 space-y-3.5 text-xs py-2">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-1.5 space-y-3.5 text-xs py-2">
           <div>
             <label className="font-bold text-slate-700 block mb-1">ชื่อ - นามสกุล / สมณศักดิ์ (ไทย):</label>
             <input
               type="text"
               required
-              value={editUserForm.name}
-              onChange={(e) => setEditUserForm({ ...editUserForm, name: e.target.value })}
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="เช่น พระมหาดวงเด่น หรือ ดร.สมชาย"
               className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium"
             />
@@ -83,8 +97,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             </label>
             <input
               type="text"
-              value={editUserForm.nameEn || ''}
-              onChange={(e) => setEditUserForm({ ...editUserForm, nameEn: e.target.value })}
+              value={form.nameEn || ''}
+              onChange={(e) => setForm({ ...form, nameEn: e.target.value })}
               placeholder="e.g. Ven. Dr. Phramaha Duangden"
               className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium"
             />
@@ -100,8 +114,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             </label>
             <input
               type="text"
-              value={editUserForm.email}
-              onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="เว้นว่างได้ หากต้องการใช้ Gmail ใหม่เป็นหลัก"
               className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono"
             />
@@ -114,8 +128,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             </label>
             <input
               type="email"
-              value={editUserForm.gmail}
-              onChange={(e) => setEditUserForm({ ...editUserForm, gmail: e.target.value })}
+              value={form.gmail}
+              onChange={(e) => setForm({ ...form, gmail: e.target.value })}
               placeholder="teacher.real@gmail.com"
               className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono"
             />
@@ -145,18 +159,18 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                   type="button"
                   onClick={() => {
                     const isOfficerType = item.label === 'เจ้าหน้าที่' || item.label === 'เจ้าหน้าที่หลักสูตร';
-                    const nextRole = isOfficerType && (!editUserForm.role || editUserForm.role === 'INSTRUCTOR')
+                    const nextRole = isOfficerType && (!form.role || form.role === 'INSTRUCTOR')
                       ? 'OFFICER'
-                      : editUserForm.role;
-                    setEditUserForm({
-                      ...editUserForm,
+                      : form.role;
+                    setForm({
+                      ...form,
                       instructorType: item.label,
                       role: nextRole,
-                      isActingOfficer: item.label.includes('ผู้ช่วยเจ้าหน้าที่') ? true : editUserForm.isActingOfficer,
+                      isActingOfficer: item.label.includes('ผู้ช่วยเจ้าหน้าที่') ? true : form.isActingOfficer,
                     });
                   }}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
-                    (editUserForm.instructorType || 'อาจารย์ประจำ') === item.label
+                    (form.instructorType || 'อาจารย์ประจำ') === item.label
                       ? `${item.color} ring-2 ring-indigo-400 shadow-xs`
                       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
@@ -169,8 +183,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             {/* Editable Input Box */}
             <input
               type="text"
-              value={editUserForm.instructorType || ''}
-              onChange={(e) => setEditUserForm({ ...editUserForm, instructorType: e.target.value })}
+              value={form.instructorType || ''}
+              onChange={(e) => setForm({ ...form, instructorType: e.target.value })}
               placeholder="เลือกจากปุ่มด้านบน หรือพิมพ์ระบุ เช่น อาจารย์ประจำ, อาจารย์พิเศษ, อาจารย์ผู้ช่วยสอน, เจ้าหน้าที่หลักสูตร, เจ้าหน้าที่"
               className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 text-xs"
             />
@@ -183,8 +197,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             <label className="font-bold text-slate-700 block mb-1">หน่วยงาน / ภาควิชา:</label>
             <input
               type="text"
-              value={editUserForm.department}
-              onChange={(e) => setEditUserForm({ ...editUserForm, department: e.target.value })}
+              value={form.department}
+              onChange={(e) => setForm({ ...form, department: e.target.value })}
               placeholder="เช่น คณะพุทธศาสตร์ ภาควิชาพระพุทธศาสนา"
               className="w-full px-3 py-2 rounded-xl border border-slate-200"
             />
@@ -195,8 +209,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1 text-xs">ตำแหน่งทางคณะสงฆ์ / สมณศักดิ์:</label>
               <input
                 type="text"
-                value={editUserForm.ecclesiasticalTitle || ''}
-                onChange={(e) => setEditUserForm({ ...editUserForm, ecclesiasticalTitle: e.target.value })}
+                value={form.ecclesiasticalTitle || ''}
+                onChange={(e) => setForm({ ...form, ecclesiasticalTitle: e.target.value })}
                 placeholder="เช่น เจ้าอาวาสวัด..., เจ้าคณะตำบล..., พระครู..."
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
               />
@@ -205,8 +219,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1 text-xs">ที่อยู่ติดต่อ / สังกัดวัด:</label>
               <input
                 type="text"
-                value={editUserForm.contactAddress || ''}
-                onChange={(e) => setEditUserForm({ ...editUserForm, contactAddress: e.target.value })}
+                value={form.contactAddress || ''}
+                onChange={(e) => setForm({ ...form, contactAddress: e.target.value })}
                 placeholder="เช่น วัดมหาธาตุยุวราชรังสฤษฎิ์ กรุงเทพฯ"
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs"
               />
@@ -218,9 +232,9 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             {(() => {
               const currentRoleSelection: UserRole = isSuper
                 ? 'SUPER_ADMIN'
-                : editUserForm.isActingOfficer && (editUserForm.role === 'INSTRUCTOR' || !editUserForm.role)
+                : form.isActingOfficer && (form.role === 'INSTRUCTOR' || !form.role)
                 ? 'ACTING_OFFICER'
-                : editUserForm.role || 'INSTRUCTOR';
+                : form.role || 'INSTRUCTOR';
 
               return (
                 <>
@@ -236,48 +250,48 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                       onChange={(e) => {
                         const val = e.target.value as UserRole;
                         if (val === 'ACTING_OFFICER') {
-                          setEditUserForm({
-                            ...editUserForm,
+                          setForm({
+                            ...form,
                             role: 'INSTRUCTOR',
                             isActingOfficer: true,
                             instructorType:
-                              editUserForm.instructorType && !editUserForm.instructorType.includes('ผู้ช่วย')
+                              form.instructorType && !form.instructorType.includes('ผู้ช่วย')
                                 ? 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)'
-                                : editUserForm.instructorType || 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)',
+                                : form.instructorType || 'ผู้ช่วยเจ้าหน้าที่ (ผู้ช่วยงาน)',
                           });
                         } else if (val === 'OFFICER') {
-                          setEditUserForm({
-                            ...editUserForm,
+                          setForm({
+                            ...form,
                             role: 'OFFICER',
                             isActingOfficer: false,
                           });
                         } else if (val === 'STAFF') {
-                          setEditUserForm({
-                            ...editUserForm,
+                          setForm({
+                            ...form,
                             role: 'STAFF',
                             isActingOfficer: false,
                           });
                         } else if (val === 'ADMIN') {
-                          setEditUserForm({
-                            ...editUserForm,
+                          setForm({
+                            ...form,
                             role: 'ADMIN',
                             isActingOfficer: false,
                           });
                         } else if (val === 'VIPASSANA_MASTER') {
-                          setEditUserForm({
-                            ...editUserForm,
+                          setForm({
+                            ...form,
                             role: 'VIPASSANA_MASTER',
                             isActingOfficer: false,
                           });
                         } else if (val === 'SUPER_ADMIN') {
-                          setEditUserForm({
-                            ...editUserForm,
+                          setForm({
+                            ...form,
                             role: 'SUPER_ADMIN',
                             isActingOfficer: false,
                           });
                         } else {
-                          setEditUserForm({
-                            ...editUserForm,
+                          setForm({
+                            ...form,
                             role: 'INSTRUCTOR',
                             isActingOfficer: false,
                           });
@@ -331,15 +345,15 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                     </div>
                   )}
 
-                  {!isOfficer && !isSuper && editUserForm.role === 'INSTRUCTOR' && (
+                  {!isOfficer && !isSuper && form.role === 'INSTRUCTOR' && (
                     <>
                       <label className="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-50 cursor-pointer transition">
                         <input
                           type="checkbox"
-                          checked={Boolean(editUserForm.isProjectCoordinator)}
+                          checked={Boolean(form.isProjectCoordinator)}
                           onChange={(e) =>
-                            setEditUserForm({
-                              ...editUserForm,
+                            setForm({
+                              ...form,
                               isProjectCoordinator: e.target.checked,
                             })
                           }
@@ -358,9 +372,9 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                       <label className="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl border border-sky-200 bg-sky-50/70 hover:bg-sky-50 cursor-pointer transition">
                         <input
                           type="checkbox"
-                          checked={Boolean(editUserForm.isActingOfficer)}
+                          checked={Boolean(form.isActingOfficer)}
                           onChange={(e) =>
-                            setEditUserForm({ ...editUserForm, isActingOfficer: e.target.checked })
+                            setForm({ ...form, isActingOfficer: e.target.checked })
                           }
                           className="mt-0.5 w-4 h-4 rounded border-sky-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
                         />

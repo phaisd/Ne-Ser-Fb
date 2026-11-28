@@ -9,6 +9,7 @@ import type {
   ProvisionCandidate,
 } from '@/components/admin/modals/AutoProvisionModal';
 import type { NewUserFormData } from '@/components/admin/modals/AddUserModal';
+import type { EditUserFormState } from '@/components/admin/modals/EditUserModal';
 
 export type AdminUserFilterItem = Omit<UserAccount, 'role'> & {
   role?: UserRole | 'STUDENT';
@@ -292,21 +293,22 @@ export function useAdminUsers({
     });
   };
 
-  const handleSaveEditUser = async (e: React.FormEvent) => {
+  const handleSaveEditUser = async (e: React.FormEvent, customData?: EditUserFormState) => {
     e.preventDefault();
     if (!editingUser) return;
-    const primaryEmail = (editUserForm.email || editUserForm.gmail || '').trim();
+    const activeForm = customData || editUserForm;
+    const primaryEmail = (activeForm.email || activeForm.gmail || '').trim();
     if (!primaryEmail) {
       alert('กรุณากรอกอีเมลสำหรับเข้าสู่ระบบ (Gmail หรือ @mcu.ac.th)');
       return;
     }
     setEditUserSaving(true);
     try {
-      const aliases = editUserForm.aliasesText
-        ? editUserForm.aliasesText.split(',').map((s) => s.trim()).filter(Boolean)
+      const aliases = activeForm.aliasesText
+        ? activeForm.aliasesText.split(',').map((s: string) => s.trim()).filter(Boolean)
         : (editingUser.aliases || []);
 
-      const roleToSave = isOfficer ? 'INSTRUCTOR' : editUserForm.role;
+      const roleToSave = isOfficer ? 'INSTRUCTOR' : activeForm.role;
 
       const res = await fetch('/api/users', {
         method: 'POST',
@@ -315,21 +317,21 @@ export function useAdminUsers({
           action: 'update-profile',
           userId: editingUser.id,
           updates: {
-            ...editUserForm,
+            ...activeForm,
             id: editingUser.id,
             previousEmail: editingUser.email,
             previousGmail: editingUser.gmail,
             previousName: editingUser.name,
             role: roleToSave,
-            email: editUserForm.email?.trim() || primaryEmail,
-            gmail: editUserForm.gmail?.trim() || (primaryEmail.endsWith('@gmail.com') ? primaryEmail : ''),
+            email: activeForm.email?.trim() || primaryEmail,
+            gmail: activeForm.gmail?.trim() || (primaryEmail.endsWith('@gmail.com') ? primaryEmail : ''),
             aliases,
           },
         }),
       });
       const data = await res.json();
       if (data.success) {
-        setActionSuccess(`แก้ไขข้อมูลโปรไฟล์และอีเมลของ ${editUserForm.name} สำเร็จ`);
+        setActionSuccess(`แก้ไขข้อมูลโปรไฟล์และอีเมลของ ${activeForm.name} สำเร็จ`);
         setEditingUser(null);
         await loadData();
       } else {
@@ -648,25 +650,26 @@ ${coursesText}
     }
   };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent, customFormData?: NewUserFormData) => {
     e.preventDefault();
-    const primaryEmail = (newUserForm.email || newUserForm.gmail || '').trim();
-    if (!newUserForm.name?.trim() || !primaryEmail) {
+    const activeForm = customFormData || newUserForm;
+    const primaryEmail = (activeForm.email || activeForm.gmail || '').trim();
+    if (!activeForm.name?.trim() || !primaryEmail) {
       alert('กรุณากรอกชื่อ และระบุอีเมลอย่างน้อย 1 ช่องทาง (Gmail หรือ @mcu.ac.th)');
       return;
     }
     try {
-      const emailToSave = newUserForm.email?.trim() || primaryEmail;
-      const gmailToSave = newUserForm.gmail?.trim() || (primaryEmail.endsWith('@gmail.com') ? primaryEmail : '');
-      const roleToSave = isOfficer ? 'INSTRUCTOR' : (newUserForm.role || 'INSTRUCTOR');
-      const isActingOfficerToSave = isOfficer ? false : Boolean(newUserForm.isActingOfficer);
+      const emailToSave = activeForm.email?.trim() || primaryEmail;
+      const gmailToSave = activeForm.gmail?.trim() || (primaryEmail.endsWith('@gmail.com') ? primaryEmail : '');
+      const roleToSave = isOfficer ? 'INSTRUCTOR' : (activeForm.role || 'INSTRUCTOR');
+      const isActingOfficerToSave = isOfficer ? false : Boolean(activeForm.isActingOfficer);
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create-user',
           userData: {
-            ...newUserForm,
+            ...activeForm,
             role: roleToSave,
             isActingOfficer: isActingOfficerToSave,
             email: emailToSave,
@@ -676,7 +679,7 @@ ${coursesText}
       });
       const data = await res.json();
       if (data.success) {
-        setActionSuccess(`สร้างบัญชีผู้ใช้ [${newUserForm.name}] สำเร็จเรียบร้อย`);
+        setActionSuccess(`สร้างบัญชีผู้ใช้ [${activeForm.name}] สำเร็จเรียบร้อย`);
         setIsAddUserOpen(false);
         setNewUserForm({
           name: '',
