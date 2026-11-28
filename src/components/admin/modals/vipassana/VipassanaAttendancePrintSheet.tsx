@@ -29,6 +29,10 @@ interface VipassanaAttendancePrintSheetProps {
   p4Conf: MeditationPeriodConfig;
   printBlankRows: boolean;
   hideCheckmarks?: boolean;
+  showPrintDate?: boolean;
+  customLocation?: string;
+  customLocationEn?: string;
+  eventStartDate?: string;
   attendanceRows: PrintAttendanceRow[];
   advisors?: string[]; // รายนามอาจารย์ประจำกลุ่ม และผู้ช่วย
   scannerStaff?: string; // อาจารย์ผู้ดูแล หรือเจ้าหน้าที่ ที่สแกนตรวจเช็ค (กรณีสแกน QR Code)
@@ -46,12 +50,53 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
   p4Conf,
   printBlankRows,
   hideCheckmarks = false,
+  showPrintDate = true,
+  customLocation,
+  customLocationEn,
+  eventStartDate,
   attendanceRows,
   advisors,
   scannerStaff,
   eventYearTh = '2569',
   eventYearCe = '2026',
 }) => {
+  // 1. Calculate Day of Month
+  let computedDayNumber = 11 + (selectedDayNumber || 1); // Default: Day 1 = 12 Dec, Day 2 = 13 Dec ...
+  if (eventStartDate) {
+    try {
+      const startD = new Date(eventStartDate);
+      if (!isNaN(startD.getTime())) {
+        startD.setDate(startD.getDate() + ((selectedDayNumber || 1) - 1));
+        computedDayNumber = startD.getDate();
+      }
+    } catch {}
+  }
+
+  const dayDisplayTh = showPrintDate && selectedDayNumber ? String(computedDayNumber) : '..........';
+  const dayDisplayEn = showPrintDate && selectedDayNumber ? String(computedDayNumber) : '..........';
+
+  // 2. Format Thai Location
+  const defaultLocationTh = 'อาคารวิปัสสนาธุระ (อาคารสมเด็จพระพุฒาจารย์ (อาจ อาสภมหาเถร) มจร';
+  const effectiveLocationTh = (customLocation || '').trim() || defaultLocationTh;
+  const locationDisplayTh = effectiveLocationTh.startsWith('ณ') ? effectiveLocationTh : `ณ ${effectiveLocationTh}`;
+
+  // 3. Format English Location
+  const defaultLocationEn = 'Vipassana Dhura Building (Somdet Phra Phutthachan (Arsapa Mahathera)), MCU';
+  let effectiveLocationEn = (customLocationEn || '').trim();
+  if (!effectiveLocationEn) {
+    if (
+      effectiveLocationTh.includes('วิปัสสนาธุระ') ||
+      effectiveLocationTh.includes('สมเด็จพระพุฒาจารย์') ||
+      effectiveLocationTh.includes('อาสภมหาเถร')
+    ) {
+      effectiveLocationEn = defaultLocationEn;
+    } else {
+      effectiveLocationEn = effectiveLocationTh.replace(/^ณ\s*/, '');
+    }
+  }
+  const locationDisplayEn = effectiveLocationEn.toUpperCase().startsWith('AT')
+    ? effectiveLocationEn
+    : `AT ${effectiveLocationEn}`;
   return (
     <div className="flex flex-col items-center print:block print:w-full">
       {/* PRINT STYLES */}
@@ -122,11 +167,11 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
                 The Name List for the 1<sup>st</sup> - 4<sup>th</sup> students of the Faculty of Buddhism. (English Program)
               </h2>
               <h3 className="text-xs sm:text-sm font-semibold">
-                The Meditation Practice on December 11 - 22, {eventYearCe}
+                The Meditation Practice on December 12 - 21, {eventYearCe}
               </h3>
-              <p className="text-xs">AT Bodhiyanmahavijjalai, Nakhon Pathom</p>
+              <p className="text-xs">{locationDisplayEn}</p>
               <p className="text-xs pt-1">
-                Date( &nbsp; &nbsp;{selectedDayNumber ? 10 + selectedDayNumber : '..........'}&nbsp; &nbsp; / December / {eventYearCe} )
+                Date( &nbsp; &nbsp;{dayDisplayEn}&nbsp; &nbsp; / December / {eventYearCe} )
               </p>
             </div>
 
@@ -274,9 +319,9 @@ export const VipassanaAttendancePrintSheet: React.FC<VipassanaAttendancePrintShe
               <h3 className="text-xs sm:text-sm font-semibold">
                 นิสิตคณะพุทธศาสตร์ ชั้นปีที่ 1 - 4 ปีการศึกษา {eventYearTh} (บรรพชิต)
               </h3>
-              <p className="text-xs">ณ อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม</p>
+              <p className="text-xs">{locationDisplayTh}</p>
               <p className="text-xs pt-1">
-                วัน ........................... ที่ &nbsp; &nbsp;{selectedDayNumber ? 10 + selectedDayNumber : '..........'}&nbsp; &nbsp; เดือน ธันวาคม พ.ศ. {eventYearTh}
+                วัน ........................... ที่ &nbsp; &nbsp;{dayDisplayTh}&nbsp; &nbsp; เดือน ธันวาคม พ.ศ. {eventYearTh}
               </p>
             </div>
 

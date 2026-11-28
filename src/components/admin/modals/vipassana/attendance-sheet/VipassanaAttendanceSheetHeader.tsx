@@ -65,7 +65,7 @@ export const VipassanaAttendanceSheetHeader: React.FC<VipassanaAttendanceSheetHe
           </h3>
 
           <p className="text-xs text-slate-500 truncate max-w-2xl hidden sm:block">
-            {event.title} • {event.location || 'อาคารปฏิบัติธรรมโพธิญาณมหาวิชชาลัย จ.นครปฐม'}
+            {event.title} • {event.location || 'อาคารวิปัสสนาธุระ (อาคารสมเด็จพระพุฒาจารย์ (อาจ อาสภมหาเถร) มจร'}
           </p>
         </div>
 
