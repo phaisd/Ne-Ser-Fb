@@ -188,14 +188,20 @@ export const SeatMapCanvas: React.FC<SeatMapCanvasProps> = ({
     ] as ParticipantStatusCategory;
     const designatedTheme = designatedKey ? STATUS_THEMES[designatedKey] : null;
 
-    // Search match
+    // Search match (Supports seat code, student name, student code, group code e.g. B4E, group name e.g. Group 4 / กลุ่ม 4, or group number)
+    const qLower = searchQuery.toLowerCase().trim();
     const isSearchMatched =
-      Boolean(searchQuery) &&
-      (seatCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      Boolean(qLower) &&
+      (seatCode.toLowerCase().includes(qLower) ||
         (occupant &&
-          (occupant.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            occupant.studentCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            occupant.groupSpecificCode?.toLowerCase().includes(searchQuery.toLowerCase()))));
+          (occupant.studentName.toLowerCase().includes(qLower) ||
+            occupant.studentCode.toLowerCase().includes(qLower) ||
+            occupant.groupSpecificCode?.toLowerCase().includes(qLower) ||
+            occupant.groupName?.toLowerCase().includes(qLower) ||
+            (occupant.groupNumber && `กลุ่ม ${occupant.groupNumber}`.toLowerCase().includes(qLower)) ||
+            (occupant.groupNumber && `กลุ่มที่ ${occupant.groupNumber}`.toLowerCase().includes(qLower)) ||
+            (occupant.groupNumber && `group ${occupant.groupNumber}`.toLowerCase().includes(qLower)) ||
+            (occupant.groupNumber && String(occupant.groupNumber) === qLower))));
 
     if (isDisabled) {
       return (

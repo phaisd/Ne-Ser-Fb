@@ -104,11 +104,12 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
       (userRole === 'INSTRUCTOR' && hasProjectDuty(activeUser, eventsList, filteredRegistrations)));
 
   // Role permissions based on user requirements:
-  // - Advisor & Officer: only Attendance 4 rounds
-  // - Vipassana Master: only Interview 4 Satipatthana
+  // - Advisor & Officer: Attendance 4 rounds + Seating Map
+  // - Vipassana Master: Interview 4 Satipatthana + Seating Map
   // - Admins: all action buttons
   const canAccessAttendance = isAdmin || isAdvisorOrOfficer;
   const canAccessInterview = isAdmin || isVipassanaMaster;
+  const canAccessSeating = isAdmin || isAdvisorOrOfficer || isVipassanaMaster;
 
   return (
     <>
@@ -166,8 +167,8 @@ export const EventParticipantsTable: React.FC<EventParticipantsTableProps> = ({
                     </button>
                   )}
 
-                  {/* แผนผังที่นั่ง & เช็คอิน (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
-                  {canAccessAttendance && onOpenVipassanaSeating && (
+                  {/* แผนผังที่นั่ง & เช็คอิน (สำหรับ Admin ทุกระดับ, อาจารย์/เจ้าหน้าที่ผู้ดูแล และ พระวิปัสสนาจารย์) */}
+                  {canAccessSeating && onOpenVipassanaSeating && (
                     <button
                       type="button"
                       onClick={() => onOpenVipassanaSeating(currentEvt)}

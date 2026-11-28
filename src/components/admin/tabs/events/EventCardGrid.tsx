@@ -77,11 +77,12 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
 
   // Role permissions based on user requirements:
   // - Advisor & Officer (ผู้ดูแลช่วงเวลาปฏิบัติ): only red-circled buttons (Scanner, Attendance 4 rounds)
-  // - Vipassana Master (พระวิปัสสนาจารย์): only blue-circled button (Interview 4 Satipatthana)
+  // - Vipassana Master (พระวิปัสสนาจารย์): Interview 4 Satipatthana + Seating Map & Checkin
   // - Admins (Admin ทุกระดับ): all buttons
   const canAccessScanner = isAdmin || isAdvisorOrOfficer;
   const canAccessAttendance = isAdmin || isAdvisorOrOfficer;
   const canAccessInterview = isAdmin || isVipassanaMaster;
+  const canAccessSeating = isAdmin || isAdvisorOrOfficer || isVipassanaMaster;
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1">
@@ -285,8 +286,8 @@ export const EventCardGrid: React.FC<EventCardGridProps> = ({
                         </button>
                       )}
 
-                      {/* 2. แผนผังที่นั่ง & เช็คอินที่นั่ง (สำหรับ Admin ทุกระดับ และ อาจารย์/เจ้าหน้าที่ผู้ดูแล) */}
-                      {canAccessScanner && onOpenVipassanaSeating && (
+                      {/* 2. แผนผังที่นั่ง & เช็คอินที่นั่ง (สำหรับ Admin ทุกระดับ, อาจารย์/เจ้าหน้าที่ผู้ดูแล และ พระวิปัสสนาจารย์) */}
+                      {canAccessSeating && onOpenVipassanaSeating && (
                         <button
                           type="button"
                           onClick={(evt) => {

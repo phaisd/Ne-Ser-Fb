@@ -248,7 +248,15 @@ export const SeatDetailSidebar: React.FC<SeatDetailSidebarProps> = ({
                 {selectedOccupant.groupSpecificCode && ` (${selectedOccupant.groupSpecificCode})`}
               </div>
               <div className="text-slate-600">
-                สังกัดกลุ่ม: <span className="font-bold">กลุ่มที่ {selectedOccupant.groupNumber || '-'}</span>
+                สังกัดกลุ่ม: <span className="font-bold">
+                  {selectedOccupant.groupNumber
+                    ? selectedOccupant.groupNumber === 12
+                      ? 'กลุ่ม 12 (ไทย)'
+                      : selectedOccupant.programType === 'ENGLISH' || selectedOccupant.programType === 'INTER'
+                      ? `Group ${selectedOccupant.groupNumber} (English)`
+                      : `กลุ่มที่ ${selectedOccupant.groupNumber}`
+                    : selectedOccupant.groupName || '-'}
+                </span>
               </div>
               <div className="text-slate-600">
                 สาขาวิชา: {selectedOccupant.major || '-'}
